@@ -26,8 +26,8 @@ class BlockerVpnService : VpnService() {
         // Add the package names of apps you want to completely kill.
         // ==========================================
         val appsToKill = listOf(
-            "com.twitter.android",     // X / Twitter
-            "com.reddit.frontpage",    // Reddit
+                 // X / Twitter
+                // Reddit
             "org.telegram.messenger"   // Telegram
         )
 
