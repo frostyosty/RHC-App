@@ -1,1 +1,1 @@
-git add . && git commit -m "apk 1.0.1" && git push origin main
+./scripts/push-apk.sh "apk 1.0.1 (this jumps to root and saves to github - ctrl-a and past this in terminal)"
