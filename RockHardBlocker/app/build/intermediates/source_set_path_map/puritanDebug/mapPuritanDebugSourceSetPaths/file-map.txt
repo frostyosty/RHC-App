@@ -1,0 +1,9 @@
+com.rockhard.blocker.app-puritan-0 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/pngs/puritan/debug
+com.rockhard.blocker.app-puritan-1 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/puritan/debug
+com.rockhard.blocker.app-packagePuritanDebugResources-2 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/puritanDebug/packagePuritanDebugResources/merged.dir
+com.rockhard.blocker.app-packagePuritanDebugResources-3 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/puritanDebug/packagePuritanDebugResources/stripped.dir
+com.rockhard.blocker.app-puritanDebug-4 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/merged_res/puritanDebug/mergePuritanDebugResources
+com.rockhard.blocker.app-debug-5 /workspaces/RHC-App/RockHardBlocker/app/src/debug/res
+com.rockhard.blocker.app-main-6 /workspaces/RHC-App/RockHardBlocker/app/src/main/res
+com.rockhard.blocker.app-puritan-7 /workspaces/RHC-App/RockHardBlocker/app/src/puritan/res
+com.rockhard.blocker.app-puritanDebug-8 /workspaces/RHC-App/RockHardBlocker/app/src/puritanDebug/res

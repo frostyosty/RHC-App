@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "com.rockhard.blocker.app-broDebug-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-8:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-broDebug-4:/xml_guardian_config.xml.flat",
+        "source": "com.rockhard.blocker.app-main-8:/xml/guardian_config.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-broDebug-4:/layout_activity_trap.xml.flat",
+        "source": "com.rockhard.blocker.app-main-8:/layout/activity_trap.xml"
+    }
+]

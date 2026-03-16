@@ -1,0 +1,12 @@
+R_DEF: Internal format may change without notice
+local
+id btnEnableGuardian
+id btnTrapAudio
+id btnTrapBrick
+id timerText
+layout activity_main
+layout activity_trap
+string app_name
+string brick_message
+string overlay_title
+xml guardian_config

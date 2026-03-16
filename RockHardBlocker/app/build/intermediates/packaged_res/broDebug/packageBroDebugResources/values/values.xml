@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Rock Hard Christians</string>
+    <string name="brick_message" translatable="false">Oh no, your phone is bricked up.</string>
+    <string name="overlay_title" translatable="false">Not today, brother.</string>
+</resources>

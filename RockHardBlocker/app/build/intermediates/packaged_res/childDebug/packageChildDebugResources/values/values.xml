@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Family Web Filter</string>
+    <string name="brick_message" translatable="false">Device locked for 60 seconds.</string>
+    <string name="overlay_title" translatable="false">Website Blocked.</string>
+</resources>

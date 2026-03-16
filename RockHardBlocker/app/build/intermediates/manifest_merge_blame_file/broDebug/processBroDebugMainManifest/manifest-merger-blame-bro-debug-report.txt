@@ -1,0 +1,103 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.rockhard.blocker.bro"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="26"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+11-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:4:5-77
+11-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:4:22-74
+12    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+12-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:5:5-80
+12-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:5:22-77
+13    <!-- WE NEED INTERNET PERMISSION TO RUN A VPN -->
+14    <uses-permission android:name="android.permission.INTERNET" />
+14-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:7:5-67
+14-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:7:22-64
+15
+16    <application
+16-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:9:5-41:19
+17        android:allowBackup="true"
+17-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:10:9-35
+18        android:debuggable="true"
+19        android:extractNativeLibs="false"
+20        android:icon="@android:drawable/sym_def_app_icon"
+20-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:11:9-58
+21        android:label="@string/app_name"
+21-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:12:9-41
+22        android:supportsRtl="true"
+22-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:13:9-35
+23        android:theme="@android:style/Theme.NoTitleBar" >
+23-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:14:9-56
+24        <activity
+24-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:9-21:20
+25            android:name="com.rockhard.blocker.MainActivity"
+25-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:19-47
+26            android:exported="true" >
+26-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:48-71
+27            <intent-filter>
+27-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:17:13-20:29
+28                <action android:name="android.intent.action.MAIN" />
+28-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:17-69
+28-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:25-66
+29
+30                <category android:name="android.intent.category.LAUNCHER" />
+30-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:19:17-77
+30-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:19:27-74
+31            </intent-filter>
+32        </activity>
+33        <activity
+33-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:9-107
+34            android:name="com.rockhard.blocker.TrapActivity"
+34-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:19-47
+35            android:exported="false"
+35-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:48-72
+36            android:launchMode="singleTask" />
+36-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:73-104
+37
+38        <service
+38-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:9-30:19
+39            android:name="com.rockhard.blocker.GuardianService"
+39-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:18-49
+40            android:exported="true"
+40-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:117-140
+41            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+41-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:50-116
+42            <intent-filter>
+42-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:13-28:29
+43                <action android:name="android.accessibilityservice.AccessibilityService" />
+43-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:17-92
+43-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:25-89
+44            </intent-filter>
+45
+46            <meta-data
+46-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:29:13-110
+47                android:name="android.accessibilityservice"
+47-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:29:24-67
+48                android:resource="@xml/guardian_config" />
+48-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:29:68-107
+49        </service>
+50
+51        <!-- REGISTERING THE VPN SERVICE -->
+52        <service
+52-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:33:9-39:19
+53            android:name="com.rockhard.blocker.BlockerVpnService"
+53-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:33:18-51
+54            android:exported="true"
+54-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:18-41
+55            android:permission="android.permission.BIND_VPN_SERVICE" >
+55-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:34:18-74
+56            <intent-filter>
+56-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:36:13-38:29
+57                <action android:name="android.net.VpnService" />
+57-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:17-64
+57-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:25-62
+58            </intent-filter>
+59        </service>
+60    </application>
+61
+62</manifest>

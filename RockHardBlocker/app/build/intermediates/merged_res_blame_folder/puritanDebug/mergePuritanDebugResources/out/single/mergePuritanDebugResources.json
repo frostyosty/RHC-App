@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "com.rockhard.blocker.app-puritanDebug-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-6:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-puritanDebug-4:/layout_activity_trap.xml.flat",
+        "source": "com.rockhard.blocker.app-main-6:/layout/activity_trap.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-puritanDebug-4:/xml_guardian_config.xml.flat",
+        "source": "com.rockhard.blocker.app-main-6:/xml/guardian_config.xml"
+    }
+]

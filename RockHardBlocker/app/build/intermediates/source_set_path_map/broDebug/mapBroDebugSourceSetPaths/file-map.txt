@@ -1,0 +1,9 @@
+com.rockhard.blocker.app-bro-0 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/pngs/bro/debug
+com.rockhard.blocker.app-bro-1 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/bro/debug
+com.rockhard.blocker.app-packageBroDebugResources-2 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/broDebug/packageBroDebugResources/merged.dir
+com.rockhard.blocker.app-packageBroDebugResources-3 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/broDebug/packageBroDebugResources/stripped.dir
+com.rockhard.blocker.app-broDebug-4 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/merged_res/broDebug/mergeBroDebugResources
+com.rockhard.blocker.app-bro-5 /workspaces/RHC-App/RockHardBlocker/app/src/bro/res
+com.rockhard.blocker.app-broDebug-6 /workspaces/RHC-App/RockHardBlocker/app/src/broDebug/res
+com.rockhard.blocker.app-debug-7 /workspaces/RHC-App/RockHardBlocker/app/src/debug/res
+com.rockhard.blocker.app-main-8 /workspaces/RHC-App/RockHardBlocker/app/src/main/res

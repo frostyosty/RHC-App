@@ -1,0 +1,10 @@
+com.rockhard.blocker.bro:xml/guardian_config = 0x7f040000
+com.rockhard.blocker.bro:string/brick_message = 0x7f030001
+com.rockhard.blocker.bro:string/app_name = 0x7f030000
+com.rockhard.blocker.bro:string/overlay_title = 0x7f030002
+com.rockhard.blocker.bro:layout/activity_trap = 0x7f020001
+com.rockhard.blocker.bro:id/btnEnableGuardian = 0x7f010000
+com.rockhard.blocker.bro:layout/activity_main = 0x7f020000
+com.rockhard.blocker.bro:id/timerText = 0x7f010003
+com.rockhard.blocker.bro:id/btnTrapAudio = 0x7f010001
+com.rockhard.blocker.bro:id/btnTrapBrick = 0x7f010002

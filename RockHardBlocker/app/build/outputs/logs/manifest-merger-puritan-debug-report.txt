@@ -1,0 +1,107 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:2:1-42:12
+INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:2:1-42:12
+INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:2:1-42:12
+INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:2:1-42:12
+	package
+		INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
+	android:versionCode
+		INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:2:11-69
+uses-permission#android.permission.FOREGROUND_SERVICE
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:4:5-77
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:4:22-74
+uses-permission#android.permission.MODIFY_AUDIO_SETTINGS
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:5:5-80
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:5:22-77
+uses-permission#android.permission.INTERNET
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:7:5-67
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:7:22-64
+application
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:9:5-41:19
+INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:9:5-41:19
+	android:extractNativeLibs
+		INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
+	android:supportsRtl
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:13:9-35
+	android:label
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:12:9-41
+	android:icon
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:11:9-58
+	android:allowBackup
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:10:9-35
+	android:theme
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:14:9-56
+activity#com.rockhard.blocker.MainActivity
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:9-21:20
+	android:exported
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:48-71
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:19-47
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:17:13-20:29
+action#android.intent.action.MAIN
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:17-69
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:19:17-77
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:19:27-74
+activity#com.rockhard.blocker.TrapActivity
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:9-107
+	android:launchMode
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:73-104
+	android:exported
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:48-72
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:19-47
+service#com.rockhard.blocker.GuardianService
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:9-30:19
+	android:exported
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:117-140
+	android:permission
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:50-116
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:18-49
+intent-filter#action:name:android.accessibilityservice.AccessibilityService
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:13-28:29
+action#android.accessibilityservice.AccessibilityService
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:17-92
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:25-89
+meta-data#android.accessibilityservice
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:29:13-110
+	android:resource
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:29:68-107
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:29:24-67
+service#com.rockhard.blocker.BlockerVpnService
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:33:9-39:19
+	android:exported
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:18-41
+	android:permission
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:34:18-74
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:33:18-51
+intent-filter#action:name:android.net.VpnService
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:36:13-38:29
+action#android.net.VpnService
+ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:17-64
+	android:name
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:25-62
+uses-sdk
+INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
+INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
