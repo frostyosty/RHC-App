@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="24dp" android:gravity="center" android:background="#121212">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="@string/app_name" android:textColor="#FFFFFF" android:textSize="28sp" android:textStyle="bold" android:layout_marginBottom="32dp"/>
+    <Button android:id="@+id/btnEnableGuardian" android:layout_width="match_parent" android:layout_height="60dp"
+        android:text="1. TURN ON THE GUARDIAN" android:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginBottom="16dp"/>
+    <Button android:id="@+id/btnTrapAudio" android:layout_width="match_parent" android:layout_height="60dp"
+        android:text="I'M BEING TEMPTED BY SATAN" android:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:layout_marginBottom="16dp"/>
+    <Button android:id="@+id/btnTrapBrick" android:layout_width="match_parent" android:layout_height="60dp"
+        android:text="EMERGENCY UNBLOCK" android:backgroundTint="#E53935" android:textColor="#FFFFFF"/>
+</LinearLayout>
