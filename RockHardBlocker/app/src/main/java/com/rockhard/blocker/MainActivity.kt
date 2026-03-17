@@ -4,9 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.media.RingtoneManager
+import android.net.Uri
 import android.net.VpnService
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Button
 import android.widget.Toast
 import android.app.Activity
@@ -18,15 +18,11 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
 
         // 1. VPN BUTTON
-        findViewById<Button>(R.id.btnEnableGuardian).text = "1. ENGAGE THE BLOCKER (VPN)"
         findViewById<Button>(R.id.btnEnableGuardian).setOnClickListener {
-            // Android requires us to ask the OS for permission to start a VPN
             val vpnIntent = VpnService.prepare(this)
             if (vpnIntent != null) {
-                // The OS will pop up a scary warning saying "This app wants to intercept network traffic"
                 startActivityForResult(vpnIntent, 0)
             } else {
-                // If it returns null, we already have permission! Start the engine.
                 startVpnEngine()
             }
         }
@@ -44,9 +40,19 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btnTrapBrick).setOnClickListener {
             startActivity(Intent(this, TrapActivity::class.java))
         }
+
+        // 4. THE DEBUG UNINSTALL BUTTON
+        findViewById<Button>(R.id.btnDebugUninstall).setOnClickListener {
+            // First, force the Guardian to sleep for 10 minutes so it doesn't fight us
+            GuardianService.pauseUntil = System.currentTimeMillis() + (10 * 60 * 1000)
+            
+            // Trigger the Android native uninstall prompt
+            val intent = Intent(Intent.ACTION_DELETE)
+            intent.data = Uri.parse("package:$packageName")
+            startActivity(intent)
+        }
     }
 
-    // Handles the user clicking "OK" on the Android VPN permission popup
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == RESULT_OK) {
             startVpnEngine()
@@ -56,8 +62,7 @@ class MainActivity : Activity() {
     }
 
     private fun startVpnEngine() {
-        val intent = Intent(this, BlockerVpnService::class.java)
-        startService(intent)
+        startService(Intent(this, BlockerVpnService::class.java))
         Toast.makeText(this, "The Blocker is active. Target apps are dead.", Toast.LENGTH_LONG).show()
     }
 }
