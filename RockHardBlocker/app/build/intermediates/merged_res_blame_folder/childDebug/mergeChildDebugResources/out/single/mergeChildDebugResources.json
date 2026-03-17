@@ -1,15 +1,15 @@
 [
     {
-        "merged": "com.rockhard.blocker.app-childDebug-4:/layout_activity_essay.xml.flat",
-        "source": "com.rockhard.blocker.app-main-8:/layout/activity_essay.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-childDebug-4:/layout_activity_essay.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-8:/layout/activity_essay.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-childDebug-4:/xml_guardian_config.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-8:/xml/guardian_config.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-childDebug-4:/layout_overlay_guard.xml.flat",
-        "source": "com.rockhard.blocker.app-main-8:/layout/overlay_guard.xml"
+        "merged": "com.rockhard.blocker.app-childDebug-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-8:/layout/activity_main.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-childDebug-4:/layout_activity_main.xml.flat",
