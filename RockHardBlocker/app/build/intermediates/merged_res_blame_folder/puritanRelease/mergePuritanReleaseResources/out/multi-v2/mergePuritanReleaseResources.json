@@ -1,0 +1,26 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.rockhard.blocker.app-puritanRelease-4:/values_values.arsc.flat",
+            "map": [
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/puritan/release/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "6,8,10",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "162,294,460",
+                        "endColumns": "83,117,88",
+                        "endOffsets": "241,407,544"
+                    },
+                    "to": {
+                        "startLines": "2,3,4",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,139,257",
+                        "endColumns": "83,117,88",
+                        "endOffsets": "134,252,341"
+                    }
+                }
+            ]
+        }
+    ]
+}

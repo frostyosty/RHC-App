@@ -1,0 +1,553 @@
+# compiler: R8
+# compiler_version: 8.3.36
+# min_api: 26
+# common_typos_disable
+# {"id":"com.android.tools.r8.mapping","version":"2.2"}
+# pg_map_id: 479ddf3
+# pg_map_hash: SHA-256 479ddf315142f18db0a742d2de6b5e6bf126b3e9ffb8d57062a767ce0d3859cf
+com.rockhard.blocker.AdminReceiver -> com.rockhard.blocker.AdminReceiver:
+# {"id":"sourceFile","fileName":"AdminReceiver.kt"}
+    0:3:void <init>():8:8 -> <init>
+    10:12:java.lang.CharSequence onDisableRequested(android.content.Context,android.content.Intent):14:14 -> onDisableRequested
+    10:20:void onDisabled(android.content.Context,android.content.Intent):18:18 -> onDisabled
+    10:20:void onEnabled(android.content.Context,android.content.Intent):10:10 -> onEnabled
+com.rockhard.blocker.BlockerVpnService -> com.rockhard.blocker.BlockerVpnService:
+# {"id":"sourceFile","fileName":"BlockerVpnService.kt"}
+    0:3:void <init>():8:8 -> <init>
+    0:2:void onDestroy():58:58 -> onDestroy
+    3:10:void onDestroy():59:59 -> onDestroy
+    11:13:void onDestroy():60:60 -> onDestroy
+    0:6:int onStartCommand(android.content.Intent,int,int):14:14 -> onStartCommand
+    7:11:int onStartCommand(android.content.Intent,int,int):16:16 -> onStartCommand
+    12:18:int onStartCommand(android.content.Intent,int,int):19:19 -> onStartCommand
+    19:24:int onStartCommand(android.content.Intent,int,int):22:22 -> onStartCommand
+    25:35:java.util.List kotlin.collections.CollectionsKt__CollectionsJVMKt.listOf(java.lang.Object):22:22 -> onStartCommand
+    25:35:int onStartCommand(android.content.Intent,int,int):28 -> onStartCommand
+    36:51:int onStartCommand(android.content.Intent,int,int):35:35 -> onStartCommand
+    52:59:int onStartCommand(android.content.Intent,int,int):39:39 -> onStartCommand
+    60:64:int onStartCommand(android.content.Intent,int,int):48:48 -> onStartCommand
+    65:72:int onStartCommand(android.content.Intent,int,int):50:50 -> onStartCommand
+com.rockhard.blocker.EssayActivity -> com.rockhard.blocker.EssayActivity:
+# {"id":"sourceFile","fileName":"EssayActivity.kt"}
+    0:2:void <init>():15:15 -> <init>
+    3:4:void <init>():18:18 -> <init>
+    5:10:void <init>():19:19 -> <init>
+    11:14:java.util.List kotlin.collections.ArraysUtilJVM.asList(java.lang.Object[]):13:13 -> <init>
+    11:14:java.util.List kotlin.collections.ArraysKt___ArraysJvmKt.asList(java.lang.Object[]):133 -> <init>
+    11:14:java.util.List kotlin.collections.CollectionsKt__CollectionsKt.listOf(java.lang.Object[]):78 -> <init>
+    11:14:void <init>():17 -> <init>
+    15:19:java.util.List kotlin.collections.ArraysKt___ArraysJvmKt.asList(java.lang.Object[]):133:133 -> <init>
+    15:19:java.util.List kotlin.collections.CollectionsKt__CollectionsKt.listOf(java.lang.Object[]):78 -> <init>
+    15:19:void <init>():17 -> <init>
+    20:22:void <init>():17:17 -> <init>
+    0:10:void onBackPressed():72:72 -> onBackPressed
+    0:2:void onCreate(android.os.Bundle):23:23 -> onCreate
+    3:7:void onCreate(android.os.Bundle):24:24 -> onCreate
+    8:20:void onCreate(android.os.Bundle):27:27 -> onCreate
+    21:24:void onCreate(android.os.Bundle):30:30 -> onCreate
+    25:34:java.lang.Object kotlin.collections.CollectionsKt___CollectionsKt.random(java.util.Collection,kotlin.random.Random):0:0 -> onCreate
+    25:34:void onCreate(android.os.Bundle):30 -> onCreate
+    35:40:java.lang.Object kotlin.collections.CollectionsKt___CollectionsKt.random(java.util.Collection,kotlin.random.Random):559:559 -> onCreate
+    35:40:void onCreate(android.os.Bundle):30 -> onCreate
+    41:48:java.lang.Object kotlin.collections.CollectionsKt___CollectionsKt.random(java.util.Collection,kotlin.random.Random):561:561 -> onCreate
+    41:48:void onCreate(android.os.Bundle):30 -> onCreate
+    49:52:java.lang.Object kotlin.collections.CollectionsKt___CollectionsKt.elementAt(java.lang.Iterable,int):86:86 -> onCreate
+    49:52:java.lang.Object kotlin.collections.CollectionsKt___CollectionsKt.random(java.util.Collection,kotlin.random.Random):561 -> onCreate
+    49:52:void onCreate(android.os.Bundle):30 -> onCreate
+    53:54:void onCreate(android.os.Bundle):30:30 -> onCreate
+    55:65:void onCreate(android.os.Bundle):31:31 -> onCreate
+    66:73:void onCreate(android.os.Bundle):33:33 -> onCreate
+    74:79:void onCreate(android.os.Bundle):34:34 -> onCreate
+    80:88:void onCreate(android.os.Bundle):36:36 -> onCreate
+    89:96:java.lang.Object kotlin.collections.CollectionsKt___CollectionsKt.random(java.util.Collection,kotlin.random.Random):560:560 -> onCreate
+    89:96:void onCreate(android.os.Bundle):30 -> onCreate
+com.rockhard.blocker.EssayActivity$onCreate$1 -> com.rockhard.blocker.EssayActivity$onCreate$1:
+# {"id":"sourceFile","fileName":"EssayActivity.kt"}
+    8:11:void <init>(java.lang.String,com.rockhard.blocker.EssayActivity,android.view.View,android.widget.EditText):36:36 -> <init>
+    0:3:void $r8$lambda$n7Yb4TTF9SUTK61DiTfupgV1w-M(android.view.View):0:0 -> a
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:3:void afterTextChanged(android.text.Editable):41:41 -> afterTextChanged
+    4:10:void afterTextChanged(android.text.Editable):43:43 -> afterTextChanged
+    11:12:void afterTextChanged(android.text.Editable):46:46 -> afterTextChanged
+    13:17:boolean kotlin.text.StringsKt__StringsJVMKt.startsWith(java.lang.String,java.lang.String,boolean):0:0 -> afterTextChanged
+    13:17:boolean kotlin.text.StringsKt__StringsJVMKt.startsWith$default(java.lang.String,java.lang.String,boolean,int,java.lang.Object):419 -> afterTextChanged
+    13:17:void afterTextChanged(android.text.Editable):46 -> afterTextChanged
+    18:23:boolean kotlin.text.StringsKt__StringsJVMKt.startsWith(java.lang.String,java.lang.String,boolean):421:421 -> afterTextChanged
+    18:23:boolean kotlin.text.StringsKt__StringsJVMKt.startsWith$default(java.lang.String,java.lang.String,boolean,int,java.lang.Object):419 -> afterTextChanged
+    18:23:void afterTextChanged(android.text.Editable):46 -> afterTextChanged
+    24:25:void afterTextChanged(android.text.Editable):48:48 -> afterTextChanged
+    26:31:boolean kotlin.jvm.internal.Intrinsics.areEqual(java.lang.Object,java.lang.Object):169:169 -> afterTextChanged
+    26:31:void afterTextChanged(android.text.Editable):48 -> afterTextChanged
+    32:43:void afterTextChanged(android.text.Editable):49:49 -> afterTextChanged
+    44:57:void afterTextChanged(android.text.Editable):51:51 -> afterTextChanged
+    58:63:void afterTextChanged(android.text.Editable):52:52 -> afterTextChanged
+    64:74:void afterTextChanged(android.text.Editable):56:56 -> afterTextChanged
+    75:81:void afterTextChanged(android.text.Editable):57:57 -> afterTextChanged
+    82:93:void afterTextChanged(android.text.Editable):58:58 -> afterTextChanged
+    94:115:void afterTextChanged(android.text.Editable):61:61 -> afterTextChanged
+    0:9:void afterTextChanged$lambda$0(android.view.View):62:62 -> afterTextChanged$lambda$0
+com.rockhard.blocker.EssayActivity$onCreate$1$$ExternalSyntheticLambda0 -> com.rockhard.blocker.a:
+# {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
+# {"id":"com.android.tools.r8.synthesized"}
+    int com.rockhard.blocker.EssayActivity$onCreate$1$$InternalSyntheticLambda$1$02c2c105cf5d7b73398261a79116c487dea8cc1b89eaa7e7a87f4cfafd4f632a$0.$r8$classId -> a
+      # {"id":"com.android.tools.r8.synthesized"}
+    android.view.View com.rockhard.blocker.EssayActivity$onCreate$1$$InternalSyntheticLambda$1$02c2c105cf5d7b73398261a79116c487dea8cc1b89eaa7e7a87f4cfafd4f632a$0.f$0 -> b
+      # {"id":"com.android.tools.r8.residualsignature","signature":"Ljava/lang/Object;"}
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:7:void <init>(int,java.lang.Object):0:0 -> <init>
+      # {"id":"com.android.tools.r8.synthesized"}
+      # {"id":"com.android.tools.r8.residualsignature","signature":"(ILjava/lang/Object;)V"}
+    0:19:void run():0:0 -> run
+      # {"id":"com.android.tools.r8.synthesized"}
+com.rockhard.blocker.GuardianService -> com.rockhard.blocker.GuardianService:
+# {"id":"sourceFile","fileName":"GuardianService.kt"}
+    0:2:void <init>():17:17 -> <init>
+    3:6:void <init>():24:24 -> <init>
+    7:14:void <init>():26:26 -> <init>
+    0:3:void $r8$lambda$6cwMeLMOh7YMfK3gJB_j-KKSz5k(com.rockhard.blocker.GuardianService,android.view.View):0:0 -> a
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:2:long access$getPauseUntil$cp():17:17 -> access$getPauseUntil$cp
+    0:2:void access$setPauseUntil$cp(long):17:17 -> access$setPauseUntil$cp
+    0:3:void $r8$lambda$Bf9OvBSu5f0RmZhgHwmOEvt84OE(com.rockhard.blocker.GuardianService,android.view.View):0:0 -> b
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:3:void $r8$lambda$o7-qlXfut7u_9ow9drcusGGn-No(com.rockhard.blocker.GuardianService):0:0 -> c
+      # {"id":"com.android.tools.r8.synthesized"}
+    4:18:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):136:136 -> findNodeWithText
+    19:33:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):137:137 -> findNodeWithText
+    34:46:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):138:138 -> findNodeWithText
+    47:53:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):141:141 -> findNodeWithText
+    54:69:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):142:142 -> findNodeWithText
+    0:9:boolean findTextInNode(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):147:147 -> findTextInNode
+    3:13:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):42:42 -> onAccessibilityEvent
+    14:27:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):46:46 -> onAccessibilityEvent
+    28:35:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):47:47 -> onAccessibilityEvent
+    36:37:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):50:50 -> onAccessibilityEvent
+    38:43:boolean kotlin.jvm.internal.Intrinsics.areEqual(java.lang.Object,java.lang.Object):169:169 -> onAccessibilityEvent
+    38:43:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):50 -> onAccessibilityEvent
+    44:59:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):51:51 -> onAccessibilityEvent
+    60:66:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):52:52 -> onAccessibilityEvent
+    67:90:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):53:53 -> onAccessibilityEvent
+    91:92:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):55:55 -> onAccessibilityEvent
+    93:98:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):56:56 -> onAccessibilityEvent
+    99:105:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):60:60 -> onAccessibilityEvent
+    106:117:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):61:61 -> onAccessibilityEvent
+    118:126:boolean kotlin.text.StringsKt__StringsKt.contains$default(java.lang.CharSequence,java.lang.CharSequence,boolean,int,java.lang.Object):1144:1144 -> onAccessibilityEvent
+    118:126:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):63 -> onAccessibilityEvent
+    127:140:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):64:64 -> onAccessibilityEvent
+    141:144:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):65:65 -> onAccessibilityEvent
+    145:149:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):66:66 -> onAccessibilityEvent
+    150:153:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):67:67 -> onAccessibilityEvent
+    154:161:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):73:73 -> onAccessibilityEvent
+    162:165:java.util.List kotlin.collections.ArraysUtilJVM.asList(java.lang.Object[]):13:13 -> onAccessibilityEvent
+    162:165:java.util.List kotlin.collections.ArraysKt___ArraysJvmKt.asList(java.lang.Object[]):133 -> onAccessibilityEvent
+    162:165:java.util.List kotlin.collections.CollectionsKt__CollectionsKt.listOf(java.lang.Object[]):78 -> onAccessibilityEvent
+    162:165:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):73 -> onAccessibilityEvent
+    166:170:java.util.List kotlin.collections.ArraysKt___ArraysJvmKt.asList(java.lang.Object[]):133:133 -> onAccessibilityEvent
+    166:170:java.util.List kotlin.collections.CollectionsKt__CollectionsKt.listOf(java.lang.Object[]):78 -> onAccessibilityEvent
+    166:170:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):73 -> onAccessibilityEvent
+    171:186:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):74:74 -> onAccessibilityEvent
+    187:192:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):75:75 -> onAccessibilityEvent
+    193:199:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):77:77 -> onAccessibilityEvent
+    200:205:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):78:78 -> onAccessibilityEvent
+    206:209:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):79:79 -> onAccessibilityEvent
+    0:2:void onServiceConnected():34:34 -> onServiceConnected
+    3:15:void onServiceConnected():35:35 -> onServiceConnected
+    16:26:void kotlin.jvm.internal.Intrinsics.throwJavaNpe(java.lang.String):50:50 -> onServiceConnected
+    16:26:void kotlin.jvm.internal.Intrinsics.checkNotNull(java.lang.Object,java.lang.String):31 -> onServiceConnected
+    16:26:void onServiceConnected():35 -> onServiceConnected
+    0:7:void removeOverlay():127:127 -> removeOverlay
+    8:15:void removeOverlay():128:128 -> removeOverlay
+    16:18:void removeOverlay():129:129 -> removeOverlay
+    19:21:void removeOverlay():130:130 -> removeOverlay
+    0:18:void showUncloseableOverlay():87:87 -> showUncloseableOverlay
+    5:9:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):88:88 -> showUncloseableOverlay$lambda$3
+    10:24:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):90:90 -> showUncloseableOverlay$lambda$3
+    25:26:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):96:96 -> showUncloseableOverlay$lambda$3
+    27:30:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):98:98 -> showUncloseableOverlay$lambda$3
+    31:41:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):99:99 -> showUncloseableOverlay$lambda$3
+    42:60:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):102:102 -> showUncloseableOverlay$lambda$3
+    61:83:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):108:108 -> showUncloseableOverlay$lambda$3
+    84:92:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):118:118 -> showUncloseableOverlay$lambda$3
+    93:96:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):119:119 -> showUncloseableOverlay$lambda$3
+    97:100:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):121:121 -> showUncloseableOverlay$lambda$3
+    5:8:void showUncloseableOverlay$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View):103:103 -> showUncloseableOverlay$lambda$3$lambda$0
+    9:12:void showUncloseableOverlay$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View):104:104 -> showUncloseableOverlay$lambda$3$lambda$0
+    5:7:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):109:109 -> showUncloseableOverlay$lambda$3$lambda$2
+    8:16:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):111:111 -> showUncloseableOverlay$lambda$3$lambda$2
+    17:19:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):112:112 -> showUncloseableOverlay$lambda$3$lambda$2
+    20:23:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):114:114 -> showUncloseableOverlay$lambda$3$lambda$2
+com.rockhard.blocker.GuardianService$$ExternalSyntheticLambda0 -> com.rockhard.blocker.b:
+# {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
+# {"id":"com.android.tools.r8.synthesized"}
+    int com.rockhard.blocker.GuardianService$$InternalSyntheticLambda$1$68db8d273252fbc69929efd781eb0294d7e0811ec58f685f78714fa6a50221e9$0.$r8$classId -> a
+      # {"id":"com.android.tools.r8.synthesized"}
+    com.rockhard.blocker.GuardianService com.rockhard.blocker.GuardianService$$InternalSyntheticLambda$1$68db8d273252fbc69929efd781eb0294d7e0811ec58f685f78714fa6a50221e9$0.f$0 -> b
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:7:void <init>(com.rockhard.blocker.GuardianService,int):0:0 -> <init>
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:15:void onClick(android.view.View):0:0 -> onClick
+      # {"id":"com.android.tools.r8.synthesized"}
+com.rockhard.blocker.GuardianService$Companion -> com.rockhard.blocker.GuardianService$Companion:
+# {"id":"sourceFile","fileName":"GuardianService.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+      # {"id":"com.android.tools.r8.residualsignature","signature":"(Ld/a;)V"}
+    0:4:long getPauseUntil():21:21 -> getPauseUntil
+    0:3:void setPauseUntil(long):21:21 -> setPauseUntil
+com.rockhard.blocker.MainActivity -> com.rockhard.blocker.MainActivity:
+# {"id":"sourceFile","fileName":"MainActivity.kt"}
+    0:3:void <init>():16:16 -> <init>
+    0:3:void $r8$lambda$Pwl8EGutRoJYN0jdc9gDRc8cJec(com.rockhard.blocker.MainActivity,android.view.View):0:0 -> a
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:3:void $r8$lambda$TUv74TwWsn3mBPF9q3gvmmXvL4s(com.rockhard.blocker.MainActivity,android.view.View):0:0 -> b
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:3:void $r8$lambda$eOWoGKJsEmkzK5gHtAyy7CDvkjk(com.rockhard.blocker.MainActivity,android.view.View):0:0 -> c
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:3:void $r8$lambda$oK60JNCIiBn287Xph_ZhXs5X6p4(com.rockhard.blocker.MainActivity,android.view.View):0:0 -> d
+      # {"id":"com.android.tools.r8.synthesized"}
+    3:6:void onActivityResult(int,int,android.content.Intent):76:76 -> onActivityResult
+    0:2:void onCreate(android.os.Bundle):22:22 -> onCreate
+    3:7:void onCreate(android.os.Bundle):23:23 -> onCreate
+    8:19:void onCreate(android.os.Bundle):25:25 -> onCreate
+    20:28:void onCreate(android.os.Bundle):26:26 -> onCreate
+    29:45:void onCreate(android.os.Bundle):29:29 -> onCreate
+    46:53:void onCreate(android.os.Bundle):39:39 -> onCreate
+    54:61:void onCreate(android.os.Bundle):40:40 -> onCreate
+    62:68:void onCreate(android.os.Bundle):41:41 -> onCreate
+    69:77:void onCreate(android.os.Bundle):43:43 -> onCreate
+    78:94:void onCreate(android.os.Bundle):55:55 -> onCreate
+    95:112:void onCreate(android.os.Bundle):60:60 -> onCreate
+    113:123:void kotlin.jvm.internal.Intrinsics.throwJavaNpe(java.lang.String):50:50 -> onCreate
+    113:123:void kotlin.jvm.internal.Intrinsics.checkNotNull(java.lang.Object,java.lang.String):31 -> onCreate
+    113:123:void onCreate(android.os.Bundle):25 -> onCreate
+    5:11:void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View):30:30 -> onCreate$lambda$0
+    12:15:void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View):32:32 -> onCreate$lambda$0
+    16:19:void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View):34:34 -> onCreate$lambda$0
+    5:21:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):44:44 -> onCreate$lambda$1
+    22:28:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):45:45 -> onCreate$lambda$1
+    29:37:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):46:46 -> onCreate$lambda$1
+    38:44:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):47:47 -> onCreate$lambda$1
+    45:48:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):48:48 -> onCreate$lambda$1
+    49:52:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):46:46 -> onCreate$lambda$1
+    53:63:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):50:50 -> onCreate$lambda$1
+    64:73:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):44:44 -> onCreate$lambda$1
+    5:15:void onCreate$lambda$2(com.rockhard.blocker.MainActivity,android.view.View):56:56 -> onCreate$lambda$2
+    5:18:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):61:61 -> onCreate$lambda$3
+    19:37:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):64:64 -> onCreate$lambda$3
+    38:57:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):65:65 -> onCreate$lambda$3
+    58:64:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):68:68 -> onCreate$lambda$3
+    65:89:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):69:69 -> onCreate$lambda$3
+    90:93:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):70:70 -> onCreate$lambda$3
+    94:101:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):64:64 -> onCreate$lambda$3
+    0:9:void startVpnEngine():81:81 -> startVpnEngine
+    10:20:void startVpnEngine():82:82 -> startVpnEngine
+com.rockhard.blocker.MainActivity$$ExternalSyntheticLambda0 -> com.rockhard.blocker.c:
+# {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
+# {"id":"com.android.tools.r8.synthesized"}
+    int com.rockhard.blocker.MainActivity$$InternalSyntheticLambda$1$497c404f8ad2c5d5437f503613a18c76211ae11cced9bc97fab4cd300f75ebb4$0.$r8$classId -> a
+      # {"id":"com.android.tools.r8.synthesized"}
+    com.rockhard.blocker.MainActivity com.rockhard.blocker.MainActivity$$InternalSyntheticLambda$1$497c404f8ad2c5d5437f503613a18c76211ae11cced9bc97fab4cd300f75ebb4$0.f$0 -> b
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:7:void <init>(com.rockhard.blocker.MainActivity,int):0:0 -> <init>
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:23:void onClick(android.view.View):0:0 -> onClick
+      # {"id":"com.android.tools.r8.synthesized"}
+com.rockhard.blocker.TrapActivity -> com.rockhard.blocker.TrapActivity:
+# {"id":"sourceFile","fileName":"TrapActivity.kt"}
+    0:3:void <init>():9:9 -> <init>
+    0:2:void onCreate(android.os.Bundle):11:11 -> onCreate
+    3:7:void onCreate(android.os.Bundle):12:12 -> onCreate
+    8:20:void onCreate(android.os.Bundle):14:14 -> onCreate
+    21:28:void onCreate(android.os.Bundle):21:21 -> onCreate
+    29:33:void onCreate(android.os.Bundle):23:23 -> onCreate
+    34:37:void onCreate(android.os.Bundle):29:29 -> onCreate
+com.rockhard.blocker.TrapActivity$onCreate$1 -> com.rockhard.blocker.TrapActivity$onCreate$1:
+# {"id":"sourceFile","fileName":"TrapActivity.kt"}
+    9:12:void <init>(android.widget.TextView,com.rockhard.blocker.TrapActivity):23:23 -> <init>
+    0:5:void onFinish():28:28 -> onFinish
+    3:4:void onTick(long):25:26 -> onTick
+    5:38:void onTick(long):26:26 -> onTick
+kotlin.UninitializedPropertyAccessException -> a.a:
+# {"id":"sourceFile","fileName":"UninitializedPropertyAccessException.kt"}
+kotlin.collections.ArraysKt__ArraysKt -> b.a:
+# {"id":"sourceFile","fileName":"Arrays.kt"}
+    0:2:void checkNotNullExpressionValue(java.lang.Object,java.lang.String):0:0 -> a
+      # {"id":"com.android.tools.r8.synthesized"}
+    3:17:void kotlin.jvm.internal.Intrinsics.checkNotNullExpressionValue(java.lang.Object,java.lang.String):93:93 -> a
+    3:17:void checkNotNullExpressionValue(java.lang.Object,java.lang.String):0 -> a
+    0:1:void checkNotNullParameter(java.lang.Object,java.lang.String):0:0 -> b
+      # {"id":"com.android.tools.r8.synthesized"}
+    2:3:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140:140 -> b
+    2:3:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    2:3:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    4:11:java.lang.String kotlin.jvm.internal.Intrinsics.createParameterIsNullExceptionMessage(java.lang.String):144:144 -> b
+    4:11:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140 -> b
+    4:11:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    4:11:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    12:18:java.lang.String kotlin.jvm.internal.Intrinsics.createParameterIsNullExceptionMessage(java.lang.String):146:146 -> b
+    12:18:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140 -> b
+    12:18:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    12:18:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    19:33:java.lang.String kotlin.jvm.internal.Intrinsics.createParameterIsNullExceptionMessage(java.lang.String):149:149 -> b
+    19:33:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140 -> b
+    19:33:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    19:33:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    34:48:java.lang.String kotlin.jvm.internal.Intrinsics.createParameterIsNullExceptionMessage(java.lang.String):151:151 -> b
+    34:48:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140 -> b
+    34:48:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    34:48:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    49:50:java.lang.String kotlin.jvm.internal.Intrinsics.createParameterIsNullExceptionMessage(java.lang.String):153:153 -> b
+    49:50:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140 -> b
+    49:50:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    49:50:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    51:54:java.lang.String kotlin.jvm.internal.Intrinsics.createParameterIsNullExceptionMessage(java.lang.String):154:154 -> b
+    51:54:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140 -> b
+    51:54:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    51:54:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    55:58:java.lang.String kotlin.jvm.internal.Intrinsics.createParameterIsNullExceptionMessage(java.lang.String):155:155 -> b
+    55:58:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140 -> b
+    55:58:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    55:58:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    59:88:java.lang.String kotlin.jvm.internal.Intrinsics.createParameterIsNullExceptionMessage(java.lang.String):157:157 -> b
+    59:88:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140 -> b
+    59:88:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    59:88:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    89:96:void kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE(java.lang.String):140:140 -> b
+    89:96:void kotlin.jvm.internal.Intrinsics.checkNotNullParameter(java.lang.Object,java.lang.String):131 -> b
+    89:96:void checkNotNullParameter(java.lang.Object,java.lang.String):0 -> b
+    0:5:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable):253:253 -> c
+      # {"id":"com.android.tools.r8.residualsignature","signature":"(Ljava/lang/RuntimeException;)V"}
+    6:9:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable,java.lang.String):257:257 -> c
+    6:9:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable):253 -> c
+    10:14:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable,java.lang.String):258:258 -> c
+    10:14:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable):253 -> c
+    15:32:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable,java.lang.String):262:262 -> c
+    15:32:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable):253 -> c
+    33:38:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable,java.lang.String):267:267 -> c
+    33:38:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable):253 -> c
+    39:42:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable,java.lang.String):268:268 -> c
+    39:42:java.lang.Throwable kotlin.jvm.internal.Intrinsics.sanitizeStackTrace(java.lang.Throwable):253 -> c
+    0:18:void kotlin.jvm.internal.Intrinsics.throwUninitializedPropertyAccessException(java.lang.String):58:58 -> d
+    19:20:void kotlin.jvm.internal.Intrinsics.throwUninitializedProperty(java.lang.String):54:54 -> d
+    19:20:void kotlin.jvm.internal.Intrinsics.throwUninitializedPropertyAccessException(java.lang.String):58 -> d
+    21:23:void kotlin.UninitializedPropertyAccessException.<init>(java.lang.String):11:11 -> d
+    21:23:void kotlin.jvm.internal.Intrinsics.throwUninitializedProperty(java.lang.String):54 -> d
+    21:23:void kotlin.jvm.internal.Intrinsics.throwUninitializedPropertyAccessException(java.lang.String):58 -> d
+    24:27:void kotlin.jvm.internal.Intrinsics.throwUninitializedProperty(java.lang.String):54:54 -> d
+    24:27:void kotlin.jvm.internal.Intrinsics.throwUninitializedPropertyAccessException(java.lang.String):58 -> d
+kotlin.collections.ArraysKt___ArraysJvmKt -> R8$$REMOVED$$CLASS$$0:
+# {"id":"sourceFile","fileName":"_ArraysJvm.kt"}
+kotlin.collections.ArraysUtilJVM -> R8$$REMOVED$$CLASS$$1:
+# {"id":"sourceFile","fileName":"ArraysUtilJVM.java"}
+kotlin.collections.CollectionsKt__CollectionsJVMKt -> R8$$REMOVED$$CLASS$$2:
+# {"id":"sourceFile","fileName":"CollectionsJVM.kt"}
+kotlin.collections.CollectionsKt__CollectionsKt -> R8$$REMOVED$$CLASS$$3:
+# {"id":"sourceFile","fileName":"Collections.kt"}
+kotlin.collections.CollectionsKt___CollectionsKt -> R8$$REMOVED$$CLASS$$4:
+# {"id":"sourceFile","fileName":"_Collections.kt"}
+kotlin.collections.IntIterator -> R8$$REMOVED$$CLASS$$5:
+# {"id":"sourceFile","fileName":"PrimitiveIterators.kt"}
+kotlin.internal.PlatformImplementations -> R8$$REMOVED$$CLASS$$6:
+# {"id":"sourceFile","fileName":"PlatformImplementations.kt"}
+kotlin.internal.ProgressionUtilKt -> R8$$REMOVED$$CLASS$$7:
+# {"id":"sourceFile","fileName":"progressionUtil.kt"}
+kotlin.internal.jdk8.JDK8PlatformImplementations -> R8$$REMOVED$$CLASS$$8:
+# {"id":"sourceFile","fileName":"JDK8PlatformImplementations.kt"}
+kotlin.internal.jdk8.JDK8PlatformImplementations$ReflectSdkVersion -> c.a:
+# {"id":"sourceFile","fileName":"JDK8PlatformImplementations.kt"}
+    java.lang.Integer sdkVersion -> a
+    0:0:void <clinit>() -> <clinit>
+    1:26:void <clinit>():34:34 -> <clinit>
+    27:36:void <clinit>():37:37 -> <clinit>
+kotlin.jvm.internal.DefaultConstructorMarker -> d.a:
+# {"id":"sourceFile","fileName":"DefaultConstructorMarker.java"}
+kotlin.jvm.internal.Intrinsics -> R8$$REMOVED$$CLASS$$9:
+# {"id":"sourceFile","fileName":"Intrinsics.java"}
+kotlin.random.AbstractPlatformRandom -> e.a:
+# {"id":"sourceFile","fileName":"PlatformRandom.kt"}
+    0:8:int nextInt(int):42:42 -> a
+    java.util.Random getImpl() -> b
+kotlin.random.FallbackThreadLocalRandom -> e.c:
+# {"id":"sourceFile","fileName":"PlatformRandom.kt"}
+    kotlin.random.FallbackThreadLocalRandom$implStorage$1 implStorage -> c
+      # {"id":"com.android.tools.r8.residualsignature","signature":"Le/b;"}
+    0:2:void kotlin.random.AbstractPlatformRandom.<init>():35:35 -> <init>
+    0:2:void <init>():50 -> <init>
+    3:4:void <init>():51:51 -> <init>
+    5:7:void kotlin.random.FallbackThreadLocalRandom$implStorage$1.<init>():51:51 -> <init>
+    5:7:void <init>():51 -> <init>
+    8:10:void <init>():51:51 -> <init>
+    0:13:java.util.Random getImpl():56:56 -> b
+kotlin.random.FallbackThreadLocalRandom$implStorage$1 -> e.b:
+# {"id":"sourceFile","fileName":"PlatformRandom.kt"}
+    0:5:java.util.Random initialValue():52:52 -> initialValue
+    0:5:java.lang.Object initialValue():51 -> initialValue
+kotlin.random.Random -> e.e:
+# {"id":"sourceFile","fileName":"Random.kt"}
+    kotlin.random.Random$Default Default -> a
+      # {"id":"com.android.tools.r8.residualsignature","signature":"Le/d;"}
+    kotlin.random.Random defaultRandom -> b
+      # {"id":"com.android.tools.r8.residualsignature","signature":"Le/a;"}
+    0:1:void <clinit>():0:0 -> <clinit>
+    2:4:void kotlin.random.Random$Default.<init>():270:270 -> <clinit>
+    2:4:void kotlin.random.Random$Default.<init>(kotlin.jvm.internal.DefaultConstructorMarker):0 -> <clinit>
+    2:4:void <clinit>():0 -> <clinit>
+    5:6:void <clinit>():0:0 -> <clinit>
+    7:19:boolean kotlin.internal.jdk8.JDK8PlatformImplementations.sdkIsNullOrAtLeast(int):40:40 -> <clinit>
+    7:19:kotlin.random.Random kotlin.internal.jdk8.JDK8PlatformImplementations.defaultPlatformRandom():58 -> <clinit>
+    7:19:void <clinit>():271 -> <clinit>
+    20:25:kotlin.random.Random kotlin.internal.PlatformImplementations.defaultPlatformRandom():45:45 -> <clinit>
+    20:25:kotlin.random.Random kotlin.internal.jdk8.JDK8PlatformImplementations.defaultPlatformRandom():58 -> <clinit>
+    20:25:void <clinit>():271 -> <clinit>
+    26:27:kotlin.random.Random kotlin.internal.jdk8.JDK8PlatformImplementations.defaultPlatformRandom():58:58 -> <clinit>
+    26:27:void <clinit>():271 -> <clinit>
+    28:30:void kotlin.random.AbstractPlatformRandom.<init>():35:35 -> <clinit>
+    28:30:void kotlin.random.jdk8.PlatformThreadLocalRandom.<init>():11 -> <clinit>
+    28:30:kotlin.random.Random kotlin.internal.jdk8.JDK8PlatformImplementations.defaultPlatformRandom():58 -> <clinit>
+    28:30:void <clinit>():271 -> <clinit>
+    31:33:void <clinit>():271:271 -> <clinit>
+    0:3:void <init>():19:19 -> <init>
+    int nextInt(int) -> a
+kotlin.random.Random$Default -> e.d:
+# {"id":"sourceFile","fileName":"Random.kt"}
+    0:6:int nextInt(int):283:283 -> a
+kotlin.random.jdk8.PlatformThreadLocalRandom -> f.a:
+# {"id":"sourceFile","fileName":"PlatformThreadLocalRandom.kt"}
+    0:9:java.util.Random getImpl():13:13 -> b
+kotlin.ranges.IntProgression -> g.a:
+# {"id":"sourceFile","fileName":"Progressions.kt"}
+    int first -> a
+    int last -> b
+    int step -> c
+    0:8:void <init>(int,int,int):77:77 -> <init>
+    9:15:void <init>(int,int,int):92:92 -> <init>
+    16:40:int kotlin.internal.ProgressionUtilKt.mod(int,int):10:10 -> <init>
+    16:40:int kotlin.internal.ProgressionUtilKt.differenceModulo(int,int,int):21 -> <init>
+    16:40:int kotlin.internal.ProgressionUtilKt.getProgressionLastElement(int,int,int):46 -> <init>
+    16:40:void <init>(int,int,int):97 -> <init>
+    41:58:int kotlin.internal.ProgressionUtilKt.mod(int,int):10:10 -> <init>
+    41:58:int kotlin.internal.ProgressionUtilKt.differenceModulo(int,int,int):21 -> <init>
+    41:58:int kotlin.internal.ProgressionUtilKt.getProgressionLastElement(int,int,int):47 -> <init>
+    41:58:void <init>(int,int,int):97 -> <init>
+    59:60:void <init>(int,int,int):97:97 -> <init>
+    61:63:void <init>(int,int,int):102:102 -> <init>
+    64:71:int kotlin.internal.ProgressionUtilKt.getProgressionLastElement(int,int,int):48:48 -> <init>
+    64:71:void <init>(int,int,int):97 -> <init>
+    72:79:void <init>(int,int,int):86:86 -> <init>
+    80:87:void <init>(int,int,int):85:85 -> <init>
+    0:11:kotlin.collections.IntIterator iterator():104:104 -> iterator
+    0:11:java.util.Iterator iterator():77 -> iterator
+kotlin.ranges.IntProgressionIterator -> g.b:
+# {"id":"sourceFile","fileName":"ProgressionIterators.kt"}
+    int step -> a
+    int finalElement -> b
+    boolean hasNext -> c
+    int next -> d
+    0:4:void <init>(int,int,int):38:38 -> <init>
+    5:17:void <init>(int,int,int):39:39 -> <init>
+    18:23:void <init>(int,int,int):40:40 -> <init>
+    24:26:void <init>(int,int,int):41:41 -> <init>
+    0:1:int nextInt():46:46 -> a
+    0:1:java.lang.Object kotlin.collections.IntIterator.next():35 -> a
+    2:5:int nextInt():47:47 -> a
+    2:5:java.lang.Object kotlin.collections.IntIterator.next():35 -> a
+    6:10:int nextInt():48:48 -> a
+    6:10:java.lang.Object kotlin.collections.IntIterator.next():35 -> a
+    11:13:int nextInt():49:49 -> a
+    11:13:java.lang.Object kotlin.collections.IntIterator.next():35 -> a
+    14:19:int nextInt():48:48 -> a
+    14:19:java.lang.Object kotlin.collections.IntIterator.next():35 -> a
+    20:24:int nextInt():52:52 -> a
+    20:24:java.lang.Object kotlin.collections.IntIterator.next():35 -> a
+    25:29:java.lang.Object kotlin.collections.IntIterator.next():35:35 -> a
+    0:7:void kotlin.collections.IntIterator.remove():0:0 -> b
+    0:2:boolean hasNext():43:43 -> hasNext
+    0:4:java.lang.Object next():0:0 -> next
+      # {"id":"com.android.tools.r8.synthesized"}
+    0:4:void remove():0:0 -> remove
+      # {"id":"com.android.tools.r8.synthesized"}
+kotlin.ranges.IntRange -> g.c:
+# {"id":"sourceFile","fileName":"PrimitiveRanges.kt"}
+    0:3:void <clinit>():84:84 -> <clinit>
+    4:7:void <init>(int,int):52:52 -> <clinit>
+    4:7:void <clinit>():84 -> <clinit>
+    0:9:boolean isEmpty():71:71 -> a
+    0:18:boolean equals(java.lang.Object):74:74 -> equals
+    19:20:boolean equals(java.lang.Object):75:75 -> equals
+    21:22:int kotlin.ranges.IntProgression.getFirst():92:92 -> equals
+    21:22:boolean equals(java.lang.Object):75 -> equals
+      # {"id":"com.android.tools.r8.rewriteFrame","conditions":["throws(Ljava/lang/NullPointerException;)"],"actions":["removeInnerFrames(1)"]}
+    23:26:boolean equals(java.lang.Object):75:75 -> equals
+    27:28:int kotlin.ranges.IntProgression.getLast():97:97 -> equals
+    27:28:boolean equals(java.lang.Object):75 -> equals
+      # {"id":"com.android.tools.r8.rewriteFrame","conditions":["throws(Ljava/lang/NullPointerException;)"],"actions":["removeInnerFrames(1)"]}
+    29:36:boolean equals(java.lang.Object):75:75 -> equals
+    0:15:int hashCode():78:78 -> hashCode
+    0:24:java.lang.String toString():80:80 -> toString
+kotlin.text.CharsKt__CharKt -> R8$$REMOVED$$CLASS$$10:
+# {"id":"sourceFile","fileName":"Char.kt"}
+kotlin.text.StringsKt__RegexExtensionsKt -> h.a:
+# {"id":"sourceFile","fileName":"RegexExtensions.kt"}
+kotlin.text.StringsKt__StringBuilderKt -> h.b:
+# {"id":"sourceFile","fileName":"StringBuilder.kt"}
+kotlin.text.StringsKt__StringNumberConversionsKt -> h.c:
+# {"id":"sourceFile","fileName":"StringNumberConversions.kt"}
+kotlin.text.StringsKt__StringsJVMKt -> R8$$REMOVED$$CLASS$$11:
+# {"id":"sourceFile","fileName":"StringsJVM.kt"}
+kotlin.text.StringsKt__StringsKt -> h.d:
+# {"id":"sourceFile","fileName":"Strings.kt"}
+    0:4:boolean contains(java.lang.String,java.lang.CharSequence,boolean):0:0 -> e
+      # {"id":"com.android.tools.r8.synthesized"}
+      # {"id":"com.android.tools.r8.residualsignature","signature":"(Ljava/lang/String;Ljava/lang/CharSequence;Z)Z"}
+    5:10:boolean contains(java.lang.CharSequence,java.lang.CharSequence,boolean):1145:1145 -> e
+    5:10:boolean contains(java.lang.String,java.lang.CharSequence,boolean):0 -> e
+    11:14:boolean contains(java.lang.CharSequence,java.lang.CharSequence,boolean):1146:1146 -> e
+    11:14:boolean contains(java.lang.String,java.lang.CharSequence,boolean):0 -> e
+    15:19:int indexOf(java.lang.CharSequence,java.lang.String,int,boolean):1105:1105 -> e
+    15:19:int indexOf$default(java.lang.CharSequence,java.lang.String,int,boolean,int,java.lang.Object):1101 -> e
+    15:19:boolean contains(java.lang.CharSequence,java.lang.CharSequence,boolean):1146 -> e
+    15:19:boolean contains(java.lang.String,java.lang.CharSequence,boolean):0 -> e
+    20:31:int indexOf(java.lang.CharSequence,java.lang.String,int,boolean):1103:1103 -> e
+    20:31:int indexOf$default(java.lang.CharSequence,java.lang.String,int,boolean,int,java.lang.Object):1101 -> e
+    20:31:boolean contains(java.lang.CharSequence,java.lang.CharSequence,boolean):1146 -> e
+    20:31:boolean contains(java.lang.String,java.lang.CharSequence,boolean):0 -> e
+    32:43:boolean contains(java.lang.CharSequence,java.lang.CharSequence,boolean):1148:1148 -> e
+    32:43:boolean contains(java.lang.String,java.lang.CharSequence,boolean):0 -> e
+    0:13:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):974:974 -> f
+    0:13:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+      # {"id":"com.android.tools.r8.residualsignature","signature":"(Ljava/lang/String;Ljava/lang/CharSequence;IIZ)I"}
+    14:16:void kotlin.ranges.IntRange.<init>(int,int):52:52 -> f
+    14:16:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):974 -> f
+    14:16:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    17:26:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):978:978 -> f
+    17:26:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    27:33:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):980:980 -> f
+    27:33:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    34:41:boolean kotlin.text.StringsKt__StringsJVMKt.regionMatches(java.lang.String,int,java.lang.String,int,int,boolean):0:0 -> f
+    34:41:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):980 -> f
+    34:41:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    42:49:boolean kotlin.text.StringsKt__StringsJVMKt.regionMatches(java.lang.String,int,java.lang.String,int,int,boolean):658:658 -> f
+    42:49:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):980 -> f
+    42:49:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    50:64:boolean kotlin.text.StringsKt__StringsJVMKt.regionMatches(java.lang.String,int,java.lang.String,int,int,boolean):660:660 -> f
+    50:64:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):980 -> f
+    50:64:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    65:70:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):985:985 -> f
+    65:70:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    71:88:boolean regionMatchesImpl(java.lang.CharSequence,int,java.lang.CharSequence,int,int,boolean):821:821 -> f
+    71:88:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):985 -> f
+    71:88:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    89:104:boolean regionMatchesImpl(java.lang.CharSequence,int,java.lang.CharSequence,int,int,boolean):826:826 -> f
+    89:104:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):985 -> f
+    89:104:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    105:108:boolean kotlin.text.CharsKt__CharKt.equals(char,char,boolean):237:237 -> f
+    105:108:boolean regionMatchesImpl(java.lang.CharSequence,int,java.lang.CharSequence,int,int,boolean):826 -> f
+    105:108:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):985 -> f
+    105:108:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    109:114:boolean kotlin.text.CharsKt__CharKt.equals(char,char,boolean):238:238 -> f
+    109:114:boolean regionMatchesImpl(java.lang.CharSequence,int,java.lang.CharSequence,int,int,boolean):826 -> f
+    109:114:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):985 -> f
+    109:114:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f
+    115:134:boolean kotlin.text.CharsKt__CharKt.equals(char,char,boolean):240:240 -> f
+    115:134:boolean regionMatchesImpl(java.lang.CharSequence,int,java.lang.CharSequence,int,int,boolean):826 -> f
+    115:134:int indexOf$StringsKt__StringsKt(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean):985 -> f
+    115:134:int indexOf$StringsKt__StringsKt$default(java.lang.CharSequence,java.lang.CharSequence,int,int,boolean,boolean,int,java.lang.Object):972 -> f

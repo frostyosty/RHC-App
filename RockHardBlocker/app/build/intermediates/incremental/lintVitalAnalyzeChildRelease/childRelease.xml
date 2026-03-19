@@ -1,0 +1,46 @@
+<variant
+    name="childRelease"
+    package="com.rockhard.blocker"
+    minSdkVersion="26"
+    targetSdkVersion="34"
+    shrinking="true"
+    mergedManifest="build/intermediates/merged_manifest/childRelease/processChildReleaseMainManifest/AndroidManifest.xml"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.3.0:proguard-rules.pro"
+    partialResultsDir="build/intermediates/lint_vital_partial_results/childRelease/lintVitalAnalyzeChildRelease/out"
+    desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/child/java:src/release/java:src/childRelease/java:src/main/kotlin:src/child/kotlin:src/release/kotlin:src/childRelease/kotlin"
+        resDirectories="src/main/res:src/child/res:src/release/res:src/childRelease/res"
+        assetsDirectories="src/main/assets:src/child/assets:src/release/assets:src/childRelease/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <resValues>
+    <resValue
+        type="string"
+        name="app_name"
+        value="Family Web Filter" />
+    <resValue
+        type="string"
+        name="brick_message"
+        value="Device locked for 60 seconds." />
+    <resValue
+        type="string"
+        name="overlay_title"
+        value="Website Blocked." />
+  </resValues>
+  <artifact
+      classOutputs="build/intermediates/javac/childRelease/compileChildReleaseJavaWithJavac/classes:build/tmp/kotlin-classes/childRelease:build/kotlinToolingMetadata:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/childRelease/processChildReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.rockhard.blocker.child"
+      generatedSourceFolders="build/generated/ap_generated_sources/childRelease/out"
+      generatedResourceFolders="build/generated/res/resValues/child/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

@@ -1,0 +1,46 @@
+<variant
+    name="broRelease"
+    package="com.rockhard.blocker"
+    minSdkVersion="26"
+    targetSdkVersion="34"
+    shrinking="true"
+    mergedManifest="build/intermediates/merged_manifest/broRelease/processBroReleaseMainManifest/AndroidManifest.xml"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.3.0:proguard-rules.pro"
+    partialResultsDir="build/intermediates/lint_vital_partial_results/broRelease/lintVitalAnalyzeBroRelease/out"
+    desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/bro/java:src/release/java:src/broRelease/java:src/main/kotlin:src/bro/kotlin:src/release/kotlin:src/broRelease/kotlin"
+        resDirectories="src/main/res:src/bro/res:src/release/res:src/broRelease/res"
+        assetsDirectories="src/main/assets:src/bro/assets:src/release/assets:src/broRelease/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <resValues>
+    <resValue
+        type="string"
+        name="app_name"
+        value="Rock Hard Christians" />
+    <resValue
+        type="string"
+        name="brick_message"
+        value="Oh no, your phone is bricked up." />
+    <resValue
+        type="string"
+        name="overlay_title"
+        value="Not today, brother." />
+  </resValues>
+  <artifact
+      classOutputs="build/intermediates/javac/broRelease/compileBroReleaseJavaWithJavac/classes:build/tmp/kotlin-classes/broRelease:build/kotlinToolingMetadata:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/broRelease/processBroReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.rockhard.blocker.bro"
+      generatedSourceFolders="build/generated/ap_generated_sources/broRelease/out"
+      generatedResourceFolders="build/generated/res/resValues/bro/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

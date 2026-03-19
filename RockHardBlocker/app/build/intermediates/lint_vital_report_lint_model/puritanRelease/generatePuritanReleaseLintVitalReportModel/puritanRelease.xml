@@ -1,0 +1,46 @@
+<variant
+    name="puritanRelease"
+    package="com.rockhard.blocker"
+    minSdkVersion="26"
+    targetSdkVersion="34"
+    shrinking="true"
+    mergedManifest="build/intermediates/merged_manifest/puritanRelease/processPuritanReleaseMainManifest/AndroidManifest.xml"
+    manifestMergeReport="build/outputs/logs/manifest-merger-puritan-release-report.txt"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.3.0:proguard-rules.pro"
+    partialResultsDir="build/intermediates/lint_vital_partial_results/puritanRelease/lintVitalAnalyzePuritanRelease/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/puritan/java:src/release/java:src/puritanRelease/java:src/main/kotlin:src/puritan/kotlin:src/release/kotlin:src/puritanRelease/kotlin"
+        resDirectories="src/main/res:src/puritan/res:src/release/res:src/puritanRelease/res"
+        assetsDirectories="src/main/assets:src/puritan/assets:src/release/assets:src/puritanRelease/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <resValues>
+    <resValue
+        type="string"
+        name="app_name"
+        value="A Gentle Shield of Purity" />
+    <resValue
+        type="string"
+        name="brick_message"
+        value="Oh heavens! Let us take a minute of silent reflection." />
+    <resValue
+        type="string"
+        name="overlay_title"
+        value="Avert thine eyes, sister." />
+  </resValues>
+  <artifact
+      classOutputs="build/intermediates/javac/puritanRelease/compilePuritanReleaseJavaWithJavac/classes:build/tmp/kotlin-classes/puritanRelease:build/kotlinToolingMetadata:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/puritanRelease/processPuritanReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.rockhard.blocker.puritan"
+      generatedSourceFolders="build/generated/ap_generated_sources/puritanRelease/out"
+      generatedResourceFolders="build/generated/res/resValues/puritan/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

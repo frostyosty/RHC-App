@@ -1,0 +1,26 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.rockhard.blocker.app-mergeChildReleaseResources-2:/values/values.xml",
+            "map": [
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/child/release/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "6,8,10",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "160,282,421",
+                        "endColumns": "75,92,79",
+                        "endOffsets": "231,370,496"
+                    },
+                    "to": {
+                        "startLines": "2,3,4",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,131,224",
+                        "endColumns": "75,92,79",
+                        "endOffsets": "126,219,299"
+                    }
+                }
+            ]
+        }
+    ]
+}

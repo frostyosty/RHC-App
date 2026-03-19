@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Value from product flavor: bro -->
+    <string name="app_name" translatable="false">Rock Hard Christians</string>
+    <!-- Value from product flavor: bro -->
+    <string name="brick_message" translatable="false">Oh no, your phone is bricked up.</string>
+    <!-- Value from product flavor: bro -->
+    <string name="overlay_title" translatable="false">Not today, brother.</string>
+
+</resources>

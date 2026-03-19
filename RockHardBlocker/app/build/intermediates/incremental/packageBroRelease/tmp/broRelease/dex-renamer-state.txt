@@ -1,0 +1,4 @@
+#Thu Mar 19 08:53:05 UTC 2026
+base.0=/workspaces/RHC-App/RockHardBlocker/app/build/intermediates/dex/broRelease/minifyBroReleaseWithR8/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex
