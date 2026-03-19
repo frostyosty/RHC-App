@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Permission required to trigger the uninstall prompt for our debug button -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <application
         android:allowBackup="true"
@@ -19,8 +21,6 @@
         </activity>
 
         <activity android:name=".TrapActivity" android:exported="false" android:launchMode="singleTask" />
-        
-        <!-- NEW: THE ESSAY TRAP -->
         <activity android:name=".EssayActivity" android:exported="false" android:launchMode="singleTask" />
 
         <service android:name=".GuardianService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true">
@@ -35,5 +35,17 @@
                 <action android:name="android.net.VpnService"/>
             </intent-filter>
         </service>
+
+        <!-- NEW: REGISTERING THE DEVICE ADMIN RECEIVER -->
+        <receiver android:name=".AdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 </manifest>
