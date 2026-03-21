@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#050505" android:padding="8dp">
+
+    <!-- TOP NAVIGATION TABS -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="50dp" android:orientation="horizontal">
+        <Button android:id="@+id/tabActivity" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:text="ACTIVITY" android:backgroundTint="#333333" android:textColor="#00FF00" android:textSize="12sp"/>
+        <Button android:id="@+id/tabParty" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:text="PARTY" android:backgroundTint="#111111" android:textColor="#888888" android:textSize="12sp"/>
+        <Button android:id="@+id/tabBag" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:text="BAG" android:backgroundTint="#111111" android:textColor="#888888" android:textSize="12sp"/>
+    </LinearLayout>
+
+    <!-- MAIN VIEW AREA -->
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp">
+        <ScrollView android:id="@+id/viewActivity" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp">
+            <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="#00FF00" android:textSize="14sp" android:fontFamily="monospace"/>
+        </ScrollView>
+
+        <ScrollView android:id="@+id/viewParty" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
+            <TextView android:id="@+id/tvParty" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="#00BCD4" android:textSize="14sp" android:fontFamily="monospace"/>
+        </ScrollView>
+
+        <ScrollView android:id="@+id/viewBag" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
+            <TextView android:id="@+id/tvBag" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="#FFCA28" android:textSize="14sp" android:fontFamily="monospace"/>
+        </ScrollView>
+    </FrameLayout>
+
+    <!-- ACTION BUTTONS -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <Button android:id="@+id/btnAttack" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1"
+            android:text="ATTACK" android:backgroundTint="#D32F2F" android:textColor="#FFF" android:layout_marginEnd="4dp"/>
+        <Button android:id="@+id/btnNet" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1"
+            android:text="USE NET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <Button android:id="@+id/btnPotion" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1"
+            android:text="POTION" android:backgroundTint="#388E3C" android:textColor="#FFF" android:layout_marginEnd="4dp"/>
+        <Button android:id="@+id/btnSpray" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1"
+            android:text="SPRAY" android:backgroundTint="#FBC02D" android:textColor="#000" android:layout_marginStart="4dp"/>
+    </LinearLayout>
+    
+    <Button android:id="@+id/btnExit" android:layout_width="match_parent" android:layout_height="50dp"
+        android:text="EXIT SYSTEM" android:backgroundTint="#222222" android:textColor="#FFF" android:layout_marginTop="8dp"/>
+</LinearLayout>
