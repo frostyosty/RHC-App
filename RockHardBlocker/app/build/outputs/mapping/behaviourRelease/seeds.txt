@@ -1,0 +1,161 @@
+com.rockhard.blocker.R$id
+com.rockhard.blocker.R$layout
+com.rockhard.blocker.R$string
+com.rockhard.blocker.R$mipmap
+com.rockhard.blocker.R
+com.rockhard.blocker.GuardianService$Companion
+com.rockhard.blocker.TrapActivity
+com.rockhard.blocker.AdminReceiver
+com.rockhard.blocker.R$xml
+com.rockhard.blocker.GuardianService
+com.rockhard.blocker.TrapActivity$onCreate$1
+com.rockhard.blocker.BlockerVpnService
+com.rockhard.blocker.MainActivity
+com.rockhard.blocker.GuardianService$triggerBossInvasion$1$1
+com.rockhard.blocker.GameActivity
+com.rockhard.blocker.R$layout: int activity_game
+com.rockhard.blocker.R$id: int btnArmShield
+com.rockhard.blocker.GameActivity: android.widget.TextView tvConsole
+com.rockhard.blocker.R$id: int tvParty
+com.rockhard.blocker.R$xml: int guardian_config
+com.rockhard.blocker.R$id: int btnYield
+com.rockhard.blocker.GameActivity: android.widget.ScrollView viewActivity
+com.rockhard.blocker.GuardianService: android.view.WindowManager windowManager
+com.rockhard.blocker.TrapActivity$onCreate$1: com.rockhard.blocker.TrapActivity this$0
+com.rockhard.blocker.TrapActivity$onCreate$1: android.widget.TextView $timerText
+com.rockhard.blocker.R$id: int btnSpray
+com.rockhard.blocker.R$layout: int activity_trap
+com.rockhard.blocker.MainActivity: android.app.admin.DevicePolicyManager dpm
+com.rockhard.blocker.GuardianService$triggerBossInvasion$1$1: android.widget.TextView $tvMsg
+com.rockhard.blocker.R$id: int btnDebugUninstall
+com.rockhard.blocker.R$id: int btnTestFilter
+com.rockhard.blocker.GameActivity: android.widget.ScrollView viewParty
+com.rockhard.blocker.R$id: int timerText
+com.rockhard.blocker.GuardianService: int urgesDefeatedCount
+com.rockhard.blocker.R$string: int overlay_title
+com.rockhard.blocker.R$xml: int device_admin
+com.rockhard.blocker.R$id: int tabParty
+com.rockhard.blocker.R$id: int btnTrapBrick
+com.rockhard.blocker.R$id: int btnPotion
+com.rockhard.blocker.R$id: int tabBag
+com.rockhard.blocker.GuardianService: android.view.View overlayView
+com.rockhard.blocker.R$id: int btnAttack
+com.rockhard.blocker.R$string: int brick_message
+com.rockhard.blocker.GuardianService$triggerBossInvasion$1$1: java.lang.String $bossName
+com.rockhard.blocker.GuardianService: android.os.CountDownTimer bossTimer
+com.rockhard.blocker.R$id: int viewActivity
+com.rockhard.blocker.R$id: int viewParty
+com.rockhard.blocker.R$id: int btnDebugUsage
+com.rockhard.blocker.GuardianService: com.rockhard.blocker.GuardianService$Companion Companion
+com.rockhard.blocker.R$id: int btnHumiliation
+com.rockhard.blocker.R$string: int app_name
+com.rockhard.blocker.GameActivity: android.widget.TextView tvBag
+com.rockhard.blocker.R$id: int tvBag
+com.rockhard.blocker.GameActivity: boolean isUnderAttack
+com.rockhard.blocker.R$string: int flavor_id
+com.rockhard.blocker.R$id: int tvOverlayMessage
+com.rockhard.blocker.GameActivity: android.widget.TextView tvParty
+com.rockhard.blocker.GameActivity: int sprays
+com.rockhard.blocker.R$id: int btnNet
+com.rockhard.blocker.MainActivity: android.content.ComponentName compName
+com.rockhard.blocker.GuardianService: java.util.Map appTimeTrackers
+com.rockhard.blocker.R$id: int tvOverlayTitle
+com.rockhard.blocker.GameActivity: int potions
+com.rockhard.blocker.BlockerVpnService: android.os.ParcelFileDescriptor vpnInterface
+com.rockhard.blocker.GameActivity: java.util.List party
+com.rockhard.blocker.R$id: int tabActivity
+com.rockhard.blocker.R$layout: int activity_main
+com.rockhard.blocker.R$id: int btnExit
+com.rockhard.blocker.GameActivity: int nets
+com.rockhard.blocker.R$layout: int overlay_guard
+com.rockhard.blocker.GameActivity: android.widget.ScrollView viewBag
+com.rockhard.blocker.GameActivity: boolean battleOver
+com.rockhard.blocker.R$string: int essay_prompt
+com.rockhard.blocker.R$id: int tvConsole
+com.rockhard.blocker.GuardianService: boolean isOverlayShowing
+com.rockhard.blocker.GuardianService$triggerBossInvasion$1$1: com.rockhard.blocker.GuardianService this$0
+com.rockhard.blocker.GameActivity: java.lang.String bossName
+com.rockhard.blocker.GuardianService: long pauseUntil
+com.rockhard.blocker.R$mipmap: int ic_launcher
+com.rockhard.blocker.R$id: int viewBag
+com.rockhard.blocker.R$id: int btnPauseBlocker
+com.rockhard.blocker.GameActivity: GameActivity()
+com.rockhard.blocker.GuardianService$triggerBossInvasion$1$1: void onTick(long)
+com.rockhard.blocker.GuardianService$Companion: int getUrgesDefeatedCount()
+com.rockhard.blocker.GuardianService: boolean findTextInNode(android.view.accessibility.AccessibilityNodeInfo,java.lang.String)
+com.rockhard.blocker.MainActivity: void onCreate$lambda$5$lambda$4$lambda$3(com.rockhard.blocker.MainActivity,kotlin.jvm.internal.Ref$ObjectRef)
+com.rockhard.blocker.GuardianService$Companion: java.util.Map getAppTimeTrackers()
+com.rockhard.blocker.GameActivity: void onCreate(android.os.Bundle)
+com.rockhard.blocker.GameActivity: void printLog(java.lang.String)
+kotlin.random.Random: Random()
+com.rockhard.blocker.GameActivity: void onCreate$lambda$0(com.rockhard.blocker.GameActivity,android.view.View)
+com.rockhard.blocker.R$xml: R$xml()
+com.rockhard.blocker.GameActivity: void setupTabs$lambda$10(com.rockhard.blocker.GameActivity,android.widget.Button,android.widget.Button,android.widget.Button,android.view.View)
+com.rockhard.blocker.GameActivity: void setupTabs$lambda$11(com.rockhard.blocker.GameActivity,android.widget.Button,android.widget.Button,android.widget.Button,android.view.View)
+com.rockhard.blocker.GuardianService$triggerBossInvasion$1$1: void onFinish()
+com.rockhard.blocker.GameActivity: void triggerBossCounterAttack$lambda$7$lambda$6(com.rockhard.blocker.GameActivity)
+com.rockhard.blocker.GuardianService: android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String)
+com.rockhard.blocker.GuardianService: GuardianService()
+com.rockhard.blocker.GuardianService$Companion: GuardianService$Companion(kotlin.jvm.internal.DefaultConstructorMarker)
+com.rockhard.blocker.GameActivity: void switchTab(int,android.widget.Button,android.widget.Button,android.widget.Button)
+com.rockhard.blocker.GuardianService: void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent)
+com.rockhard.blocker.GameActivity: void onCreate$lambda$5(com.rockhard.blocker.GameActivity,android.view.View)
+com.rockhard.blocker.TrapActivity: void onBackPressed()
+com.rockhard.blocker.GameActivity: void setupTabs()
+com.rockhard.blocker.AdminReceiver: java.lang.CharSequence onDisableRequested(android.content.Context,android.content.Intent)
+com.rockhard.blocker.GameActivity: void updateBagScreen()
+com.rockhard.blocker.MainActivity: boolean isAccessibilityServiceEnabled(android.content.Context,java.lang.Class)
+com.rockhard.blocker.GameActivity: void checkWelfareBouncemons()
+com.rockhard.blocker.GameActivity: void triggerBossCounterAttack()
+com.rockhard.blocker.GuardianService$Companion: void setPauseUntil(long)
+com.rockhard.blocker.R: R()
+com.rockhard.blocker.TrapActivity$onCreate$1: void onTick(long)
+com.rockhard.blocker.GuardianService: void removeOverlay()
+com.rockhard.blocker.GuardianService: void onServiceConnected()
+com.rockhard.blocker.AdminReceiver: void onEnabled(android.content.Context,android.content.Intent)
+com.rockhard.blocker.GuardianService$Companion: void setUrgesDefeatedCount(int)
+com.rockhard.blocker.GuardianService$Companion: GuardianService$Companion()
+com.rockhard.blocker.GameActivity: void triggerBossCounterAttack$lambda$7(com.rockhard.blocker.GameActivity)
+com.rockhard.blocker.R$layout: R$layout()
+com.rockhard.blocker.GameActivity: void bossFlees()
+com.rockhard.blocker.GuardianService: void onInterrupt()
+com.rockhard.blocker.MainActivity: void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.R$string: R$string()
+com.rockhard.blocker.GuardianService: void triggerBossInvasion()
+com.rockhard.blocker.GameActivity: void onCreate$lambda$2(com.rockhard.blocker.GameActivity,android.view.View)
+com.rockhard.blocker.GuardianService: void access$removeOverlay(com.rockhard.blocker.GuardianService)
+com.rockhard.blocker.TrapActivity: void onCreate(android.os.Bundle)
+com.rockhard.blocker.GuardianService: void access$setPauseUntil$cp(long)
+com.rockhard.blocker.GameActivity: void updatePartyScreen()
+com.rockhard.blocker.MainActivity: void onCreate(android.os.Bundle)
+com.rockhard.blocker.GameActivity: void onCreate$lambda$2$lambda$1(com.rockhard.blocker.GameActivity)
+com.rockhard.blocker.AdminReceiver: void onDisabled(android.content.Context,android.content.Intent)
+com.rockhard.blocker.GuardianService: long access$getPauseUntil$cp()
+com.rockhard.blocker.R$mipmap: R$mipmap()
+com.rockhard.blocker.MainActivity: void onCreate$lambda$5(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.GuardianService: int access$getUrgesDefeatedCount$cp()
+com.rockhard.blocker.MainActivity: void onCreate$lambda$6(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.MainActivity: void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.GuardianService: void access$setUrgesDefeatedCount$cp(int)
+com.rockhard.blocker.MainActivity: void onCreate$lambda$7(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.GuardianService: void triggerBossInvasion$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View)
+com.rockhard.blocker.GameActivity: void onCreate$lambda$3(com.rockhard.blocker.GameActivity,android.view.View)
+com.rockhard.blocker.MainActivity: MainActivity()
+com.rockhard.blocker.BlockerVpnService: BlockerVpnService()
+com.rockhard.blocker.BlockerVpnService: int onStartCommand(android.content.Intent,int,int)
+com.rockhard.blocker.GuardianService$Companion: long getPauseUntil()
+com.rockhard.blocker.GuardianService: void triggerBossInvasion$lambda$3(com.rockhard.blocker.GuardianService)
+com.rockhard.blocker.TrapActivity: TrapActivity()
+com.rockhard.blocker.GuardianService: void triggerBossInvasion$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View)
+com.rockhard.blocker.R$id: R$id()
+com.rockhard.blocker.TrapActivity$onCreate$1: void onFinish()
+com.rockhard.blocker.TrapActivity$onCreate$1: TrapActivity$onCreate$1(android.widget.TextView,com.rockhard.blocker.TrapActivity)
+com.rockhard.blocker.GuardianService: java.util.Map access$getAppTimeTrackers$cp()
+com.rockhard.blocker.GameActivity: void setupTabs$lambda$9(com.rockhard.blocker.GameActivity,android.widget.Button,android.widget.Button,android.widget.Button,android.view.View)
+com.rockhard.blocker.MainActivity: void onCreate$lambda$2(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.GameActivity: void onCreate$lambda$4(com.rockhard.blocker.GameActivity,android.view.View)
+com.rockhard.blocker.AdminReceiver: AdminReceiver()
+com.rockhard.blocker.BlockerVpnService: void onDestroy()
+com.rockhard.blocker.MainActivity: void onCreate$lambda$5$lambda$4(com.rockhard.blocker.MainActivity)
+com.rockhard.blocker.GameActivity: void bossFlees$lambda$8(com.rockhard.blocker.GameActivity)
+com.rockhard.blocker.GuardianService$triggerBossInvasion$1$1: GuardianService$triggerBossInvasion$1$1(android.widget.TextView,java.lang.String,com.rockhard.blocker.GuardianService)

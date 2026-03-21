@@ -1,0 +1,54 @@
+<variant
+    name="rhcRelease"
+    package="com.rockhard.blocker"
+    minSdkVersion="26"
+    targetSdkVersion="34"
+    shrinking="true"
+    mergedManifest="build/intermediates/merged_manifest/rhcRelease/processRhcReleaseMainManifest/AndroidManifest.xml"
+    manifestMergeReport="build/outputs/logs/manifest-merger-rhc-release-report.txt"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.3.0:proguard-rules.pro"
+    partialResultsDir="build/intermediates/lint_vital_partial_results/rhcRelease/lintVitalAnalyzeRhcRelease/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/rhc/java:src/release/java:src/rhcRelease/java:src/main/kotlin:src/rhc/kotlin:src/release/kotlin:src/rhcRelease/kotlin"
+        resDirectories="src/main/res:src/rhc/res:src/release/res:src/rhcRelease/res"
+        assetsDirectories="src/main/assets:src/rhc/assets:src/release/assets:src/rhcRelease/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <resValues>
+    <resValue
+        type="string"
+        name="app_name"
+        value="Rock Hard Christians" />
+    <resValue
+        type="string"
+        name="brick_message"
+        value="Oh no, your phone is bricked up." />
+    <resValue
+        type="string"
+        name="essay_prompt"
+        value="I am a grown man with a fully functioning prefrontal cortex. I will not lose a psychological battle against a glowing glass rectangle today. I am choosing strength over weakness." />
+    <resValue
+        type="string"
+        name="flavor_id"
+        value="rhc" />
+    <resValue
+        type="string"
+        name="overlay_title"
+        value="NOT TODAY." />
+  </resValues>
+  <artifact
+      classOutputs="build/intermediates/javac/rhcRelease/compileRhcReleaseJavaWithJavac/classes:build/tmp/kotlin-classes/rhcRelease:build/kotlinToolingMetadata:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/rhcRelease/processRhcReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.rockhard.blocker.rhc"
+      generatedSourceFolders="build/generated/ap_generated_sources/rhcRelease/out"
+      generatedResourceFolders="build/generated/res/resValues/rhc/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

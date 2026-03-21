@@ -1,7 +1,7 @@
 R_DEF: Internal format may change without notice
 local
+id btnArmShield
 id btnDebugUninstall
-id btnEnableGuardian
 id btnPauseBlocker
 id btnTrapAudio
 id btnTrapBrick

@@ -1,0 +1,9 @@
+com.rockhard.blocker.app-bounceland-0 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/pngs/bounceland/release
+com.rockhard.blocker.app-bounceland-1 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/bounceland/release
+com.rockhard.blocker.app-packageBouncelandReleaseResources-2 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/bouncelandRelease/packageBouncelandReleaseResources/merged.dir
+com.rockhard.blocker.app-packageBouncelandReleaseResources-3 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/bouncelandRelease/packageBouncelandReleaseResources/stripped.dir
+com.rockhard.blocker.app-bouncelandRelease-4 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/merged_res/bouncelandRelease/mergeBouncelandReleaseResources
+com.rockhard.blocker.app-bounceland-5 /workspaces/RHC-App/RockHardBlocker/app/src/bounceland/res
+com.rockhard.blocker.app-bouncelandRelease-6 /workspaces/RHC-App/RockHardBlocker/app/src/bouncelandRelease/res
+com.rockhard.blocker.app-main-7 /workspaces/RHC-App/RockHardBlocker/app/src/main/res
+com.rockhard.blocker.app-release-8 /workspaces/RHC-App/RockHardBlocker/app/src/release/res

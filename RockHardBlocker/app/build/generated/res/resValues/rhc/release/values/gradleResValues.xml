@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Value from product flavor: rhc -->
+    <string name="app_name" translatable="false">Rock Hard Christians</string>
+    <!-- Value from product flavor: rhc -->
+    <string name="brick_message" translatable="false">Oh no, your phone is bricked up.</string>
+    <!-- Value from product flavor: rhc -->
+    <string name="essay_prompt" translatable="false">I am a grown man with a fully functioning prefrontal cortex. I will not lose a psychological battle against a glowing glass rectangle today. I am choosing strength over weakness.</string>
+    <!-- Value from product flavor: rhc -->
+    <string name="flavor_id" translatable="false">rhc</string>
+    <!-- Value from product flavor: rhc -->
+    <string name="overlay_title" translatable="false">NOT TODAY.</string>
+
+</resources>

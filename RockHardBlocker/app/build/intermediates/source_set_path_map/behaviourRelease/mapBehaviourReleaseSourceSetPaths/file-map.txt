@@ -1,0 +1,9 @@
+com.rockhard.blocker.app-behaviour-0 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/pngs/behaviour/release
+com.rockhard.blocker.app-behaviour-1 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/behaviour/release
+com.rockhard.blocker.app-packageBehaviourReleaseResources-2 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/behaviourRelease/packageBehaviourReleaseResources/merged.dir
+com.rockhard.blocker.app-packageBehaviourReleaseResources-3 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/behaviourRelease/packageBehaviourReleaseResources/stripped.dir
+com.rockhard.blocker.app-behaviourRelease-4 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/merged_res/behaviourRelease/mergeBehaviourReleaseResources
+com.rockhard.blocker.app-behaviour-5 /workspaces/RHC-App/RockHardBlocker/app/src/behaviour/res
+com.rockhard.blocker.app-behaviourRelease-6 /workspaces/RHC-App/RockHardBlocker/app/src/behaviourRelease/res
+com.rockhard.blocker.app-main-7 /workspaces/RHC-App/RockHardBlocker/app/src/main/res
+com.rockhard.blocker.app-release-8 /workspaces/RHC-App/RockHardBlocker/app/src/release/res

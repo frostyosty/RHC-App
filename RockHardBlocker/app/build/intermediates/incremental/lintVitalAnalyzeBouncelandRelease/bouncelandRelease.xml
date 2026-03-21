@@ -1,0 +1,54 @@
+<variant
+    name="bouncelandRelease"
+    package="com.rockhard.blocker"
+    minSdkVersion="26"
+    targetSdkVersion="34"
+    shrinking="true"
+    mergedManifest="build/intermediates/merged_manifest/bouncelandRelease/processBouncelandReleaseMainManifest/AndroidManifest.xml"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.3.0:proguard-rules.pro"
+    partialResultsDir="build/intermediates/lint_vital_partial_results/bouncelandRelease/lintVitalAnalyzeBouncelandRelease/out"
+    desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/bounceland/java:src/release/java:src/bouncelandRelease/java:src/main/kotlin:src/bounceland/kotlin:src/release/kotlin:src/bouncelandRelease/kotlin"
+        resDirectories="src/main/res:src/bounceland/res:src/release/res:src/bouncelandRelease/res"
+        assetsDirectories="src/main/assets:src/bounceland/assets:src/release/assets:src/bouncelandRelease/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <resValues>
+    <resValue
+        type="string"
+        name="app_name"
+        value="Bounceland" />
+    <resValue
+        type="string"
+        name="brick_message"
+        value="Time out for 10 minutes!" />
+    <resValue
+        type="string"
+        name="essay_prompt"
+        value="GAME_MODE" />
+    <resValue
+        type="string"
+        name="flavor_id"
+        value="bounceland" />
+    <resValue
+        type="string"
+        name="overlay_title"
+        value="WILD GLITCH APPEARED!" />
+  </resValues>
+  <artifact
+      classOutputs="build/intermediates/javac/bouncelandRelease/compileBouncelandReleaseJavaWithJavac/classes:build/tmp/kotlin-classes/bouncelandRelease:build/kotlinToolingMetadata:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/bouncelandRelease/processBouncelandReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.rockhard.blocker.bounceland"
+      generatedSourceFolders="build/generated/ap_generated_sources/bouncelandRelease/out"
+      generatedResourceFolders="build/generated/res/resValues/bounceland/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

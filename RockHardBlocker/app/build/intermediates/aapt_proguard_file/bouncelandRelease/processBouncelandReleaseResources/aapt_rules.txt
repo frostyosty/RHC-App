@@ -1,0 +1,6 @@
+-keep class com.rockhard.blocker.AdminReceiver { <init>(); }
+-keep class com.rockhard.blocker.BlockerVpnService { <init>(); }
+-keep class com.rockhard.blocker.GameActivity { <init>(); }
+-keep class com.rockhard.blocker.GuardianService { <init>(); }
+-keep class com.rockhard.blocker.MainActivity { <init>(); }
+-keep class com.rockhard.blocker.TrapActivity { <init>(); }

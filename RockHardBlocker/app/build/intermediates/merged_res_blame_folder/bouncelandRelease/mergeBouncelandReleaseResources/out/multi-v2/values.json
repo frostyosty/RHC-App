@@ -1,0 +1,26 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.rockhard.blocker.app-mergeBouncelandReleaseResources-2:/values/values.xml",
+            "map": [
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/bounceland/release/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "6,8,10,12,14",
+                        "startColumns": "4,4,4,4,4",
+                        "startOffsets": "165,285,424,547,668",
+                        "endColumns": "68,87,71,69,84",
+                        "endOffsets": "229,368,491,612,748"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6",
+                        "startColumns": "4,4,4,4,4",
+                        "startOffsets": "55,124,212,284,354",
+                        "endColumns": "68,87,71,69,84",
+                        "endOffsets": "119,207,279,349,434"
+                    }
+                }
+            ]
+        }
+    ]
+}

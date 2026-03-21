@@ -6,8 +6,9 @@
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:text="@string/app_name" android:textColor="#FFFFFF" android:textSize="28sp" android:textStyle="bold" android:layout_marginBottom="32dp"/>
 
-    <Button android:id="@+id/btnEnableGuardian" android:layout_width="match_parent" android:layout_height="60dp"
-        android:text="1. ENGAGE THE BLOCKER (VPN)" android:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginBottom="16dp"/>
+    <!-- THE NEW SMART ONBOARDING BUTTON -->
+    <Button android:id="@+id/btnArmShield" android:layout_width="match_parent" android:layout_height="80dp"
+        android:text="ARM THE SHIELD" android:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" android:layout_marginBottom="24dp"/>
 
     <Button android:id="@+id/btnTrapAudio" android:layout_width="match_parent" android:layout_height="60dp"
         android:text="I'M BEING TEMPTED BY SATAN" android:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:layout_marginBottom="16dp"/>
@@ -15,8 +16,6 @@
     <Button android:id="@+id/btnTrapBrick" android:layout_width="match_parent" android:layout_height="60dp"
         android:text="EMERGENCY UNBLOCK" android:backgroundTint="#E53935" android:textColor="#FFFFFF" android:layout_marginBottom="32dp"/>
 
-    <!-- NEW DEBUG BUTTON -->
     <Button android:id="@+id/btnDebugUninstall" android:layout_width="match_parent" android:layout_height="60dp"
         android:text="DEBUG: KILL &amp; UNINSTALL" android:backgroundTint="#555555" android:textColor="#FFCDD2" android:textStyle="bold"/>
-
 </LinearLayout>

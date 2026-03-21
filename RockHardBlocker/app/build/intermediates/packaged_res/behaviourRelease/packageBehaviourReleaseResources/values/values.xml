@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Behaviour</string>
+    <string name="brick_message" translatable="false">Let us take a minute of reflection.</string>
+    <string name="essay_prompt" translatable="false">I am a woman of dignity and grace. I will not compromise my peace of mind for fleeting pixels. I am choosing my future over this moment of weakness, and I will step away from this device.</string>
+    <string name="flavor_id" translatable="false">behaviour</string>
+    <string name="overlay_title" translatable="false">AVERT YOUR EYES.</string>
+</resources>

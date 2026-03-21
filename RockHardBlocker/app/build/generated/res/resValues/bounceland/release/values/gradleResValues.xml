@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Value from product flavor: bounceland -->
+    <string name="app_name" translatable="false">Bounceland</string>
+    <!-- Value from product flavor: bounceland -->
+    <string name="brick_message" translatable="false">Time out for 10 minutes!</string>
+    <!-- Value from product flavor: bounceland -->
+    <string name="essay_prompt" translatable="false">GAME_MODE</string>
+    <!-- Value from product flavor: bounceland -->
+    <string name="flavor_id" translatable="false">bounceland</string>
+    <!-- Value from product flavor: bounceland -->
+    <string name="overlay_title" translatable="false">WILD GLITCH APPEARED!</string>
+
+</resources>

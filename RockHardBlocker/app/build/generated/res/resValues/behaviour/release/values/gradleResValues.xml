@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Value from product flavor: behaviour -->
+    <string name="app_name" translatable="false">Behaviour</string>
+    <!-- Value from product flavor: behaviour -->
+    <string name="brick_message" translatable="false">Let us take a minute of reflection.</string>
+    <!-- Value from product flavor: behaviour -->
+    <string name="essay_prompt" translatable="false">I am a woman of dignity and grace. I will not compromise my peace of mind for fleeting pixels. I am choosing my future over this moment of weakness, and I will step away from this device.</string>
+    <!-- Value from product flavor: behaviour -->
+    <string name="flavor_id" translatable="false">behaviour</string>
+    <!-- Value from product flavor: behaviour -->
+    <string name="overlay_title" translatable="false">AVERT YOUR EYES.</string>
+
+</resources>

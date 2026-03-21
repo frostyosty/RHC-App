@@ -1,0 +1,4 @@
+#Sat Mar 21 03:30:22 UTC 2026
+base.0=/workspaces/RHC-App/RockHardBlocker/app/build/intermediates/dex/behaviourRelease/minifyBehaviourReleaseWithR8/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex

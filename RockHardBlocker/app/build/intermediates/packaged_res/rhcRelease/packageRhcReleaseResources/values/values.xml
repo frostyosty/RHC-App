@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Rock Hard Christians</string>
+    <string name="brick_message" translatable="false">Oh no, your phone is bricked up.</string>
+    <string name="essay_prompt" translatable="false">I am a grown man with a fully functioning prefrontal cortex. I will not lose a psychological battle against a glowing glass rectangle today. I am choosing strength over weakness.</string>
+    <string name="flavor_id" translatable="false">rhc</string>
+    <string name="overlay_title" translatable="false">NOT TODAY.</string>
+</resources>

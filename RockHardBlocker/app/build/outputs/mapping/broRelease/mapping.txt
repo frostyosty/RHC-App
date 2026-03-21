@@ -3,8 +3,8 @@
 # min_api: 26
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 479ddf3
-# pg_map_hash: SHA-256 479ddf315142f18db0a742d2de6b5e6bf126b3e9ffb8d57062a767ce0d3859cf
+# pg_map_id: e3879bc
+# pg_map_hash: SHA-256 e3879bc25901a984caffde93006e3f3eb7b1000cde9dd05e73da1d93d584bd41
 com.rockhard.blocker.AdminReceiver -> com.rockhard.blocker.AdminReceiver:
 # {"id":"sourceFile","fileName":"AdminReceiver.kt"}
     0:3:void <init>():8:8 -> <init>
@@ -102,8 +102,8 @@ com.rockhard.blocker.EssayActivity$onCreate$1$$ExternalSyntheticLambda0 -> com.r
 com.rockhard.blocker.GuardianService -> com.rockhard.blocker.GuardianService:
 # {"id":"sourceFile","fileName":"GuardianService.kt"}
     0:2:void <init>():17:17 -> <init>
-    3:6:void <init>():24:24 -> <init>
-    7:14:void <init>():26:26 -> <init>
+    3:6:void <init>():23:23 -> <init>
+    7:14:void <init>():25:25 -> <init>
     0:3:void $r8$lambda$6cwMeLMOh7YMfK3gJB_j-KKSz5k(com.rockhard.blocker.GuardianService,android.view.View):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
     0:2:long access$getPauseUntil$cp():17:17 -> access$getPauseUntil$cp
@@ -112,70 +112,72 @@ com.rockhard.blocker.GuardianService -> com.rockhard.blocker.GuardianService:
       # {"id":"com.android.tools.r8.synthesized"}
     0:3:void $r8$lambda$o7-qlXfut7u_9ow9drcusGGn-No(com.rockhard.blocker.GuardianService):0:0 -> c
       # {"id":"com.android.tools.r8.synthesized"}
-    4:18:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):136:136 -> findNodeWithText
-    19:33:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):137:137 -> findNodeWithText
-    34:46:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):138:138 -> findNodeWithText
-    47:53:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):141:141 -> findNodeWithText
-    54:69:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):142:142 -> findNodeWithText
-    0:9:boolean findTextInNode(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):147:147 -> findTextInNode
-    3:13:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):42:42 -> onAccessibilityEvent
-    14:27:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):46:46 -> onAccessibilityEvent
-    28:35:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):47:47 -> onAccessibilityEvent
-    36:37:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):50:50 -> onAccessibilityEvent
+    4:18:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):131:131 -> findNodeWithText
+    19:33:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):132:132 -> findNodeWithText
+    34:46:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):133:133 -> findNodeWithText
+    47:53:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):136:136 -> findNodeWithText
+    54:69:android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):137:137 -> findNodeWithText
+    0:9:boolean findTextInNode(android.view.accessibility.AccessibilityNodeInfo,java.lang.String):142:142 -> findTextInNode
+    3:13:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):40:40 -> onAccessibilityEvent
+    14:27:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):42:42 -> onAccessibilityEvent
+    28:35:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):43:43 -> onAccessibilityEvent
+    36:37:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):46:46 -> onAccessibilityEvent
     38:43:boolean kotlin.jvm.internal.Intrinsics.areEqual(java.lang.Object,java.lang.Object):169:169 -> onAccessibilityEvent
-    38:43:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):50 -> onAccessibilityEvent
-    44:59:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):51:51 -> onAccessibilityEvent
-    60:66:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):52:52 -> onAccessibilityEvent
-    67:90:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):53:53 -> onAccessibilityEvent
-    91:92:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):55:55 -> onAccessibilityEvent
-    93:98:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):56:56 -> onAccessibilityEvent
-    99:105:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):60:60 -> onAccessibilityEvent
-    106:117:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):61:61 -> onAccessibilityEvent
+    38:43:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):46 -> onAccessibilityEvent
+    44:59:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):47:47 -> onAccessibilityEvent
+    60:66:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):48:48 -> onAccessibilityEvent
+    67:90:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):49:49 -> onAccessibilityEvent
+    91:92:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):51:51 -> onAccessibilityEvent
+    93:98:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):52:52 -> onAccessibilityEvent
+    99:105:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):56:56 -> onAccessibilityEvent
+    106:117:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):57:57 -> onAccessibilityEvent
     118:126:boolean kotlin.text.StringsKt__StringsKt.contains$default(java.lang.CharSequence,java.lang.CharSequence,boolean,int,java.lang.Object):1144:1144 -> onAccessibilityEvent
-    118:126:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):63 -> onAccessibilityEvent
-    127:140:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):64:64 -> onAccessibilityEvent
-    141:144:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):65:65 -> onAccessibilityEvent
-    145:149:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):66:66 -> onAccessibilityEvent
-    150:153:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):67:67 -> onAccessibilityEvent
-    154:161:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):73:73 -> onAccessibilityEvent
-    162:165:java.util.List kotlin.collections.ArraysUtilJVM.asList(java.lang.Object[]):13:13 -> onAccessibilityEvent
-    162:165:java.util.List kotlin.collections.ArraysKt___ArraysJvmKt.asList(java.lang.Object[]):133 -> onAccessibilityEvent
-    162:165:java.util.List kotlin.collections.CollectionsKt__CollectionsKt.listOf(java.lang.Object[]):78 -> onAccessibilityEvent
-    162:165:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):73 -> onAccessibilityEvent
-    166:170:java.util.List kotlin.collections.ArraysKt___ArraysJvmKt.asList(java.lang.Object[]):133:133 -> onAccessibilityEvent
-    166:170:java.util.List kotlin.collections.CollectionsKt__CollectionsKt.listOf(java.lang.Object[]):78 -> onAccessibilityEvent
-    166:170:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):73 -> onAccessibilityEvent
-    171:186:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):74:74 -> onAccessibilityEvent
-    187:192:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):75:75 -> onAccessibilityEvent
-    193:199:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):77:77 -> onAccessibilityEvent
-    200:205:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):78:78 -> onAccessibilityEvent
-    206:209:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):79:79 -> onAccessibilityEvent
-    0:2:void onServiceConnected():34:34 -> onServiceConnected
-    3:15:void onServiceConnected():35:35 -> onServiceConnected
+    118:126:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):62 -> onAccessibilityEvent
+    127:132:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):63:63 -> onAccessibilityEvent
+    133:140:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):64:64 -> onAccessibilityEvent
+    141:148:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):65:65 -> onAccessibilityEvent
+    149:152:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):67:67 -> onAccessibilityEvent
+    153:157:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):68:68 -> onAccessibilityEvent
+    158:161:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):69:69 -> onAccessibilityEvent
+    162:169:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):75:75 -> onAccessibilityEvent
+    170:173:java.util.List kotlin.collections.ArraysUtilJVM.asList(java.lang.Object[]):13:13 -> onAccessibilityEvent
+    170:173:java.util.List kotlin.collections.ArraysKt___ArraysJvmKt.asList(java.lang.Object[]):133 -> onAccessibilityEvent
+    170:173:java.util.List kotlin.collections.CollectionsKt__CollectionsKt.listOf(java.lang.Object[]):78 -> onAccessibilityEvent
+    170:173:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):75 -> onAccessibilityEvent
+    174:178:java.util.List kotlin.collections.ArraysKt___ArraysJvmKt.asList(java.lang.Object[]):133:133 -> onAccessibilityEvent
+    174:178:java.util.List kotlin.collections.CollectionsKt__CollectionsKt.listOf(java.lang.Object[]):78 -> onAccessibilityEvent
+    174:178:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):75 -> onAccessibilityEvent
+    179:194:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):76:76 -> onAccessibilityEvent
+    195:200:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):77:77 -> onAccessibilityEvent
+    201:207:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):79:79 -> onAccessibilityEvent
+    208:213:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):80:80 -> onAccessibilityEvent
+    214:217:void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent):81:81 -> onAccessibilityEvent
+    0:2:void onServiceConnected():33:33 -> onServiceConnected
+    3:15:void onServiceConnected():34:34 -> onServiceConnected
     16:26:void kotlin.jvm.internal.Intrinsics.throwJavaNpe(java.lang.String):50:50 -> onServiceConnected
     16:26:void kotlin.jvm.internal.Intrinsics.checkNotNull(java.lang.Object,java.lang.String):31 -> onServiceConnected
-    16:26:void onServiceConnected():35 -> onServiceConnected
-    0:7:void removeOverlay():127:127 -> removeOverlay
-    8:15:void removeOverlay():128:128 -> removeOverlay
-    16:18:void removeOverlay():129:129 -> removeOverlay
-    19:21:void removeOverlay():130:130 -> removeOverlay
-    0:18:void showUncloseableOverlay():87:87 -> showUncloseableOverlay
-    5:9:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):88:88 -> showUncloseableOverlay$lambda$3
-    10:24:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):90:90 -> showUncloseableOverlay$lambda$3
-    25:26:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):96:96 -> showUncloseableOverlay$lambda$3
+    16:26:void onServiceConnected():34 -> onServiceConnected
+    0:7:void removeOverlay():122:122 -> removeOverlay
+    8:15:void removeOverlay():123:123 -> removeOverlay
+    16:18:void removeOverlay():124:124 -> removeOverlay
+    19:21:void removeOverlay():125:125 -> removeOverlay
+    0:18:void showUncloseableOverlay():89:89 -> showUncloseableOverlay
+    5:9:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):90:90 -> showUncloseableOverlay$lambda$3
+    10:24:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):91:91 -> showUncloseableOverlay$lambda$3
+    25:26:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):97:97 -> showUncloseableOverlay$lambda$3
     27:30:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):98:98 -> showUncloseableOverlay$lambda$3
     31:41:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):99:99 -> showUncloseableOverlay$lambda$3
-    42:60:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):102:102 -> showUncloseableOverlay$lambda$3
-    61:83:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):108:108 -> showUncloseableOverlay$lambda$3
-    84:92:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):118:118 -> showUncloseableOverlay$lambda$3
-    93:96:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):119:119 -> showUncloseableOverlay$lambda$3
-    97:100:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):121:121 -> showUncloseableOverlay$lambda$3
-    5:8:void showUncloseableOverlay$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View):103:103 -> showUncloseableOverlay$lambda$3$lambda$0
-    9:12:void showUncloseableOverlay$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View):104:104 -> showUncloseableOverlay$lambda$3$lambda$0
-    5:7:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):109:109 -> showUncloseableOverlay$lambda$3$lambda$2
-    8:16:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):111:111 -> showUncloseableOverlay$lambda$3$lambda$2
-    17:19:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):112:112 -> showUncloseableOverlay$lambda$3$lambda$2
-    20:23:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):114:114 -> showUncloseableOverlay$lambda$3$lambda$2
+    42:60:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):101:101 -> showUncloseableOverlay$lambda$3
+    61:83:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):105:105 -> showUncloseableOverlay$lambda$3
+    84:92:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):113:113 -> showUncloseableOverlay$lambda$3
+    93:96:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):114:114 -> showUncloseableOverlay$lambda$3
+    97:100:void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService):116:116 -> showUncloseableOverlay$lambda$3
+    5:8:void showUncloseableOverlay$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View):102:102 -> showUncloseableOverlay$lambda$3$lambda$0
+    9:12:void showUncloseableOverlay$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View):103:103 -> showUncloseableOverlay$lambda$3$lambda$0
+    5:7:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):106:106 -> showUncloseableOverlay$lambda$3$lambda$2
+    8:16:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):107:107 -> showUncloseableOverlay$lambda$3$lambda$2
+    17:19:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):108:108 -> showUncloseableOverlay$lambda$3$lambda$2
+    20:23:void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View):110:110 -> showUncloseableOverlay$lambda$3$lambda$2
 com.rockhard.blocker.GuardianService$$ExternalSyntheticLambda0 -> com.rockhard.blocker.b:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}
@@ -191,11 +193,11 @@ com.rockhard.blocker.GuardianService$Companion -> com.rockhard.blocker.GuardianS
 # {"id":"sourceFile","fileName":"GuardianService.kt"}
     1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
       # {"id":"com.android.tools.r8.residualsignature","signature":"(Ld/a;)V"}
-    0:4:long getPauseUntil():21:21 -> getPauseUntil
-    0:3:void setPauseUntil(long):21:21 -> setPauseUntil
+    0:4:long getPauseUntil():20:20 -> getPauseUntil
+    0:3:void setPauseUntil(long):20:20 -> setPauseUntil
 com.rockhard.blocker.MainActivity -> com.rockhard.blocker.MainActivity:
 # {"id":"sourceFile","fileName":"MainActivity.kt"}
-    0:3:void <init>():16:16 -> <init>
+    0:3:void <init>():15:15 -> <init>
     0:3:void $r8$lambda$Pwl8EGutRoJYN0jdc9gDRc8cJec(com.rockhard.blocker.MainActivity,android.view.View):0:0 -> a
       # {"id":"com.android.tools.r8.synthesized"}
     0:3:void $r8$lambda$TUv74TwWsn3mBPF9q3gvmmXvL4s(com.rockhard.blocker.MainActivity,android.view.View):0:0 -> b
@@ -204,42 +206,40 @@ com.rockhard.blocker.MainActivity -> com.rockhard.blocker.MainActivity:
       # {"id":"com.android.tools.r8.synthesized"}
     0:3:void $r8$lambda$oK60JNCIiBn287Xph_ZhXs5X6p4(com.rockhard.blocker.MainActivity,android.view.View):0:0 -> d
       # {"id":"com.android.tools.r8.synthesized"}
-    3:6:void onActivityResult(int,int,android.content.Intent):76:76 -> onActivityResult
-    0:2:void onCreate(android.os.Bundle):22:22 -> onCreate
-    3:7:void onCreate(android.os.Bundle):23:23 -> onCreate
-    8:19:void onCreate(android.os.Bundle):25:25 -> onCreate
-    20:28:void onCreate(android.os.Bundle):26:26 -> onCreate
-    29:45:void onCreate(android.os.Bundle):29:29 -> onCreate
-    46:53:void onCreate(android.os.Bundle):39:39 -> onCreate
-    54:61:void onCreate(android.os.Bundle):40:40 -> onCreate
-    62:68:void onCreate(android.os.Bundle):41:41 -> onCreate
-    69:77:void onCreate(android.os.Bundle):43:43 -> onCreate
-    78:94:void onCreate(android.os.Bundle):55:55 -> onCreate
-    95:112:void onCreate(android.os.Bundle):60:60 -> onCreate
-    113:123:void kotlin.jvm.internal.Intrinsics.throwJavaNpe(java.lang.String):50:50 -> onCreate
-    113:123:void kotlin.jvm.internal.Intrinsics.checkNotNull(java.lang.Object,java.lang.String):31 -> onCreate
-    113:123:void onCreate(android.os.Bundle):25 -> onCreate
-    5:11:void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View):30:30 -> onCreate$lambda$0
-    12:15:void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View):32:32 -> onCreate$lambda$0
-    16:19:void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View):34:34 -> onCreate$lambda$0
-    5:21:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):44:44 -> onCreate$lambda$1
-    22:28:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):45:45 -> onCreate$lambda$1
-    29:37:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):46:46 -> onCreate$lambda$1
-    38:44:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):47:47 -> onCreate$lambda$1
-    45:48:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):48:48 -> onCreate$lambda$1
-    49:52:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):46:46 -> onCreate$lambda$1
-    53:63:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):50:50 -> onCreate$lambda$1
-    64:73:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):44:44 -> onCreate$lambda$1
-    5:15:void onCreate$lambda$2(com.rockhard.blocker.MainActivity,android.view.View):56:56 -> onCreate$lambda$2
-    5:18:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):61:61 -> onCreate$lambda$3
-    19:37:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):64:64 -> onCreate$lambda$3
-    38:57:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):65:65 -> onCreate$lambda$3
-    58:64:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):68:68 -> onCreate$lambda$3
-    65:89:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):69:69 -> onCreate$lambda$3
-    90:93:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):70:70 -> onCreate$lambda$3
-    94:101:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):64:64 -> onCreate$lambda$3
-    0:9:void startVpnEngine():81:81 -> startVpnEngine
-    10:20:void startVpnEngine():82:82 -> startVpnEngine
+    0:2:void onCreate(android.os.Bundle):21:21 -> onCreate
+    3:7:void onCreate(android.os.Bundle):22:22 -> onCreate
+    8:19:void onCreate(android.os.Bundle):24:24 -> onCreate
+    20:28:void onCreate(android.os.Bundle):25:25 -> onCreate
+    29:36:void onCreate(android.os.Bundle):28:28 -> onCreate
+    37:41:void onCreate(android.os.Bundle):29:29 -> onCreate
+    42:50:void onCreate(android.os.Bundle):30:30 -> onCreate
+    51:58:void onCreate(android.os.Bundle):37:37 -> onCreate
+    59:66:void onCreate(android.os.Bundle):38:38 -> onCreate
+    67:73:void onCreate(android.os.Bundle):39:39 -> onCreate
+    74:82:void onCreate(android.os.Bundle):40:40 -> onCreate
+    83:99:void onCreate(android.os.Bundle):52:52 -> onCreate
+    100:117:void onCreate(android.os.Bundle):57:57 -> onCreate
+    118:128:void kotlin.jvm.internal.Intrinsics.throwJavaNpe(java.lang.String):50:50 -> onCreate
+    118:128:void kotlin.jvm.internal.Intrinsics.checkNotNull(java.lang.Object,java.lang.String):31 -> onCreate
+    118:128:void onCreate(android.os.Bundle):24 -> onCreate
+    5:14:void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View):31:31 -> onCreate$lambda$0
+    15:25:void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View):33:33 -> onCreate$lambda$0
+    5:21:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):41:41 -> onCreate$lambda$1
+    22:28:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):42:42 -> onCreate$lambda$1
+    29:37:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):43:43 -> onCreate$lambda$1
+    38:44:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):44:44 -> onCreate$lambda$1
+    45:48:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):45:45 -> onCreate$lambda$1
+    49:52:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):43:43 -> onCreate$lambda$1
+    53:63:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):47:47 -> onCreate$lambda$1
+    64:73:void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View):41:41 -> onCreate$lambda$1
+    5:15:void onCreate$lambda$2(com.rockhard.blocker.MainActivity,android.view.View):53:53 -> onCreate$lambda$2
+    5:18:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):58:58 -> onCreate$lambda$3
+    19:37:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):59:59 -> onCreate$lambda$3
+    38:57:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):60:60 -> onCreate$lambda$3
+    58:64:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):62:62 -> onCreate$lambda$3
+    65:89:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):63:63 -> onCreate$lambda$3
+    90:93:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):64:64 -> onCreate$lambda$3
+    94:101:void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View):59:59 -> onCreate$lambda$3
 com.rockhard.blocker.MainActivity$$ExternalSyntheticLambda0 -> com.rockhard.blocker.c:
 # {"id":"sourceFile","fileName":"R8$$SyntheticClass"}
 # {"id":"com.android.tools.r8.synthesized"}

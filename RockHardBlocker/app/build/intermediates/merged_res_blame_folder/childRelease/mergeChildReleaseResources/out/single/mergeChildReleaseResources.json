@@ -8,6 +8,10 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_essay.xml"
     },
     {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-childRelease-4:/xml_device_admin.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/xml/device_admin.xml"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-childRelease-4:/layout_activity_trap.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_trap.xml"
     },
@@ -16,11 +20,11 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/overlay_guard.xml"
     },
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-childRelease-4:/layout_activity_main.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
+        "merged": "com.rockhard.blocker.app-childRelease-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-childRelease-4:/xml_device_admin.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/xml/device_admin.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-childRelease-4:/layout_activity_main.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
     }
 ]

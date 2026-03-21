@@ -1,104 +1,102 @@
-com.rockhard.blocker.BlockerVpnService
+com.rockhard.blocker.AdminReceiver
+com.rockhard.blocker.R$xml
 com.rockhard.blocker.TrapActivity$onCreate$1
 com.rockhard.blocker.GuardianService
-com.rockhard.blocker.R$id
-com.rockhard.blocker.EssayActivity
-com.rockhard.blocker.GuardianService$Companion
-com.rockhard.blocker.R$xml
-com.rockhard.blocker.TrapActivity
-com.rockhard.blocker.EssayActivity$onCreate$1
+com.rockhard.blocker.BlockerVpnService
 com.rockhard.blocker.R$string
-com.rockhard.blocker.MainActivity
-com.rockhard.blocker.AdminReceiver
-com.rockhard.blocker.R$layout
+com.rockhard.blocker.EssayActivity$onCreate$1
 com.rockhard.blocker.R
-com.rockhard.blocker.R$id: int btnDebugUninstall
-com.rockhard.blocker.R$string: int overlay_title
-com.rockhard.blocker.GuardianService: long pauseUntil
-com.rockhard.blocker.R$xml: int device_admin
-com.rockhard.blocker.R$xml: int guardian_config
-com.rockhard.blocker.EssayActivity$onCreate$1: android.view.View $background
-com.rockhard.blocker.EssayActivity$onCreate$1: java.lang.String $targetText
-com.rockhard.blocker.R$layout: int overlay_guard
-com.rockhard.blocker.R$id: int btnYield
+com.rockhard.blocker.EssayActivity
+com.rockhard.blocker.TrapActivity
+com.rockhard.blocker.MainActivity
+com.rockhard.blocker.R$id
+com.rockhard.blocker.R$layout
+com.rockhard.blocker.GuardianService$Companion
+com.rockhard.blocker.R$id: int etInput
 com.rockhard.blocker.R$id: int essayBackground
-com.rockhard.blocker.R$id: int btnTrapAudio
-com.rockhard.blocker.EssayActivity$onCreate$1: com.rockhard.blocker.EssayActivity this$0
-com.rockhard.blocker.EssayActivity$onCreate$1: android.widget.EditText $etInput
-com.rockhard.blocker.GuardianService: java.util.Map appTimeTrackers
-com.rockhard.blocker.EssayActivity: java.util.List prompts
-com.rockhard.blocker.TrapActivity$onCreate$1: com.rockhard.blocker.TrapActivity this$0
-com.rockhard.blocker.R$id: int btnPauseBlocker
-com.rockhard.blocker.R$id: int btnTrapBrick
-com.rockhard.blocker.GuardianService: int urgesDefeatedCount
-com.rockhard.blocker.GuardianService: java.lang.String currentApp
+com.rockhard.blocker.MainActivity: android.content.ComponentName componentName
 com.rockhard.blocker.GuardianService: android.view.WindowManager windowManager
 com.rockhard.blocker.MainActivity: android.app.admin.DevicePolicyManager devicePolicyManager
-com.rockhard.blocker.GuardianService: android.view.View overlayView
-com.rockhard.blocker.R$id: int etInput
-com.rockhard.blocker.R$layout: int activity_main
-com.rockhard.blocker.BlockerVpnService: android.os.ParcelFileDescriptor vpnInterface
-com.rockhard.blocker.R$id: int timerText
-com.rockhard.blocker.GuardianService: boolean isOverlayShowing
-com.rockhard.blocker.R$layout: int activity_essay
-com.rockhard.blocker.GuardianService: long currentAppStartTime
-com.rockhard.blocker.MainActivity: android.content.ComponentName componentName
-com.rockhard.blocker.TrapActivity$onCreate$1: android.widget.TextView $timerText
-com.rockhard.blocker.R$id: int tvPrompt
-com.rockhard.blocker.R$id: int btnEnableGuardian
 com.rockhard.blocker.R$layout: int activity_trap
-com.rockhard.blocker.GuardianService: com.rockhard.blocker.GuardianService$Companion Companion
-com.rockhard.blocker.R$string: int app_name
+com.rockhard.blocker.GuardianService: android.view.View overlayView
+com.rockhard.blocker.R$id: int btnDebugUninstall
+com.rockhard.blocker.R$id: int btnTrapAudio
+com.rockhard.blocker.GuardianService: int urgesDefeatedCount
+com.rockhard.blocker.EssayActivity$onCreate$1: java.lang.String $targetText
+com.rockhard.blocker.GuardianService: java.util.Map appTimeTrackers
+com.rockhard.blocker.R$id: int btnPauseBlocker
+com.rockhard.blocker.BlockerVpnService: android.os.ParcelFileDescriptor vpnInterface
+com.rockhard.blocker.R$id: int btnYield
+com.rockhard.blocker.R$xml: int device_admin
+com.rockhard.blocker.EssayActivity$onCreate$1: com.rockhard.blocker.EssayActivity this$0
 com.rockhard.blocker.R$string: int brick_message
-com.rockhard.blocker.GuardianService: void showUncloseableOverlay$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View)
-com.rockhard.blocker.MainActivity: void onCreate$lambda$2(com.rockhard.blocker.MainActivity,android.view.View)
-com.rockhard.blocker.TrapActivity$onCreate$1: TrapActivity$onCreate$1(android.widget.TextView,com.rockhard.blocker.TrapActivity)
-com.rockhard.blocker.EssayActivity: void onBackPressed()
-com.rockhard.blocker.R$layout: R$layout()
-com.rockhard.blocker.TrapActivity: void onCreate(android.os.Bundle)
-com.rockhard.blocker.GuardianService$Companion: GuardianService$Companion(kotlin.jvm.internal.DefaultConstructorMarker)
-com.rockhard.blocker.MainActivity: void onActivityResult(int,int,android.content.Intent)
-com.rockhard.blocker.GuardianService: android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String)
-com.rockhard.blocker.MainActivity: void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View)
-com.rockhard.blocker.GuardianService$Companion: void setPauseUntil(long)
-com.rockhard.blocker.EssayActivity$onCreate$1: void onTextChanged(java.lang.CharSequence,int,int,int)
-com.rockhard.blocker.R$id: R$id()
-com.rockhard.blocker.R$xml: R$xml()
-com.rockhard.blocker.GuardianService: long access$getPauseUntil$cp()
-com.rockhard.blocker.MainActivity: void onCreate(android.os.Bundle)
-com.rockhard.blocker.R$string: R$string()
-com.rockhard.blocker.GuardianService$Companion: GuardianService$Companion()
-com.rockhard.blocker.BlockerVpnService: BlockerVpnService()
-com.rockhard.blocker.MainActivity: MainActivity()
-com.rockhard.blocker.AdminReceiver: AdminReceiver()
-com.rockhard.blocker.MainActivity: void startVpnEngine()
-com.rockhard.blocker.TrapActivity$onCreate$1: void onFinish()
-com.rockhard.blocker.AdminReceiver: java.lang.CharSequence onDisableRequested(android.content.Context,android.content.Intent)
-com.rockhard.blocker.EssayActivity$onCreate$1: void afterTextChanged(android.text.Editable)
-com.rockhard.blocker.GuardianService: void removeOverlay()
-com.rockhard.blocker.GuardianService: void onInterrupt()
-com.rockhard.blocker.EssayActivity$onCreate$1: void afterTextChanged$lambda$0(android.view.View)
-com.rockhard.blocker.GuardianService: void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService)
-com.rockhard.blocker.GuardianService: GuardianService()
-com.rockhard.blocker.AdminReceiver: void onEnabled(android.content.Context,android.content.Intent)
-com.rockhard.blocker.GuardianService: void onServiceConnected()
-com.rockhard.blocker.GuardianService: void access$setPauseUntil$cp(long)
-com.rockhard.blocker.TrapActivity: TrapActivity()
-com.rockhard.blocker.TrapActivity: void onBackPressed()
+com.rockhard.blocker.GuardianService: long pauseUntil
+com.rockhard.blocker.R$id: int btnTrapBrick
+com.rockhard.blocker.GuardianService: boolean isOverlayShowing
+com.rockhard.blocker.EssayActivity$onCreate$1: android.widget.EditText $etInput
+com.rockhard.blocker.GuardianService: com.rockhard.blocker.GuardianService$Companion Companion
+com.rockhard.blocker.EssayActivity$onCreate$1: android.view.View $background
+com.rockhard.blocker.GuardianService: java.lang.String currentApp
+com.rockhard.blocker.EssayActivity: java.util.List prompts
+com.rockhard.blocker.R$string: int overlay_title
+com.rockhard.blocker.R$id: int timerText
+com.rockhard.blocker.R$id: int btnEnableGuardian
+com.rockhard.blocker.R$layout: int activity_essay
+com.rockhard.blocker.TrapActivity$onCreate$1: com.rockhard.blocker.TrapActivity this$0
+com.rockhard.blocker.TrapActivity$onCreate$1: android.widget.TextView $timerText
+com.rockhard.blocker.R$layout: int overlay_guard
+com.rockhard.blocker.GuardianService: long currentAppStartTime
+com.rockhard.blocker.R$layout: int activity_main
+com.rockhard.blocker.R$xml: int guardian_config
+com.rockhard.blocker.R$string: int app_name
+com.rockhard.blocker.R$id: int tvPrompt
 com.rockhard.blocker.GuardianService: void showUncloseableOverlay$lambda$3$lambda$2(com.rockhard.blocker.GuardianService,android.view.View)
-com.rockhard.blocker.GuardianService: void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent)
-com.rockhard.blocker.TrapActivity$onCreate$1: void onTick(long)
-com.rockhard.blocker.GuardianService$Companion: long getPauseUntil()
-com.rockhard.blocker.GuardianService: void showUncloseableOverlay()
-kotlin.random.Random: Random()
-com.rockhard.blocker.BlockerVpnService: int onStartCommand(android.content.Intent,int,int)
+com.rockhard.blocker.GuardianService$Companion: GuardianService$Companion()
+com.rockhard.blocker.EssayActivity$onCreate$1: void onTextChanged(java.lang.CharSequence,int,int,int)
 com.rockhard.blocker.GuardianService: boolean findTextInNode(android.view.accessibility.AccessibilityNodeInfo,java.lang.String)
-com.rockhard.blocker.R: R()
-com.rockhard.blocker.EssayActivity$onCreate$1: void beforeTextChanged(java.lang.CharSequence,int,int,int)
-com.rockhard.blocker.EssayActivity: void onCreate(android.os.Bundle)
+com.rockhard.blocker.GuardianService: void removeOverlay()
+com.rockhard.blocker.GuardianService: void showUncloseableOverlay$lambda$3(com.rockhard.blocker.GuardianService)
+com.rockhard.blocker.EssayActivity$onCreate$1: void afterTextChanged(android.text.Editable)
+com.rockhard.blocker.TrapActivity$onCreate$1: void onTick(long)
+com.rockhard.blocker.MainActivity: void onCreate(android.os.Bundle)
 com.rockhard.blocker.MainActivity: void onCreate$lambda$3(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.BlockerVpnService: int onStartCommand(android.content.Intent,int,int)
+com.rockhard.blocker.R$string: R$string()
+com.rockhard.blocker.GuardianService: void showUncloseableOverlay$lambda$3$lambda$0(com.rockhard.blocker.GuardianService,android.view.View)
+com.rockhard.blocker.GuardianService$Companion: GuardianService$Companion(kotlin.jvm.internal.DefaultConstructorMarker)
+com.rockhard.blocker.TrapActivity: void onCreate(android.os.Bundle)
+com.rockhard.blocker.GuardianService: void onServiceConnected()
+com.rockhard.blocker.AdminReceiver: AdminReceiver()
 com.rockhard.blocker.EssayActivity: EssayActivity()
-com.rockhard.blocker.AdminReceiver: void onDisabled(android.content.Context,android.content.Intent)
-com.rockhard.blocker.BlockerVpnService: void onDestroy()
-com.rockhard.blocker.EssayActivity$onCreate$1: EssayActivity$onCreate$1(java.lang.String,com.rockhard.blocker.EssayActivity,android.view.View,android.widget.EditText)
+kotlin.random.Random: Random()
+com.rockhard.blocker.R$xml: R$xml()
+com.rockhard.blocker.EssayActivity: void onBackPressed()
+com.rockhard.blocker.GuardianService: void onAccessibilityEvent(android.view.accessibility.AccessibilityEvent)
+com.rockhard.blocker.TrapActivity: TrapActivity()
+com.rockhard.blocker.EssayActivity$onCreate$1: void beforeTextChanged(java.lang.CharSequence,int,int,int)
 com.rockhard.blocker.MainActivity: void onCreate$lambda$1(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.EssayActivity$onCreate$1: EssayActivity$onCreate$1(java.lang.String,com.rockhard.blocker.EssayActivity,android.view.View,android.widget.EditText)
+com.rockhard.blocker.AdminReceiver: void onDisabled(android.content.Context,android.content.Intent)
+com.rockhard.blocker.TrapActivity$onCreate$1: TrapActivity$onCreate$1(android.widget.TextView,com.rockhard.blocker.TrapActivity)
+com.rockhard.blocker.GuardianService: long access$getPauseUntil$cp()
+com.rockhard.blocker.GuardianService$Companion: void setPauseUntil(long)
+com.rockhard.blocker.MainActivity: void onCreate$lambda$0(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.R$id: R$id()
+com.rockhard.blocker.GuardianService: GuardianService()
+com.rockhard.blocker.TrapActivity$onCreate$1: void onFinish()
+com.rockhard.blocker.MainActivity: MainActivity()
+com.rockhard.blocker.GuardianService: android.view.accessibility.AccessibilityNodeInfo findNodeWithText(android.view.accessibility.AccessibilityNodeInfo,java.lang.String)
+com.rockhard.blocker.R: R()
+com.rockhard.blocker.AdminReceiver: java.lang.CharSequence onDisableRequested(android.content.Context,android.content.Intent)
+com.rockhard.blocker.GuardianService: void access$setPauseUntil$cp(long)
+com.rockhard.blocker.MainActivity: void onCreate$lambda$2(com.rockhard.blocker.MainActivity,android.view.View)
+com.rockhard.blocker.TrapActivity: void onBackPressed()
+com.rockhard.blocker.EssayActivity: void onCreate(android.os.Bundle)
+com.rockhard.blocker.GuardianService$Companion: long getPauseUntil()
+com.rockhard.blocker.BlockerVpnService: void onDestroy()
+com.rockhard.blocker.GuardianService: void onInterrupt()
+com.rockhard.blocker.BlockerVpnService: BlockerVpnService()
+com.rockhard.blocker.EssayActivity$onCreate$1: void afterTextChanged$lambda$0(android.view.View)
+com.rockhard.blocker.GuardianService: void showUncloseableOverlay()
+com.rockhard.blocker.AdminReceiver: void onEnabled(android.content.Context,android.content.Intent)
+com.rockhard.blocker.R$layout: R$layout()

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Bounceland</string>
+    <string name="brick_message" translatable="false">Time out for 10 minutes!</string>
+    <string name="essay_prompt" translatable="false">GAME_MODE</string>
+    <string name="flavor_id" translatable="false">bounceland</string>
+    <string name="overlay_title" translatable="false">WILD GLITCH APPEARED!</string>
+</resources>
