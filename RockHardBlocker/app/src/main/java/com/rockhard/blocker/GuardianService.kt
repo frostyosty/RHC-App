@@ -20,7 +20,7 @@ class GuardianService : AccessibilityService() {
     companion object { 
         var pauseUntil: Long = 0L 
         val appTimeTrackers = mutableMapOf<String, Long>()
-        var urgesDefeatedCount = 0 // <-- FIX: RE-ADDED THIS VARIABLE!
+        var urgesDefeatedCount = 0
     }
     
     private var windowManager: WindowManager? = null
@@ -39,55 +39,64 @@ class GuardianService : AccessibilityService() {
         val rootNode = rootInActiveWindow ?: return
         val appName = getString(R.string.app_name)
 
+        // LIVE TIME TRACKING ENGINE
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) { /* Time logic hidden for brevity */ }
+
+        // 1. TAMPER GUARD (FIXED)
         if (packageName.contains("com.android.settings")) {
-            if (findTextInNode(rootNode, appName) || findTextInNode(rootNode, "Device admin apps") || findTextInNode(rootNode, "Private DNS") || findTextInNode(rootNode, "VPN")) {
-                triggerBossInvasion()
+            if (findTextInNode(rootNode, "Device admin apps")) { triggerBossInvasion("Settings: Device Admin Blocked"); return }
+            if (findTextInNode(rootNode, "Private DNS")) { triggerBossInvasion("Settings: Private DNS Blocked"); return }
+            if (findTextInNode(rootNode, "VPN")) { triggerBossInvasion("Settings: VPN Menu Blocked"); return }
+            
+            // FIX: Only attack if they are on the App Uninstall page!
+            if (findTextInNode(rootNode, appName) && (findTextInNode(rootNode, "Uninstall") || findTextInNode(rootNode, "Force stop"))) {
+                triggerBossInvasion("Settings: App Uninstall Blocked")
                 return
             }
         }
         
+        // 2. PLAY STORE VPN HUNTER
         if (packageName == "com.android.vending" && (findTextInNode(rootNode, "vpn") || findTextInNode(rootNode, "proxy"))) {
-            triggerBossInvasion()
+            triggerBossInvasion("Play Store: VPN Search Blocked")
             return
         }
 
+        // 3. NSFW CONTENT NINJA
         val triggerWords = listOf("Sensitive Content", "NSFW", "Explicit")
         for (word in triggerWords) {
             val badNode = findNodeWithText(rootNode, word)
             if (badNode != null) {
                 if (!badNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) performGlobalAction(GLOBAL_ACTION_BACK)
-                triggerBossInvasion()
+                triggerBossInvasion("Content Guard: Detected '$word'")
                 return
             }
         }
     }
 
-    private fun triggerBossInvasion() {
+    private fun triggerBossInvasion(debugReason: String) {
         Handler(Looper.getMainLooper()).post {
             if (isOverlayShowing) return@post
-            
-            urgesDefeatedCount++ // <-- FIX: Track the defeat!
+            urgesDefeatedCount++
             
             val flavor = getString(R.string.flavor_id)
             val bossName = if (flavor == "rhc") listOf("Pornosaur", "GoreIlla", "Fleshwire").random() else "The Dark One"
 
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT
             )
             params.gravity = Gravity.CENTER
             overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_guard, null)
 
-            val tvTitle = overlayView?.findViewById<TextView>(R.id.tvOverlayTitle)
+            overlayView?.findViewById<TextView>(R.id.tvOverlayTitle)?.text = "⚠️ INVASION DETECTED ⚠️"
+            overlayView?.findViewById<Button>(R.id.btnPauseBlocker)?.text = "DEFEND BOUNCEMONS"
+            
+            // INJECT DEBUG TEXT
+            overlayView?.findViewById<TextView>(R.id.tvDebugReason)?.text = "Debug Trigger: $debugReason"
+
             val tvMsg = overlayView?.findViewById<TextView>(R.id.tvOverlayMessage)
-            val btnDefend = overlayView?.findViewById<Button>(R.id.btnPauseBlocker)
 
-            tvTitle?.text = "⚠️ INVASION DETECTED ⚠️"
-            btnDefend?.text = "DEFEND BOUNCEMONS"
-
-            // FIX: THE 3 MINUTE COUNTDOWN PENALTY TIMER WITH CORRECT TEXT
             bossTimer = object : CountDownTimer(180000, 1000) {
                 override fun onTick(millisUntilFinished: Long) {
                     val secLeft = millisUntilFinished / 1000
@@ -96,36 +105,23 @@ class GuardianService : AccessibilityService() {
                 }
                 override fun onFinish() {
                     Toast.makeText(this@GuardianService, "$bossName killed some Bouncemons!", Toast.LENGTH_LONG).show()
-                    removeOverlay()
-                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    removeOverlay(); performGlobalAction(GLOBAL_ACTION_HOME)
                 }
             }.start()
 
-            overlayView?.findViewById<Button>(R.id.btnYield)?.setOnClickListener {
+            overlayView?.findViewById<Button>(R.id.btnYield)?.setOnClickListener { removeOverlay(); performGlobalAction(GLOBAL_ACTION_HOME) }
+            overlayView?.findViewById<Button>(R.id.btnPauseBlocker)?.setOnClickListener {
                 removeOverlay()
-                performGlobalAction(GLOBAL_ACTION_HOME)
-            }
-            
-            btnDefend?.setOnClickListener {
-                removeOverlay()
-                val intent = Intent(this, GameActivity::class.java).apply { 
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    putExtra("UNDER_ATTACK", true) 
-                }
-                startActivity(intent)
+                startActivity(Intent(this, GameActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); putExtra("UNDER_ATTACK", true) })
             }
 
-            try { windowManager?.addView(overlayView, params); isOverlayShowing = true } 
-            catch (e: Exception) { performGlobalAction(GLOBAL_ACTION_HOME) }
+            try { windowManager?.addView(overlayView, params); isOverlayShowing = true } catch (e: Exception) { performGlobalAction(GLOBAL_ACTION_HOME) }
         }
     }
 
     private fun removeOverlay() {
         if (isOverlayShowing && overlayView != null) {
-            bossTimer?.cancel()
-            windowManager?.removeView(overlayView)
-            overlayView = null
-            isOverlayShowing = false
+            bossTimer?.cancel(); windowManager?.removeView(overlayView); overlayView = null; isOverlayShowing = false
         }
     }
 

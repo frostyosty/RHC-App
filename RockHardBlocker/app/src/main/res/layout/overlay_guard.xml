@@ -14,4 +14,8 @@
         
     <Button android:id="@+id/btnPauseBlocker" android:layout_width="match_parent" android:layout_height="60dp"
         android:text="TEMPTATION PROTOCOL" android:backgroundTint="#B71C1C" android:textColor="#FFCDD2" android:textStyle="bold"/>
+        
+    <!-- NEW: DEBUG REASON TEXT -->
+    <TextView android:id="@+id/tvDebugReason" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Debug Reason: Unknown" android:textColor="#FFCDD2" android:textSize="12sp" android:layout_marginTop="32dp" android:textAlignment="center"/>
 </LinearLayout>
