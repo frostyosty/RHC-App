@@ -1,9 +1,11 @@
 R_DEF: Internal format may change without notice
 local
+id battleControls
 id btnArmShield
 id btnAttack
 id btnDebugUninstall
 id btnDebugUsage
+id btnDispatch
 id btnExit
 id btnHumiliation
 id btnNet
@@ -13,12 +15,15 @@ id btnSpray
 id btnTestFilter
 id btnTrapBrick
 id btnYield
+id navTabs
+id peaceControls
 id tabActivity
 id tabBag
 id tabParty
 id timerText
 id tvBag
 id tvConsole
+id tvDebugReason
 id tvOverlayMessage
 id tvOverlayTitle
 id tvParty

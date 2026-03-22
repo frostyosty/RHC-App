@@ -1,0 +1,6 @@
+The "DEBUG: KILL & UNINSTALL" Button (In MainActivity).
+The "DEBUG: TEST ILLICIT WEBSITES" Button (In MainActivity).
+The "DEBUG: VIEW SCREEN TRACKING" Button (In MainActivity).
+The "EMERGENCY LOCKDOWN (10 MIN)" Brick Button (We can keep this if you want it as a feature, but remove if it's just for testing).
+The Red Wall Debug Trigger Text (Which we are adding right now so you can see why the boss spawned).
+The REQUEST_DELETE_PACKAGES permission in AndroidManifest.xml.
