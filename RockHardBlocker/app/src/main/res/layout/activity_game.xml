@@ -11,15 +11,52 @@
 
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp">
         <ScrollView android:id="@+id/viewActivity" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp">
-            <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="14sp" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="13sp" android:fontFamily="monospace" android:lineSpacingExtra="2dp"/>
         </ScrollView>
+        
         <ScrollView android:id="@+id/viewParty" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
-            <TextView android:id="@+id/tvParty" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BCD4" android:textSize="14sp" android:fontFamily="monospace"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                <TextView android:id="@+id/tvParty" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BCD4" android:textSize="14sp" android:fontFamily="monospace"/>
+                
+                <!-- NEW: EQUIPMENT PANEL FOR ACTIVE NETBEAST -->
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- EQUIP ACTIVE NETBEAST --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginTop="16dp" android:layout_marginBottom="8dp" android:textAlignment="center"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                    <Button android:id="@+id/btnEqNet" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ NET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp"/>
+                    <Button android:id="@+id/btnEqPot" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ POT" android:backgroundTint="#388E3C" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp" android:layout_marginStart="4dp"/>
+                    <Button android:id="@+id/btnEqSpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ SPRY" android:backgroundTint="#FBC02D" android:textColor="#000" android:textSize="10sp" android:layout_marginStart="4dp"/>
+                </LinearLayout>
+                <Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
+
+                <Button android:id="@+id/btnSellBeast" android:layout_width="match_parent" android:layout_height="50dp" android:text="SELL ACTIVE BEAST (50c)" android:backgroundTint="#D32F2F" android:textColor="#FFF"/>
+            </LinearLayout>
         </ScrollView>
+        
         <ScrollView android:id="@+id/viewBag" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
-            <TextView android:id="@+id/tvBag" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFCA28" android:textSize="14sp" android:fontFamily="monospace"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                <TextView android:id="@+id/tvBag" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFCA28" android:textSize="14sp" android:fontFamily="monospace" android:layout_marginBottom="16dp"/>
+                
+                <!-- NEW: HIDDEN SHOP CONTAINER -->
+                <LinearLayout android:id="@+id/llShopContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="--- SAFARI SHOP ---" android:textColor="#FFFFFF" android:textStyle="bold" android:textAlignment="center" android:layout_marginBottom="16dp"/>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                        <Button android:id="@+id/btnBuyNet" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="BUY NET (5c)" android:backgroundTint="#333" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp"/>
+                        <Button android:id="@+id/btnSellNet" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="SELL NET (2c)" android:backgroundTint="#222" android:textColor="#AAA" android:textSize="10sp" android:layout_marginStart="4dp"/>
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                        <Button android:id="@+id/btnBuyPotion" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="BUY POTION (10c)" android:backgroundTint="#333" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp"/>
+                        <Button android:id="@+id/btnSellPotion" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="SELL POTION (5c)" android:backgroundTint="#222" android:textColor="#AAA" android:textSize="10sp" android:layout_marginStart="4dp"/>
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
+                        <Button android:id="@+id/btnBuySpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="BUY SPRAY (15c)" android:backgroundTint="#333" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp"/>
+                        <Button android:id="@+id/btnSellSpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="SELL SPRAY (7c)" android:backgroundTint="#222" android:textColor="#AAA" android:textSize="10sp" android:layout_marginStart="4dp"/>
+                    </LinearLayout>
+                    <Button android:id="@+id/btnBuyBeast" android:layout_width="match_parent" android:layout_height="60dp" android:text="BUY RANDOM NETBEAST (100c)" android:backgroundTint="#1976D2" android:textColor="#FFF"/>
+                </LinearLayout>
+            </LinearLayout>
         </ScrollView>
     </FrameLayout>
+
+    <LinearLayout android:id="@+id/qteContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp"/>
 
     <LinearLayout android:id="@+id/battleControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
@@ -30,11 +67,13 @@
             <Button android:id="@+id/btnSwap" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="SWAP PET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:layout_marginEnd="4dp"/>
             <Button android:id="@+id/btnItem" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="USE SPRAY" android:backgroundTint="#FBC02D" android:textColor="#000" android:layout_marginStart="4dp"/>
         </LinearLayout>
+        <Button android:id="@+id/btnAbandon" android:layout_width="120dp" android:layout_height="40dp" android:text="ABANDON" android:backgroundTint="#555555" android:textColor="#999" android:textSize="10sp" android:layout_gravity="center" android:layout_marginTop="8dp"/>
     </LinearLayout>
 
     <LinearLayout android:id="@+id/peaceControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="visible">
-        <Button android:id="@+id/btnDispatch" android:layout_width="match_parent" android:layout_height="60dp" android:text="DISPATCH BOUNCEMON" android:backgroundTint="#2196F3" android:textColor="#FFF" android:layout_marginTop="8dp"/>
+        <Button android:id="@+id/btnDispatch" android:layout_width="match_parent" android:layout_height="60dp" android:text="DISPATCH NETBEAST" android:backgroundTint="#2196F3" android:textColor="#FFF" android:layout_marginTop="8dp"/>
+        <Button android:id="@+id/btnRhcSettings" android:layout_width="match_parent" android:layout_height="50dp" android:text="RHC SYSTEM SETTINGS" android:backgroundTint="#333" android:textColor="#AAA" android:layout_marginTop="8dp" android:visibility="gone"/>
     </LinearLayout>
     
-    <Button android:id="@+id/btnExit" android:layout_width="match_parent" android:layout_height="50dp" android:text="EXIT SYSTEM" android:backgroundTint="#222222" android:textColor="#FFF" android:layout_marginTop="8dp"/>
+    <Button android:id="@+id/btnExit" android:layout_width="match_parent" android:layout_height="40dp" android:text="EXIT" android:backgroundTint="#111" android:textColor="#555" android:layout_marginTop="8dp"/>
 </LinearLayout>

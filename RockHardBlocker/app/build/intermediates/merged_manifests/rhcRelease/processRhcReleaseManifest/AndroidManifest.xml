@@ -10,25 +10,41 @@
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Permission required to trigger the uninstall prompt for our debug button -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <application
         android:allowBackup="true"
         android:extractNativeLibs="false"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.NoTitleBar" >
         <activity
             android:name="com.rockhard.blocker.MainActivity"
-            android:exported="true" >
+            android:exported="true" /> <!-- GAME ICON ALIAS (Swapped dynamically!) -->
+        <activity-alias
+            android:name="com.rockhard.blocker.GameLauncher"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_game"
+            android:targetActivity="com.rockhard.blocker.MainActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias> <!-- DEFAULT ICON ALIAS -->
+        <activity-alias
+            android:name="com.rockhard.blocker.DefaultLauncher"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:targetActivity="com.rockhard.blocker.MainActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <activity
             android:name="com.rockhard.blocker.TrapActivity"
             android:exported="false"
@@ -50,16 +66,7 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/guardian_config" />
         </service>
-        <service
-            android:name="com.rockhard.blocker.BlockerVpnService"
-            android:exported="true"
-            android:permission="android.permission.BIND_VPN_SERVICE" >
-            <intent-filter>
-                <action android:name="android.net.VpnService" />
-            </intent-filter>
-        </service>
 
-        <!-- NEW: REGISTERING THE DEVICE ADMIN RECEIVER -->
         <receiver
             android:name="com.rockhard.blocker.AdminReceiver"
             android:exported="true"

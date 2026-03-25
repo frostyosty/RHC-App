@@ -19,10 +19,14 @@ import android.widget.Button
 import android.widget.TextView
 
 class GuardianService : AccessibilityService() {
+
+    // FIX: RESTORED THE MISSING VARIABLES!
     companion object { 
         var pauseUntil: Long = 0L 
         var urgesDefeatedCount = 0
+        val appTimeTrackers = mutableMapOf<String, Long>()
     }
+
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
     private var isOverlayShowing = false
@@ -46,14 +50,19 @@ class GuardianService : AccessibilityService() {
         val isAdminActive = dpm.isAdminActive(compName)
         val isDnsVerified = prefs.getBoolean("DNS_VERIFIED", false)
         val isGamificationEnabled = prefs.getBoolean("GAMIFICATION", true)
-        val blocklist = prefs.getString("BLOCKLIST", "")?.split(",")?.map { it.trim().lowercase() }?.filter { it.isNotEmpty() } ?: emptyList()
 
-        if (blocklist.any { packageName.lowercase().contains(it) }) {
+        // READ BOTH LISTS
+        val blockedWebs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.map { it.trim().lowercase() }?.filter { it.isNotEmpty() } ?: emptyList()
+        val blockedApps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.map { it.trim().lowercase() }?.filter { it.isNotEmpty() } ?: emptyList()
+
+        // 1. APP PACKAGE BANNING (Checks underlying Android package name)
+        if (blockedApps.any { packageName.lowercase().contains(it) }) {
             performGlobalAction(GLOBAL_ACTION_HOME)
             triggerBossInvasion("App Overcome: $packageName", isGamificationEnabled)
             return
         }
 
+        // 2. TAMPER GUARD (Settings Menu)
         if (packageName.contains("com.android.settings")) {
             if (isAdminActive) { val ctx = extractContext(rootNode, "Device admin apps"); if (ctx != null) { triggerBossInvasion("Settings Guard: $ctx", isGamificationEnabled); return } }
             if (isDnsVerified) { val ctx = extractContext(rootNode, "Private DNS"); if (ctx != null) { triggerBossInvasion("Settings Guard: $ctx", isGamificationEnabled); return } }
@@ -70,9 +79,11 @@ class GuardianService : AccessibilityService() {
             if (ctx != null) { triggerBossInvasion("VPN Search: $ctx", isGamificationEnabled); return }
         }
 
+        // STOP FRIENDLY FIRE: Ignore content/website checks if inside our own App!
         if (packageName.contains("com.rockhard.blocker")) return
 
-        for (word in blocklist) {
+        // 3. CONTEXT-AWARE WEBSITE BANNING (Only triggers if it's a clickable link or URL bar)
+        for (word in blockedWebs) {
             val ctx = extractDangerousContext(rootNode, word)
             if (ctx != null) {
                 performGlobalAction(GLOBAL_ACTION_HOME)
@@ -81,6 +92,7 @@ class GuardianService : AccessibilityService() {
             }
         }
 
+        // 4. NSFW NINJA
         val triggerWords = listOf("Sensitive Content", "NSFW", "Explicit", "porno", "色情", "黄片")
         for (word in triggerWords) {
             val badNode = findNodeWithText(rootNode, word)
@@ -96,6 +108,8 @@ class GuardianService : AccessibilityService() {
     private fun triggerBossInvasion(debugReason: String, isGamificationEnabled: Boolean) {
         Handler(Looper.getMainLooper()).post {
             if (isOverlayShowing) return@post
+            urgesDefeatedCount++
+            
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
@@ -104,7 +118,8 @@ class GuardianService : AccessibilityService() {
             params.gravity = Gravity.CENTER
             overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_guard, null)
             
-            overlayView?.findViewById<TextView>(R.id.tvDebugReason)?.text = "Triggered by: \"$debugReason\""
+            // CONTEXTUAL REASON OUTPUT
+            overlayView?.findViewById<TextView>(R.id.tvDebugReason)?.text = "Triggered by:\n\"$debugReason\""
             
             val tvMsg = overlayView?.findViewById<TextView>(R.id.tvOverlayMessage)
             val btnDefend = overlayView?.findViewById<Button>(R.id.btnPauseBlocker)
@@ -142,13 +157,14 @@ class GuardianService : AccessibilityService() {
         if (isOverlayShowing && overlayView != null) { bossTimer?.cancel(); windowManager?.removeView(overlayView); overlayView = null; isOverlayShowing = false }
     }
 
+    // EXPANDED CONTEXT EXTRACTOR (40 Chars!)
     private fun extractContext(node: AccessibilityNodeInfo?, word: String): String? {
         if (node == null) return null
         val text = node.text?.toString() ?: node.contentDescription?.toString() ?: return null
         val index = text.indexOf(word, ignoreCase = true)
         if (index != -1) {
-            val start = Math.max(0, index - 15)
-            val end = Math.min(text.length, index + word.length + 15)
+            val start = Math.max(0, index - 40)
+            val end = Math.min(text.length, index + word.length + 40)
             return "...${text.substring(start, end).replace('\n', ' ')}..."
         }
         for (i in 0 until node.childCount) { val res = extractContext(node.getChild(i), word); if (res != null) return res }
@@ -165,8 +181,8 @@ class GuardianService : AccessibilityService() {
             
             if (isClickable) {
                 val index = text.indexOf(word, ignoreCase = true)
-                val start = Math.max(0, index - 15)
-                val end = Math.min(text.length, index + word.length + 15)
+                val start = Math.max(0, index - 40)
+                val end = Math.min(text.length, index + word.length + 40)
                 return "...${text.substring(start, end).replace('\n', ' ')}..."
             }
         }

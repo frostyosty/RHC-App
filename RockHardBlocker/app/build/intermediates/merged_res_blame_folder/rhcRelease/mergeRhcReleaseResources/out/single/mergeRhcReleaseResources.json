@@ -16,16 +16,24 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/activity_game.xml"
     },
     {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/layout_item_qte_row.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/item_qte_row.xml"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/layout_activity_main.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-rhcRelease-4:/layout_activity_game.xml.flat",
+        "source": "com.rockhard.blocker.app-main-5:/layout/activity_game.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/drawable_bg_btn_warning.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_btn_warning.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-rhcRelease-4:/layout_activity_main.xml.flat",
-        "source": "com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/mipmap-xxhdpi_ic_game.png.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhc-7:/mipmap-xxhdpi/ic_game.png"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/drawable_bg_card.xml.flat",

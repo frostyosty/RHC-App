@@ -24,6 +24,10 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_card.xml"
     },
     {
+        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_activity_game.xml.flat",
+        "source": "com.rockhard.blocker.app-main-7:/layout/activity_game.xml"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/mipmap-xxhdpi_ic_launcher.png.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bounceland-5:/mipmap-xxhdpi/ic_launcher.png"
     },
@@ -32,12 +36,16 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_standard.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_activity_main.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_item_qte_row.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/item_qte_row.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_activity_main.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/mipmap-xxhdpi_ic_game.png.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bounceland-5:/mipmap-xxhdpi/ic_game.png"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/xml_guardian_config.xml.flat",
