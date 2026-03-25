@@ -1,5 +1,10 @@
 # RHC-App
 
+quick changes --> do change then
+./gradlew assembleRelease
+cp app/build/outputs/apk/rhc/release/app-rhc-release.apk ./rhc.apk
+gh release create "v$(date +%Y%m%d%H%M)" ./rhc.apk --repo frostyosty/htc-downloads-rhc --title "Quick Tweak"
+
 ## The Pro Way
 Let's do the "Pro Way" we talked about earlier.
 On your phone: Go to Settings 
