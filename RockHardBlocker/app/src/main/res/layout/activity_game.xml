@@ -16,17 +16,19 @@
         
         <ScrollView android:id="@+id/viewParty" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                <TextView android:id="@+id/tvParty" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BCD4" android:textSize="14sp" android:fontFamily="monospace"/>
+                <TextView android:id="@+id/tvParty" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BCD4" android:textSize="14sp" android:fontFamily="monospace" android:layout_marginBottom="8dp"/>
+                <Button android:id="@+id/btnCyclePet" android:layout_width="match_parent" android:layout_height="45dp" android:text="CYCLE ACTIVE NETBEAST 🔄" android:backgroundTint="#555555" android:textColor="#FFF" android:textSize="12sp" android:layout_marginBottom="16dp"/>
                 
-                <!-- NEW: EQUIPMENT PANEL FOR ACTIVE NETBEAST -->
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- EQUIP ACTIVE NETBEAST --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginTop="16dp" android:layout_marginBottom="8dp" android:textAlignment="center"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- EQUIP ACTIVE NETBEAST --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginBottom="8dp" android:textAlignment="center"/>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
                     <Button android:id="@+id/btnEqNet" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ NET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp"/>
                     <Button android:id="@+id/btnEqPot" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ POT" android:backgroundTint="#388E3C" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp" android:layout_marginStart="4dp"/>
                     <Button android:id="@+id/btnEqSpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ SPRY" android:backgroundTint="#FBC02D" android:textColor="#000" android:textSize="10sp" android:layout_marginStart="4dp"/>
                 </LinearLayout>
+                
+                <!-- NEW: WEATHER INFUSION BUTTON -->
+                <Button android:id="@+id/btnInfuse" android:layout_width="match_parent" android:layout_height="45dp" android:text="INFUSE WITH CURRENT WEATHER" android:backgroundTint="#9C27B0" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
                 <Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
-
                 <Button android:id="@+id/btnSellBeast" android:layout_width="match_parent" android:layout_height="50dp" android:text="SELL ACTIVE BEAST (50c)" android:backgroundTint="#D32F2F" android:textColor="#FFF"/>
             </LinearLayout>
         </ScrollView>
@@ -34,8 +36,6 @@
         <ScrollView android:id="@+id/viewBag" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
                 <TextView android:id="@+id/tvBag" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFCA28" android:textSize="14sp" android:fontFamily="monospace" android:layout_marginBottom="16dp"/>
-                
-                <!-- NEW: HIDDEN SHOP CONTAINER -->
                 <LinearLayout android:id="@+id/llShopContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="--- SAFARI SHOP ---" android:textColor="#FFFFFF" android:textStyle="bold" android:textAlignment="center" android:layout_marginBottom="16dp"/>
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
