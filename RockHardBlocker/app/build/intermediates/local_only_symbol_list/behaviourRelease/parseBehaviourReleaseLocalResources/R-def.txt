@@ -12,6 +12,7 @@ id btnBuyBeast
 id btnBuyNet
 id btnBuyPotion
 id btnBuySpray
+id btnCyclePet
 id btnDebugReset
 id btnDebugUninstall
 id btnDispatch
@@ -20,6 +21,7 @@ id btnEqPot
 id btnEqSpray
 id btnExit
 id btnGame
+id btnInfuse
 id btnItem
 id btnMove1
 id btnMove2

@@ -36,7 +36,7 @@ class MainActivity : Activity() {
         compName = ComponentName(this, AdminReceiver::class.java)
 
         if (!prefs.getBoolean("INITIALIZED", false)) {
-            val starterParty = "Cacheon,Tech,120,120,Digital Swipe,Overclock,0,0,0,0,false;Cardiol,Fitness,150,150,Momentum,Heavy Lift,0,0,0,0,false"
+            val starterParty = "Cacheon,Tech,120,120,Digital Swipe,Overclock,0,0,0,0,false,None,0;Cardiol,Fitness,150,150,Momentum,Heavy Lift,0,0,0,0,false,None,0"
             prefs.edit().putString("PARTY_DATA", starterParty).putInt("NETS", 5).putInt("SPRAYS", 2).putInt("POTIONS", 3).putBoolean("INITIALIZED", true).apply()
         }
 
