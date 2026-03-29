@@ -6,36 +6,43 @@
     <LinearLayout android:id="@+id/navTabs" android:layout_width="match_parent" android:layout_height="50dp" android:orientation="horizontal">
         <Button android:id="@+id/tabActivity" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="EXPLORE" android:backgroundTint="#333333" android:textColor="#00FF00" android:textSize="12sp"/>
         <Button android:id="@+id/tabParty" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="PARTY" android:backgroundTint="#111111" android:textColor="#888888" android:textSize="12sp"/>
-        <Button android:id="@+id/tabBag" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="BAG" android:backgroundTint="#111111" android:textColor="#888888" android:textSize="12sp"/>
+        <Button android:id="@+id/tabBag" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="BAG/SHOP" android:backgroundTint="#111111" android:textColor="#888888" android:textSize="12sp"/>
     </LinearLayout>
 
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp">
+        
         <ScrollView android:id="@+id/viewActivity" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp">
             <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="13sp" android:fontFamily="monospace" android:lineSpacingExtra="2dp"/>
         </ScrollView>
         
+        <RelativeLayout android:id="@+id/battleArena" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone">
+            <TextView android:id="@+id/spritePlayer" android:layout_width="120dp" android:layout_height="120dp" android:background="#1976D2" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" android:layout_alignParentBottom="true" android:layout_alignParentStart="true" android:layout_marginBottom="40dp" android:translationX="-400dp" android:elevation="5dp"/>
+            <TextView android:id="@+id/spriteEnemy" android:layout_width="120dp" android:layout_height="120dp" android:background="#D32F2F" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" android:layout_alignParentBottom="true" android:layout_alignParentEnd="true" android:layout_marginBottom="40dp" android:translationX="400dp" android:elevation="5dp"/>
+        </RelativeLayout>
+
         <ScrollView android:id="@+id/viewParty" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                <TextView android:id="@+id/tvParty" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BCD4" android:textSize="14sp" android:fontFamily="monospace"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- TAP A BEAST TO SELECT --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginBottom="8dp" android:textAlignment="center"/>
                 
-                <!-- NEW: EQUIPMENT PANEL FOR ACTIVE NETBEAST -->
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- EQUIP ACTIVE NETBEAST --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginTop="16dp" android:layout_marginBottom="8dp" android:textAlignment="center"/>
+                <!-- RESTORED: The Missing Party Container! -->
+                <LinearLayout android:id="@+id/partyContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="16dp"/>
+                
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- EQUIP ACTIVE NETBEAST --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginBottom="8dp" android:textAlignment="center"/>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
-                    <Button android:id="@+id/btnEqNet" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ NET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp"/>
-                    <Button android:id="@+id/btnEqPot" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ POT" android:backgroundTint="#388E3C" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp" android:layout_marginStart="4dp"/>
-                    <Button android:id="@+id/btnEqSpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="+ SPRY" android:backgroundTint="#FBC02D" android:textColor="#000" android:textSize="10sp" android:layout_marginStart="4dp"/>
+                    <Button android:id="@+id/btnEqNet" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ NET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:textSize="12sp" android:layout_marginEnd="4dp"/>
+                    <Button android:id="@+id/btnEqPot" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ POT" android:backgroundTint="#388E3C" android:textColor="#FFF" android:textSize="12sp" android:layout_marginEnd="4dp" android:layout_marginStart="4dp"/>
+                    <Button android:id="@+id/btnEqSpray" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ SPRY" android:backgroundTint="#FBC02D" android:textColor="#000" android:textSize="12sp" android:layout_marginStart="4dp"/>
                 </LinearLayout>
+                
+                <Button android:id="@+id/btnInfuse" android:layout_width="match_parent" android:layout_height="45dp" android:text="INFUSE WITH CURRENT WEATHER" android:backgroundTint="#9C27B0" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
                 <Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
-
-                <Button android:id="@+id/btnSellBeast" android:layout_width="match_parent" android:layout_height="50dp" android:text="SELL ACTIVE BEAST (50c)" android:backgroundTint="#D32F2F" android:textColor="#FFF"/>
+                <Button android:id="@+id/btnSellBeast" android:layout_width="match_parent" android:layout_height="50dp" android:text="LIST ACTIVE BEAST ON MARKET" android:backgroundTint="#D32F2F" android:textColor="#FFF"/>
             </LinearLayout>
         </ScrollView>
         
         <ScrollView android:id="@+id/viewBag" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
                 <TextView android:id="@+id/tvBag" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFCA28" android:textSize="14sp" android:fontFamily="monospace" android:layout_marginBottom="16dp"/>
-                
-                <!-- NEW: HIDDEN SHOP CONTAINER -->
                 <LinearLayout android:id="@+id/llShopContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="--- SAFARI SHOP ---" android:textColor="#FFFFFF" android:textStyle="bold" android:textAlignment="center" android:layout_marginBottom="16dp"/>
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
@@ -50,7 +57,8 @@
                         <Button android:id="@+id/btnBuySpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="BUY SPRAY (15c)" android:backgroundTint="#333" android:textColor="#FFF" android:textSize="10sp" android:layout_marginEnd="4dp"/>
                         <Button android:id="@+id/btnSellSpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="SELL SPRAY (7c)" android:backgroundTint="#222" android:textColor="#AAA" android:textSize="10sp" android:layout_marginStart="4dp"/>
                     </LinearLayout>
-                    <Button android:id="@+id/btnBuyBeast" android:layout_width="match_parent" android:layout_height="60dp" android:text="BUY RANDOM NETBEAST (100c)" android:backgroundTint="#1976D2" android:textColor="#FFF"/>
+                    <TextView android:id="@+id/tvMarketTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="--- BEASTS FOR SALE ---" android:textColor="#FFFFFF" android:textStyle="bold" android:textAlignment="center" android:layout_marginBottom="16dp"/>
+                    <LinearLayout android:id="@+id/marketContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
@@ -65,7 +73,7 @@
         </LinearLayout>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
             <Button android:id="@+id/btnSwap" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="SWAP PET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:layout_marginEnd="4dp"/>
-            <Button android:id="@+id/btnItem" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="USE SPRAY" android:backgroundTint="#FBC02D" android:textColor="#000" android:layout_marginStart="4dp"/>
+            <Button android:id="@+id/btnItem" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="USE ITEM" android:backgroundTint="#FBC02D" android:textColor="#000" android:layout_marginStart="4dp"/>
         </LinearLayout>
         <Button android:id="@+id/btnAbandon" android:layout_width="120dp" android:layout_height="40dp" android:text="ABANDON" android:backgroundTint="#555555" android:textColor="#999" android:textSize="10sp" android:layout_gravity="center" android:layout_marginTop="8dp"/>
     </LinearLayout>

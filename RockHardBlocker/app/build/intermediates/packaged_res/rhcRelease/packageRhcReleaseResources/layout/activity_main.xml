@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#121212">
-    <LinearLayout android:orientation="vertical" android:padding="20dp" android:gravity="center_horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
-        
-        <!-- HEADER WITH SETTINGS GEAR -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#121212">
+    <LinearLayout android:orientation="vertical" android:padding="20dp" android:gravity="center_horizontal"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+
+        <!-- HEADER -->
         <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/app_name" android:textColor="#FFFFFF" android:textSize="30sp" android:textStyle="bold" android:layout_centerInParent="true"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/app_name" android:textColor="#FFFFFF" android:textSize="26sp" android:textStyle="bold" android:layout_centerInParent="true"/>
             <Button android:id="@+id/btnSettings" android:layout_width="40dp" android:layout_height="40dp" android:text="⚙️" android:textSize="18sp" android:backgroundTint="#222" android:textColor="#FFF" android:layout_alignParentEnd="true" android:layout_centerVertical="true"/>
         </RelativeLayout>
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="- Converts positive domains into Christian gameplay mechanics\n- Overcomes illicit and obscene material\n- Overcomes VPNs and self-uninstall\n- Supports custom write-only overcome list\n- Overcomes self-removal via safe mode"
+            android:text="- Converts overcome domains into negative gameplay\n- Overcomes illicit and obscene material\n- Overcomes VPNs and self-uninstall\n- Supports custom write-only overcome list\n- Overcomes self-removal via safe mode"
             android:textColor="#AAAAAA" android:textSize="13sp" android:layout_marginBottom="24dp" android:lineSpacingExtra="6dp"/>
 
+        <!-- ONBOARDING CARD -->
         <LinearLayout android:id="@+id/llOnboarding" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="20dp" android:layout_marginBottom="24dp">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SYSTEM SETUP" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:layout_marginBottom="16dp"/>
             <Button android:id="@+id/btnStep1" android:layout_width="match_parent" android:layout_height="55dp" android:text="1. ENABLE GUARDIAN" android:background="@drawable/bg_btn_standard" android:textColor="#FFFFFF" android:layout_marginBottom="12dp" android:elevation="0dp"/>
@@ -20,17 +24,38 @@
             <Button android:id="@+id/btnTestFilter" android:layout_width="match_parent" android:layout_height="55dp" android:text="VERIFY DNS (UNLOCKS REWARD)" android:background="@drawable/bg_btn_accent" android:textColor="#FFFFFF" android:elevation="0dp"/>
         </LinearLayout>
 
-        <Button android:id="@+id/btnGame" android:layout_width="match_parent" android:layout_height="60dp" android:text="OPEN NETBEAST SAFARI" android:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginBottom="24dp"/>
+        <!-- SAFARI CARD -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="20dp" android:layout_marginBottom="24dp">
+            <CheckBox android:id="@+id/cbGamification" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Enable Gamification (Netbeast Safari)" android:textColor="#FFFFFF" android:buttonTint="#4CAF50" android:layout_marginBottom="16dp" android:checked="true"/>
+            <Button android:id="@+id/btnGame" android:layout_width="match_parent" android:layout_height="60dp" android:text="OPEN NETBEAST SAFARI" android:background="@drawable/bg_btn_accent" android:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold"/>
+        </LinearLayout>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="20dp" android:layout_marginBottom="32dp">
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="CUSTOM OVERCOME LIST (Write Only)" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+        <!-- OVERCOME WEBSITES -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="20dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="OVERCOME WEBSITES (Write Only)" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                <EditText android:id="@+id/etCustomBlock" android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:textColor="#FFFFFF" android:hint="e.g. youtube" android:textColorHint="#777" android:paddingHorizontal="16dp" android:layout_marginEnd="8dp"/>
-                <Button android:id="@+id/btnAddBlock" android:layout_width="wrap_content" android:layout_height="50dp" android:text="OVERCOME" android:background="@drawable/bg_btn_warning" android:textColor="#FFF" android:elevation="0dp"/>
+                <EditText android:id="@+id/etCustomWeb" android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:textColor="#FFFFFF" android:hint="e.g. youtube.com" android:textColorHint="#777" android:paddingHorizontal="16dp" android:layout_marginEnd="8dp"/>
+                <Button android:id="@+id/btnAddWeb" android:layout_width="wrap_content" android:layout_height="50dp" android:text="OVERCOME" android:background="@drawable/bg_btn_warning" android:textColor="#FFF"/>
             </LinearLayout>
         </LinearLayout>
 
-        <Button android:id="@+id/btnDebugReset" android:layout_width="match_parent" android:layout_height="50dp" android:text="DEBUG: RESET SAVE FILE" android:backgroundTint="#7B1FA2" android:textColor="#FFFFFF" android:layout_marginBottom="12dp"/>
-        <Button android:id="@+id/btnDebugUninstall" android:layout_width="match_parent" android:layout_height="50dp" android:text="DEBUG: KILL &amp; UNINSTALL" android:backgroundTint="#333333" android:textColor="#FFCDD2" android:layout_marginBottom="32dp"/>
+        <!-- OVERCOME APPS -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="20dp" android:layout_marginBottom="32dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="OVERCOME APPS (Write Only)" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Spinner android:id="@+id/spinApps" android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp" android:background="#EEEEEE" android:layout_marginEnd="8dp"/>
+                <Button android:id="@+id/btnAddApp" android:layout_width="wrap_content" android:layout_height="50dp" android:text="OVERCOME" android:background="@drawable/bg_btn_warning" android:textColor="#FFF"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- DEBUG TOOLS -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="20dp" android:layout_marginBottom="32dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="--- DEVELOPER DEBUG TOOLS ---" android:textColor="#FF5252" android:textAlignment="center" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="16dp"/>
+            <Button android:id="@+id/btnDebugChecklist" android:layout_width="match_parent" android:layout_height="45dp" android:text="PRODUCTION REMOVAL CHECKLIST" android:backgroundTint="#2196F3" android:textColor="#FFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDebugApi" android:layout_width="match_parent" android:layout_height="45dp" android:text="VIEW RAW API DATA (GEO/WEATHER)" android:backgroundTint="#009688" android:textColor="#FFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDebugSpawns" android:layout_width="match_parent" android:layout_height="45dp" android:text="VIEW SPAWN INTELLIGENCE (HABITS)" android:backgroundTint="#3F51B5" android:textColor="#FFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDebugReset" android:layout_width="match_parent" android:layout_height="45dp" android:text="WIPE SAVE FILES" android:backgroundTint="#7B1FA2" android:textColor="#FFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDebugUninstall" android:layout_width="match_parent" android:layout_height="45dp" android:text="KILL &amp; UNINSTALL APP" android:backgroundTint="#D32F2F" android:textColor="#FFF"/>
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

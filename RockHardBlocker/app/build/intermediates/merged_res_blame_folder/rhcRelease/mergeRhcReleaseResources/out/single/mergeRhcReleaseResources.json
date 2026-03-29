@@ -1,15 +1,11 @@
 [
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/xml_guardian_config.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/guardian_config.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/drawable_bg_btn_success.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_btn_success.xml"
     },
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/layout_activity_essay.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/activity_essay.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/xml_guardian_config.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/guardian_config.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/layout_activity_game.xml.flat",
@@ -36,6 +32,14 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhc-7:/mipmap-xxhdpi/ic_game.png"
     },
     {
+        "merged": "com.rockhard.blocker.app-rhcRelease-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/layout_dialog_custom.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/dialog_custom.xml"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/drawable_bg_card.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_card.xml"
     },
@@ -50,6 +54,10 @@
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/drawable_bg_btn_standard.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_btn_standard.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/drawable_ic_arrow_active.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/ic_arrow_active.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/layout_overlay_guard.xml.flat",

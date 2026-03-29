@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:background="@drawable/bg_card" android:padding="24dp">
+
+    <TextView android:id="@+id/tvDialogTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+
+    <TextView android:id="@+id/tvDialogMessage" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="#CCCCCC" android:textSize="14sp" android:layout_marginBottom="16dp" android:visibility="gone"/>
+
+    <!-- ScrollView ensures it doesn't overflow the screen if you have lots of beasts! -->
+    <ScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginBottom="16dp">
+        <LinearLayout android:id="@+id/llDialogContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+    </ScrollView>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="end">
+        <Button android:id="@+id/btnDialogNegative" android:layout_width="wrap_content" android:layout_height="45dp"
+            android:text="CANCEL" android:backgroundTint="#333333" android:textColor="#FFF" android:layout_marginEnd="8dp" android:visibility="gone"/>
+        <Button android:id="@+id/btnDialogPositive" android:layout_width="wrap_content" android:layout_height="45dp"
+            android:text="OK" android:backgroundTint="#2196F3" android:textColor="#FFF" android:visibility="gone"/>
+    </LinearLayout>
+</LinearLayout>

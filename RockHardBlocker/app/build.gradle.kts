@@ -41,7 +41,7 @@ android {
         create("rhc") {
             dimension = "audience"
             applicationIdSuffix = ".rhc"
-            resValue("string", "app_name", "Rock Hard Christians")
+            resValue("string", "app_name", "Rock Hard Christianity")
             resValue("string", "flavor_id", "rhc")
             resValue("string", "overlay_title", "NOT TODAY.")
             resValue("string", "brick_message", "Oh no, your phone is bricked up.")

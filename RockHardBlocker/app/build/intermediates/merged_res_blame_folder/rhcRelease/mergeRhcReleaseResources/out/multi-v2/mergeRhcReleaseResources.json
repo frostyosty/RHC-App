@@ -1,23 +1,23 @@
 {
     "logs": [
         {
-            "outputFile": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/values_values.arsc.flat",
+            "outputFile": "com.rockhard.blocker.app-rhcRelease-4:/values_values.arsc.flat",
             "map": [
                 {
                     "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/rhc/release/values/gradleResValues.xml",
                     "from": {
                         "startLines": "6,8,10,12,14",
                         "startColumns": "4,4,4,4,4",
-                        "startOffsets": "158,281,421,706,813",
-                        "endColumns": "78,95,240,62,73",
-                        "endOffsets": "232,372,657,764,882"
+                        "startOffsets": "158,283,423,708,815",
+                        "endColumns": "80,95,240,62,73",
+                        "endOffsets": "234,374,659,766,884"
                     },
                     "to": {
                         "startLines": "2,3,4,5,6",
                         "startColumns": "4,4,4,4,4",
-                        "startOffsets": "55,134,230,471,534",
-                        "endColumns": "78,95,240,62,73",
-                        "endOffsets": "129,225,466,529,603"
+                        "startOffsets": "55,136,232,473,536",
+                        "endColumns": "80,95,240,62,73",
+                        "endOffsets": "131,227,468,531,605"
                     }
                 }
             ]
