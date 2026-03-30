@@ -2,7 +2,7 @@ package com.rockhard.blocker
 
 data class Netbeast(
     val name: String, val type: String, var hp: Int, val maxHp: Int, 
-    val move1: String, val move2: String, val boughtAt: Long, 
+    var move1: String, var move2: String, val boughtAt: Long, 
     var eqNets: Int, var eqPots: Int, var eqSprays: Int, 
     var isNew: Boolean, var infusionEl: String, var infusionStacks: Int, var listedPrice: Int = 0
 ) {
@@ -11,8 +11,6 @@ data class Netbeast(
 
 object GameData {
     val bossNames = listOf("Pornosaur", "GoreIlla", "Fleshwire", "Lustrot", "The Dark One")
-    
-    // NEW: Added evoStage (1, 2, or 3)
     data class BeastDef(val name: String, val type: String, val baseHp: Int, val m1: String, val m2: String, val category: String, val evoStage: Int)
     data class TraitDef(val name: String, val rarityWeight: Int, val trigger: String, val hpMult: Double)
 

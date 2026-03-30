@@ -45,6 +45,7 @@ id btnStep1
 id btnStep2
 id btnStep3
 id btnSwap
+id btnTeachMove
 id btnTestFilter
 id btnUnequip
 id btnYield
