@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; background: #202124; color: #e8eaed; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
+        .nav-btn { padding: 0 15px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.1s; display: flex; align-items: center; height: 100%; }
+        .nav-btn:hover { background: #303134; color: #8ab4f8; }
+        .tab-bar { display: flex; height: 100%; }
+        .tab { padding: 0 20px; display: flex; align-items: center; border-right: 1px solid #3c4043; cursor: pointer; font-size: 13px; transition: 0.1s; }
+        .tab:hover { background: #303134; }
+        .tab.active { background: #323639; border-bottom: 3px solid #8ab4f8; font-weight: bold; }
+        .url-bar { flex-grow: 1; margin: 0 20px; display: flex; align-items: center; }
+        .url-input { width: 100%; background: #171717; border: 1px solid #5f6368; color: white; border-radius: 16px; padding: 6px 16px; outline: none; font-size: 13px; }
+        .url-input:focus { border-color: #8ab4f8; background: #292a2d; }
+        .settings-btn { padding: 0 20px; cursor: pointer; font-size: 18px; display: flex; align-items: center; height: 100%; }
+        .settings-btn:hover { color: #8ab4f8; }
+    </style>
+</head>
+<body>
+    <div class="nav-btn" onclick="cmd('BACK')" title="Go Back">❮</div>
+    <div class="nav-btn" style="border-right: 1px solid #3c4043;" onclick="cmd('FORWARD')" title="Go Forward">❯</div>
+
+    <div class="tab-bar">
+        <div class="tab active" onclick="nav('https://search.brave.com')">Brave Search</div>
+        <div class="tab" onclick="nav('https://lite.duckduckgo.com')">DuckDuckGo</div>
+    </div>
+    <div class="url-bar">
+        <input type="text" class="url-input" id="address" placeholder="Type URL and press Enter..." onkeydown="if(event.key === 'Enter') nav(this.value)">
+    </div>
+    <div class="settings-btn" title="Settings">⚙️</div>
+
+    <script>
+        function cmd(action) { window.chrome.webview.postMessage('CMD:' + action); }
+        function nav(url) {
+            if (!url.startsWith('http')) url = 'https://' + url;
+            window.chrome.webview.postMessage('NAV:' + url);
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('address').value = url;
+        }
+    </script>
+</body>
+</html>
