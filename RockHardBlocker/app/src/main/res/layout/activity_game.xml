@@ -11,15 +11,13 @@
 
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp">
         
-        <!-- TEXT CONSOLE (Layer 1) -->
         <ScrollView android:id="@+id/viewActivity" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp">
             <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="13sp" android:fontFamily="monospace" android:lineSpacingExtra="2dp"/>
         </ScrollView>
         
-        <!-- STREET FIGHTER ARENA (Layer 2) - MOVED TO TOP THIRD OF SCREEN! -->
         <RelativeLayout android:id="@+id/battleArena" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone">
-            <TextView android:id="@+id/spritePlayer" android:layout_width="120dp" android:layout_height="120dp" android:background="#1976D2" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" android:layout_alignParentTop="true" android:layout_alignParentStart="true" android:layout_marginTop="40dp" android:translationX="-400dp" android:elevation="5dp"/>
-            <TextView android:id="@+id/spriteEnemy" android:layout_width="120dp" android:layout_height="120dp" android:background="#D32F2F" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" android:layout_alignParentTop="true" android:layout_alignParentEnd="true" android:layout_marginTop="40dp" android:translationX="400dp" android:elevation="5dp"/>
+            <TextView android:id="@+id/spritePlayer" android:layout_width="120dp" android:layout_height="120dp" android:background="#1976D2" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" android:layout_alignParentBottom="true" android:layout_alignParentStart="true" android:layout_marginBottom="40dp" android:translationX="-400dp" android:elevation="5dp"/>
+            <TextView android:id="@+id/spriteEnemy" android:layout_width="120dp" android:layout_height="120dp" android:background="#D32F2F" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" android:layout_alignParentBottom="true" android:layout_alignParentEnd="true" android:layout_marginBottom="40dp" android:translationX="400dp" android:elevation="5dp"/>
         </RelativeLayout>
 
         <ScrollView android:id="@+id/viewParty" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
@@ -32,8 +30,11 @@
                     <Button android:id="@+id/btnEqPot" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ POT" android:backgroundTint="#388E3C" android:textColor="#FFF" android:textSize="12sp" android:layout_marginEnd="4dp" android:layout_marginStart="4dp"/>
                     <Button android:id="@+id/btnEqSpray" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ SPRY" android:backgroundTint="#FBC02D" android:textColor="#000" android:textSize="12sp" android:layout_marginStart="4dp"/>
                 </LinearLayout>
+                
                 <Button android:id="@+id/btnInfuse" android:layout_width="match_parent" android:layout_height="45dp" android:text="INFUSE WITH CURRENT WEATHER" android:backgroundTint="#9C27B0" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
-                <Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
+                <!-- NEW TEACH MOVE BUTTON -->
+                <Button android:id="@+id/btnTeachMove" android:layout_width="match_parent" android:layout_height="45dp" android:text="TEACH MOVE FROM PARTY (50c)" android:backgroundTint="#009688" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
+                <Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL ITEMS" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
                 <Button android:id="@+id/btnSellBeast" android:layout_width="match_parent" android:layout_height="50dp" android:text="LIST ACTIVE BEAST ON MARKET" android:backgroundTint="#D32F2F" android:textColor="#FFF"/>
             </LinearLayout>
         </ScrollView>
