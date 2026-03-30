@@ -1,4 +1,10 @@
+// app/src/main/java/com/rockhard/blocker/WeatherEngine.kt
 package com.rockhard.blocker
+
+/*
+ * FILE: WeatherEngine.kt
+ * DESCRIPTION: Fetches background IP Geolocation and Open-Meteo Weather silently.
+ */
 
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -18,9 +24,8 @@ object WeatherEngine {
                 val weatherUrl = URL("https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code,relative_humidity_2m").openConnection() as HttpURLConnection
                 weatherUrl.connectTimeout = 3000
                 val wJson = JSONObject(weatherUrl.inputStream.bufferedReader().readText())
-                val currentObj = wJson.getJSONObject("current")
-                val wCode = currentObj.getInt("weather_code")
-                val humidity = currentObj.getInt("relative_humidity_2m")
+                val wCode = wJson.getJSONObject("current").getInt("weather_code")
+                val humidity = wJson.getJSONObject("current").getInt("relative_humidity_2m")
                 val elevation = wJson.getDouble("elevation")
 
                 val (weatherText, icon) = when (wCode) { 
@@ -40,11 +45,8 @@ object WeatherEngine {
                 else if (elevation > 150) terrain = "Hilly, elevated terrain"
 
                 val debugStr = "IP City: $city\nLat/Lon: $lat, $lon\nElevation: ${elevation}m\nHumidity: $humidity%\nWeather: $weatherText\nTerrain: $terrain"
-                
                 onSuccess(city, weatherText, icon, terrain, debugStr)
-            } catch (e: Exception) {
-                onFail()
-            }
+            } catch (e: Exception) { onFail() }
         }.start()
     }
 }

@@ -1,4 +1,10 @@
+// app/src/main/java/com/rockhard/blocker/SaveManager.kt
 package com.rockhard.blocker
+
+/*
+ * FILE: SaveManager.kt
+ * DESCRIPTION: Handles safe reading/writing to Android SharedPreferences.
+ */
 
 import android.content.SharedPreferences
 
@@ -32,7 +38,7 @@ object SaveManager {
         return map
     }
 
-    fun saveExpeditions(prefs: SharedPreferences, activeExpeditions: Map<Int, Long>) {
-        prefs.edit().putString("EXP_DATA", activeExpeditions.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
+    fun saveExpeditions(prefs: SharedPreferences, map: Map<Int, Long>) {
+        prefs.edit().putString("EXP_DATA", map.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
     }
 }
