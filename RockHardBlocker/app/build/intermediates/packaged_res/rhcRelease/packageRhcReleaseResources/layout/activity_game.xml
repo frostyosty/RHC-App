@@ -23,10 +23,7 @@
         <ScrollView android:id="@+id/viewParty" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- TAP A BEAST TO SELECT --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginBottom="8dp" android:textAlignment="center"/>
-                
-                <!-- RESTORED: The Missing Party Container! -->
                 <LinearLayout android:id="@+id/partyContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="16dp"/>
-                
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- EQUIP ACTIVE NETBEAST --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginBottom="8dp" android:textAlignment="center"/>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
                     <Button android:id="@+id/btnEqNet" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ NET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:textSize="12sp" android:layout_marginEnd="4dp"/>
@@ -35,7 +32,9 @@
                 </LinearLayout>
                 
                 <Button android:id="@+id/btnInfuse" android:layout_width="match_parent" android:layout_height="45dp" android:text="INFUSE WITH CURRENT WEATHER" android:backgroundTint="#9C27B0" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
-                <Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
+                <!-- NEW TEACH MOVE BUTTON -->
+                <Button android:id="@+id/btnTeachMove" android:layout_width="match_parent" android:layout_height="45dp" android:text="TEACH MOVE FROM PARTY (50c)" android:backgroundTint="#009688" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
+                <Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL ITEMS" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
                 <Button android:id="@+id/btnSellBeast" android:layout_width="match_parent" android:layout_height="50dp" android:text="LIST ACTIVE BEAST ON MARKET" android:backgroundTint="#D32F2F" android:textColor="#FFF"/>
             </LinearLayout>
         </ScrollView>

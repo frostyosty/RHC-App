@@ -32,10 +32,6 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhc-7:/mipmap-xxhdpi/ic_game.png"
     },
     {
-        "merged": "com.rockhard.blocker.app-rhcRelease-4:/layout_activity_main.xml.flat",
-        "source": "com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/layout_dialog_custom.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/dialog_custom.xml"
     },
