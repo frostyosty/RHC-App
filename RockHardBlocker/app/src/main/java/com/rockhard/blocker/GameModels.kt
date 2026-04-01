@@ -1,8 +1,7 @@
-// app/src/main/java/com/rockhard/blocker/GameModels.kt
 package com.rockhard.blocker
 
 data class Netbeast(
-    val name: String, val type: String, var hp: Int, val maxHp: Int, 
+    val name: String, val type: String, var hp: Int, var maxHp: Int, 
     var move1: String, var move2: String, val boughtAt: Long, 
     var eqNets: Int, var eqPots: Int, var eqSprays: Int, 
     var isNew: Boolean, var infusionEl: String, var infusionStacks: Int, var listedPrice: Int = 0
@@ -12,12 +11,14 @@ data class Netbeast(
 
 object GameData {
     val bossNames = listOf("Pornosaur", "GoreIlla", "Fleshwire", "Lustrot", "The Dark One")
+    
     data class BeastDef(val name: String, val type: String, val baseHp: Int, val m1: String, val m2: String, val category: String, val evoStage: Int)
     data class TraitDef(val name: String, val rarityWeight: Int, val trigger: String, val hpMult: Double)
 
     val traits = listOf(
         TraitDef("Ordinary", 100, "None", 1.0), TraitDef("Frail", 40, "None", 0.8),
         TraitDef("Strong", 30, "None", 1.2), TraitDef("Savage", 10, "None", 1.5),
+        TraitDef("Battle-Hardened", 5, "None", 1.6), TraitDef("Veteran", 2, "None", 1.8),
         TraitDef("Slick", 20, "Rain", 1.15), TraitDef("Radiant", 20, "Clear", 1.25),
         TraitDef("Frostbitten", 20, "Snow", 1.1), TraitDef("Charged", 15, "Storm", 1.4),
         TraitDef("Aggressive", 25, "Gaming", 1.3), TraitDef("Skittish", 25, "Social", 0.85),

@@ -20,15 +20,7 @@ class MainActivity : Activity() {
     private lateinit var compName: ComponentName
     private lateinit var prefs: SharedPreferences
 
-    // EXACT ANDROID PACKAGE MAPPING
-    private val appPackages = mapOf(
-        "YouTube" to "com.google.android.youtube", "TikTok" to "com.zhiliaoapp.musically",
-        "Instagram" to "com.instagram.android", "Snapchat" to "com.snapchat.android",
-        "Facebook" to "com.facebook.katana", "Reddit" to "com.reddit.frontpage",
-        "Twitter / X" to "com.twitter.android", "Discord" to "com.discord",
-        "Twitch" to "tv.twitch.android.app", "Telegram" to "org.telegram.messenger",
-        "Tinder" to "com.tinder", "WeChat" to "com.tencent.mm"
-    )
+    private val popularApps = arrayOf("YouTube", "TikTok", "Instagram", "Snapchat", "Facebook", "Reddit", "Twitter / X", "Discord", "Twitch", "Telegram", "Tinder", "WeChat")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,44 +35,94 @@ class MainActivity : Activity() {
         dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         compName = ComponentName(this, AdminReceiver::class.java)
 
+        WeatherEngine.fetchSilent({ city, _, _, _, debugStr ->
+            prefs.edit().putString("CURRENT_CITY", city).putString("DEBUG_API_DATA", debugStr).apply()
+        }, {})
+
         if (!prefs.getBoolean("INITIALIZED", false)) {
             val starterParty = "Cacheon,Tech,120,120,Digital Swipe,Overclock,0,0,0,0,false,None,0,0;Cardiol,Fitness,150,150,Momentum,Heavy Lift,0,0,0,0,false,None,0,0"
-            prefs.edit().putString("PARTY_DATA", starterParty).putInt("NETS", 5).putInt("SPRAYS", 2).putInt("POTIONS", 3).putBoolean("INITIALIZED", true).apply()
+            prefs.edit().putString("PARTY_DATA", starterParty).putInt("NETS", 5).putInt("SPRAYS", 2).putInt("POTIONS", 3).putBoolean("INITIALIZED", true).putBoolean("VIBRATION", true).apply()
         }
 
         val spinApps = findViewById<Spinner>(R.id.spinApps)
-        spinApps.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, appPackages.keys.toTypedArray())
+        spinApps.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, popularApps)
 
         findViewById<Button>(R.id.btnSettings).setOnClickListener { openSettingsMenu() }
-        findViewById<Button>(R.id.btnStep1).setOnClickListener { if (!isAccessibilityServiceEnabled(this, GuardianService::class.java)) { AlertDialog.Builder(this).setTitle("Step 1: Turn on the Guardian").setMessage("Tap 'Downloaded apps' -> Find '${getString(R.string.app_name)}' -> Turn ON.").setPositiveButton("GOT IT") { _, _ -> startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }.show() } }
-        findViewById<Button>(R.id.btnStep2).setOnClickListener { if (!dpm.isAdminActive(compName)) { AlertDialog.Builder(this).setTitle("Step 2: Lock the App").setMessage("This prevents the app from being uninstalled.").setPositiveButton("GOT IT") { _, _ -> startActivity(Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply { putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName); putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Locks app down.") }) }.show() } }
-        findViewById<Button>(R.id.btnStep3).setOnClickListener { val clip = ClipData.newPlainText("DNS", "adult-filter-dns.cleanbrowsing.org"); (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip); AlertDialog.Builder(this).setTitle("Step 3: The Web Filter").setMessage("We copied the secure address to your clipboard!\n\nFind 'Private DNS' -> Select 'Custom' -> Paste the text.").setPositiveButton("GOT IT") { _, _ -> startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS)) }.show() }
-        findViewById<Button>(R.id.btnTestFilter).setOnClickListener { Thread { try { val conn = URL("https://playboy.com").openConnection() as HttpURLConnection; conn.connectTimeout = 3000; conn.connect(); runOnUiThread { Toast.makeText(this, "DNS Not Working Yet.", Toast.LENGTH_SHORT).show() } } catch (e: Exception) { prefs.edit().putBoolean("DNS_VERIFIED", true).apply(); runOnUiThread { refreshUI() } } }.start() }
+        
+        findViewById<Button>(R.id.btnStep1).setOnClickListener { 
+            if (!isAccessibilityServiceEnabled(this, GuardianService::class.java)) { 
+                DialogUtils.showCustomDialog(this, "Step 1: The Guardian", "Android hides this setting for security.\n\n→ Tap 'Downloaded apps' or 'Installed services'.\n→ Find '${getString(R.string.app_name)}'.\n→ Turn the switch ON.", true, "GO TO SETTINGS", { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) })
+            } 
+        }
+        
+        findViewById<Button>(R.id.btnStep2).setOnClickListener { 
+            if (!dpm.isAdminActive(compName)) { 
+                DialogUtils.showCustomDialog(this, "Step 2: Lock Device", "This prevents the app from being uninstalled from your home screen.", true, "LOCK APP", { startActivity(Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply { putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName); putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Locks app down.") }) })
+            } 
+        }
+        
+        findViewById<Button>(R.id.btnStep3).setOnClickListener { 
+            val clip = ClipData.newPlainText("DNS", "adult-filter-dns.cleanbrowsing.org"); (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
+            DialogUtils.showCustomDialog(this, "Step 3: Web Filter", "We copied the secure address to your clipboard!\n\n→ Find 'Private DNS' in settings.\n→ Select 'Custom provider'.\n→ Paste the text.", true, "OPEN SETTINGS", { startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS)) })
+        }
+        
+        findViewById<Button>(R.id.btnTestFilter).setOnClickListener { 
+            Toast.makeText(this, "Verifying DNS...", Toast.LENGTH_SHORT).show()
+            Thread { 
+                try { val conn = URL("https://playboy.com").openConnection() as HttpURLConnection; conn.connectTimeout = 3000; conn.connect(); runOnUiThread { Toast.makeText(this, "DNS Not Working Yet. Try again.", Toast.LENGTH_SHORT).show() } } 
+                catch (e: Exception) { prefs.edit().putBoolean("DNS_VERIFIED", true).apply(); runOnUiThread { refreshUI() } } 
+            }.start() 
+        }
         
         findViewById<Button>(R.id.btnAddWeb).setOnClickListener { val word = findViewById<EditText>(R.id.etCustomWeb).text.toString().trim().lowercase(); if (word.isNotEmpty()) { val currentList = prefs.getString("BLOCKLIST_WEB", "") ?: ""; prefs.edit().putString("BLOCKLIST_WEB", "$currentList,$word").apply(); findViewById<EditText>(R.id.etCustomWeb).setText(""); Toast.makeText(this, "Permanently overcome Website: $word", Toast.LENGTH_SHORT).show() } }
-        findViewById<Button>(R.id.btnAddApp).setOnClickListener { 
-            val selectedApp = spinApps.selectedItem.toString()
-            val pkg = appPackages[selectedApp] ?: ""
-            if (pkg.isNotEmpty()) {
+findViewById<Button>(R.id.btnAddApp).setOnClickListener { 
+            val spinner = findViewById<Spinner>(R.id.spinApps)
+            val selectedApp = spinner.selectedItem.toString()
+            val packageKeyword = when(selectedApp) { "YouTube" -> "com.google.android.youtube"; "TikTok" -> "com.zhiliaoapp.musically"; "Instagram" -> "com.instagram.android"; "Snapchat" -> "com.snapchat.android"; "Facebook" -> "com.facebook.katana"; "Reddit" -> "com.reddit.frontpage"; "Twitter / X" -> "com.twitter.android"; "Discord" -> "com.discord"; "Twitch" -> "tv.twitch.android.app"; "Telegram" -> "org.telegram.messenger"; "Tinder" -> "com.tinder"; "WeChat" -> "com.tencent.mm"; else -> "" }
+            if (packageKeyword.isNotEmpty()) {
                 val currentList = prefs.getString("BLOCKLIST_APP", "") ?: ""
-                prefs.edit().putString("BLOCKLIST_APP", "$currentList,$pkg").apply()
+                prefs.edit().putString("BLOCKLIST_APP", "$currentList,$packageKeyword").apply()
                 Toast.makeText(this, "Permanently overcome App: $selectedApp", Toast.LENGTH_SHORT).show() 
             }
         }
         
         findViewById<Button>(R.id.btnGame).setOnClickListener { startActivity(Intent(this, GameActivity::class.java)) }
 
-        // DEBUG TOOLS
         findViewById<Button>(R.id.btnDebugChecklist).setOnClickListener { val checklist = "THINGS TO REMOVE FOR PRODUCTION:\n\n1. Entire DEVELOPER DEBUG TOOLS UI box.\n2. tvDebugReason TextView in overlay_guard.xml.\n3. REQUEST_DELETE_PACKAGES permission in AndroidManifest.\n4. All references to btnDebug... in MainActivity.kt."; AlertDialog.Builder(this).setTitle("Production Checklist").setMessage(checklist).setPositiveButton("Understood", null).show() }
-        findViewById<Button>(R.id.btnDebugApi).setOnClickListener { val apiData = prefs.getString("DEBUG_API_DATA", "No API data fetched yet. Open the Netbeast Safari to trigger a background fetch!"); AlertDialog.Builder(this).setTitle("Raw API Data").setMessage(apiData).setPositiveButton("Close", null).show() }
+        findViewById<Button>(R.id.btnDebugApi).setOnClickListener { val apiData = prefs.getString("DEBUG_API_DATA", "No API data fetched yet. Wait a few seconds for background boot!"); AlertDialog.Builder(this).setTitle("Raw API Data").setMessage(apiData).setPositiveButton("Close", null).show() }
         findViewById<Button>(R.id.btnDebugSpawns).setOnClickListener { val trackers = GuardianService.appTimeTrackers; var social = 10L; var stream = 10L; var game = 10L; var tech = 10L; for ((pkg, time) in trackers) { val sec = time / 1000; if (pkg.contains("twitter") || pkg.contains("instagram") || pkg.contains("facebook") || pkg.contains("snapchat")) social += sec else if (pkg.contains("youtube") || pkg.contains("tiktok") || pkg.contains("twitch") || pkg.contains("netflix")) stream += sec else if (pkg.contains("game")) game += sec else tech += sec }; val total = social + stream + game + tech; val topSpawn = if (social > stream && social > game && social > tech) "Chirplet (Social)" else if (stream > social && stream > game && stream > tech) "Bufferoo (Streaming)" else if (game > social && game > stream && game > tech) "Noobit (Gaming)" else "Atomit (Tech/Web)"; val report = "LIVE HABIT PROFILE:\n\nSocial / Chat: ${(social * 100) / total}%\nMedia / Video: ${(stream * 100) / total}%\nGaming Apps: ${(game * 100) / total}%\nWeb / Tech: ${(tech * 100) / total}%\n\nMost likely Wild Spawn: $topSpawn"; AlertDialog.Builder(this).setTitle("Spawn Intelligence").setMessage(report).setPositiveButton("Close", null).show() }
+        findViewById<Button>(R.id.btnDebugLogs).setOnClickListener { val logs = if (GuardianService.actionLogs.isEmpty()) "No logs recorded yet. Try opening a blocked app!" else GuardianService.actionLogs.joinToString("\n\n"); AlertDialog.Builder(this).setTitle("Guardian Action Logs").setMessage(logs).setPositiveButton("Close", null).show() }
+
         findViewById<Button>(R.id.btnDebugReset).setOnClickListener { prefs.edit().clear().apply(); Toast.makeText(this, "SAVE WIPED.", Toast.LENGTH_LONG).show(); finish(); startActivity(intent) }
         findViewById<Button>(R.id.btnDebugUninstall).setOnClickListener { GuardianService.pauseUntil = System.currentTimeMillis() + (10 * 60 * 1000); if (dpm.isAdminActive(compName)) dpm.removeActiveAdmin(compName); startActivity(Intent(Intent.ACTION_DELETE).apply { data = Uri.parse("package:$packageName") }) }
     }
-
-    private fun openSettingsMenu() { val cbGame = CheckBox(this).apply { text = "Enable Gamification"; isChecked = prefs.getBoolean("GAMIFICATION", true); setTextColor(Color.WHITE) }; val cbDefault = CheckBox(this).apply { text = "Set Netbeasts as Default Home App"; isChecked = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false); setTextColor(Color.WHITE) }; val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(40, 40, 40, 40); addView(cbGame); addView(cbDefault) }; AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle("Settings").setView(layout).setPositiveButton("Save") { _, _ -> prefs.edit().putBoolean("GAMIFICATION", cbGame.isChecked).putBoolean("LAUNCH_GAME_DEFAULT", cbDefault.isChecked).apply(); swapAppIcon(cbDefault.isChecked) }.show() }
+    
+    private fun openSettingsMenu() { 
+        val cbGame = CheckBox(this).apply { text = "Enable Gamification"; isChecked = prefs.getBoolean("GAMIFICATION", true); setTextColor(Color.WHITE) }
+        val cbDefault = CheckBox(this).apply { text = "Set Netbeasts as Default Home App"; isChecked = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false); setTextColor(Color.WHITE) }
+        val cbVibe = CheckBox(this).apply { text = "Enable Combat Vibration"; isChecked = prefs.getBoolean("VIBRATION", true); setTextColor(Color.WHITE) }
+        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(40, 40, 40, 40); addView(cbGame); addView(cbDefault); addView(cbVibe) }
+        
+        AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle("Settings").setView(layout).setPositiveButton("Save") { _, _ -> 
+            prefs.edit().putBoolean("GAMIFICATION", cbGame.isChecked).putBoolean("LAUNCH_GAME_DEFAULT", cbDefault.isChecked).putBoolean("VIBRATION", cbVibe.isChecked).apply()
+            swapAppIcon(cbDefault.isChecked) 
+        }.show() 
+    }
+    
     private fun swapAppIcon(useGameIcon: Boolean) { val pm = packageManager; val defaultAlias = ComponentName(this, "com.rockhard.blocker.DefaultLauncher"); val gameAlias = ComponentName(this, "com.rockhard.blocker.GameLauncher"); val currentDefault = pm.getComponentEnabledSetting(defaultAlias); if (useGameIcon && currentDefault != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) { pm.setComponentEnabledSetting(defaultAlias, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP); pm.setComponentEnabledSetting(gameAlias, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP); Toast.makeText(this, "Icon swapped to Netbeasts!", Toast.LENGTH_LONG).show() } else if (!useGameIcon && currentDefault != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) { pm.setComponentEnabledSetting(gameAlias, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP); pm.setComponentEnabledSetting(defaultAlias, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP); Toast.makeText(this, "Icon swapped to RHC Default!", Toast.LENGTH_LONG).show() } }
     override fun onResume() { super.onResume(); refreshUI() }
-    private fun refreshUI() { val btn1 = findViewById<Button>(R.id.btnStep1); val btn2 = findViewById<Button>(R.id.btnStep2); val btn3 = findViewById<Button>(R.id.btnStep3); val step1Done = isAccessibilityServiceEnabled(this, GuardianService::class.java); val step2Done = dpm.isAdminActive(compName); val step3Done = prefs.getBoolean("DNS_VERIFIED", false); if (prefs.getBoolean("REWARD_PREMIUM", false)) { findViewById<View>(R.id.llOnboarding).visibility = View.GONE; return }; if (step1Done) { btn1.text = "STEP 1: VERIFIED"; btn1.setBackgroundResource(R.drawable.bg_btn_success) }; if (step2Done) { btn2.text = "STEP 2: VERIFIED"; btn2.setBackgroundResource(R.drawable.bg_btn_success) }; if (step3Done) { btn3.text = "STEP 3: VERIFIED"; btn3.setBackgroundResource(R.drawable.bg_btn_success) }; if (step1Done && step2Done && step3Done && !prefs.getBoolean("REWARD_PREMIUM", false)) { prefs.edit().putBoolean("REWARD_PREMIUM", true).apply(); Toast.makeText(this, "SYSTEM SECURED! Premium Netbeast Unlocked!", Toast.LENGTH_LONG).show(); findViewById<View>(R.id.llOnboarding).visibility = View.GONE } }
+    
+    private fun refreshUI() {
+        val btn1 = findViewById<Button>(R.id.btnStep1); val btn2 = findViewById<Button>(R.id.btnStep2); val btn3 = findViewById<Button>(R.id.btnStep3)
+        val step1Done = isAccessibilityServiceEnabled(this, GuardianService::class.java); val step2Done = dpm.isAdminActive(compName); val step3Done = prefs.getBoolean("DNS_VERIFIED", false)
+        if (prefs.getBoolean("REWARD_PREMIUM", false)) { findViewById<View>(R.id.llOnboarding).visibility = View.GONE; return }
+        
+        if (step1Done) { btn1.text = "STEP 1: VERIFIED ✔️"; btn1.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (step2Done) { btn2.text = "STEP 2: VERIFIED ✔️"; btn2.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (step3Done) { btn3.text = "STEP 3: VERIFIED ✔️"; btn3.setBackgroundResource(R.drawable.bg_btn_success) }
+        
+        if (step1Done && step2Done && step3Done && !prefs.getBoolean("REWARD_PREMIUM", false)) { prefs.edit().putBoolean("REWARD_PREMIUM", true).apply(); Toast.makeText(this, "SYSTEM SECURED! Premium Netbeast Unlocked!", Toast.LENGTH_LONG).show(); findViewById<View>(R.id.llOnboarding).visibility = View.GONE }
+    }
+
     private fun isAccessibilityServiceEnabled(context: Context, accessibilityService: Class<*>): Boolean { val expected = ComponentName(context, accessibilityService); val setting = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false; val splitter = TextUtils.SimpleStringSplitter(':'); splitter.setString(setting); while (splitter.hasNext()) { if (ComponentName.unflattenFromString(splitter.next()) == expected) return true }; return false }
 }

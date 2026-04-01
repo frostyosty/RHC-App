@@ -3,27 +3,30 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-    <application android:allowBackup="true" android:supportsRtl="true" android:theme="@android:style/Theme.NoTitleBar">
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- FIX: Added label to application so it shows correctly in Android Settings -->
+    <application android:allowBackup="true" android:supportsRtl="true" android:theme="@android:style/Theme.NoTitleBar" android:label="@string/app_name">
         
-        <activity android:name=".MainActivity" android:exported="true" />
+        <activity android:name=".MainActivity" android:exported="true" android:label="@string/app_name" />
         <activity android:name=".TrapActivity" android:exported="false" android:launchMode="singleTask" />
-        <activity android:name=".GameActivity" android:exported="false" android:launchMode="singleTask" />
+        <activity android:name=".GameActivity" android:exported="false" android:launchMode="singleTask" android:label="Netbeasts Safari" />
 
-        <!-- DEFAULT ICON ALIAS -->
-        <activity-alias android:name=".DefaultLauncher" android:enabled="true" android:exported="true" android:icon="@mipmap/ic_launcher" android:targetActivity=".MainActivity">
+        <!-- FIX: Added labels to the Launchers so your Home Screen is correct! -->
+        <activity-alias android:name=".DefaultLauncher" android:enabled="true" android:exported="true" android:icon="@mipmap/ic_launcher" android:targetActivity=".MainActivity" android:label="@string/app_name">
             <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
         </activity-alias>
 
-        <!-- GAME ICON ALIAS (Swapped dynamically!) -->
-        <activity-alias android:name=".GameLauncher" android:enabled="false" android:exported="true" android:icon="@mipmap/ic_game" android:targetActivity=".MainActivity">
+        <activity-alias android:name=".GameLauncher" android:enabled="false" android:exported="true" android:icon="@mipmap/ic_game" android:targetActivity=".MainActivity" android:label="Netbeasts">
             <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
         </activity-alias>
 
-        <service android:name=".GuardianService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true">
+        <!-- FIX: Added labels to the Services so they look right in Security Settings -->
+        <service android:name=".GuardianService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/app_name">
             <intent-filter> <action android:name="android.accessibilityservice.AccessibilityService" /> </intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/guardian_config" />
         </service>
-        <receiver android:name=".AdminReceiver" android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true">
+        <receiver android:name=".AdminReceiver" android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true" android:label="@string/app_name" android:description="@string/app_name">
             <meta-data android:name="android.app.device_admin" android:resource="@xml/device_admin" />
             <intent-filter> <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" /> </intent-filter>
         </receiver>

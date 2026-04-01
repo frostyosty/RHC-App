@@ -1,12 +1,6 @@
-// app/src/main/java/com/rockhard/blocker/AnimUtils.kt
 package com.rockhard.blocker
-
-/*
- * FILE: AnimUtils.kt
- * DESCRIPTION: Handles hardware-accelerated View animations (Shake, Evade, Death).
- */
-
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 
 object AnimUtils {
     fun animShake(v: View) {
@@ -29,6 +23,14 @@ object AnimUtils {
             v.animate().alpha(1f).setDuration(100).withEndAction { 
                 v.animate().alpha(0f).setDuration(800).start() 
             }.start() 
+        }.start()
+    }
+
+    // NEW: THE LUNGE ANIMATION!
+    fun animAttack(v: View, isPlayer: Boolean) {
+        val dir = if (isPlayer) 150f else -150f
+        v.animate().translationXBy(dir).setDuration(100).setInterpolator(AccelerateDecelerateInterpolator()).withEndAction {
+            v.animate().translationXBy(-dir).setDuration(200).setInterpolator(AccelerateDecelerateInterpolator()).start()
         }.start()
     }
 }
