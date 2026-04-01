@@ -20,16 +20,16 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-rhcRelease-4:/layout_activity_game.xml.flat",
-        "source": "com.rockhard.blocker.app-main-5:/layout/activity_game.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/drawable_bg_btn_warning.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_btn_warning.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/mipmap-xxhdpi_ic_game.png.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhc-7:/mipmap-xxhdpi/ic_game.png"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-rhcRelease-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-rhcRelease-4:/layout_dialog_custom.xml.flat",

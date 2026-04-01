@@ -1,10 +1,4 @@
-// app/src/main/java/com/rockhard/blocker/WeatherEngine.kt
 package com.rockhard.blocker
-
-/*
- * FILE: WeatherEngine.kt
- * DESCRIPTION: Fetches background IP Geolocation and Open-Meteo Weather silently.
- */
 
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -14,18 +8,20 @@ object WeatherEngine {
     fun fetchSilent(onSuccess: (city: String, weather: String, icon: String, terrain: String, debugStr: String) -> Unit, onFail: () -> Unit) {
         Thread {
             try {
-                val ipUrl = URL("http://ip-api.com/json/").openConnection() as HttpURLConnection
+                // FIXED: Now uses HTTPS (ipapi.co) so Android 9+ doesn't block it!
+                val ipUrl = URL("https://ipapi.co/json/").openConnection() as HttpURLConnection
                 ipUrl.connectTimeout = 3000
                 val ipJson = JSONObject(ipUrl.inputStream.bufferedReader().readText())
                 val city = ipJson.getString("city")
-                val lat = ipJson.getDouble("lat")
-                val lon = ipJson.getDouble("lon")
+                val lat = ipJson.getDouble("latitude")
+                val lon = ipJson.getDouble("longitude")
                 
                 val weatherUrl = URL("https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=weather_code,relative_humidity_2m").openConnection() as HttpURLConnection
                 weatherUrl.connectTimeout = 3000
                 val wJson = JSONObject(weatherUrl.inputStream.bufferedReader().readText())
-                val wCode = wJson.getJSONObject("current").getInt("weather_code")
-                val humidity = wJson.getJSONObject("current").getInt("relative_humidity_2m")
+                val currentObj = wJson.getJSONObject("current")
+                val wCode = currentObj.getInt("weather_code")
+                val humidity = currentObj.getInt("relative_humidity_2m")
                 val elevation = wJson.getDouble("elevation")
 
                 val (weatherText, icon) = when (wCode) { 
@@ -45,8 +41,11 @@ object WeatherEngine {
                 else if (elevation > 150) terrain = "Hilly, elevated terrain"
 
                 val debugStr = "IP City: $city\nLat/Lon: $lat, $lon\nElevation: ${elevation}m\nHumidity: $humidity%\nWeather: $weatherText\nTerrain: $terrain"
+                
                 onSuccess(city, weatherText, icon, terrain, debugStr)
-            } catch (e: Exception) { onFail() }
+            } catch (e: Exception) {
+                onFail()
+            }
         }.start()
     }
 }

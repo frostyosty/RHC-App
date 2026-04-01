@@ -26,6 +26,13 @@ class GuardianService : AccessibilityService() {
         var pauseUntil: Long = 0L 
         var urgesDefeatedCount = 0
         val appTimeTrackers = mutableMapOf<String, Long>()
+        val actionLogs = mutableListOf<String>() // THE NEW DEBUG LOGGER!
+        
+        fun addLog(msg: String) {
+            val time = SimpleDateFormat("HH:mm:ss").format(Date())
+            actionLogs.add(0, "[$time] $msg")
+            if (actionLogs.size > 50) actionLogs.removeLast()
+        }
     }
     
     private var windowManager: WindowManager? = null
@@ -36,6 +43,14 @@ class GuardianService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        
+        // AUTO-RETURN TO APP ONCE GUARDIAN IS ENABLED (Step 1 Complete!)
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        startActivity(intent)
+        Toast.makeText(this, "Guardian Activated!", Toast.LENGTH_SHORT).show()
+        addLog("Service Connected.")
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -49,13 +64,9 @@ class GuardianService : AccessibilityService() {
             appTimeTrackers[packageName] = time + 1000L
         }
 
-        // ===============================================
-        // DEV WHITELIST (Prevents AI Studio / GitHub from triggering attacks!)
-        // ===============================================
+        // DEV WHITELIST (Prevents AI Studio / GitHub friendly fire)
         val safeDomains = listOf("aistudio", "github", "codespaces")
-        for (w in safeDomains) {
-            if (findTextInNode(rootNode, w)) return 
-        }
+        for (w in safeDomains) { if (findTextInNode(rootNode, w)) return }
 
         // URL SCAVENGER HUNT
         if (packageName.contains("chrome") || packageName.contains("firefox") || packageName.contains("browser")) {
@@ -67,8 +78,7 @@ class GuardianService : AccessibilityService() {
                 if (activePetIndex < party.size) {
                     val activePet = party[activePetIndex].split(",")
                     if (activePet.size >= 13) {
-                        val petName = activePet[0]
-                        val infusionEl = activePet[11]
+                        val petName = activePet[0]; val infusionEl = activePet[11]
                         if (infusionEl != "None") {
                             val targetWord = when (infusionEl) { "Clear" -> "sun"; "Cloudy" -> "cloud"; "Rain" -> "rain"; "Storm" -> "storm"; "Snow" -> "snow"; else -> "" }
                             if (targetWord.isNotEmpty() && isNodeDangerousContext(rootNode, targetWord)) {
@@ -78,10 +88,10 @@ class GuardianService : AccessibilityService() {
                                     prefs.edit().putBoolean(buffKey, true).apply()
                                     val newStacks = activePet[12].toInt() + 1
                                     val newPetData = "${activePet[0]},${activePet[1]},${activePet[2]},${activePet[3]},${activePet[4]},${activePet[5]},${activePet[6]},${activePet[7]},${activePet[8]},${activePet[9]},${activePet[10]},${activePet[11]},$newStacks,${activePet.getOrElse(13){"0"}}"
-                                    val newPartyList = party.toMutableList()
-                                    newPartyList[activePetIndex] = newPetData
+                                    val newPartyList = party.toMutableList(); newPartyList[activePetIndex] = newPetData
                                     prefs.edit().putString("PARTY_DATA", newPartyList.joinToString(";")).apply()
                                     Handler(Looper.getMainLooper()).post { Toast.makeText(this, "🌟 $petName absorbed $infusionEl energy! (+1 Stack)", Toast.LENGTH_LONG).show() }
+                                    addLog("Scavenged URL for $infusionEl.")
                                 }
                             }
                         }
@@ -111,15 +121,17 @@ class GuardianService : AccessibilityService() {
         }
         
         if (packageName == "com.android.vending") { val ctx = extractContext(rootNode, "vpn") ?: extractContext(rootNode, "proxy"); if (ctx != null) { triggerBossInvasion("VPN Search: $ctx", isGamificationEnabled); return } }
+        
         if (packageName.contains("com.rockhard.blocker")) return
 
-        for (word in blockedWebs) { val ctx = extractDangerousContext(rootNode, word); if (ctx != null) { performGlobalAction(GLOBAL_ACTION_HOME); triggerBossInvasion("Hyperlink Overcome: $ctx", isGamificationEnabled); return } }
+        for (word in blockedWebs) { val ctx = extractDangerousContext(rootNode, word); if (ctx != null) { performGlobalAction(GLOBAL_ACTION_HOME); triggerBossInvasion("Hyperlink Overcome: $ctx (in $packageName)", isGamificationEnabled); return } }
 
         val triggerWords = listOf("Sensitive Content", "NSFW", "Explicit", "porno", "色情", "黄片")
-        for (word in triggerWords) { val badNode = findNodeWithText(rootNode, word); if (badNode != null) { val ctx = extractContext(badNode, word) ?: word; if (!badNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) performGlobalAction(GLOBAL_ACTION_BACK); triggerBossInvasion("Content Guard: $ctx", isGamificationEnabled); return } }
+        for (word in triggerWords) { val badNode = findNodeWithText(rootNode, word); if (badNode != null) { val ctx = extractContext(badNode, word) ?: word; if (!badNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) performGlobalAction(GLOBAL_ACTION_BACK); triggerBossInvasion("Content Guard: $ctx (in $packageName)", isGamificationEnabled); return } }
     }
 
     private fun triggerBossInvasion(debugReason: String, isGamificationEnabled: Boolean) {
+        addLog("RED WALL DROPPED. Reason: $debugReason")
         Handler(Looper.getMainLooper()).post {
             if (isOverlayShowing) return@post
             urgesDefeatedCount++
@@ -132,7 +144,6 @@ class GuardianService : AccessibilityService() {
             if (!isGamificationEnabled) { tvMsg?.text = "Access Denied. Stay strong."; btnDefend?.visibility = View.GONE; overlayView?.findViewById<Button>(R.id.btnYield)?.setOnClickListener { removeOverlay(); performGlobalAction(GLOBAL_ACTION_HOME) }; try { windowManager?.addView(overlayView, params); isOverlayShowing = true } catch (e: Exception) {}; return@post }
 
             val bossName = if (getString(R.string.flavor_id) == "rhc") GameData.bossNames.random() else "The Dark One"
-            
             overlayView?.findViewById<TextView>(R.id.tvOverlayTitle)?.text = "⚠️ INVASION DETECTED ⚠️"; btnDefend?.text = "DEFEND NETBEASTS"
 
             bossTimer = object : CountDownTimer(180000, 1000) {
@@ -141,15 +152,13 @@ class GuardianService : AccessibilityService() {
             }.start()
 
             overlayView?.findViewById<Button>(R.id.btnYield)?.setOnClickListener { removeOverlay(); performGlobalAction(GLOBAL_ACTION_HOME) }
-            btnDefend?.setOnClickListener { 
-                removeOverlay()
-                startActivity(Intent(this, GameActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP); putExtra("UNDER_ATTACK", true) }) 
-            }
+            btnDefend?.setOnClickListener { removeOverlay(); startActivity(Intent(this, GameActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); putExtra("UNDER_ATTACK", true) }) }
             try { windowManager?.addView(overlayView, params); isOverlayShowing = true } catch (e: Exception) {}
         }
     }
 
     private fun removeOverlay() { if (isOverlayShowing && overlayView != null) { bossTimer?.cancel(); windowManager?.removeView(overlayView); overlayView = null; isOverlayShowing = false } }
+    
     private fun extractContext(node: AccessibilityNodeInfo?, word: String): String? { if (node == null) return null; val text = node.text?.toString() ?: node.contentDescription?.toString() ?: return null; val index = text.indexOf(word, ignoreCase = true); if (index != -1) { val start = Math.max(0, index - 40); val end = Math.min(text.length, index + word.length + 40); return "...${text.substring(start, end).replace('\n', ' ')}..." }; for (i in 0 until node.childCount) { val res = extractContext(node.getChild(i), word); if (res != null) return res }; return null }
     private fun extractDangerousContext(node: AccessibilityNodeInfo?, word: String): String? { if (node == null) return null; val text = node.text?.toString() ?: node.contentDescription?.toString() ?: ""; if (text.contains(word, true)) { var parent = node.parent; var isClickable = node.isClickable || node.className?.toString()?.contains("EditText") == true; while (parent != null && !isClickable) { isClickable = parent.isClickable; parent = parent.parent }; if (isClickable) { val index = text.indexOf(word, ignoreCase = true); val start = Math.max(0, index - 40); val end = Math.min(text.length, index + word.length + 40); return "...${text.substring(start, end).replace('\n', ' ')}..." } }; for (i in 0 until node.childCount) { val res = extractDangerousContext(node.getChild(i), word); if (res != null) return res }; return null }
     private fun isNodeDangerousContext(node: AccessibilityNodeInfo?, textToFind: String): Boolean { if (node == null) return false; val text = node.text?.toString() ?: ""; val desc = node.contentDescription?.toString() ?: ""; if (text.contains(textToFind, true) || desc.contains(textToFind, true)) { var parent = node.parent; var isClickable = node.isClickable || node.className?.toString()?.contains("EditText") == true; while (parent != null && !isClickable) { isClickable = parent.isClickable; parent = parent.parent }; if (isClickable) return true }; for (i in 0 until node.childCount) { if (isNodeDangerousContext(node.getChild(i), textToFind)) return true }; return false }

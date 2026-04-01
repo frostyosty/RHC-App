@@ -16,6 +16,7 @@ id btnBuyPotion
 id btnBuySpray
 id btnDebugApi
 id btnDebugChecklist
+id btnDebugLogs
 id btnDebugReset
 id btnDebugSpawns
 id btnDebugUninstall
@@ -49,7 +50,6 @@ id btnTeachMove
 id btnTestFilter
 id btnUnequip
 id btnYield
-id cbGamification
 id etCustomWeb
 id llDialogContent
 id llOnboarding

@@ -11,32 +11,38 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- FIX: Added label to application so it shows correctly in Android Settings -->
     <application
         android:allowBackup="true"
         android:extractNativeLibs="false"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.NoTitleBar" >
         <activity
             android:name="com.rockhard.blocker.MainActivity"
-            android:exported="true" /> <!-- GAME ICON ALIAS (Swapped dynamically!) -->
+            android:exported="true"
+            android:label="@string/app_name" />
+
         <activity-alias
             android:name="com.rockhard.blocker.GameLauncher"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_game"
+            android:label="Netbeasts"
             android:targetActivity="com.rockhard.blocker.MainActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity-alias> <!-- DEFAULT ICON ALIAS -->
+        </activity-alias> <!-- FIX: Added labels to the Launchers so your Home Screen is correct! -->
         <activity-alias
             android:name="com.rockhard.blocker.DefaultLauncher"
             android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
             android:targetActivity="com.rockhard.blocker.MainActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -52,11 +58,14 @@
         <activity
             android:name="com.rockhard.blocker.GameActivity"
             android:exported="false"
+            android:label="Netbeasts Safari"
             android:launchMode="singleTask" />
 
+        <!-- FIX: Added labels to the Services so they look right in Security Settings -->
         <service
             android:name="com.rockhard.blocker.GuardianService"
             android:exported="true"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -69,7 +78,9 @@
 
         <receiver
             android:name="com.rockhard.blocker.AdminReceiver"
+            android:description="@string/app_name"
             android:exported="true"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_DEVICE_ADMIN" >
             <meta-data
                 android:name="android.app.device_admin"

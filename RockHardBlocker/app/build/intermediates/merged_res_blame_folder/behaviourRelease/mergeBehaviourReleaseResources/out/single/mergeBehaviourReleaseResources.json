@@ -1,15 +1,15 @@
 [
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-behaviourRelease-4:/layout_activity_main.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-behaviourRelease-4:/drawable_bg_card.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_card.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-behaviourRelease-4:/drawable_bg_btn_warning.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_warning.xml"
     },
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-behaviourRelease-4:/drawable_bg_card.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_card.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-behaviourRelease-4:/layout_activity_main.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-behaviourRelease-4:/mipmap-xxhdpi_ic_game.png.flat",
@@ -24,12 +24,12 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/xml/guardian_config.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-behaviourRelease-4:/layout_activity_game.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/layout/activity_game.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-behaviourRelease-4:/layout_dialog_custom.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/dialog_custom.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-behaviourRelease-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-behaviourRelease-4:/drawable_bg_btn_success.xml.flat",
