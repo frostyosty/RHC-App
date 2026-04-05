@@ -4,6 +4,45 @@
             "outputFile": "com.rockhard.blocker.app-mergeRhcReleaseResources-2:/values/values.xml",
             "map": [
                 {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/src/main/res/values/styles.xml",
+                    "from": {
+                        "startLines": "23,36,40,32,45,3,15,8",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "800,1301,1422,1176,1559,79,510,250",
+                        "endLines": "30,38,42,34,52,5,20,13",
+                        "endColumns": "12,12,12,12,12,12,12,12",
+                        "endOffsets": "1170,1416,1522,1295,1951,210,767,504"
+                    },
+                    "to": {
+                        "startLines": "7,15,18,21,24,32,35,41",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "610,985,1105,1210,1334,1731,1867,2129",
+                        "endLines": "14,17,20,23,31,34,40,46",
+                        "endColumns": "12,12,12,12,12,12,12,12",
+                        "endOffsets": "980,1100,1205,1329,1726,1862,2124,2383"
+                    }
+                },
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/rhc/release/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "-1,-1,-1,-1,-1",
+                        "startColumns": "-1,-1,-1,-1,-1",
+                        "startOffsets": "-1,-1,-1,-1,-1"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6",
+                        "startColumns": "4,4,4,4,4",
+                        "startOffsets": "55,136,232,473,536",
+                        "endColumns": "80,95,240,62,73",
+                        "endOffsets": "131,227,468,531,605"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-mergeRhcReleaseResources-2:/values/values.xml",
+            "map": [
+                {
                     "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/rhc/release/values/gradleResValues.xml",
                     "from": {
                         "startLines": "6,8,10,12,14",

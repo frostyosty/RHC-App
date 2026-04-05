@@ -1,5 +1,5 @@
 #!/bin/bash
-BEASTS=("cacheon" "cardiol" "skirmalot" "cartini" "noobit" "atomit" "roamlet" "pornosaur" "goreilla" "fleshwire" "lustrot" "darkone")
+BEASTS=("cacheon" "cardiol" "skirmalot" "cartini" "noobit" "atomit" "roamlet" "pronosaur" "gorella" "fleshwire" "lustrot" "darkone")
 ACTIONS=("idle" "walk" "defend" "attack")
 echo "======================================"
 echo "   NETBEAST SPRITE AUDIT REPORT"

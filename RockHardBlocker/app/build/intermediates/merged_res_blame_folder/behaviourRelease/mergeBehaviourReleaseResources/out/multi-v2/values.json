@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.rockhard.blocker.app-mergeBehaviourReleaseResources-2:/values/values.xml",
+            "outputFile": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-mergeBehaviourReleaseResources-2:/values/values.xml",
             "map": [
                 {
                     "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/behaviour/release/values/gradleResValues.xml",
@@ -18,6 +18,45 @@
                         "startOffsets": "55,123,222,472,541",
                         "endColumns": "67,98,249,68,79",
                         "endOffsets": "118,217,467,536,616"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "com.rockhard.blocker.app-mergeBehaviourReleaseResources-2:/values/values.xml",
+            "map": [
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/behaviour/release/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "-1,-1,-1,-1,-1",
+                        "startColumns": "-1,-1,-1,-1,-1",
+                        "startOffsets": "-1,-1,-1,-1,-1"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6",
+                        "startColumns": "4,4,4,4,4",
+                        "startOffsets": "55,123,222,472,541",
+                        "endColumns": "67,98,249,68,79",
+                        "endOffsets": "118,217,467,536,616"
+                    }
+                },
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/src/main/res/values/styles.xml",
+                    "from": {
+                        "startLines": "23,36,40,32,45,3,15,8",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "800,1301,1422,1176,1559,79,510,250",
+                        "endLines": "30,38,42,34,52,5,20,13",
+                        "endColumns": "12,12,12,12,12,12,12,12",
+                        "endOffsets": "1170,1416,1522,1295,1951,210,767,504"
+                    },
+                    "to": {
+                        "startLines": "7,15,18,21,24,32,35,41",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "621,996,1116,1221,1345,1742,1878,2140",
+                        "endLines": "14,17,20,23,31,34,40,46",
+                        "endColumns": "12,12,12,12,12,12,12,12",
+                        "endOffsets": "991,1111,1216,1340,1737,1873,2135,2394"
                     }
                 }
             ]

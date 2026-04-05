@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/llOnboarding" style="@style/AppCard">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/TextHeader" android:text="SYSTEM SETUP"/>
+    <Button android:id="@+id/btnStep1" style="@style/AppButton.Standard" android:text="STEP 1: ENABLE GUARDIAN"/>
+    <Button android:id="@+id/btnStep2" style="@style/AppButton.Standard" android:text="STEP 2: LOCK APP (REQUIRES ADMIN)"/>
+    <Button android:id="@+id/btnStep3" style="@style/AppButton.Standard" android:text="STEP 3: SET UP DNS FILTER"/>
+    <Button android:id="@+id/btnTestFilter" style="@style/AppButton.Accent" android:text="VERIFY DNS (UNLOCKS REWARD)" android:layout_marginBottom="0dp"/>
+    <Button android:id="@+id/btnStep4" style="@style/AppButton.Standard" android:text="STEP 4: FIX BATTERY SETTINGS" android:layout_marginTop="12dp" android:visibility="gone"/>
+</LinearLayout>
