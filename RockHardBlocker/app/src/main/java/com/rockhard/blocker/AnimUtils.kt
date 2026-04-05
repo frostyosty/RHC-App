@@ -1,4 +1,5 @@
 package com.rockhard.blocker
+
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 
@@ -26,7 +27,7 @@ object AnimUtils {
         }.start()
     }
 
-    // NEW: THE LUNGE ANIMATION!
+    // THE LUNGE ANIMATION
     fun animAttack(v: View, isPlayer: Boolean) {
         val dir = if (isPlayer) 150f else -150f
         v.animate().translationXBy(dir).setDuration(100).setInterpolator(AccelerateDecelerateInterpolator()).withEndAction {

@@ -15,9 +15,21 @@
             <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="13sp" android:fontFamily="monospace" android:lineSpacingExtra="2dp"/>
         </ScrollView>
         
-        <RelativeLayout android:id="@+id/battleArena" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone">
-            <TextView android:id="@+id/spritePlayer" android:layout_width="120dp" android:layout_height="120dp" android:background="#1976D2" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" android:layout_alignParentBottom="true" android:layout_alignParentStart="true" android:layout_marginBottom="40dp" android:translationX="-400dp" android:elevation="5dp"/>
-            <TextView android:id="@+id/spriteEnemy" android:layout_width="120dp" android:layout_height="120dp" android:background="#D32F2F" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" android:layout_alignParentBottom="true" android:layout_alignParentEnd="true" android:layout_marginBottom="40dp" android:translationX="400dp" android:elevation="5dp"/>
+        <!-- STREET FIGHTER ARENA WITH HEALTH BARS! -->
+        <RelativeLayout android:id="@+id/battleArena" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone" android:elevation="20dp">
+            
+            <!-- PLAYER CONTAINER -->
+            <LinearLayout android:id="@+id/spritePlayerContainer" android:layout_width="120dp" android:layout_height="wrap_content" android:orientation="vertical" android:layout_centerVertical="true" android:layout_alignParentStart="true" android:translationX="-400dp" android:elevation="10dp">
+                <ProgressBar android:id="@+id/pbPlayerHp" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="14dp" android:layout_marginBottom="6dp" android:progressDrawable="@android:drawable/progress_horizontal" android:progressTint="#4CAF50"/>
+                <TextView android:id="@+id/spritePlayer" android:layout_width="120dp" android:layout_height="120dp" android:background="#1976D2" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" />
+            </LinearLayout>
+
+            <!-- ENEMY CONTAINER -->
+            <LinearLayout android:id="@+id/spriteEnemyContainer" android:layout_width="120dp" android:layout_height="wrap_content" android:orientation="vertical" android:layout_centerVertical="true" android:layout_alignParentEnd="true" android:translationX="400dp" android:elevation="10dp">
+                <ProgressBar android:id="@+id/pbEnemyHp" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="14dp" android:layout_marginBottom="6dp" android:progressDrawable="@android:drawable/progress_horizontal" android:progressTint="#E53935"/>
+                <TextView android:id="@+id/spriteEnemy" android:layout_width="120dp" android:layout_height="120dp" android:background="#D32F2F" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" />
+            </LinearLayout>
+
         </RelativeLayout>
 
         <ScrollView android:id="@+id/viewParty" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
@@ -32,9 +44,9 @@
                 </LinearLayout>
                 
                 <Button android:id="@+id/btnInfuse" android:layout_width="match_parent" android:layout_height="45dp" android:text="INFUSE WITH CURRENT WEATHER" android:backgroundTint="#9C27B0" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
-                <!-- NEW TEACH MOVE BUTTON -->
                 <Button android:id="@+id/btnTeachMove" android:layout_width="match_parent" android:layout_height="45dp" android:text="TEACH MOVE FROM PARTY (50c)" android:backgroundTint="#009688" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
-                <Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL ITEMS" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
+                <Button android:id="@+id/btnDistribute" android:layout_width="match_parent" android:layout_height="45dp" android:text="DISTRIBUTE ITEMS EVENLY" android:backgroundTint="#009688" android:textColor="#FFF" android:textSize="10sp" android:layout_marginBottom="8dp"/>
+<Button android:id="@+id/btnUnequip" android:layout_width="match_parent" android:layout_height="45dp" android:text="UNEQUIP ALL ITEMS" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="10sp" android:layout_marginBottom="16dp"/>
                 <Button android:id="@+id/btnSellBeast" android:layout_width="match_parent" android:layout_height="50dp" android:text="LIST ACTIVE BEAST ON MARKET" android:backgroundTint="#D32F2F" android:textColor="#FFF"/>
             </LinearLayout>
         </ScrollView>

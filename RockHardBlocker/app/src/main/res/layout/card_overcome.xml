@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+    
+    <!-- OVERCOME WEBSITES -->
+    <LinearLayout android:id="@+id/cardOvercomeWeb" style="@style/AppCard" android:visibility="gone">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" style="@style/TextHeader" android:text="OVERCOME WEBSITES (Write Only)" android:textSize="14sp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <EditText android:id="@+id/etCustomWeb" android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:textColor="#FFFFFF" android:hint="e.g. youtube.com" android:textColorHint="#777" android:paddingHorizontal="16dp" android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/btnAddWeb" android:layout_width="wrap_content" android:layout_height="50dp" android:text="OVERCOME" android:background="@drawable/bg_btn_warning" android:textColor="#FFF"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- OVERCOME APPS -->
+    <LinearLayout android:id="@+id/cardOvercomeApp" style="@style/AppCard" android:visibility="gone" android:layout_marginBottom="32dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" style="@style/TextHeader" android:text="OVERCOME APPS (Write Only)" android:textSize="14sp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <Spinner android:id="@+id/spinApps" android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp" android:background="#EEEEEE" android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/btnAddApp" android:layout_width="wrap_content" android:layout_height="50dp" android:text="OVERCOME" android:background="@drawable/bg_btn_warning" android:textColor="#FFF"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
