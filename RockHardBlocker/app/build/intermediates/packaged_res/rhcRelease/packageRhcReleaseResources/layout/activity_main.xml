@@ -21,7 +21,6 @@
 
         <!-- SAFARI CARD -->
         <LinearLayout style="@style/AppCard">
-            <CheckBox android:id="@+id/cbGamification" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Enable Netbeast Gamification" android:textColor="#FFFFFF" android:buttonTint="#4CAF50" android:layout_marginBottom="16dp" android:checked="true"/>
             <Button android:id="@+id/btnGame" style="@style/AppButton.Accent" android:backgroundTint="#FF9800" android:text="OPEN NETBEAST SAFARI" android:layout_marginBottom="0dp"/>
         </LinearLayout>
 

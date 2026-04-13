@@ -1,6 +1,8 @@
 R_DEF: Internal format may change without notice
 local
 drawable bg_btn_accent
+drawable bg_btn_danger
+drawable bg_btn_pill
 drawable bg_btn_standard
 drawable bg_btn_success
 drawable bg_btn_warning
@@ -51,7 +53,6 @@ id btnUnequip
 id btnYield
 id cardOvercomeApp
 id cardOvercomeWeb
-id cbGamification
 id etCustomWeb
 id llDialogContent
 id llOnboarding

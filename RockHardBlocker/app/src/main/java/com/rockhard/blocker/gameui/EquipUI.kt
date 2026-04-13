@@ -103,12 +103,7 @@ internal fun GameActivity.setupEquipPanel() {
         }
     }
 
-    findViewById<Button>(R.id.btnSellBeast).setOnClickListener {
-        if (party.size <= 1) { Toast.makeText(this, "Cannot sell your last Netbeast!", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
-        if (activeExpeditions.containsKey(activePetIndex)) { Toast.makeText(this, "Cannot sell while exploring!", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
-        val p = party[activePetIndex]; val suggestedPrice = (p.maxHp / 10) * Random.nextInt(4, 8)
-        DialogUtils.showCustomDialog(this, "List on Market?", "List ${p.name} for ${suggestedPrice}c?", true, "LIST", { p.listedPrice = suggestedPrice; forSaleParty.add(p); party.removeAt(activePetIndex); activePetIndex = 0; prefs.edit().putInt("ACTIVE_PET_INDEX", 0).apply(); saveParty(); SaveManager.saveParty(prefs, "FORSALE_DATA", forSaleParty); updatePartyScreen(); updateBagScreen(); printLog("\n> 📦 You listed ${p.name} on the market for ${suggestedPrice}c.") }, null)
-    }
+findViewById<Button>(R.id.btnSellBeast)?.visibility = android.view.View.GONE
 }
 
 internal fun GameActivity.chooseSlot(pet: Netbeast, newMove: String) {

@@ -8,40 +8,20 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_success.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_card_onboarding.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/layout/card_onboarding.xml"
-    },
-    {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_overlay_guard.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/overlay_guard.xml"
-    },
-    {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_btn_accent.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_accent.xml"
-    },
-    {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_activity_essay.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_essay.xml"
-    },
-    {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_card.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_card.xml"
-    },
-    {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_dialog_custom.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/dialog_custom.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_card_overcome.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/card_overcome.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/mipmap-xxhdpi_ic_launcher.png.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bounceland-5:/mipmap-xxhdpi/ic_launcher.png"
     },
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_btn_standard.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_standard.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_card_debug.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/card_debug.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_activity_main.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_btn_standard.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_standard.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_ic_arrow_active.xml.flat",
@@ -56,8 +36,72 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_card_debug.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/layout/card_debug.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_btn_danger.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_danger.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_game_arena.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/game_arena.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/xml_device_admin.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/xml/device_admin.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_btn_warning.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_warning.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_activity_trap.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_trap.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_game_party.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/game_party.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_game_bag.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/game_bag.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_overlay_guard.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/overlay_guard.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_game_nav_tabs.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/game_nav_tabs.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_btn_accent.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_accent.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_activity_essay.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_essay.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_game_controls_battle.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/game_controls_battle.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_card.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_card.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_dialog_custom.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/dialog_custom.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_btn_pill.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_pill.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_game_arena.xml.flat",
+        "source": "com.rockhard.blocker.app-main-7:/layout/game_arena.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_card_onboarding.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/card_onboarding.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/mipmap-xxhdpi_ic_game.png.flat",
@@ -68,19 +112,7 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/xml/guardian_config.xml"
     },
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/xml_device_admin.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/xml/device_admin.xml"
-    },
-    {
-        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_card_overcome.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/layout/card_overcome.xml"
-    },
-    {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable_bg_btn_warning.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_warning.xml"
-    },
-    {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_activity_trap.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_trap.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/drawable-nodpi_spr_cacheon.png.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable-nodpi/spr_cacheon.png"
     }
 ]

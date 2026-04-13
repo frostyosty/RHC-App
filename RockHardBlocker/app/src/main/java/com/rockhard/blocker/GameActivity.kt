@@ -17,6 +17,11 @@ import android.widget.TextView
 class GameActivity : Activity() {
     internal lateinit var tvConsole: TextView
     internal lateinit var tvBag: TextView
+    internal lateinit var tvBagConsole: TextView
+    internal lateinit var tvAether: TextView
+    internal var aetherSeconds = 600
+    internal var aetherDepleted = false
+    internal var isFightAetherActive = false
     internal lateinit var partyContainer: LinearLayout
     internal lateinit var qteContainer: LinearLayout
     internal lateinit var prefs: SharedPreferences
@@ -27,11 +32,14 @@ class GameActivity : Activity() {
     internal var isWildBattle = false
     internal var battleOver = false
     internal var playerLastStand = false
-    internal var playerHasInstaKill = false
+    internal var playerHasTripleStrike = false
     internal var playerHasEvasion = false
     internal var currentEnemy: Netbeast? = null
+    internal var enemyParty = mutableListOf<Netbeast>()
+    internal var isTrainerBattle = false
+    internal var capturedRescueTarget: Netbeast? = null
 
-    internal var sprays = 0
+    internal var sprays = 0; internal var smallHpPots = 0; internal var largeHpPots = 0
     internal var potions = 0
     internal var nets = 0
     internal var focusCoins = 0
@@ -48,6 +56,7 @@ class GameActivity : Activity() {
 
     internal val activeExpeditions = mutableMapOf<Int, Long>()
     internal val activeQTEs = mutableMapOf<Int, View>()
+    internal val participatingPets = mutableSetOf<Int>()
 
     internal val mainHandler = Handler(Looper.getMainLooper())
     private val exploreRunnable =
@@ -65,6 +74,8 @@ class GameActivity : Activity() {
 
         tvConsole = findViewById(R.id.tvConsole)
         tvBag = findViewById(R.id.tvBag)
+        tvBagConsole = findViewById(R.id.tvBagConsole)
+        tvAether = findViewById(R.id.tvAether)
         partyContainer = findViewById(R.id.partyContainer)
         qteContainer = findViewById(R.id.qteContainer)
 
@@ -103,7 +114,7 @@ class GameActivity : Activity() {
         if (intent != null) handleIncomingIntent(intent)
     }
 
-    private fun handleIncomingIntent(i: Intent) {
+  private fun handleIncomingIntent(i: Intent) {
         isUnderAttack = i.getBooleanExtra("UNDER_ATTACK", false)
         if (isUnderAttack) {
             val triggerReason = i.getStringExtra("TRIGGER_REASON") ?: "Anomaly"
@@ -169,6 +180,7 @@ class GameActivity : Activity() {
 
     internal fun printLog(msg: String) {
         tvConsole.text = "${tvConsole.text}\n$msg"
+        tvBagConsole.text = "${tvBagConsole.text}\n$msg"
         findViewById<ScrollView>(R.id.viewActivity).post { findViewById<ScrollView>(R.id.viewActivity).fullScroll(View.FOCUS_DOWN) }
     }
 
@@ -176,5 +188,6 @@ class GameActivity : Activity() {
         super.onDestroy()
         mainHandler.removeCallbacksAndMessages(null)
         SaveManager.saveExpeditions(prefs, activeExpeditions)
+        com.rockhard.blocker.engines.AudioEngine.release()
     }
 }

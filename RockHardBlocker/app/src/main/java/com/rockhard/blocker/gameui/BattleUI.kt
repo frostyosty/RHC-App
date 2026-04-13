@@ -21,13 +21,18 @@ internal fun GameActivity.showBattleArena(playerName: String, enemyName: String)
     val pSprite = findViewById<TextView>(R.id.spritePlayer)
     val eSprite = findViewById<TextView>(R.id.spriteEnemy)
 
+    CombatState.reset()
     arena.visibility = View.VISIBLE
-    pSprite.text = "$playerName\n(Player)"; eSprite.text = "$enemyName\n(Enemy)"
+    
+    var pScale = 1.0f; var eScale = 1.0f
+    val pLvl = if (!playerLastStand) party[activePetIndex].maxHp / 10 else 1
+    val eLvl = currentEnemy?.maxHp?.div(10) ?: 1
+    
+    pSprite.text = "$playerName Lvl $pLvl\n(Player)"
+    eSprite.text = "$enemyName Lvl $eLvl\n(Enemy)"
     pSprite.alpha = 1f; eSprite.alpha = 1f
 
-    var pScale = 1.0f; var eScale = 1.0f
     if (currentEnemy != null && !playerLastStand) {
-        val pLvl = party[activePetIndex].maxHp / 10; val eLvl = currentEnemy!!.maxHp / 10
         val pEvo = GameData.beasts.find { it.name.contains(party[activePetIndex].name.split(" ").last()) }?.evoStage ?: 1
         val eEvo = GameData.beasts.find { it.name.contains(currentEnemy!!.name.split(" ").last()) }?.evoStage ?: 1
         if (pLvl > eLvl) eScale = (1.0f - (((pLvl - eLvl) * 0.03f) / eEvo)).coerceAtLeast(0.3f)
@@ -48,15 +53,21 @@ internal fun GameActivity.hideBattleArena() {
     eContainer.animate().translationX(400f).setDuration(500).withEndAction { findViewById<View>(R.id.battleArena).visibility = View.GONE }.start()
 }
 
-// RESTORED: This is the missing function that caused half the errors!
 internal fun GameActivity.updateDispatchButton() {
     val btn = findViewById<Button>(R.id.btnDispatch) ?: return
-    if (activeExpeditions.size >= party.size && party.isNotEmpty()) {
-        btn.text = "ALL NETBEASTS DEPLOYED"
-        btn.isEnabled = false
+    if (party.isEmpty()) {
+        if (activeExpeditions.containsKey(-1)) { btn.text = "YOU ARE EXPLORING"; btn.isEnabled = false } 
+        else { btn.text = "GO EXPLORE (No Beasts)"; btn.isEnabled = true }
     } else {
-        btn.text = "DISPATCH NETBEAST (${activeExpeditions.size}/${party.size} deployed)"
-        btn.isEnabled = true
+        if (activeExpeditions.size >= party.size) { btn.text = "ALL NETBEASTS DEPLOYED"; btn.isEnabled = false } 
+        else { btn.text = "DISPATCH ALL (${party.size - activeExpeditions.size} idle)"; btn.isEnabled = true }
+    }
+    
+    // Grey out Fight Aether button while exploring!
+    val isExploring = activeExpeditions.isNotEmpty()
+    findViewById<Button>(R.id.btnFightAether)?.apply {
+        isEnabled = !isExploring
+        alpha = if (isExploring) 0.5f else 1.0f
     }
 }
 
@@ -72,41 +83,29 @@ internal fun GameActivity.setUIState(state: String) {
     updateDispatchButton()
 
     if (state == "BATTLE") {
-        findViewById<ScrollView>(R.id.viewActivity).visibility = View.VISIBLE
-        findViewById<ScrollView>(R.id.viewParty).visibility = View.GONE
-        findViewById<ScrollView>(R.id.viewBag).visibility = View.GONE
+        findViewById<View>(R.id.viewActivity).visibility = View.VISIBLE
+        findViewById<View>(R.id.viewParty).visibility = View.GONE
+        findViewById<View>(R.id.viewBag).visibility = View.GONE
     } else hideBattleArena()
 }
 
 internal fun GameActivity.updateBattleUI() {
     val btn1 = findViewById<Button>(R.id.btnMove1)
     val btn2 = findViewById<Button>(R.id.btnMove2)
-    // FIXED: Casting parent to ViewGroup avoids the findViewWithTag error!
     val parentGroup = btn2.parent as? ViewGroup
     val btn3 = parentGroup?.findViewWithTag<Button>("BTN_MOVE_3")
-    
     val btnSwap = findViewById<Button>(R.id.btnSwap)
     val btnItem = findViewById<Button>(R.id.btnItem)
     val btnAbandon = findViewById<Button>(R.id.btnAbandon)
 
     if (playerLastStand) {
         btn1.text = "THROW PUNCH"
-        btn2.visibility = View.GONE
-        // FIXED: Using let { it... } avoids the "Variable Expected" compiler error!
-        btn3?.let { it.visibility = View.GONE }
-        btnSwap.visibility = View.GONE
-        btnItem.visibility = View.GONE
-        btnAbandon.visibility = View.GONE
+        btn2.visibility = View.GONE; btn3?.let { it.visibility = View.GONE }; btnSwap.visibility = View.GONE
+        btnItem.visibility = View.GONE; btnAbandon.visibility = View.GONE
     } else if (party.isNotEmpty()) {
-        btn1.text = party[activePetIndex].move1
-        btn2.text = party[activePetIndex].move2
-        btn3?.let { it.text = party[activePetIndex].move3 }
-        
-        btn2.visibility = View.VISIBLE
-        btn3?.let { it.visibility = View.VISIBLE }
-        btnSwap.visibility = View.VISIBLE
-        btnItem.visibility = View.VISIBLE
-        btnAbandon.visibility = View.VISIBLE
+        btn1.text = party[activePetIndex].move1; btn2.text = party[activePetIndex].move2; btn3?.let { it.text = party[activePetIndex].move3 }
+        btn2.visibility = View.VISIBLE; btn3?.let { it.visibility = View.VISIBLE }; btnSwap.visibility = View.VISIBLE
+        btnItem.visibility = View.VISIBLE; btnAbandon.visibility = View.VISIBLE
 
         val p = party[activePetIndex]
         if (p.eqPots <= 0 && p.eqSprays <= 0) btnItem.visibility = View.GONE

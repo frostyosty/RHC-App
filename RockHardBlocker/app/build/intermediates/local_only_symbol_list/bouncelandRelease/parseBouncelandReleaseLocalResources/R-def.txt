@@ -1,11 +1,14 @@
 R_DEF: Internal format may change without notice
 local
 drawable bg_btn_accent
+drawable bg_btn_danger
+drawable bg_btn_pill
 drawable bg_btn_standard
 drawable bg_btn_success
 drawable bg_btn_warning
 drawable bg_card
 drawable ic_arrow_active
+drawable spr_cacheon
 id battleArena
 id battleControls
 id btnAbandon
@@ -25,6 +28,7 @@ id btnEqNet
 id btnEqPot
 id btnEqSpray
 id btnExit
+id btnFightAether
 id btnGame
 id btnInfuse
 id btnItem
@@ -34,8 +38,6 @@ id btnPauseBlocker
 id btnQteAmbush
 id btnQteAvoid
 id btnQteNet
-id btnRhcSettings
-id btnSellBeast
 id btnSellNet
 id btnSellPotion
 id btnSellSpray
@@ -51,7 +53,6 @@ id btnUnequip
 id btnYield
 id cardOvercomeApp
 id cardOvercomeWeb
-id cbGamification
 id etCustomWeb
 id llDialogContent
 id llOnboarding
@@ -68,16 +69,18 @@ id spriteEnemy
 id spriteEnemyContainer
 id spritePlayer
 id spritePlayerContainer
+id spriteVfx
 id tabActivity
 id tabBag
 id tabParty
 id timerText
+id tvAether
 id tvBag
+id tvBagConsole
 id tvConsole
 id tvDebugReason
 id tvDialogMessage
 id tvDialogTitle
-id tvMarketTitle
 id tvOverlayMessage
 id tvOverlayTitle
 id tvQteDesc
@@ -91,6 +94,11 @@ layout card_debug
 layout card_onboarding
 layout card_overcome
 layout dialog_custom
+layout game_arena
+layout game_bag
+layout game_controls_battle
+layout game_nav_tabs
+layout game_party
 layout item_qte_row
 layout overlay_guard
 mipmap ic_game
