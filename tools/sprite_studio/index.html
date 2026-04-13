@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"><title>RHC Sprite Studio V8.1</title>
+    <style>
+        body { background: #121212; color: white; font-family: monospace; margin: 0; padding: 15px; display: flex; gap: 30px; height: 100vh; box-sizing: border-box; }
+        .editor-panel { flex: 0 0 384px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding-right:10px;}
+        .canvas-container { position: relative; width: 384px; height: 384px; border: 2px solid #555; background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 50% / 32px 32px; flex-shrink:0;}
+        canvas { position: absolute; top: 0; left: 0; cursor: crosshair; image-rendering: pixelated; width: 100%; height: 100%; }
+        #onionCanvas { opacity: 0.3; pointer-events: none; }
+        .tools, .frames { display: flex; gap: 6px; align-items: center; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+        input[type="color"] { width: 30px; height: 30px; padding: 0; border: none; cursor: pointer; }
+        input[type="text"], input[type="number"] { background: #222; border: 1px solid #444; color: white; padding: 6px; font-family: monospace; }
+        button, select { background: #FF9800; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; font-family: monospace; font-size: 12px; border-radius: 4px;}
+        button:hover { background: #E65100; }
+        .tool-btn { background: #333; } .tool-btn.active { background: #4CAF50; }
+        .frame-btn { background: #444; width: 30px; height: 30px; text-align: center; line-height: 30px; border: 2px solid transparent; cursor: pointer; font-size: 12px; border-radius: 4px;}
+        .frame-btn.active { border-color: #00BCD4; background: #222; }
+        .panel-box { background: #1e1e1e; border: 1px solid #444; padding: 10px; border-radius: 6px; margin-bottom: 15px; width: 100%; box-sizing: border-box; text-align: center; }
+        .dashboard-panel { flex: 1; overflow-y: auto; background: #1A1A1A; border: 1px solid #333; padding: 15px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { border: 1px solid #333; padding: 5px; text-align: center; vertical-align: middle; }
+        th { background: #222; position: sticky; top: 0; z-index: 10;} .beast-name { text-align: left; font-weight: bold; color: #00BCD4; text-transform: uppercase;}
+        .preview-img { width: 48px; height: 48px; image-rendering: pixelated; margin-bottom: 4px; background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 50% / 8px 8px; }
+        .btn-edit { background: #4CAF50; padding: 4px; font-size: 9px; display: block; width: 100%; box-sizing: border-box; margin-bottom:2px;}
+        .btn-create { background: #333; padding: 4px; font-size: 9px; display: block; width: 100%; box-sizing: border-box; color: #888;}
+    </style>
+</head>
+<body>
+    <div class="editor-panel">
+        
+        <div class="panel-box" style="border-color:#E91E63;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="color:#E91E63; font-weight:bold;">✨ AI Generator</div>
+                <select id="canvasSize" onchange="updateCanvasSize()">
+                    <option value="64">Standard (64x64)</option>
+                    <option value="32">Projectile (32x32)</option>
+                    <option value="128">Titan Boss (128x128)</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:5px; justify-content:center;">
+                <input type="text" id="aiPrompt" placeholder="cyber wolf" style="width: 140px;" onkeydown="if(event.key==='Enter') generateAI()">
+                <input type="number" id="aiSeed" placeholder="Seed" style="width: 60px;">
+                <button style="background:#E91E63;" onclick="generateAI()">GEN</button>
+            </div>
+        </div>
+
+        <div class="panel-box" style="border-color:#00BCD4;">
+            <div style="color:#00BCD4; font-weight:bold; margin-bottom:8px;">🔊 8-Bit SFX Generator</div>
+            <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap; margin-bottom:10px;">
+                <button onclick="generateSFX('laser')" style="background:#333;">Laser</button>
+                <button onclick="generateSFX('hit')" style="background:#333;">Hit/Bite</button>
+                <button onclick="generateSFX('powerup')" style="background:#333;">Powerup</button>
+                <button onclick="generateSFX('noise')" style="background:#333;">Noise</button>
+            </div>
+            <button style="background:#00BCD4; width:100%;" onclick="saveAudio()">💾 SAVE SYNCED AUDIO (.wav)</button>
+        </div>
+
+        <div class="tools">
+            <button id="btnDraw" class="tool-btn active" onclick="setTool('draw')">✏️</button>
+            <button id="btnErase" class="tool-btn" onclick="setTool('erase')">🧽</button>
+            <button id="btnMove" class="tool-btn" onclick="setTool('move')">✥</button>
+            <button class="tool-btn" onclick="flipHorizontal()">↔️</button>
+            <select id="brushSize"><option value="1">1px</option><option value="2">2px</option><option value="3">3px</option></select>
+            <input type="color" id="colorPicker" value="#FFFFFF">
+            <button class="tool-btn" style="background:#D32F2F" onclick="clearCanvas()">🗑️</button>
+        </div>
+        
+        <div class="canvas-container"><canvas id="onionCanvas" width="64" height="64"></canvas><canvas id="canvas" width="64" height="64"></canvas></div>
+        <div class="frames" id="frameContainer"></div>
+        
+        <div class="tools">
+            <button class="tool-btn" onclick="addFrame()">➕ NEW</button>
+            <button class="tool-btn" onclick="copyFrame()">📄 COPY</button>
+            <button class="tool-btn" style="background:#9C27B0" onclick="insertTween()">✨ TWEEN</button>
+            <button class="tool-btn" style="background:#2196F3" onclick="togglePlay()" id="btnPlay">▶️ PLAY</button>
+        </div>
+
+        <div class="tools" style="margin-top: 15px; width: 100%;">
+            <input type="text" id="filename" placeholder="spr_name_idle" style="flex:1;">
+            <button onclick="saveSprite()">💾 SAVE GIF</button>
+        </div>
+        <p id="status" style="font-size:12px; margin-top:5px; height:15px;"></p>
+    </div>
+
+    <div class="dashboard-panel"><h3 style="margin-top: 0; color:#FF9800;">📊 Asset Matrix</h3><table><thead><tr id="matrixHeader"></tr></thead><tbody id="matrixBody"></tbody></table></div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let lastAudioBuffer = null;
+
+        function generateSFX(type) {
+            const sampleRate = audioCtx.sampleRate; const length = sampleRate * 0.5; 
+            const buffer = audioCtx.createBuffer(1, length, sampleRate); const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < length; i++) {
+                const t = i / sampleRate; const env = Math.exp(-t * 10); 
+                if (type === 'laser') { const freq = 1500 * Math.exp(-t * 15); data[i] = (Math.sin(2 * Math.PI * freq * t) > 0 ? 1 : -1) * env; }
+                else if (type === 'hit') { data[i] = (Math.random() * 2 - 1) * env * (1 - t*2); }
+                else if (type === 'powerup') { const freq = 300 + Math.floor(t * 10) * 100; data[i] = Math.sin(2 * Math.PI * freq * t) * env; }
+                else if (type === 'noise') { data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 3); }
+            }
+            lastAudioBuffer = buffer;
+            const source = audioCtx.createBufferSource(); source.buffer = buffer; source.connect(audioCtx.destination); source.start();
+        }
+
+        function saveAudio() {
+            if (!lastAudioBuffer) { alert("Generate a sound first!"); return; }
+            let name = document.getElementById('filename').value || 'fx_unknown';
+            const numOfChan = 1; const length = lastAudioBuffer.length * 2 + 44; const bufferArr = new ArrayBuffer(length);
+            const view = new DataView(bufferArr); let pos = 0;
+            const setUint16 = (d) => { view.setUint16(pos, d, true); pos += 2; }; const setUint32 = (d) => { view.setUint32(pos, d, true); pos += 4; };
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157); setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(1); setUint32(audioCtx.sampleRate); setUint32(audioCtx.sampleRate * 2); setUint16(2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
+            const channel = lastAudioBuffer.getChannelData(0);
+            for(let i=0; i<channel.length; i++) { let sample = Math.max(-1, Math.min(1, channel[i])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2; }
+            const b64 = btoa(String.fromCharCode.apply(null, new Uint8Array(bufferArr)));
+            fetch('/save_audio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: name, audio: b64 }) })
+            .then(res => res.json()).then(data => { document.getElementById('status').innerText = "✅ Saved Audio: " + data.file; setTimeout(() => document.getElementById('status').innerText = "", 3000); });
+        }
+
+        const canvas = document.getElementById('canvas'); const ctx = canvas.getContext('2d'); const onionCtx = document.getElementById('onionCanvas').getContext('2d');
+        let frames =[canvas.toDataURL()]; let currentFrame = 0; let drawing = false; let tool = 'draw'; let playing = false; let playInterval; let panStartX, panStartY, panCanvasSnapshot;
+
+        function updateCanvasSize() { const sz = parseInt(document.getElementById('canvasSize').value); canvas.width = sz; canvas.height = sz; onionCanvas.width = sz; onionCanvas.height = sz; frames = [canvas.toDataURL()]; currentFrame = 0; renderFrameList(); }
+        function setTool(t) { tool = t; document.getElementById('btnDraw').className = 'tool-btn ' + (t==='draw' ? 'active' : ''); document.getElementById('btnErase').className = 'tool-btn ' + (t==='erase' ? 'active' : ''); document.getElementById('btnMove').className = 'tool-btn ' + (t==='move' ? 'active' : ''); }
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentFrame(); }
+        function flipHorizontal() { const img = new Image(); img.src = canvas.toDataURL(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save(); ctx.translate(canvas.width, 0); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0); ctx.restore(); saveCurrentFrame(); } }
+
+        canvas.addEventListener('mousedown', (e) => { if(playing) return; drawing = true; if (tool === 'move') { panStartX = e.clientX; panStartY = e.clientY; panCanvasSnapshot = document.createElement('canvas'); panCanvasSnapshot.width = canvas.width; panCanvasSnapshot.height = canvas.height; panCanvasSnapshot.getContext('2d').drawImage(canvas, 0, 0); } else drawPixel(e); });
+        canvas.addEventListener('mousemove', (e) => { if (!drawing || playing) return; if (tool === 'move') { const rect = canvas.getBoundingClientRect(); const dx = Math.floor((e.clientX - panStartX) / (rect.width / canvas.width)); const dy = Math.floor((e.clientY - panStartY) / (rect.height / canvas.height)); ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(panCanvasSnapshot, dx, dy); } else drawPixel(e); });
+        canvas.addEventListener('mouseup', () => { drawing = false; saveCurrentFrame(); }); canvas.addEventListener('mouseleave', () => { drawing = false; });
+
+        function drawPixel(e) { const rect = canvas.getBoundingClientRect(); const x = Math.floor((e.clientX - rect.left) / (rect.width / canvas.width)); const y = Math.floor((e.clientY - rect.top) / (rect.height / canvas.height)); const size = parseInt(document.getElementById('brushSize').value); if (tool === 'draw') { ctx.fillStyle = document.getElementById('colorPicker').value; ctx.fillRect(x, y, size, size); } else if (tool === 'erase') { ctx.clearRect(x, y, size, size); } }
+        function saveCurrentFrame() { frames[currentFrame] = canvas.toDataURL('image/png'); renderFrameList(); }
+        function loadFrame(index) { currentFrame = index; const img = new Image(); img.src = frames[index]; img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; onionCtx.clearRect(0, 0, canvas.width, canvas.height); if (index > 0) { const prevImg = new Image(); prevImg.src = frames[index - 1]; prevImg.onload = () => onionCtx.drawImage(prevImg, 0, 0); } renderFrameList(); }
+        function addFrame() { const temp = document.createElement('canvas'); temp.width = canvas.width; temp.height = canvas.height; frames.push(temp.toDataURL()); loadFrame(frames.length - 1); }
+        function copyFrame() { frames.push(frames[currentFrame]); loadFrame(frames.length - 1); }
+
+        // FIXED TRUE TWEENING: Blends previous frame and next frame into the current frame.
+        function insertTween() {
+            if (currentFrame > 0 && currentFrame < frames.length - 1) {
+                const imgPrev = new Image(); imgPrev.src = frames[currentFrame - 1];
+                const imgNext = new Image(); imgNext.src = frames[currentFrame + 1];
+                imgPrev.onload = () => {
+                    imgNext.onload = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.globalAlpha = 0.5;
+                        ctx.drawImage(imgPrev, 0, 0);
+                        ctx.drawImage(imgNext, 0, 0);
+                        ctx.globalAlpha = 1.0;
+                        saveCurrentFrame();
+                        document.getElementById('status').style.color = '#9C27B0';
+                        document.getElementById('status').innerText = "✨ Frames Blended!";
+                    }
+                }
+            } else {
+                alert("TWEEN TOOL:\n1. Draw Frame 1\n2. Click '➕ NEW' (Creates empty Frame 2)\n3. Click '➕ NEW' (Creates empty Frame 3)\n4. Draw Frame 3\n5. Go back to Frame 2 and click ✨ TWEEN!");
+            }
+        }
+
+        function generateAI() { 
+            const prompt = document.getElementById('aiPrompt').value; 
+            const seed = document.getElementById('aiSeed').value; 
+            if(!prompt) return; 
+            const status = document.getElementById('status'); status.style.color = '#E91E63'; status.innerText = "⏳ Dreaming..."; 
+            let payload = {prompt: prompt, width: canvas.width}; if (seed) payload.seed = seed; 
+            
+            fetch('/generate', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
+            .then(res => {
+                if (!res.ok) throw new Error('Timeout or Server Error');
+                return res.json();
+            }).then(data => { 
+                if (data.status === 'success') { frames[currentFrame] = data.image; document.getElementById('aiSeed').value = data.seed; loadFrame(currentFrame); status.style.color = '#4CAF50'; status.innerText = "✅ AI Generated!"; } 
+                else { status.style.color = '#D32F2F'; status.innerText = "❌ Generation failed."; } 
+            }).catch(err => { status.style.color = '#D32F2F'; status.innerText = "❌ Timeout or Error."; }); 
+        }
+
+        function renderFrameList() { const container = document.getElementById('frameContainer'); container.innerHTML = ''; frames.forEach((f, i) => { const div = document.createElement('div'); div.className = 'frame-btn ' + (i === currentFrame ? 'active' : ''); div.innerText = i + 1; div.onclick = () => loadFrame(i); container.appendChild(div); }); }
+        function togglePlay() { playing = !playing; document.getElementById('btnPlay').innerText = playing ? '⏸️ PAUSE' : '▶️ PLAY'; if (playing) { let playFrame = 0; playInterval = setInterval(() => { const img = new Image(); img.src = frames[playFrame]; img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img, 0, 0); }; playFrame = (playFrame + 1) % frames.length; }, 200); } else { clearInterval(playInterval); loadFrame(currentFrame); } }
+
+        function saveSprite() { let name = document.getElementById('filename').value || 'spr_unknown'; name = name.replace('.gif', ''); fetch('/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: name, frames: frames }) }).then(res => res.json()).then(data => { document.getElementById('status').style.color = '#4CAF50'; document.getElementById('status').innerText = "✅ Saved: " + data.file; setTimeout(() => document.getElementById('status').innerText = "", 3000); loadDashboard(); }); }
+
+        function loadDashboard() { fetch('/dashboard_data').then(res => res.json()).then(data => { const header = document.getElementById('matrixHeader'); header.innerHTML = '<th>Beast</th>'; data.animations.forEach(anim => { header.innerHTML += `<th>${anim}</th>`; }); const body = document.getElementById('matrixBody'); body.innerHTML = ''; data.matrix.forEach(row => { let tr = `<tr><td class="beast-name">${row.beast}</td>`; data.animations.forEach(anim => { const cell = row.anims[anim]; const bareName = (anim === 'fx' ? 'fx_' : 'spr_') + (anim === 'fx' ? row.beast : row.beast + '_' + anim); if (cell.exists) { tr += `<td><img class="preview-img" src="/drawable/${cell.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${cell.file}', '${bareName}')">✏️ EDIT</button></td>`; } else { tr += `<td><div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('${bareName}')">➕ CREATE</button></td>`; } }); tr += '</tr>'; body.innerHTML += tr; }); }); }
+        function prepareCreate(filename) { document.getElementById('filename').value = filename; ctx.clearRect(0, 0, canvas.width, canvas.height); frames =[canvas.toDataURL()]; loadFrame(0); window.scrollTo(0,0); }
+        function loadFromMatrix(filename, bareName) { fetch('/load?file=' + filename).then(res => res.json()).then(data => { if(data.frames && data.frames.length > 0) { document.getElementById('canvasSize').value = data.width; updateCanvasSize(); setTimeout(() => { frames = data.frames; document.getElementById('filename').value = bareName; loadFrame(0); window.scrollTo(0,0); }, 100); } }); }
+
+        renderFrameList(); loadDashboard();
+    </script>
+</body>
+</html>

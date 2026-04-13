@@ -21,7 +21,7 @@ object BossNameEngine {
             if (base.contains(nsfw)) base = base.replace(nsfw, "")
         }
 
-        base = base.trim()
+        base = base.trim().replace(Regex("[^a-zA-Z]"), "")
 
         // 4. If the word is too short or empty after purging, give it an evil prefix
         if (base.length < 3) {

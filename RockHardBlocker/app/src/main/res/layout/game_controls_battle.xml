@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/battleControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <Button android:id="@+id/btnMove1" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="MOVE 1" style="@style/AppButton.Standard" android:backgroundTint="#D32F2F" android:layout_marginEnd="4dp"/>
+        <Button android:id="@+id/btnMove2" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="MOVE 2" style="@style/AppButton.Standard" android:backgroundTint="#C2185B" android:layout_marginStart="4dp"/>
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <Button android:id="@+id/btnSwap" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="SWAP PET" style="@style/AppButton.Accent" android:layout_marginEnd="4dp"/>
+        <Button android:id="@+id/btnItem" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="USE ITEM" style="@style/AppButton.Standard" android:backgroundTint="#FBC02D" android:textColor="#000" android:layout_marginStart="4dp"/>
+    </LinearLayout>
+    <Button android:id="@+id/btnAbandon" android:layout_width="120dp" android:layout_height="40dp" android:text="ABANDON" style="@style/AppButton.Standard" android:backgroundTint="#555555" android:textColor="#999" android:textSize="10sp" android:layout_gravity="center" android:layout_marginTop="8dp"/>
+</LinearLayout>

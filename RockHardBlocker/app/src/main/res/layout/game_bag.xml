@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/viewBag" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#111111" android:visibility="gone">
+    
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="12dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <TextView android:id="@+id/tvBag" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFCA28" android:textSize="14sp" android:fontFamily="monospace" android:layout_marginBottom="16dp"/>
+            <LinearLayout android:id="@+id/llShopContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                    <Button android:id="@+id/btnBuyNet" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="BUY NET (5c)" style="@style/AppButton.Standard" android:backgroundTint="#333" android:textSize="10sp" android:layout_marginEnd="4dp"/>
+                    <Button android:id="@+id/btnSellNet" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="SELL NET (2c)" style="@style/AppButton.Standard" android:backgroundTint="#222" android:textColor="#AAA" android:textSize="10sp" android:layout_marginStart="4dp"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                    <Button android:id="@+id/btnBuyPotion" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="BUY POTION (10c)" style="@style/AppButton.Standard" android:backgroundTint="#333" android:textSize="10sp" android:layout_marginEnd="4dp"/>
+                    <Button android:id="@+id/btnSellPotion" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="SELL POTION (5c)" style="@style/AppButton.Standard" android:backgroundTint="#222" android:textColor="#AAA" android:textSize="10sp" android:layout_marginStart="4dp"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
+                    <Button android:id="@+id/btnBuySpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="BUY SPRAY (15c)" style="@style/AppButton.Standard" android:backgroundTint="#333" android:textSize="10sp" android:layout_marginEnd="4dp"/>
+                    <Button android:id="@+id/btnSellSpray" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="SELL SPRAY (7c)" style="@style/AppButton.Standard" android:backgroundTint="#222" android:textColor="#AAA" android:textSize="10sp" android:layout_marginStart="4dp"/>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/marketContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- MINI CONSOLE FOR BAG SCREEN -->
+    <ScrollView android:layout_width="match_parent" android:layout_height="150dp" android:background="#0A0A0A" android:padding="8dp">
+        <TextView android:id="@+id/tvBagConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="11sp" android:fontFamily="monospace"/>
+    </ScrollView>
+</LinearLayout>

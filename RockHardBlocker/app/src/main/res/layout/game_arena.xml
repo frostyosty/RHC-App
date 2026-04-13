@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/battleArena" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone" android:elevation="20dp">
+    
+    <LinearLayout android:id="@+id/spritePlayerContainer" android:layout_width="120dp" android:layout_height="wrap_content" android:orientation="vertical" android:layout_centerVertical="true" android:layout_alignParentStart="true" android:translationX="-400dp" android:elevation="10dp">
+        <ProgressBar android:id="@+id/pbPlayerHp" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="14dp" android:layout_marginBottom="6dp" android:progressDrawable="@android:drawable/progress_horizontal" android:progressTint="#4CAF50"/>
+        <TextView android:id="@+id/spritePlayer" android:layout_width="120dp" android:layout_height="120dp" android:background="#1976D2" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" />
+    </LinearLayout>
+
+    <!-- NEW: THE VFX PROJECTILE LAYER -->
+    <TextView android:id="@+id/spriteVfx" android:layout_width="80dp" android:layout_height="80dp" android:layout_centerInParent="true" android:visibility="gone" android:elevation="15dp" android:textColor="#FFEB3B" android:textStyle="bold" android:gravity="center" android:background="#00000000"/>
+
+    <LinearLayout android:id="@+id/spriteEnemyContainer" android:layout_width="120dp" android:layout_height="wrap_content" android:orientation="vertical" android:layout_centerVertical="true" android:layout_alignParentEnd="true" android:translationX="400dp" android:elevation="10dp">
+        <ProgressBar android:id="@+id/pbEnemyHp" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="14dp" android:layout_marginBottom="6dp" android:progressDrawable="@android:drawable/progress_horizontal" android:progressTint="#E53935"/>
+        <TextView android:id="@+id/spriteEnemy" android:layout_width="120dp" android:layout_height="120dp" android:background="#D32F2F" android:textColor="#FFF" android:textStyle="bold" android:gravity="center" />
+    </LinearLayout>
+</RelativeLayout>
