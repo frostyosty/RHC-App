@@ -96,12 +96,12 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_pill.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_game_arena.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/layout/game_arena.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/layout_card_onboarding.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/card_onboarding.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-bouncelandRelease-4:/layout_game_controls_battle.xml.flat",
+        "source": "com.rockhard.blocker.app-main-7:/layout/game_controls_battle.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-bouncelandRelease-4:/mipmap-xxhdpi_ic_game.png.flat",

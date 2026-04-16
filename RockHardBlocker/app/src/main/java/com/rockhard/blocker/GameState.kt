@@ -12,6 +12,8 @@ internal fun GameActivity.loadSaveData() {
     smallHpPots = prefs.getInt("SMALL_HP_POTS", 0)
     largeHpPots = prefs.getInt("LARGE_HP_POTS", 0)
     activePetIndex = prefs.getInt("ACTIVE_PET_INDEX", 0)
+    totalExpeds = prefs.getInt("TOTAL_EXPEDS", 0)
+    graveyard = SaveManager.loadParty(prefs, "GRAVEYARD_DATA")
 
     playerId = prefs.getString("PLAYER_ID", "") ?: ""
     playerName = prefs.getString("PLAYER_NAME", "") ?: ""

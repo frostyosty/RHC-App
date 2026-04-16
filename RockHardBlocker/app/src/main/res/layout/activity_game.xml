@@ -6,9 +6,19 @@
     <include layout="@layout/game_nav_tabs"/>
 
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp">
-        <ScrollView android:id="@+id/viewActivity" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp">
-            <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="13sp" android:fontFamily="monospace" android:lineSpacingExtra="2dp"/>
-        </ScrollView>
+        
+        <!-- NEW: EXPLORE TAB NOW HAS THE SLIDER -->
+        <LinearLayout android:id="@+id/viewActivity" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#111111" android:padding="12dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DANGER" android:textColor="#F44336" android:textSize="10sp" android:textStyle="bold"/>
+                <SeekBar android:id="@+id/seekDifficulty" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:max="100" android:progress="50" android:progressTint="#FF9800" android:thumbTint="#FF9800"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SAFE" android:textColor="#4CAF50" android:textSize="10sp" android:textStyle="bold"/>
+            </LinearLayout>
+            <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+                <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="13sp" android:fontFamily="monospace" android:lineSpacingExtra="2dp"/>
+            </ScrollView>
+        </LinearLayout>
+        
         <include layout="@layout/game_arena"/>
         <include layout="@layout/game_party"/>
         <include layout="@layout/game_bag"/>
@@ -21,7 +31,6 @@
         <Button android:id="@+id/btnDispatch" style="@style/AppButton.Accent" android:text="DISPATCH NETBEAST" android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
     </LinearLayout>
 
-    <!-- THE AETHER FOOTER -->
     <LinearLayout android:layout_width="match_parent" android:layout_height="50dp" android:orientation="horizontal" android:gravity="center_vertical">
         <Button android:id="@+id/btnExit" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="EXIT" style="@style/AppButton.Standard" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="12sp" android:layout_marginBottom="0dp"/>
         <TextView android:id="@+id/tvAether" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.2" android:text="Aether: 10:00" android:textColor="#00BCD4" android:textSize="13sp" android:textStyle="bold" android:gravity="center" android:layout_marginHorizontal="4dp"/>
