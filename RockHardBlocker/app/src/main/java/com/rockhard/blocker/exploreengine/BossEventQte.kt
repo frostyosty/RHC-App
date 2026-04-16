@@ -29,7 +29,7 @@ internal fun GameActivity.spawnEventBossQTE() {
             
             // Generate the massive boss! (FIX: 19 Variables!)
             val pl = 1500 + (party.size * 200) 
-            val eventBoss = Netbeast(bossName, "EventBoss", pl, pl, "Cataclysm", "Obliterate", "Annihilate", 0L, 0, 0, 0, false, "None", 0, 0, 0, 0, "None", 0)
+            val eventBoss = Netbeast("[Ephemeral] [Elusive] [Colossal] $bossName", "EventBoss", pl, pl, "Cataclysm", "Obliterate", "Annihilate", 0L, 0, 0, 0, false, "None", 0, 0, 0, 0, "None", 0)
             
             currentEnemy = eventBoss
             isWildBattle = true

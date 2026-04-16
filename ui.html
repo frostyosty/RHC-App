@@ -4,8 +4,29 @@
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background: #202124; color: #e8eaed; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
-        .nav-btn { padding: 0 15px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.1s; display: flex; align-items: center; height: 100%; }
-        .nav-btn:hover { background: #303134; color: #8ab4f8; }
+/* Update your existing nav-btn rule and add the hidden state */
+.nav-btn { padding: 0 12px; cursor: pointer; font-size: 16px; font-weight: bold; color: #9aa0a6; }
+.nav-btn:hover { color: #8ab4f8; }
+
+/* NATIVE FIX: The Smooth Slide-in Arrow */
+#btn-refresh {
+    width: 0;
+    opacity: 0;
+    padding: 0;
+    margin-left: 0;
+    overflow: hidden;
+    transition: width 0.3s ease-out, opacity 0.3s ease-out, margin-left 0.3s ease-out, padding 0.3s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#btn-refresh.show {
+    width: 32px; /* Standard button width */
+    opacity: 1;
+    padding: 0 12px;
+    margin-left: 5px;
+}
         .tab-bar { display: flex; height: 100%; }
         .tab { padding: 0 20px; display: flex; align-items: center; border-right: 1px solid #3c4043; cursor: pointer; font-size: 13px; transition: 0.1s; }
         .tab:hover { background: #303134; }

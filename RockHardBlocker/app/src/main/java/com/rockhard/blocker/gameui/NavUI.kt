@@ -3,15 +3,16 @@ package com.rockhard.blocker
 import android.graphics.Color
 import android.view.View
 import android.widget.Button
-import android.widget.ScrollView
 
 internal fun GameActivity.setupTabs() {
     val b1 = findViewById<Button>(R.id.tabActivity)
     val b2 = findViewById<Button>(R.id.tabParty)
     val b3 = findViewById<Button>(R.id.tabBag)
-    val v1 = findViewById<ScrollView>(R.id.viewActivity)
-    val v2 = findViewById<ScrollView>(R.id.viewParty)
-    val v3 = findViewById<ScrollView>(R.id.viewBag)
+    
+    // FIXED: Safely cast as <View> so the app doesn't crash if we change XML layouts later!
+    val v1 = findViewById<View>(R.id.viewActivity)
+    val v2 = findViewById<View>(R.id.viewParty)
+    val v3 = findViewById<View>(R.id.viewBag)
 
     b1.setOnClickListener {
         v1.visibility = View.VISIBLE; v2.visibility = View.GONE; v3.visibility = View.GONE

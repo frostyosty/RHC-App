@@ -1,4 +1,4 @@
-package com.rockhard.blocker.engines
+package com.rockhard.blocker
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -18,14 +18,8 @@ object AudioEngine {
 
     fun playSfx(context: Context, filename: String) {
         if (soundPool == null) init()
-        
-        // Strip prefixes and extensions to find the raw resource name
-        val cleanName = filename.lowercase()
-            .replace(" ", "_").replace("-", "_").replace(".gif", "")
-            
+        val cleanName = filename.lowercase().replace(" ", "_").replace("-", "_").replace(".gif", "")
         val resId = context.resources.getIdentifier(cleanName, "raw", context.packageName)
-        
-        // If the sound file actually exists in the app!
         if (resId != 0) {
             if (loadedSounds.containsKey(resId)) {
                 soundPool?.play(loadedSounds[resId]!!, 1f, 1f, 1, 0, 1f)

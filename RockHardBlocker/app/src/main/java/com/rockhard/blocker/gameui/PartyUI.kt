@@ -46,7 +46,9 @@ internal fun GameActivity.updatePartyScreen() {
         val bar = "█".repeat(hpPercent.toInt().coerceAtLeast(0)) + "-".repeat((10 - hpPercent.toInt()).coerceAtLeast(0))
 
         val tvName = TextView(this).apply {
-            text = "$newTag$infTag${p.name}"
+            val cleanBaseName = p.name.split(" ").last()
+            val displayName = if (p.name.contains("[Obscure]")) "[Obscure] $cleanBaseName" else p.name
+            text = "$newTag$infTag$displayName"
             setTextColor(Color.WHITE)
             textSize = 18f
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -86,7 +88,7 @@ internal fun GameActivity.updatePartyScreen() {
             visibility = android.view.View.GONE
         }
 
-        val traitName = if (p.name.contains("]")) p.name.substringBefore("]").substringAfter("[") else "Ordinary"
+        val traitName = if (p.name.contains("[Obscure]")) "Obscure" else if (p.name.contains("]")) p.name.substringBefore("]").substringAfter("[") else "Ordinary"
         val traitDef = GameData.traits.find { it.name == traitName }
         val tDesc = traitDef?.desc ?: "Standard stats."
         val tCause = traitDef?.trigger ?: "None"
@@ -100,15 +102,15 @@ internal fun GameActivity.updatePartyScreen() {
             else -> Pair("Legendary", Color.parseColor("#FFBB33"))
         }
 
+        val st = p.infusionStacks
         val infDesc = when (p.infusionEl) {
-            "Clear" -> "+15% Net Catch Rate"
-            "Cloudy" -> "+15% Evasion"
-            "Rain" -> "+20% Critical Hit Chance"
-            "Storm" -> "Double Damage"
-            "Snow" -> "-50% Damage Taken"
+            "Clear" -> "+${15 * st}% Net Catch Rate"
+            "Cloudy" -> "+${15 * st}% Evasion"
+            "Rain" -> "+${20 * st}% Critical Hit Chance"
+            "Storm" -> "+${50 * st}% Damage"
+            "Snow" -> "Damage Taken divided by ${st + 1}"
             else -> "None"
         }
-        val inf = if (p.infusionEl != "None") "${p.infusionEl} (Stacks: ${p.infusionStacks})\n  ↳ $infDesc" else "None"
 
         val headerLayout = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; weightSum = 5.5f; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT); setPadding(0, 0, 0, 8) }
         headerLayout.addView(TextView(this).apply { text = "TRAIT"; setTextColor(Color.GRAY); textSize = 11f; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.2f) })
@@ -126,10 +128,10 @@ internal fun GameActivity.updatePartyScreen() {
         val m2D = SkillEngine.getDetails(p.move2, p.maxHp)
         val m3D = SkillEngine.getDetails(p.move3, p.maxHp)
 
-        val tvCombat = TextView(this).apply { text = "\n--- COMBAT SKILLS ---\n⚔️ ${p.move1}:\n  ↳ $m1D\n⚔️ ${p.move2}:\n  ↳ $m2D\n⚔️ ${p.move3}:\n  ↳ $m3D\n\n--- STATS ---\nInfusion: $inf\nMax HP: ${p.maxHp}"; setTextColor(Color.WHITE); setPadding(0, 32, 0, 0) }
+        val tvCombat = TextView(this).apply { text = "\n--- COMBAT SKILLS ---\n⚔️ ${p.move1}:\n  ↳ $m1D\n⚔️ ${p.move2}:\n  ↳ $m2D\n⚔️ ${p.move3}:\n  ↳ $m3D\n\n--- STATS ---\nMax HP: ${p.maxHp}"; setTextColor(Color.WHITE); setPadding(0, 32, 0, 0) }
 
         // --- NEW LORE GENERATOR ---
-        val cleanName = p.name.replace(Regex("\\[.*?\\]"), "").trim()
+        val cleanLoreName = p.name.replace(Regex("\\[.*?\\]"), "").trim()
         val originSite = when(p.type) {
             "Tech" -> listOf("sys-kernel.org", "packet-route.net", "data-cache.io", "server-farm.local").let { it[(p.name.hashCode() and 0x7FFFFFFF) % it.size] }
             "Social" -> listOf("scroll-feed.com", "chat-hub.app", "echo-chamber.net", "status-update.io").let { it[(p.name.hashCode() and 0x7FFFFFFF) % it.size] }
@@ -137,7 +139,7 @@ internal fun GameActivity.updatePartyScreen() {
             "Streaming" -> listOf("vid-stream.tv", "binge-watch.com", "media-buffer.net", "auto-play.io").let { it[(p.name.hashCode() and 0x7FFFFFFF) % it.size] }
             "Flying" -> listOf("cloud-server.net", "aero-net.org", "strato-host.com").let { it[(p.name.hashCode() and 0x7FFFFFFF) % it.size] }
             "Reclaimed" -> {
-                val baseApp = cleanName.lowercase()
+                val baseApp = cleanLoreName.lowercase()
                     .replace("saurus","").replace("ling","").replace("let","")
                     .replace("puff","").replace("wing","").replace("sprite","")
                     .replace("bot","").replace("mon","").replace("fox","")
@@ -148,7 +150,21 @@ internal fun GameActivity.updatePartyScreen() {
         val loreText = if (originSite.contains(" ")) originSite else "www.$originSite"
         val tvLore = TextView(this).apply { text = "\nFound roaming $loreText"; setTextColor(Color.parseColor("#888888")); setTypeface(null, android.graphics.Typeface.ITALIC); setPadding(0, 16, 0, 0) }
 
-        detailsPanel.addView(headerLayout); detailsPanel.addView(traitLayout); detailsPanel.addView(tvCombat); detailsPanel.addView(tvLore)
+        detailsPanel.addView(headerLayout)
+        detailsPanel.addView(traitLayout)
+        
+        // FIXED: Replaced the broken line-break!
+        if (p.infusionStacks > 0) {
+            detailsPanel.addView(TextView(this@updatePartyScreen).apply { 
+                text = "🌟 ${p.infusionEl} Infused (Stacks: ${p.infusionStacks})\n  ↳ $infDesc"
+                setTextColor(Color.parseColor("#E040FB"))
+                textSize = 11f
+                setPadding(0, 16, 0, 0) 
+            })
+        }
+        
+        detailsPanel.addView(tvCombat)
+        detailsPanel.addView(tvLore)
 
         mainBar.setOnClickListener {
             if (index == activePetIndex) {

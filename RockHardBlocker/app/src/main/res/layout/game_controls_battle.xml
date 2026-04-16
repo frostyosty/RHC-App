@@ -1,13 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/battleControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
-        <Button android:id="@+id/btnMove1" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="MOVE 1" style="@style/AppButton.Standard" android:backgroundTint="#D32F2F" android:layout_marginEnd="4dp"/>
-        <Button android:id="@+id/btnMove2" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="MOVE 2" style="@style/AppButton.Standard" android:backgroundTint="#C2185B" android:layout_marginStart="4dp"/>
+    
+    <!-- THE ATB TIMER BAR -->
+    <ProgressBar android:id="@+id/pbBattleTimer" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="8dp" android:progressDrawable="@android:drawable/progress_horizontal" android:progressTint="#FF5252" android:max="100" android:progress="100" android:visibility="gone" android:layout_marginTop="4dp"/>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="60dp" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <Button android:id="@+id/btnMove1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="MOVE 1" style="@style/AppButton.Standard" android:backgroundTint="#D32F2F" android:layout_marginEnd="4dp"/>
+        <Button android:id="@+id/btnMove2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="MOVE 2" style="@style/AppButton.Standard" android:backgroundTint="#C2185B" android:layout_marginEnd="4dp"/>
+        <Button android:id="@+id/btnMove3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="MOVE 3" style="@style/AppButton.Standard" android:backgroundTint="#7B1FA2"/>
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
-        <Button android:id="@+id/btnSwap" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="SWAP PET" style="@style/AppButton.Accent" android:layout_marginEnd="4dp"/>
-        <Button android:id="@+id/btnItem" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="USE ITEM" style="@style/AppButton.Standard" android:backgroundTint="#FBC02D" android:textColor="#000" android:layout_marginStart="4dp"/>
+    
+    <LinearLayout android:id="@+id/infoRow" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+        <TextView android:id="@+id/infoMove1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="▼ INFO" android:textColor="#888" android:textSize="10sp" android:textAlignment="center" android:padding="4dp" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/infoMove2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="▼ INFO" android:textColor="#888" android:textSize="10sp" android:textAlignment="center" android:padding="4dp" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/infoMove3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="▼ INFO" android:textColor="#888" android:textSize="10sp" android:textAlignment="center" android:padding="4dp"/>
     </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <Button android:id="@+id/btnSwap" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="SWAP" style="@style/AppButton.Accent" android:layout_marginEnd="4dp"/>
+        <!-- DYNAMIC ITEM BUTTONS -->
+        <Button android:id="@+id/btnBattleNet" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="NET" style="@style/AppButton.Standard" android:backgroundTint="#1976D2" android:textColor="#FFF" android:layout_marginEnd="4dp" android:visibility="gone"/>
+        <Button android:id="@+id/btnBattlePot" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="POT" style="@style/AppButton.Standard" android:backgroundTint="#388E3C" android:textColor="#FFF" android:layout_marginEnd="4dp" android:visibility="gone"/>
+        <Button android:id="@+id/btnBattleSpray" android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:text="SPRY" style="@style/AppButton.Standard" android:backgroundTint="#FBC02D" android:textColor="#000" android:visibility="gone"/>
+    </LinearLayout>
+    
     <Button android:id="@+id/btnAbandon" android:layout_width="120dp" android:layout_height="40dp" android:text="ABANDON" style="@style/AppButton.Standard" android:backgroundTint="#555555" android:textColor="#999" android:textSize="10sp" android:layout_gravity="center" android:layout_marginTop="8dp"/>
 </LinearLayout>
