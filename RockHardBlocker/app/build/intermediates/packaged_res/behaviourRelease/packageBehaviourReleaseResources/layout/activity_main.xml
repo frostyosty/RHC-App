@@ -25,7 +25,7 @@
         </LinearLayout>
 
         <include layout="@layout/card_overcome"/>
-        <include layout="@layout/card_debug"/>
+        <!-- <include layout="@layout/card_debug"/> -->
 
     </LinearLayout>
 </ScrollView>

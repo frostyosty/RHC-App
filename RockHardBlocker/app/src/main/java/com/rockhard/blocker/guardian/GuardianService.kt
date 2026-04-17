@@ -44,20 +44,36 @@ class GuardianService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+
+        // --- THE IMMORTALITY NOTIFICATION ---
+        // This forces Android to treat the Shield as a top-priority Foregound process
+        val channelId = "shield_channel"
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(channelId, "Shield Status", android.app.NotificationManager.IMPORTANCE_LOW)
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.createNotificationChannel(channel)
+        }
+        val builder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(this, channelId)
+        } else {
+            @Suppress("DEPRECATION") android.app.Notification.Builder(this)
+        }
+        val notification = builder.setContentTitle("Rock Hard Shield Active")
+            .setContentText("Guarding your digital environment.")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true)
+            .build()
+        
+        startForeground(1011, notification)
+        // ------------------------------------
+
         addLog("Service Connected.")
         Toast.makeText(this, "Rock Hard Shield Activated!", Toast.LENGTH_LONG).show()
 
         Handler(Looper.getMainLooper()).postDelayed({
             performGlobalAction(GLOBAL_ACTION_HOME)
-            val intent =
-                Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                }
-            try {
-                startActivity(intent)
-            } catch (e: Exception) {
-                addLog("Auto-return failed.")
-            }
+            val intent = Intent(this, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) }
+            try { startActivity(intent) } catch (e: Exception) { addLog("Auto-return failed.") }
         }, 500)
     }
 
@@ -91,9 +107,44 @@ class GuardianService : AccessibilityService() {
             appTimeTrackers[packageName] = time + 1000L
         }
 
+
+
         val safeDomains = listOf("aistudio", "github", "codespaces")
         for (w in safeDomains) {
             if (findTextInNode(rootNode, w)) return
+        }
+
+val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+        // 1. Process 24-Hour Nightfall Pending Changes
+        val applyTime = prefs.getLong("NIGHTFALL_APPLY_TIME", 0L)
+        if (applyTime in 1..System.currentTimeMillis()) {
+            prefs.edit()
+                .putInt("NIGHTFALL_START", prefs.getInt("PENDING_NIGHTFALL_START", -1))
+                .putInt("NIGHTFALL_END", prefs.getInt("PENDING_NIGHTFALL_END", -1))
+                .putLong("NIGHTFALL_APPLY_TIME", 0L)
+                .apply()
+        }
+
+        // 2. Execute Nightfall Wall
+        val nfStart = prefs.getInt("NIGHTFALL_START", -1)
+        val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
+        if (nfStart != -1 && nfEnd != -1) {
+            val cal = java.util.Calendar.getInstance()
+            val currentMins = (cal.get(java.util.Calendar.HOUR_OF_DAY) * 60) + cal.get(java.util.Calendar.MINUTE)
+            
+            val isNightfall = if (nfStart < nfEnd) { currentMins in nfStart..nfEnd } else { currentMins >= nfStart || currentMins <= nfEnd }
+            
+            if (isNightfall) {
+                // Apps allowed during sleep:
+                val sleepAllowed = listOf("com.android.systemui", "launcher", "nexus", "pixel", "clock", "alarm", "dialer", "contacts", "com.rockhard.blocker")
+                if (!sleepAllowed.any { packageName.contains(it, ignoreCase = true) }) {
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    // Passing 'false' as the second parameter completely disables the "Defend Netbeasts" button!
+                    triggerBossInvasion("Nightfall Protocol Active. Go to sleep.", false)
+                    return
+                }
+            }
         }
 
         val allScreenText = extractAllText(rootNode).lowercase()
