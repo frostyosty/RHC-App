@@ -35,35 +35,36 @@ android {
     kotlinOptions { jvmTarget = "17" }
     lint { abortOnError = false }
 
-    flavorDimensions += "audience"
-
+    flavorDimensions += "version"
+    
     productFlavors {
-        create("rhc") {
-            dimension = "audience"
-            applicationIdSuffix = ".rhc"
-            resValue("string", "app_name", "Rock Hard Christianity")
-            resValue("string", "flavor_id", "rhc")
+        create("gamersMaleNetbeasts") {
+            dimension = "version"
+            applicationIdSuffix = ".netbeasts"
+            resValue("string", "app_name", "RHC")
+            resValue("string", "flavor_id", "rhc") // Keeps your Kaiju boss generator active!
             resValue("string", "overlay_title", "NOT TODAY.")
-            resValue("string", "brick_message", "Oh no, your phone is bricked up.")
-            resValue("string", "essay_prompt", "I am a grown man with a fully functioning prefrontal cortex. I will not lose a psychological battle against a glowing glass rectangle today. I am choosing strength over weakness.")
         }
-        create("behaviour") {
-            dimension = "audience"
-            applicationIdSuffix = ".behaviour"
-            resValue("string", "app_name", "Behaviour")
-            resValue("string", "flavor_id", "behaviour")
+        create("gamersFemaleHomevisits") {
+            dimension = "version"
+            applicationIdSuffix = ".homevisits"
+            resValue("string", "app_name", "RHC")
+            resValue("string", "flavor_id", "female_gamers")
             resValue("string", "overlay_title", "AVERT YOUR EYES.")
-            resValue("string", "brick_message", "Let us take a minute of reflection.")
-            resValue("string", "essay_prompt", "I am a woman of dignity and grace. I will not compromise my peace of mind for fleeting pixels. I am choosing my future over this moment of weakness, and I will step away from this device.")
         }
-        create("bounceland") {
-            dimension = "audience"
-            applicationIdSuffix = ".bounceland"
-            resValue("string", "app_name", "Bounceland")
-            resValue("string", "flavor_id", "bounceland")
-            resValue("string", "overlay_title", "WILD GLITCH APPEARED!")
-            resValue("string", "brick_message", "Time out for 10 minutes!")
-            resValue("string", "essay_prompt", "GAME_MODE")
+        create("timesaversMaleMomentum") {
+            dimension = "version"
+            applicationIdSuffix = ".momentum_m"
+            resValue("string", "app_name", "RHC")
+            resValue("string", "flavor_id", "momentum_male")
+            resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
+        }
+        create("timesaversFemaleMomentum") {
+            dimension = "version"
+            applicationIdSuffix = ".momentum_f"
+            resValue("string", "app_name", "RHC")
+            resValue("string", "flavor_id", "momentum_female")
+            resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
         }
     }
 }

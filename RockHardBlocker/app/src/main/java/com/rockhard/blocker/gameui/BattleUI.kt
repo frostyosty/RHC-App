@@ -102,10 +102,10 @@ internal fun GameActivity.setUIState(state: String) {
     
     updateDispatchButton()
 
-    if (state == "BATTLE") {
-        findViewById<ScrollView>(R.id.viewActivity)?.visibility = View.VISIBLE
-        findViewById<ScrollView>(R.id.viewParty)?.visibility = View.GONE
-        findViewById<ScrollView>(R.id.viewBag)?.visibility = View.GONE
+if (state == "BATTLE") {
+        findViewById<View>(R.id.viewActivity)?.visibility = View.VISIBLE
+        findViewById<View>(R.id.viewParty)?.visibility = View.GONE
+        findViewById<View>(R.id.viewBag)?.visibility = View.GONE
     } else hideBattleArena()
 }
 
