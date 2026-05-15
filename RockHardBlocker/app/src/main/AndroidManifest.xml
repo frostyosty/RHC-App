@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -14,7 +16,8 @@
         <activity android:name=".MainActivity" android:exported="true" android:label="@string/app_name" />
         <activity android:name=".TrapActivity" android:exported="false" android:launchMode="singleTask" />
         <activity android:name=".GameActivity" android:exported="false" android:launchMode="singleTask" android:label="Netbeasts Safari" />
-
+        <activity android:name=".MomentumActivity" android:exported="false" android:launchMode="singleTask" />
+        
         <!-- FIX: Added labels to the Launchers so your Home Screen is correct! -->
         <activity-alias android:name=".DefaultLauncher" android:enabled="true" android:exported="true" android:icon="@mipmap/ic_launcher" android:targetActivity=".MainActivity" android:label="@string/app_name">
             <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
@@ -25,7 +28,7 @@
         </activity-alias>
 
         <!-- FIX: Added labels to the Services so they look right in Security Settings -->
-        <service android:name=".GuardianService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/app_name">
+        <service android:name=".GuardianService" android:foregroundServiceType="specialUse" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/app_name">
             <intent-filter> <action android:name="android.accessibilityservice.AccessibilityService" /> </intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/guardian_config" />
         </service>
@@ -39,5 +42,25 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
-    </application>
+    
+        <receiver android:name=".ShutdownReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_SHUTDOWN" />
+                <action android:name="android.intent.action.QUICKBOOT_POWEROFF" />
+            </intent-filter>
+        </receiver>
+        <activity-alias android:name=".CloakLauncher" android:enabled="false" android:exported="true" android:icon="@drawable/ic_sys_sync" android:targetActivity=".MainActivity" android:label="Sync Services">
+            <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
+        </activity-alias>
+
+        <activity android:name=".ProcessTextActivity" android:label="Overcome" android:theme="@android:style/Theme.NoDisplay" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <receiver android:name=".WatchdogReceiver" android:exported="false" />
+</application>
 </manifest>

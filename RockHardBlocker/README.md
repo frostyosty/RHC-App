@@ -1,69 +1,89 @@
-PROJECT OVERVIEW: Rock Hard Christianity (RHC) & Netbeast Safari
+PROJECT OVERVIEW: Rock Hard Christianity (RHC)
 
-1. The Core Concept
-Rock Hard Christianity (RHC) is a native Android application designed to completely eradicate pornographic material, illicit apps, and time-wasting websites from a user's phone.
-However, instead of relying on guilt or "accountability partners" (which cause shame and friction), it uses Loss Aversion and Positive Reinforcement. The blocker is gamified through a built-in retro RPG called Netbeast Safari. The user collects, trains, and battles digital pets (Netbeasts). If they try to bypass the blocker, terrifying Boss monsters invade their game and permanently kill their pets and steal their items. It rewires the brain's dopamine loop to protect their digital ecosystem instead of destroying it.
-
-2. The Ironclad Defense Stack (The Guardian)
-We built a multi-layered, tamper-proof security system that does not require a PC to install.
-The Accessibility Ninja (Screen Reader): A background service that reads the screen at 60fps using virtually zero battery. It features a 10-Language NSFW Dictionary (English, Chinese, Spanish, Russian, etc.). If it sees illicit words, it physically forces the phone to scroll away or hit the "Back" button.
-The Red Wall Overlay: If the user tries to open Android Settings, alter the VPN, or remove Device Admin privileges, the Guardian instantly hijacks the screen with a massive, un-closeable red overlay.
-Custom "Overcome" Lists: Users can permanently ban specific websites (e.g., youtube.com) or specific Android Apps (e.g., WeChat, TikTok, Tinder). The Guardian is context-aware: it only blocks websites if the word is found in a clickable link or URL address bar, preventing "friendly fire" if the user is just reading a book.
-Anti-ADB & Battery Guard: Blocks the "Developer Options" menu so users can't uninstall it via a PC. It also detects Chinese OEM phones (Xiaomi, Huawei, Oppo) and forces the user to enable "Autostart" so the phone's battery-saver doesn't accidentally kill the blocker.
-Free IP-Level DNS: Integrates with CleanBrowsing’s Adult Filter to block illicit domains at the hardware level.
-
-3. The RPG Game Engine (Netbeast Safari)
-Hidden inside the app is a fully modular, text-adventure-style RPG that reacts to the real world.
-Real-World Weather & Terrain: The app silently pings an IP-Geolocation and Open-Meteo API in the background. It reads the user's real-world City, Elevation, and Humidity to mathematically calculate their Terrain (e.g., Coastal Lowlands or Mountainous) and live Weather (Rain, Snow, Storms), adjusting the game's ecosystem without ever asking for scary GPS permissions.
-Habit-Based Spawning: The Guardian secretly tracks how many seconds the user spends on Social Media, Streaming, Gaming, or Tech apps. When a wild Netbeast spawns, it matches their exact real-world habits (e.g., watching YouTube spawns a Bufferoo, scrolling Twitter spawns a Chirplet).
-URL Scavenger Hunts: If it is currently raining in the real world, the user can "Infuse" their Netbeast with Rain energy. If they browse healthy websites that contain the word "rain" in the URL, the Netbeast absorbs it and permanently gains damage multiplier stacks!
-Concurrent Expeditions: Users can deploy their Netbeasts on 3-minute background expeditions. They scavenge for items or trigger 5-second Quick Time Events (QTEs) where wild beasts ambush them.
-Offline Resolution: If the user closes the app while a Netbeast is exploring, the game calculates the math in the background. When they return, they might be greeted with an "OFFLINE AMBUSH" and thrown straight into a battle.
-
-4. Deep Combat Mechanics
-David vs Goliath Scaling: Wild Netbeasts dynamically scale their HP based on your active pet. Furthermore, a Party Penalty adds +15 HP to wild monsters for every extra beast you hoard in your party, forcing players to be strategic. Beating higher-level monsters yields massive "Goliath Bonus" payouts.
-Tactical Weather & Traits: Rain makes Netbeasts slip and miss attacks. Netbeasts spawn with randomly generated traits (e.g., Slick, Glitchy, Battle-Hardened, Veteran) that alter their HP.
-Potions & Gene Splicing: Potions grant dynamic buffs (Insta-Kill, Guaranteed Evasion, or Permanent Max HP increases). The "Move Tutor" allows players to pay 50 coins to rip a move off one beast and teach it to another.
-The "Last Stand": If all your Netbeasts die in a boss fight, the human player is forced to step in. You get a "THROW PUNCH" button, deal 2 damage, and the Boss obliterates you for 9,999 damage.
-The Flee Penalty: If a user triggers a Red Wall block, they can hit "FLEE" to escape the boss. But when they reopen the app... their camp is devastated. The boss permanently kills their 3 weakest Netbeasts and steals 50% of their inventory items.
-
-5. The Economy & Frictionless Multiplayer
-The Safari Lodge: A local market where users can buy and sell Nets, Sprays, and Potions using "Focus Coins."
-The Grouchy Debuff: If you buy a Netbeast from the market, it remembers. It receives a 24-hour [Grouchy] status effect where it has a 30% chance to cross its arms and disobey your attack commands in battle.
-Ghost Multiplayer Setup: The moment the app is opened, it silently generates a secure UUID and a retro Hacker Name (e.g., Neon_Paladin_42). This lays the groundwork for our upcoming Cloud Market, where users can buy and sell beasts with other real players in their city without ever needing to create an account or log in.
-
-6. UI / UX Polish & Engineering
-Custom XML Dialogs: We stripped out all ugly Android system popups. Everything runs on beautifully styled, dark-mode Native XML modals.
-Street Fighter Arena: Battles feature dual health bars and colored placeholders that physically slide onto the screen, shake when hit, lunge when attacking, evade diagonally, and fade out when killed.
-Haptic Feedback: Native hardware vibration is tied to combat. Small buzzes for hits, heavy buzzes for crits, and massive vibrations when a Netbeast is killed.
-Dynamic App Icons: Users can toggle a setting that physically morphs their phone's home screen icon from the gritty "RHC" logo into a bright orange "Netbeasts" gaming logo.
-Master Debug Console: A dedicated developer UI that outputs raw API location data, live battery health/voltage, exact habit tracking percentages, and a 40-character contextual readout of exactly why the Guardian triggered a block.
-Modular Architecture: We took a massive "God Class" file and successfully refactored the codebase into distinct, professional engines (CombatEngine.kt, ExploreEngine.kt, WeatherEngine.kt, SaveManager.kt, GameUI.kt) to ensure lightning-fast compile times and zero memory leaks.
-
-
-
-🗂️ THE MASTER ARCHITECTURE LIST
-✅ GameModels.kt -> The Data. Contains Netbeast class and GameData lists (Beasts, Traits, Bosses).
-✅ SaveManager.kt -> The Hard Drive. Handles all SharedPreferences string parsing.
-✅ DialogUtils.kt -> The Modals. The sleek XML pop-up generator.
-✅ AnimUtils.kt -> The Graphics. View shakes, lunges, and fades.
-✅ WeatherEngine.kt -> The Network. Fetches IP Geolocation and Open-Meteo data silently.
-✅ CombatEngine.kt -> The Math. Handles executePlayerMove, triggerEnemyCounterAttack, and endBattle.
-✅ ExploreEngine.kt -> The World Clock. Handles performGlobalTick, spawnWildQTE, and checkOfflineExpeditions.
-✅ GameUI.kt -> The Screen. Handles updatePartyScreen, updateBagScreen, setUIState, setupShop, and setupEquipPanel.
-⏳ GameState.kt (NEW) -> The Memory. Handles loadSaveData, wipeCorruptSave, processFleePenalty, and generateMarket.
-⏳ GameSetup.kt (NEW) -> The Wires. Extracts the massive button click-listeners out of onCreate.
-⏳ GameActivity.kt (SLIMMED) -> The Hub. Will now only hold the variables and the onCreate lifecycle.
-
-
+Rock Hard Christianity (RHC) is a cross-platform (Native Android & Native Windows C++) environment protector and time-reclamation engine. It operates in two distinct build flavors:
+Netbeast Safari (Gamers): Disguises a military-grade blocker inside a retro 32-bit RPG. Bypassing the blocker spawns terrifying Bosses that permanently kill the player's Netbeasts.
+Momentum Core (Time-Savers): A sleek productivity dashboard that converts blocked urges into an "evaporating" time currency, incentivizing users to spend reclaimed time on real-world tasks and rank on a global leaderboard.
+1. Multi-Platform Architecture & Modularization
+The project uses a unified logic architecture ported across two entirely different native stacks:
+Mobile (Kotlin / Android): Compiled via Gradle into 4 distinct flavors (Gamers/Timesavers, Male/Female). Features a unified "Command Center" dashboard (MainActivity.kt).
+Desktop (Pure C++ / Win32): A zero-dependency, lightning-fast Windows .exe utilizing the Win32 API, GDI rendering, and Microsoft UIAutomation.
+Shared Engine (rhc-common/): The C++ desktop app perfectly mirrors the Android logic by utilizing a custom DatabaseManager wrapping sqlite3.c, mimicking Android's SharedPreferences for 1:1 logic translation of the ShieldRuleEngine and MomentumEngine.
+2. The Ironclad Security Stack (Mobile & Desktop)
+Mobile (GuardianService & Rules Engine):
+The Accessibility Ninja: Scans the DOM. Triggers on Hard words (instant drop) or Soft words (requires 3 distinct triggers).
+Fuzzy App Matching: Dynamically maps user-installed apps via PackageManager and strips developer tags (e.g., com.instagram.android becomes instagram) to automatically block "Lite" and variant apps.
+The Xiaomi/MIUI Nuke: Bypasses proprietary Chinese task killers by aggressively monitoring all Launchers. If an uninstall confirmation popup is detected, the Red Wall slams down instantly, overriding all setup passes.
+The Watchdog Heartbeat: An AlarmManager pings every 15 minutes. If the OS kills the service, it fires a high-priority "SHIELD DOWN" lock-screen notification.
+Windows Desktop (C++ System Interceptors):
+UIA Scanner: Uses native Microsoft UI Automation to read browser tabs, URL bars, and window titles without triggering Antivirus heuristic flags. Injects Alt+Left Arrow via SendInput to physically back the user out of illicit sites.
+Network Sinkholing: Directly parses and rewrites C:\Windows\System32\drivers\etc\hosts to instantly sever connections to user-defined blocklists.
+Taskmgr Assassin: A background thread that identifies Taskmgr.exe and instantly fires a WM_CLOSE message, making the app unkillable by standard means.
+Safe Mode Cloak (Dead Man's Switch): Hooks the WM_QUERYENDSESSION shutdown event. On restart, it hides the original executable and disguises itself in the startup registry as SyncServices.exe to evade Safe Mode uninstalls, uncloaking only on a normal boot.
+3. The "Self-Destruct" System Override
+To prevent "Lock-in Panic" without enabling 3 AM relapses, the system features a one-way mandatory cooldown for uninstallation or pausing.
+Users select a 3, 5, 7, or 14-day delay using a one-way slider (cannot be decreased).
+Once the countdown expires, Android allows access to the Settings app, and Windows executes a silent CMD script that physically deletes rhc_desktop.exe from the hard drive and wipes the hosts file.
+4. Momentum Core (Time-Savers Engine)
+Smart Daily Yields: Eliminates "Urge Farming" by awarding 0 points for hitting the Red Wall. Instead, users gain a passive daily time yield based on their blocklist (e.g., blocking TikTok = +45 mins/day, Snapchat = +15 mins/day).
+Evaporation: Earned time decays. After 2 hours, 1 minute of Momentum evaporates every 5 minutes, enforcing urgent, proactive task execution.
+Global Supabase Leaderboards: A serverless REST integration using Android's HttpURLConnection and Windows' native winhttp.dll. Scores and Anonymous UUIDs are synced safely using Row Level Security (RLS).
+5. Netbeast Safari (Gamers RPG Engine)
+The 19-Variable Netbeast String: Zero-overhead data serialization. (Name, Type, HP, MaxHP, Moves, Amulets, Traits, etc.).
+Dynamic RPG Combat: CombatState.kt tracks transient statuses. Modifiers include [Vampiric], [Thick-Skinned], [Spiked], and [Elusive].
+Weather & GPS Rescues: Pings Open-Meteo silently. Weather dictates combat buffs (e.g., Storm = +50% Dmg). Dead Netbeasts are captured by Poachers at real-world GPS offset suburbs; the player must physically travel there to win them back.
+The Flee Penalty: Fleeing the Red Wall permanently kills the player's 3 weakest Netbeasts and enforces a 15-minute "Demon Domain" OS-level lockout where the app cannot be opened.
+6. UI & Rendering
+Mobile (Command Center): A unified, dark-mode dashboard housing the Evaporating Bar, Custom Spend Tasks, Overcome Lists, and Global Leaderboard in a single view. Uses native XML <layer-list> shapes for 3D tactile buttons.
+Desktop (Pure Win32 GDI): Zero-bloat native Window rendering. Implements custom Window Subclassing to capture WM_MOUSEMOVE and WM_LBUTTONDOWN, creating tactile, color-shifting dark-mode buttons that physically depress when clicked. Embedded System Tray integration with a hidden Developer Backdoor.
+7. Tooling: RHC Sprite Studio V9 (For Gamers Flavor)
+A zero-dependency Python/HTML5 suite running locally.
+Features AI Text-to-Sprite (via pollinations.ai) with mathematical white-background stripping and nearest-neighbor 8-bit resizing.
+Auto-Tweening GIF timelines, Onion Skinning, and 8-bit Audio Synthesizer for combat SFX.
 
 
 cd /workspaces/RHC-App/RockHardBlocker
-./gradlew assembleRelease
-cp app/build/outputs/apk/rhc/release/app-rhc-release.apk ../rhc.apk
 
+# 1. Compile all four flavors
+./gradlew assembleGamersMaleNetbeastsRelease
+./gradlew assembleGamersFemaleHomevisitsRelease
+./gradlew assembleTimesaversMaleMomentumRelease
+./gradlew assembleTimesaversFemaleMomentumRelease
+
+# 2. Copy and rename them to match the website's JS fileMap
+cp app/build/outputs/apk/gamersMaleNetbeasts/release/app-gamersMaleNetbeasts-release.apk ../rhc_netbeasts.apk
+cp app/build/outputs/apk/gamersFemaleHomevisits/release/app-gamersFemaleHomevisits-release.apk ../rhc_homevisits.apk
+cp app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk ../rhc_momentum_m.apk
+cp app/build/outputs/apk/timesaversFemaleMomentum/release/app-timesaversFemaleMomentum-release.apk ../rhc_momentum_f.apk
+
+# 3. Create the release and upload ALL 4 APKs at once
 cd /workspaces/RHC-App
 TAG="v$(date +%Y%m%d%H%M%S)"
-GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" ./rhc.apk \
-  --repo frostyosty/htc-downloads-rhc --title "Dev Build $TAG - Link Restoration" \
-  --notes "message"
+GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" \
+  ./rhc_netbeasts.apk \
+  ./rhc_homevisits.apk \
+  ./rhc_momentum_m.apk \
+  ./rhc_momentum_f.apk \
+  --repo frostyosty/htc-downloads-rhc \
+  --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
+  --notes "Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
+
+
+
+
+
+  # Navigate to the Desktop project directory
+cd /workspaces/RHC-App/rhc-desktop
+
+# 1. Run the build script
+./build.sh
+
+# 2. Navigate back to the root and create the GitHub Release
+cd /workspaces/RHC-App
+TAG="v$(date +%Y%m%d%H%M%S)-desktop"
+
+# IMPORTANT: Make sure your GITHUB_TOKEN is set
+gh release create "$TAG" \
+  ./rhc-desktop/rhc_desktop.exe \
+  --repo frostyosty/htc-downloads-rhc \
+  --title "Desktop Build $TAG" \
+  --notes "Latest build of the Win32 C++ Momentum Core. Includes all server-side logic from the Android build."

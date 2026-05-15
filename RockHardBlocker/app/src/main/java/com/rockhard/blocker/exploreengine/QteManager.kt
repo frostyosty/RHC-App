@@ -55,13 +55,11 @@ internal fun GameActivity.spawnWildQTE(petIndex: Int, pet: Netbeast) {
             if (netCount <= 0) btnQteNet.visibility = View.GONE
             saveItems(); saveParty(); updatePartyScreen(); updateBagScreen()
             
-            // LOGARITHMIC CATCH RATE WITH SLIDER PENALTY
             val totalNets = nets + party.sumOf { it.eqNets }
             val baseCatchChance = 15 + (25.0 * Math.exp(-0.05 * totalNets)).toInt()
             val isClear = !isPlayer && party[petIndex].infusionStacks > 0 && party[petIndex].infusionEl == "Clear"
-            
-            val catchPenalty = (safeFactor * 20).toInt() // -0% at Danger, -20% at Safe
-            val catchChance = (if (isClear) baseCatchChance + (15 * party[petIndex].infusionStacks) else baseCatchChance) - catchPenalty
+            val catchPenalty = (exploreDifficulty / 100f * 20).toInt()
+            val catchChance = (if (isClear) baseCatchChance + 15 else baseCatchChance) - catchPenalty
             
             if (Random.nextInt(100) < catchChance) {
                 mainHandler.removeCallbacks(expireTask); qteContainer.removeView(qteView); activeQTEs.remove(petIndex)
@@ -75,8 +73,14 @@ internal fun GameActivity.spawnWildQTE(petIndex: Int, pet: Netbeast) {
                     printLog("\n> 💢 The net broke! ${wildBeast.name} is angry and ATTACKS!")
                     startWildBattle(petIndex, wildBeast)
                 } else {
-                    if (netCount > 0) printLog("\n> The net broke! But ${wildBeast.name} hasn't fled yet.") 
-                    else printLog("\n> The net broke! You are out of nets. The wild ${wildBeast.name} wanders off.")
+                    if (netCount > 0) {
+                        printLog("\n> The net broke! But ${wildBeast.name} hasn't fled yet.")
+                        mainHandler.removeCallbacks(expireTask)
+                        mainHandler.postDelayed(expireTask, 5000) // Reset the timer!
+                    } else {
+                        mainHandler.removeCallbacks(expireTask); qteContainer.removeView(qteView); activeQTEs.remove(petIndex)
+                        printLog("\n> The net broke! You are out of nets. The wild ${wildBeast.name} wanders off.")
+                    }
                 }
             }
         }

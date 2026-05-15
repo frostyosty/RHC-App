@@ -1,9 +1,7 @@
 # RHC-App
 
 quick changes --> do change then
-./gradlew assembleRelease
-cp app/build/outputs/apk/rhc/release/app-rhc-release.apk ./rhc.apk
-gh release create "v$(date +%Y%m%d%H%M)" ./rhc.apk --repo frostyosty/htc-downloads-rhc --title "Quick Tweak"
+see bottom of this file
 
 ## The Pro Way
 Let's do the "Pro Way" we talked about earlier.
@@ -45,10 +43,62 @@ Android will recognize it instantly, give you the standard "Do you want to insta
 
 
 
-
 ## real emergency kill switch
 
 If your phone is plugged into your computer (or connected via Wireless ADB) to test this, your computer has supreme power over the phone. If you are stuck on the red screen, you just open a local terminal on your computer and type:
 code
 Bash
-adb uninstall com.rockhard.blocker.bro
+adb uninstall [apk name]
+
+
+
+
+
+
+
+cd /workspaces/RHC-App/RockHardBlocker
+
+# 1. Compile all four flavors
+./gradlew assembleGamersMaleNetbeastsRelease
+./gradlew assembleGamersFemaleHomevisitsRelease
+./gradlew assembleTimesaversMaleMomentumRelease
+./gradlew assembleTimesaversFemaleMomentumRelease
+
+# 2. Copy and rename them to match the website's JS fileMap
+cp app/build/outputs/apk/gamersMaleNetbeasts/release/app-gamersMaleNetbeasts-release.apk ../rhc_netbeasts.apk
+cp app/build/outputs/apk/gamersFemaleHomevisits/release/app-gamersFemaleHomevisits-release.apk ../rhc_homevisits.apk
+cp app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk ../rhc_momentum_m.apk
+cp app/build/outputs/apk/timesaversFemaleMomentum/release/app-timesaversFemaleMomentum-release.apk ../rhc_momentum_f.apk
+
+# 3. Create the release and upload ALL 4 APKs at once
+cd /workspaces/RHC-App
+TAG="v$(date +%Y%m%d%H%M%S)"
+GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" \
+  ./rhc_netbeasts.apk \
+  ./rhc_homevisits.apk \
+  ./rhc_momentum_m.apk \
+  ./rhc_momentum_f.apk \
+  --repo frostyosty/htc-downloads-rhc \
+  --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
+  --notes "Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
+
+
+
+
+
+  # Navigate to the Desktop project directory
+cd /workspaces/RHC-App/rhc-desktop
+
+# 1. Run the build script
+./build.sh
+
+# 2. Navigate back to the root and create the GitHub Release
+cd /workspaces/RHC-App
+TAG="v$(date +%Y%m%d%H%M%S)-desktop"
+
+# IMPORTANT: Make sure your GITHUB_TOKEN is set
+gh release create "$TAG" \
+  ./rhc-desktop/rhc_desktop.exe \
+  --repo frostyosty/htc-downloads-rhc \
+  --title "Desktop Build $TAG" \
+  --notes "Latest build of the Win32 C++ Momentum Core. Includes all server-side logic from the Android build."
