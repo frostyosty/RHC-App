@@ -4,6 +4,9 @@ plugins {
 }
 
 android {
+    buildFeatures {
+        buildConfig = true
+    }
     namespace = "com.rockhard.blocker"
     compileSdk = 34
     defaultConfig {
@@ -42,8 +45,10 @@ android {
             dimension = "version"
             applicationIdSuffix = ".netbeasts"
             resValue("string", "app_name", "RHC")
-            resValue("string", "flavor_id", "rhc") // Keeps your Kaiju boss generator active!
+            resValue("string", "flavor_id", "rhc") 
             resValue("string", "overlay_title", "NOT TODAY.")
+            resValue("string", "brick_message", "Stay strong. Defend your Netbeasts.")
+            resValue("string", "essay_prompt", "GAME_MODE")
         }
         create("gamersFemaleHomevisits") {
             dimension = "version"
@@ -51,6 +56,8 @@ android {
             resValue("string", "app_name", "RHC")
             resValue("string", "flavor_id", "female_gamers")
             resValue("string", "overlay_title", "AVERT YOUR EYES.")
+            resValue("string", "brick_message", "Take a deep breath and step away.")
+            resValue("string", "essay_prompt", "GAME_MODE")
         }
         create("timesaversMaleMomentum") {
             dimension = "version"
@@ -58,6 +65,8 @@ android {
             resValue("string", "app_name", "RHC")
             resValue("string", "flavor_id", "momentum_male")
             resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
+            resValue("string", "brick_message", "Your time is valuable. Protect it.")
+            resValue("string", "essay_prompt", "MOMENTUM_MODE")
         }
         create("timesaversFemaleMomentum") {
             dimension = "version"
@@ -65,6 +74,8 @@ android {
             resValue("string", "app_name", "RHC")
             resValue("string", "flavor_id", "momentum_female")
             resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
+            resValue("string", "brick_message", "Your time is valuable. Protect it.")
+            resValue("string", "essay_prompt", "MOMENTUM_MODE")
         }
     }
 }

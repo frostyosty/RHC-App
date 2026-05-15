@@ -1,0 +1,45 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/values_values.arsc.flat",
+            "map": [
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/src/main/res/values/styles.xml",
+                    "from": {
+                        "startLines": "23,36,40,32,45,3,15,8",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "800,1301,1422,1176,1559,79,510,250",
+                        "endLines": "30,38,42,34,52,5,20,13",
+                        "endColumns": "12,12,12,12,12,12,12,12",
+                        "endOffsets": "1170,1416,1522,1295,1951,210,767,504"
+                    },
+                    "to": {
+                        "startLines": "7,15,18,21,24,32,35,41",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "425,800,920,1025,1149,1546,1682,1944",
+                        "endLines": "14,17,20,23,31,34,40,46",
+                        "endColumns": "12,12,12,12,12,12,12,12",
+                        "endOffsets": "795,915,1020,1144,1541,1677,1939,2198"
+                    }
+                },
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/gamersMaleNetbeasts/release/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "6,8,10,12,14",
+                        "startColumns": "4,4,4,4,4",
+                        "startOffsets": "174,296,455,587,710",
+                        "endColumns": "61,98,71,62,73",
+                        "endOffsets": "231,390,522,645,779"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6",
+                        "startColumns": "4,4,4,4,4",
+                        "startOffsets": "55,117,216,288,351",
+                        "endColumns": "61,98,71,62,73",
+                        "endOffsets": "112,211,283,346,420"
+                    }
+                }
+            ]
+        }
+    ]
+}

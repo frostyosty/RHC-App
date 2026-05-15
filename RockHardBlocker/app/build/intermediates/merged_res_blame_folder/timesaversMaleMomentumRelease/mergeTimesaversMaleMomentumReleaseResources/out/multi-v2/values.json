@@ -1,0 +1,45 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.rockhard.blocker.app-mergeTimesaversMaleMomentumReleaseResources-2:/values/values.xml",
+            "map": [
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/timesaversMaleMomentum/release/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "6,8,10,12,14",
+                        "startColumns": "4,4,4,4,4",
+                        "startOffsets": "177,302,463,602,738",
+                        "endColumns": "61,97,75,72,81",
+                        "endOffsets": "234,395,534,670,815"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6",
+                        "startColumns": "4,4,4,4,4",
+                        "startOffsets": "55,117,215,291,364",
+                        "endColumns": "61,97,75,72,81",
+                        "endOffsets": "112,210,286,359,441"
+                    }
+                },
+                {
+                    "source": "/workspaces/RHC-App/RockHardBlocker/app/src/main/res/values/styles.xml",
+                    "from": {
+                        "startLines": "23,36,40,32,45,3,15,8",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "800,1301,1422,1176,1559,79,510,250",
+                        "endLines": "30,38,42,34,52,5,20,13",
+                        "endColumns": "12,12,12,12,12,12,12,12",
+                        "endOffsets": "1170,1416,1522,1295,1951,210,767,504"
+                    },
+                    "to": {
+                        "startLines": "7,15,18,21,24,32,35,41",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "446,821,941,1046,1170,1567,1703,1965",
+                        "endLines": "14,17,20,23,31,34,40,46",
+                        "endColumns": "12,12,12,12,12,12,12,12",
+                        "endOffsets": "816,936,1041,1165,1562,1698,1960,2219"
+                    }
+                }
+            ]
+        }
+    ]
+}

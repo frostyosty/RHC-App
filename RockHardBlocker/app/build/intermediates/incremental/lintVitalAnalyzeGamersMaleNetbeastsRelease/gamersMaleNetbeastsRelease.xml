@@ -1,0 +1,53 @@
+<variant
+    name="gamersMaleNetbeastsRelease"
+    package="com.rockhard.blocker"
+    minSdkVersion="26"
+    targetSdkVersion="34"
+    mergedManifest="build/intermediates/merged_manifest/gamersMaleNetbeastsRelease/processGamersMaleNetbeastsReleaseMainManifest/AndroidManifest.xml"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.3.0:proguard-rules.pro"
+    partialResultsDir="build/intermediates/lint_vital_partial_results/gamersMaleNetbeastsRelease/lintVitalAnalyzeGamersMaleNetbeastsRelease/out"
+    desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/gamersMaleNetbeasts/java:src/release/java:src/gamersMaleNetbeastsRelease/java:src/main/kotlin:src/gamersMaleNetbeasts/kotlin:src/release/kotlin:src/gamersMaleNetbeastsRelease/kotlin"
+        resDirectories="src/main/res:src/gamersMaleNetbeasts/res:src/release/res:src/gamersMaleNetbeastsRelease/res"
+        assetsDirectories="src/main/assets:src/gamersMaleNetbeasts/assets:src/release/assets:src/gamersMaleNetbeastsRelease/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <resValues>
+    <resValue
+        type="string"
+        name="app_name"
+        value="RHC" />
+    <resValue
+        type="string"
+        name="brick_message"
+        value="Stay strong. Defend your Netbeasts." />
+    <resValue
+        type="string"
+        name="essay_prompt"
+        value="GAME_MODE" />
+    <resValue
+        type="string"
+        name="flavor_id"
+        value="rhc" />
+    <resValue
+        type="string"
+        name="overlay_title"
+        value="NOT TODAY." />
+  </resValues>
+  <artifact
+      classOutputs="build/intermediates/javac/gamersMaleNetbeastsRelease/compileGamersMaleNetbeastsReleaseJavaWithJavac/classes:build/tmp/kotlin-classes/gamersMaleNetbeastsRelease:build/kotlinToolingMetadata:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/gamersMaleNetbeastsRelease/processGamersMaleNetbeastsReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.rockhard.blocker.netbeasts"
+      generatedSourceFolders="build/generated/ap_generated_sources/gamersMaleNetbeastsRelease/out:build/generated/source/buildConfig/gamersMaleNetbeasts/release"
+      generatedResourceFolders="build/generated/res/resValues/gamersMaleNetbeasts/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

@@ -1,2 +1,0 @@
-#- File Locator -
-listingFile=../../../../outputs/apk/bounceland/release/output-metadata.json

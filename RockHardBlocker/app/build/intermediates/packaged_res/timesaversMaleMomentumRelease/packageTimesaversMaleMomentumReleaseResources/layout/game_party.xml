@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/viewParty" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#111111" android:padding="12dp" android:visibility="gone">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- TAP A BEAST TO SELECT --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginBottom="8dp" android:textAlignment="center"/>
+        <LinearLayout android:id="@+id/partyContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="16dp"/>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="-- EQUIP ACTIVE NETBEAST --" android:textColor="#FFF" android:textStyle="bold" android:layout_marginBottom="8dp" android:textAlignment="center"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+            <Button android:id="@+id/btnEqNet" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ NET" style="@style/AppButton.Standard" android:backgroundTint="#1976D2" android:textSize="12sp" android:layout_marginEnd="4dp"/>
+            <Button android:id="@+id/btnEqPot" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ POT" style="@style/AppButton.Standard" android:backgroundTint="#388E3C" android:textSize="12sp" android:layout_marginEnd="4dp" android:layout_marginStart="4dp"/>
+            <Button android:id="@+id/btnEqSpray" android:layout_width="0dp" android:layout_height="55dp" android:layout_weight="1" android:text="+ SPRY" style="@style/AppButton.Standard" android:backgroundTint="#FBC02D" android:textColor="#000" android:textSize="12sp" android:layout_marginStart="4dp"/>
+        </LinearLayout>
+        <Button android:id="@+id/btnInfuse" style="@style/AppButton.Standard" android:backgroundTint="#9C27B0" android:text="INFUSE WITH CURRENT WEATHER" android:textSize="10sp"/>
+        <Button android:id="@+id/btnTeachMove" style="@style/AppButton.Standard" android:backgroundTint="#009688" android:text="TEACH MOVE FROM PARTY (50c)" android:textSize="10sp"/>
+        <Button android:id="@+id/btnDistribute" style="@style/AppButton.Standard" android:backgroundTint="#009688" android:text="DISTRIBUTE ITEMS EVENLY" android:textSize="10sp"/>
+        <Button android:id="@+id/btnUnequip" style="@style/AppButton.Standard" android:backgroundTint="#333333" android:text="UNEQUIP ALL ITEMS" android:textSize="10sp" android:layout_marginBottom="16dp"/>
+    </LinearLayout>
+</ScrollView>

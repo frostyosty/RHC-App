@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Value from product flavor: gamersFemaleHomevisits -->
+    <string name="app_name" translatable="false">RHC</string>
+    <!-- Value from product flavor: gamersFemaleHomevisits -->
+    <string name="brick_message" translatable="false">Take a deep breath and step away.</string>
+    <!-- Value from product flavor: gamersFemaleHomevisits -->
+    <string name="essay_prompt" translatable="false">GAME_MODE</string>
+    <!-- Value from product flavor: gamersFemaleHomevisits -->
+    <string name="flavor_id" translatable="false">female_gamers</string>
+    <!-- Value from product flavor: gamersFemaleHomevisits -->
+    <string name="overlay_title" translatable="false">AVERT YOUR EYES.</string>
+
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Value from product flavor: gamersMaleNetbeasts -->
+    <string name="app_name" translatable="false">RHC</string>
+    <!-- Value from product flavor: gamersMaleNetbeasts -->
+    <string name="brick_message" translatable="false">Stay strong. Defend your Netbeasts.</string>
+    <!-- Value from product flavor: gamersMaleNetbeasts -->
+    <string name="essay_prompt" translatable="false">GAME_MODE</string>
+    <!-- Value from product flavor: gamersMaleNetbeasts -->
+    <string name="flavor_id" translatable="false">rhc</string>
+    <!-- Value from product flavor: gamersMaleNetbeasts -->
+    <string name="overlay_title" translatable="false">NOT TODAY.</string>
+
+</resources>

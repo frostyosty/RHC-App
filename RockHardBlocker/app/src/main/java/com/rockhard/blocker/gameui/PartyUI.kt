@@ -111,6 +111,7 @@ internal fun GameActivity.updatePartyScreen() {
             "Snow" -> "Damage Taken divided by ${st + 1}"
             else -> "None"
         }
+        val inf = if (p.infusionEl != "None") "${p.infusionEl} (Stacks: ${p.infusionStacks})\n  ↳ $infDesc" else "None"
 
         val headerLayout = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; weightSum = 5.5f; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT); setPadding(0, 0, 0, 8) }
         headerLayout.addView(TextView(this).apply { text = "TRAIT"; setTextColor(Color.GRAY); textSize = 11f; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.2f) })
@@ -131,7 +132,7 @@ internal fun GameActivity.updatePartyScreen() {
         val tvCombat = TextView(this).apply { text = "\n--- COMBAT SKILLS ---\n⚔️ ${p.move1}:\n  ↳ $m1D\n⚔️ ${p.move2}:\n  ↳ $m2D\n⚔️ ${p.move3}:\n  ↳ $m3D\n\n--- STATS ---\nMax HP: ${p.maxHp}"; setTextColor(Color.WHITE); setPadding(0, 32, 0, 0) }
 
         // --- NEW LORE GENERATOR ---
-        val cleanLoreName = p.name.replace(Regex("\\[.*?\\]"), "").trim()
+        val cleanName = p.name.replace(Regex("\\[.*?\\]"), "").trim()
         val originSite = when(p.type) {
             "Tech" -> listOf("sys-kernel.org", "packet-route.net", "data-cache.io", "server-farm.local").let { it[(p.name.hashCode() and 0x7FFFFFFF) % it.size] }
             "Social" -> listOf("scroll-feed.com", "chat-hub.app", "echo-chamber.net", "status-update.io").let { it[(p.name.hashCode() and 0x7FFFFFFF) % it.size] }
@@ -139,7 +140,7 @@ internal fun GameActivity.updatePartyScreen() {
             "Streaming" -> listOf("vid-stream.tv", "binge-watch.com", "media-buffer.net", "auto-play.io").let { it[(p.name.hashCode() and 0x7FFFFFFF) % it.size] }
             "Flying" -> listOf("cloud-server.net", "aero-net.org", "strato-host.com").let { it[(p.name.hashCode() and 0x7FFFFFFF) % it.size] }
             "Reclaimed" -> {
-                val baseApp = cleanLoreName.lowercase()
+                val baseApp = cleanName.lowercase()
                     .replace("saurus","").replace("ling","").replace("let","")
                     .replace("puff","").replace("wing","").replace("sprite","")
                     .replace("bot","").replace("mon","").replace("fox","")
@@ -150,10 +151,8 @@ internal fun GameActivity.updatePartyScreen() {
         val loreText = if (originSite.contains(" ")) originSite else "www.$originSite"
         val tvLore = TextView(this).apply { text = "\nFound roaming $loreText"; setTextColor(Color.parseColor("#888888")); setTypeface(null, android.graphics.Typeface.ITALIC); setPadding(0, 16, 0, 0) }
 
-        detailsPanel.addView(headerLayout)
-        detailsPanel.addView(traitLayout)
+        detailsPanel.addView(headerLayout); detailsPanel.addView(traitLayout); 
         
-        // FIXED: Replaced the broken line-break!
         if (p.infusionStacks > 0) {
             detailsPanel.addView(TextView(this@updatePartyScreen).apply { 
                 text = "🌟 ${p.infusionEl} Infused (Stacks: ${p.infusionStacks})\n  ↳ $infDesc"
@@ -163,8 +162,7 @@ internal fun GameActivity.updatePartyScreen() {
             })
         }
         
-        detailsPanel.addView(tvCombat)
-        detailsPanel.addView(tvLore)
+        detailsPanel.addView(tvCombat); detailsPanel.addView(tvLore)
 
         mainBar.setOnClickListener {
             if (index == activePetIndex) {

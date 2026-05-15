@@ -1,0 +1,9 @@
+com.rockhard.blocker.app-gamersMaleNetbeasts-0 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/pngs/gamersMaleNetbeasts/release
+com.rockhard.blocker.app-gamersMaleNetbeasts-1 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/gamersMaleNetbeasts/release
+com.rockhard.blocker.app-packageGamersMaleNetbeastsReleaseResources-2 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/gamersMaleNetbeastsRelease/packageGamersMaleNetbeastsReleaseResources/merged.dir
+com.rockhard.blocker.app-packageGamersMaleNetbeastsReleaseResources-3 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/gamersMaleNetbeastsRelease/packageGamersMaleNetbeastsReleaseResources/stripped.dir
+com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/merged_res/gamersMaleNetbeastsRelease/mergeGamersMaleNetbeastsReleaseResources
+com.rockhard.blocker.app-gamersMaleNetbeasts-5 /workspaces/RHC-App/RockHardBlocker/app/src/gamersMaleNetbeasts/res
+com.rockhard.blocker.app-gamersMaleNetbeastsRelease-6 /workspaces/RHC-App/RockHardBlocker/app/src/gamersMaleNetbeastsRelease/res
+com.rockhard.blocker.app-main-7 /workspaces/RHC-App/RockHardBlocker/app/src/main/res
+com.rockhard.blocker.app-release-8 /workspaces/RHC-App/RockHardBlocker/app/src/release/res

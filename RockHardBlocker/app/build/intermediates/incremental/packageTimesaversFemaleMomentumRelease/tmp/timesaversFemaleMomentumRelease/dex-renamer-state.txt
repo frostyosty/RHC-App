@@ -1,0 +1,4 @@
+#Thu May 14 00:42:28 UTC 2026
+base.0=/workspaces/RHC-App/RockHardBlocker/app/build/intermediates/dex/timesaversFemaleMomentumRelease/mergeDexTimesaversFemaleMomentumRelease/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex

@@ -110,33 +110,33 @@ if (state == "BATTLE") {
 }
 
 internal fun GameActivity.updateBattleUI() {
-    val btn1 = findViewById<Button>(R.id.btnMove1)
-    val btn2 = findViewById<Button>(R.id.btnMove2)
-    val btn3 = findViewById<Button>(R.id.btnMove3) // Safely grabbed from the new XML!
-    val infoRow = findViewById<View>(R.id.infoRow)
-    val info1 = findViewById<TextView>(R.id.infoMove1)
-    val info2 = findViewById<TextView>(R.id.infoMove2)
-    val info3 = findViewById<TextView>(R.id.infoMove3)
-    val btnSwap = findViewById<Button>(R.id.btnSwap)
-    val btnBattleNet = findViewById<Button>(R.id.btnBattleNet)
-    val btnBattlePot = findViewById<Button>(R.id.btnBattlePot)
-    val btnBattleSpray = findViewById<Button>(R.id.btnBattleSpray)
-    val btnAbandon = findViewById<Button>(R.id.btnAbandon)
+    val btn1 = findViewById<Button>(R.id.btnMove1); val btn2 = findViewById<Button>(R.id.btnMove2)
+    val btn3 = (btn2.parent as? ViewGroup)?.findViewWithTag<Button>("BTN_MOVE_3")
+    val infoRow = findViewById<View>(R.id.infoRow); val tvInfoPanel = findViewById<TextView>(R.id.tvBattleInfoPanel)
+    val info1 = findViewById<TextView>(R.id.infoMove1); val info2 = findViewById<TextView>(R.id.infoMove2); val info3 = findViewById<TextView>(R.id.infoMove3)
+    val actionRow = findViewById<View>(R.id.actionRow)
+    val btnSwap = findViewById<Button>(R.id.btnSwap); val btnAbandon = findViewById<Button>(R.id.btnAbandon)
+    val btnBattleNet = findViewById<Button>(R.id.btnBattleNet); val btnBattlePot = findViewById<Button>(R.id.btnBattlePot); val btnBattleSpray = findViewById<Button>(R.id.btnBattleSpray)
+
+    tvInfoPanel?.visibility = View.GONE; actionRow?.visibility = View.VISIBLE
 
     if (playerLastStand) {
         btn1.text = "THROW PUNCH"
         btn2.visibility = View.GONE; btn3?.visibility = View.GONE; infoRow.visibility = View.GONE
-        btnSwap.visibility = View.GONE; btnBattleNet.visibility = View.GONE; btnBattlePot.visibility = View.GONE; btnBattleSpray.visibility = View.GONE; btnAbandon.visibility = View.GONE
+        actionRow?.visibility = View.GONE; btnAbandon.visibility = View.GONE
     } else if (party.isNotEmpty()) {
         val p = party[activePetIndex]
         btn1.text = p.move1; btn2.text = p.move2; btn3?.text = p.move3
         
-        info1.setOnClickListener { DialogUtils.showCustomDialog(this, p.move1, SkillEngine.getDetails(p.move1, p.maxHp), false, "CLOSE", null) }
-        info2.setOnClickListener { DialogUtils.showCustomDialog(this, p.move2, SkillEngine.getDetails(p.move2, p.maxHp), false, "CLOSE", null) }
-        info3.setOnClickListener { DialogUtils.showCustomDialog(this, p.move3, SkillEngine.getDetails(p.move3, p.maxHp), false, "CLOSE", null) }
+        val toggleInfo = { moveName: String ->
+            val details = SkillEngine.getDetails(moveName, p.maxHp)
+            if (tvInfoPanel?.visibility == View.VISIBLE && tvInfoPanel.text == details) { tvInfoPanel.visibility = View.GONE; actionRow?.visibility = View.VISIBLE } 
+            else { tvInfoPanel?.text = details; tvInfoPanel?.visibility = View.VISIBLE; actionRow?.visibility = View.GONE }
+        }
+        info1.setOnClickListener { toggleInfo(p.move1) }; info2.setOnClickListener { toggleInfo(p.move2) }; info3.setOnClickListener { toggleInfo(p.move3) }
 
         btn2.visibility = View.VISIBLE; btn3?.visibility = View.VISIBLE; infoRow.visibility = View.VISIBLE
-        btnSwap.visibility = View.VISIBLE; btnAbandon.visibility = View.VISIBLE
+        actionRow?.visibility = View.VISIBLE; btnAbandon.visibility = View.VISIBLE
 
         if (p.eqNets > 0) { btnBattleNet.visibility = View.VISIBLE; btnBattleNet.text = "NET (${p.eqNets})" } else btnBattleNet.visibility = View.GONE
         if (p.eqPots > 0) { btnBattlePot.visibility = View.VISIBLE; btnBattlePot.text = "POT (${p.eqPots})" } else btnBattlePot.visibility = View.GONE

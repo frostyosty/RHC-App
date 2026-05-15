@@ -1,0 +1,53 @@
+<variant
+    name="gamersFemaleHomevisitsRelease"
+    package="com.rockhard.blocker"
+    minSdkVersion="26"
+    targetSdkVersion="34"
+    mergedManifest="build/intermediates/merged_manifest/gamersFemaleHomevisitsRelease/processGamersFemaleHomevisitsReleaseMainManifest/AndroidManifest.xml"
+    manifestMergeReport="build/outputs/logs/manifest-merger-gamersFemaleHomevisits-release-report.txt"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.3.0:proguard-rules.pro"
+    partialResultsDir="build/intermediates/lint_vital_partial_results/gamersFemaleHomevisitsRelease/lintVitalAnalyzeGamersFemaleHomevisitsRelease/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/gamersFemaleHomevisits/java:src/release/java:src/gamersFemaleHomevisitsRelease/java:src/main/kotlin:src/gamersFemaleHomevisits/kotlin:src/release/kotlin:src/gamersFemaleHomevisitsRelease/kotlin"
+        resDirectories="src/main/res:src/gamersFemaleHomevisits/res:src/release/res:src/gamersFemaleHomevisitsRelease/res"
+        assetsDirectories="src/main/assets:src/gamersFemaleHomevisits/assets:src/release/assets:src/gamersFemaleHomevisitsRelease/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <resValues>
+    <resValue
+        type="string"
+        name="app_name"
+        value="RHC" />
+    <resValue
+        type="string"
+        name="brick_message"
+        value="Take a deep breath and step away." />
+    <resValue
+        type="string"
+        name="essay_prompt"
+        value="GAME_MODE" />
+    <resValue
+        type="string"
+        name="flavor_id"
+        value="female_gamers" />
+    <resValue
+        type="string"
+        name="overlay_title"
+        value="AVERT YOUR EYES." />
+  </resValues>
+  <artifact
+      classOutputs="build/intermediates/javac/gamersFemaleHomevisitsRelease/compileGamersFemaleHomevisitsReleaseJavaWithJavac/classes:build/tmp/kotlin-classes/gamersFemaleHomevisitsRelease:build/kotlinToolingMetadata:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/gamersFemaleHomevisitsRelease/processGamersFemaleHomevisitsReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.rockhard.blocker.homevisits"
+      generatedSourceFolders="build/generated/ap_generated_sources/gamersFemaleHomevisitsRelease/out:build/generated/source/buildConfig/gamersFemaleHomevisits/release"
+      generatedResourceFolders="build/generated/res/resValues/gamersFemaleHomevisits/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/transforms-4/a6993d97ae9eefb490c59b9f8ce761ab/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>
