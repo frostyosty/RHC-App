@@ -41,6 +41,35 @@ Features AI Text-to-Sprite (via pollinations.ai) with mathematical white-backgro
 Auto-Tweening GIF timelines, Onion Skinning, and 8-bit Audio Synthesizer for combat SFX.
 
 
+
+
+
+
+
+
+male momentum only
+
+cd /workspaces/RHC-App/RockHardBlocker
+
+./gradlew assembleTimesaversMaleMomentumRelease
+
+cp app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk ../rhc_momentum_m.apk
+
+cd /workspaces/RHC-App
+TAG="v$(date +%Y%m%d%H%M%S)"
+GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" \
+  ./rhc_momentum_m.apk \
+  --repo frostyosty/htc-downloads-rhc \
+  --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
+  --notes "Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
+
+
+
+
+
+
+
+
 cd /workspaces/RHC-App/RockHardBlocker
 
 # 1. Compile all four flavors
@@ -66,6 +95,7 @@ GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" \
   --repo frostyosty/htc-downloads-rhc \
   --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
   --notes "Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
+
 
 
 

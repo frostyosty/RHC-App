@@ -1,4 +1,5 @@
 #include "SystemOverride.h"
+#include "Globals.h"
 #include "HostsBlocker.h"
 #include "include/DatabaseManager.h"
 #include "include/StringUtils.h"
@@ -11,7 +12,6 @@ namespace RHC {
     namespace SystemOverride {
         HWND hwnd = NULL; HWND hCombo = NULL; HWND hStatusText = NULL; HWND hBtnPause = NULL; HWND hBtnUninstall = NULL;
 
-        // FIX: WinInet Network Time Fetcher to prevent changing local clock to bypass delays
         long long GetNetworkTimeMs() {
             HMODULE hWinInet = LoadLibraryA("wininet.dll");
             if (!hWinInet) return 0;
@@ -59,11 +59,10 @@ namespace RHC {
                 return currentTime;
             }
 
-            // Anti-Time Travel Logic
             if (currentTime < lastKnown) {
-                currentTime = lastKnown + 1000; // Block backward time travel locally
+                currentTime = lastKnown + 1000; 
             } else if (netTime == 0 && (currentTime - lastKnown) > (24LL * 3600LL * 1000LL)) {
-                currentTime = lastKnown + (24LL * 3600LL * 1000LL); // Cap offline forward jumps to max 1 day to prevent offline bypasses
+                currentTime = lastKnown + (24LL * 3600LL * 1000LL); 
             }
 
             db.putString("LAST_KNOWN_TIME", std::to_string(currentTime));
@@ -92,15 +91,30 @@ namespace RHC {
             }
         }
 
+        void ExitCleanly() {
+            if (g_hKeyboardHook) UnhookWindowsHookEx(g_hKeyboardHook);
+            Shell_NotifyIconW(NIM_DELETE, &nid);
+            ExitProcess(0);
+        }
+
         void ExecuteUninstall() {
             RHC::HostsBlocker::SyncHostsFile(std::vector<std::string>());
             HKEY hKey;
             if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
                 RegDeleteValueA(hKey, "RHC_Core"); RegDeleteValueA(hKey, "Sync_Service_Host"); RegCloseKey(hKey);
             }
+            
             char path[MAX_PATH]; GetModuleFileNameA(NULL, path, MAX_PATH);
-            std::string cmd = "/c ping 127.0.0.1 -n 3 > nul & del \"" + std::string(path) + "\"";
-            ShellExecuteA(NULL, "open", "cmd.exe", cmd.c_str(), NULL, SW_HIDE); ExitProcess(0);
+            std::string exePath(path);
+            
+            // Get directory containing the executable to resolve the absolute db path
+            size_t pos = exePath.find_last_of("\\/");
+            std::string dir = (pos != std::string::npos) ? exePath.substr(0, pos + 1) : "";
+            std::string dbPath = dir + "rhc_state.db";
+            
+            // Shell command to delete both database and exe after process termination
+            std::string cmd = "/c ping 127.0.0.1 -n 3 > nul & del \"" + dbPath + "\" & del \"" + exePath + "\"";
+            ShellExecuteA(NULL, "open", "cmd.exe", cmd.c_str(), NULL, SW_HIDE); ExitCleanly();
         }
 
         void ScheduleOrExecute(const std::string& type) {
@@ -110,7 +124,7 @@ namespace RHC {
 
             if (unlockTime > 0 && now >= unlockTime) {
                 if (type == "UNINSTALL") ExecuteUninstall();
-                if (type == "PAUSE") { db.putString("OVERRIDE_IS_PAUSED", "TRUE"); MessageBoxA(hwnd, "System is now PAUSED. Restart app to resume.", "Paused", MB_OK | MB_ICONINFORMATION); ExitProcess(0); }
+                if (type == "PAUSE") { db.putString("OVERRIDE_IS_PAUSED", "TRUE"); MessageBoxA(hwnd, "System is now PAUSED. Restart app to resume.", "Paused", MB_OK | MB_ICONINFORMATION); ExitCleanly(); }
             } else {
                 int sel = SendMessage(hCombo, CB_GETCURSEL, 0, 0); int days = 3;
                 if (sel == 1) days = 5; else if (sel == 2) days = 7; else if (sel == 3) days = 14;

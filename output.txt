@@ -1,3 +1,109 @@
+===== rhc-desktop/src/Globals.h =====
+#pragma once
+#include <windows.h>
+#include <string>
+#include <vector>
+#include <map>
+
+// Cue Banner Message ID for Edit Controls
+#ifndef EM_SETCUEBANNER
+#define EM_SETCUEBANNER 0x1501
+#endif
+
+// --- SHARED WINDOW HANDLES ---
+extern HWND g_hMainWindow;
+extern HWND g_hDashboardWindow;
+extern HWND g_hMomentumText;
+
+extern HWND g_hComboAppBlock;
+extern HWND g_hEditAppTime;
+extern HWND g_hEditWebBlock;
+extern HWND g_hEditWebTime;
+
+extern HWND g_hListBlocks;
+extern HWND g_hListEarned;
+extern HWND g_hListSpent;
+
+// Category Comboboxes
+extern HWND g_hComboPhysical;
+extern HWND g_hComboMental;
+extern HWND g_hComboChores;
+extern HWND g_hComboWork;
+
+// --- SHARED SYSTEM HANDLES ---
+extern HHOOK g_hKeyboardHook;
+extern NOTIFYICONDATAW nid;
+
+// --- SHARED STATE ---
+extern std::wstring g_RedWallReason;
+extern HFONT g_hFontTitle, g_hFontNormal, g_hFontEmoji, g_hFontSmall, g_hFontGiant;
+extern bool g_DebugMode;
+extern bool g_SystemIsSleeping;
+
+struct TaskItem { 
+    std::wstring name; 
+    int cost; 
+    std::string category; 
+};
+extern std::vector<TaskItem> g_Tasks;
+extern std::map<std::string, std::vector<TaskItem>> g_CategorizedTasks;
+
+// --- UI IDENTIFIERS ---
+#define IDI_APPICON 101
+#define WM_TRAYICON (WM_USER + 1)
+#define ID_TRAY_EXIT 1001
+#define ID_TRAY_OPEN 1002
+#define ID_TRAY_TASKMGR 1003
+#define ID_TRAY_OVERRIDE 1004
+#define ID_TRAY_NIGHTFALL 1005
+
+#define ID_BTN_ADD_APP 2004
+#define ID_BTN_ADD_WEB 2005
+#define ID_LIST_BLOCKS 2006
+
+#define ID_COMBO_PHYSICAL 2008
+#define ID_COMBO_MENTAL 2009
+#define ID_COMBO_CHORES 2010
+#define ID_COMBO_WORK 2011
+
+#define ID_BTN_EXEC_PHYSICAL 2012
+#define ID_BTN_EXEC_MENTAL 2013
+#define ID_BTN_EXEC_CHORES 2014
+#define ID_BTN_EXEC_WORK 2015
+
+#define ID_LIST_EARNED 2020
+#define ID_LIST_SPENT 2021
+#define ID_BTN_OPEN_TASKMGR 2022
+#define ID_BTN_DEV_CONSOLE 4003
+
+// --- NIGHTFALL BUTTONS ---
+#define ID_BTN_NIGHT_SLEEP 4001
+#define ID_BTN_NIGHT_SHUTDOWN 4002
+
+
+
+===== rhc-desktop/src/DashboardUI.h =====
+#pragma once
+#include <windows.h>
+#include <string>
+
+namespace RHC {
+    namespace DashboardUI {
+        void SyncHostsFileFromDB();
+        void RefreshLogsUI();
+        void RefreshBlockListUI();
+        void PopulateInstalledAppsCombo(HWND hCombo);
+        void AddBlockItem(const std::wstring& domain, const std::wstring& timeRestr);
+        void UpdateDashboardText();
+        void TrackOvercome(const std::string& target, const std::string& listKey, const std::string& firstTimeKey);
+        void SpendTime(int taskIndex);
+
+        LRESULT CALLBACK DashboardProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    }
+}
+
+
+
 ===== rhc-desktop/src/DashboardUI.cpp =====
 #include "DashboardUI.h"
 #include "Globals.h"
@@ -13,10 +119,12 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <iostream>
 
 #define ID_BTN_FAV1 3001
 #define ID_BTN_FAV2 3002
 #define ID_BTN_FAV3 3003
+#define ID_BTN_ADD_REDIRECT 3004
 
 namespace RHC {
     namespace CustomTaskManager { void Show(); }
@@ -31,7 +139,21 @@ namespace RHC {
         HWND g_hBtnFav1 = NULL;
         HWND g_hBtnFav2 = NULL;
         HWND g_hBtnFav3 = NULL;
+        
+        HWND g_hComboRedirectTrigger = NULL;
+        HWND g_hComboRedirectTarget = NULL;
+        HWND g_hEditRedirectCustom = NULL;
+        HWND g_hListRedirects = NULL;
+
         std::vector<TaskItem> recentFavorites;
+        std::vector<std::string> curRedirectTriggers;
+        std::vector<std::string> curRedirectTargets = {
+            "- Select Productive Destination -",
+            "https://en.wikipedia.org/wiki/Special:Random",
+            "https://khanacademy.org",
+            "https://freecodecamp.org",
+            "CUSTOM"
+        };
 
         void SyncHostsFileFromDB() {
             RHC::DatabaseManager db("rhc_state.db");
@@ -94,6 +216,32 @@ namespace RHC {
             UpdateFavoritesUI();
         }
 
+        void RefreshRedirectsUI() {
+            SendMessageW(g_hComboRedirectTrigger, CB_RESETCONTENT, 0, 0);
+            SendMessageW(g_hListRedirects, LB_RESETCONTENT, 0, 0);
+            RHC::DatabaseManager db("rhc_state.db");
+            
+            curRedirectTriggers.clear();
+            curRedirectTriggers.push_back("- Select Trigger -");
+            
+            auto parseTriggers = [](const std::string& str) {
+                for (const auto& entry : RHC::StringUtils::split(str, ',')) {
+                    if (!entry.empty()) curRedirectTriggers.push_back(RHC::StringUtils::split(entry, '|')[0]);
+                }
+            };
+            parseTriggers(db.getString("BLOCKLIST_EXE", ""));
+            parseTriggers(db.getString("BLOCKLIST_WEB", ""));
+            
+            for (const auto& t : curRedirectTriggers) SendMessageW(g_hComboRedirectTrigger, CB_ADDSTRING, 0, (LPARAM)RHC::Utils::utf8_to_wstring(t).c_str());
+            SendMessageW(g_hComboRedirectTrigger, CB_SETCURSEL, 0, 0);
+
+            for (const auto& r : RHC::StringUtils::split(db.getString("REDIRECTS", ""), ',')) {
+                if (r.empty()) continue;
+                auto parts = RHC::StringUtils::split(r, '|');
+                if (parts.size() == 2) SendMessageW(g_hListRedirects, LB_ADDSTRING, 0, (LPARAM)RHC::Utils::utf8_to_wstring("⚡ " + parts[0] + " -> " + parts[1]).c_str());
+            }
+        }
+
         void RefreshBlockListUI() {
             SendMessageW(g_hListBlocks, LB_RESETCONTENT, 0, 0);
             RHC::DatabaseManager db("rhc_state.db");
@@ -112,6 +260,7 @@ namespace RHC {
             parseAndAdd(db.getString("BLOCKLIST_EXE", ""), "🖥️");
             parseAndAdd(db.getString("BLOCKLIST_WEB", ""), "🌐");
             RefreshLogsUI();
+            RefreshRedirectsUI(); // Keep redirects combo synced with blocks
         }
 
         void PopulateInstalledAppsCombo(HWND hCombo) {
@@ -155,17 +304,60 @@ namespace RHC {
             std::string utf8Target = RHC::Utils::wstring_to_utf8(target);
             std::string utf8Time = RHC::Utils::wstring_to_utf8(timeRestr);
             if (utf8Target.empty() || utf8Target == "None") return;
-            if (utf8Time.empty()) utf8Time = "None"; // Ensure explicit None string
+            if (utf8Time.empty() || utf8Time == "HH:MM-HH:MM") utf8Time = "None"; // Ensure explicit None string
 
             RHC::DatabaseManager db("rhc_state.db");
-            auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-            std::stringstream ss; ss << std::put_time(std::localtime(&now), "%b %d");
-            
-            std::string newEntry = utf8Target + "|" + ss.str() + "|0|" + utf8Time;
             std::string key = isExe ? "BLOCKLIST_EXE" : "BLOCKLIST_WEB";
-            
             std::string currentList = db.getString(key, "");
-            db.putString(key, currentList.empty() ? newEntry : currentList + "," + newEntry);
+            auto entries = RHC::StringUtils::split(currentList, ',');
+            
+            bool found = false;
+            std::string newList = "";
+            std::string oldTime = "None";
+
+            for (auto& entry : entries) {
+                if (entry.empty()) continue;
+                auto parts = RHC::StringUtils::split(entry, '|');
+                if (RHC::StringUtils::toLower(parts[0]) == RHC::StringUtils::toLower(utf8Target)) {
+                    found = true;
+                    oldTime = (parts.size() >= 4) ? parts[3] : "None";
+
+                    // Enforce lock-in constraint (allowed minutes must decrease or stay same)
+                    int oldDuration = RHC::Utils::GetAllowedWindowDuration(oldTime);
+                    int newDuration = RHC::Utils::GetAllowedWindowDuration(utf8Time);
+
+                    if (newDuration > oldDuration) {
+                        RHC::Utils::ShowErrorModal(g_hDashboardWindow, L"Security Restriction", 
+                            L"You can only DECREASE your allowed bypass window, not increase it!\n\n"
+                            L"Current Allowed Limit: " + RHC::Utils::utf8_to_wstring(std::to_string(oldDuration)) + L" mins\n"
+                            L"Attempted New Limit: " + RHC::Utils::utf8_to_wstring(std::to_string(newDuration)) + L" mins");
+                        return; // Abort
+                    }
+
+                    // Rebuild the updated row in place
+                    std::string dateStr = (parts.size() > 1) ? parts[1] : "Today";
+                    std::string defeatsStr = (parts.size() > 2) ? parts[2] : "0";
+                    entry = parts[0] + "|" + dateStr + "|" + defeatsStr + "|" + utf8Time;
+                }
+                if (!newList.empty()) newList += ",";
+                newList += entry;
+            }
+
+            if (found) {
+                db.putString(key, newList);
+
+                // Compile and save spent ledger update string
+                std::string logMsg = utf8Target + " hours updated from " + RHC::Utils::FormatTimeToAmPm(oldTime) + " --> " + RHC::Utils::FormatTimeToAmPm(utf8Time);
+                std::string currentSpent = db.getString("MOMENTUM_SPENT_TODAY", "");
+                std::string newLogEntry = logMsg + "|0|" + std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+                db.putString("MOMENTUM_SPENT_TODAY", currentSpent.empty() ? newLogEntry : currentSpent + "," + newLogEntry);
+            } else {
+                auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+                std::stringstream ss; ss << std::put_time(std::localtime(&now), "%b %d");
+                std::string newEntry = utf8Target + "|" + ss.str() + "|0|" + utf8Time;
+                db.putString(key, currentList.empty() ? newEntry : currentList + "," + newEntry);
+            }
+
             if(!isExe) SyncHostsFileFromDB();
             RefreshBlockListUI();
         }
@@ -212,12 +404,10 @@ namespace RHC {
                 if (task.category == "reading") db.putInt("TOTAL_READING", db.getInt("TOTAL_READING", 0) + task.cost);
                 if (task.category == "physical") db.putInt("TOTAL_PHYSICAL", db.getInt("TOTAL_PHYSICAL", 0) + task.cost);
                 
-                // Update Recent Favorites String
                 std::string currentRt = db.getString("RECENT_TASKS", "");
                 std::string newTaskStr = RHC::Utils::wstring_to_utf8(task.name) + "|" + std::to_string(task.cost);
                 
-                std::vector<std::string> uniques;
-                uniques.push_back(newTaskStr);
+                std::vector<std::string> uniques; uniques.push_back(newTaskStr);
                 for (const auto& p : RHC::StringUtils::split(currentRt, ',')) {
                     if (p != newTaskStr && !p.empty() && uniques.size() < 3) uniques.push_back(p);
                 }
@@ -236,17 +426,16 @@ namespace RHC {
         }
 
         void ProcessCategoryExecution(HWND hCombo) {
-            wchar_t buf[256];
-            GetWindowTextW(hCombo, buf, 256);
+            wchar_t buf[256]; GetWindowTextW(hCombo, buf, 256);
             std::wstring taskName = buf;
-            for (const auto& t : g_Tasks) {
-                if (t.name == taskName) { ExecuteSpendTime(t); return; }
-            }
+            for (const auto& t : g_Tasks) if (t.name == taskName) { ExecuteSpendTime(t); return; }
         }
 
         LRESULT CALLBACK DashboardProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch (uMsg) {
                 case WM_CREATE: {
+                    SetWindowPos(hwnd, NULL, 0, 0, 800, 1000, SWP_NOMOVE | SWP_NOZORDER);
+
                     g_hFontGiant = CreateFontW(40, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
                     g_hFontTitle = CreateFontW(22, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
                     g_hFontNormal = CreateFontW(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
@@ -255,40 +444,56 @@ namespace RHC {
 
                     auto addText = [hwnd](int x, int y, int w, int h, const wchar_t* txt, HFONT font) { HWND t = CreateWindowExW(0, L"STATIC", txt, WS_CHILD | WS_VISIBLE | SS_CENTER, x, y, w, h, hwnd, NULL, NULL, NULL); SendMessage(t, WM_SETFONT, (WPARAM)font, TRUE); return t; };
                     
-                    // --- 1. NEW OVERCOME SECTION ---
                     addText(0, 10, 780, 30, L"1. NEW OVERCOME", g_hFontTitle);
-                    addText(20, 40, 360, 20, L"--- APPLICATION ---", g_hFontNormal);
-                    addText(400, 40, 360, 20, L"--- WEBSITE ---", g_hFontNormal);
                     
-                    // App Row
+                    // Column labels position directly above controls
+                    addText(20, 42, 180, 15, L"App Name (.exe)", g_hFontSmall);
+                    addText(210, 42, 80, 15, L"Bypass Window", g_hFontSmall);
+                    HWND hBtnAppHelp = CreateWindowExW(0, L"BUTTON", L"?", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 292, 39, 16, 16, hwnd, (HMENU)ID_BTN_BYPASS_HELP, NULL, NULL);
+
+                    addText(400, 42, 180, 15, L"Domain (e.g. site.com)", g_hFontSmall);
+                    addText(590, 42, 80, 15, L"Bypass Window", g_hFontSmall);
+                    HWND hBtnWebHelp = CreateWindowExW(0, L"BUTTON", L"?", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 672, 39, 16, 16, hwnd, (HMENU)ID_BTN_BYPASS_HELP, NULL, NULL);
+
+                    SendMessage(hBtnAppHelp, WM_SETFONT, (WPARAM)g_hFontSmall, TRUE);
+                    SendMessage(hBtnWebHelp, WM_SETFONT, (WPARAM)g_hFontSmall, TRUE);
+                    
                     g_hComboAppBlock = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | WS_VSCROLL, 20, 60, 180, 200, hwnd, NULL, NULL, NULL);
-                    g_hEditAppTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"None", WS_CHILD | WS_VISIBLE, 210, 60, 80, 25, hwnd, NULL, NULL, NULL);
+                    g_hEditAppTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, 210, 60, 80, 25, hwnd, NULL, NULL, NULL);
                     HWND bAddApp = CreateWindowExW(0, L"BUTTON", L"Block App", WS_CHILD | WS_VISIBLE, 300, 60, 80, 25, hwnd, (HMENU)ID_BTN_ADD_APP, NULL, NULL);
                     PopulateInstalledAppsCombo(g_hComboAppBlock);
                     
-                    // Web Row
                     g_hEditWebBlock = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"reddit.com", WS_CHILD | WS_VISIBLE, 400, 60, 180, 25, hwnd, NULL, NULL, NULL);
-                    g_hEditWebTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"None", WS_CHILD | WS_VISIBLE, 590, 60, 80, 25, hwnd, NULL, NULL, NULL);
+                    g_hEditWebTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, 590, 60, 80, 25, hwnd, NULL, NULL, NULL);
                     HWND bAddWeb = CreateWindowExW(0, L"BUTTON", L"Block Web", WS_CHILD | WS_VISIBLE, 680, 60, 80, 25, hwnd, (HMENU)ID_BTN_ADD_WEB, NULL, NULL);
+
+                    SendMessageW(g_hEditAppTime, EM_SETCUEBANNER, FALSE, (LPARAM)L"HH:MM-HH:MM");
+                    SendMessageW(g_hEditWebTime, EM_SETCUEBANNER, FALSE, (LPARAM)L"HH:MM-HH:MM");
 
                     RHC::UI::SmoothButton::Attach(bAddApp); RHC::UI::SmoothButton::Attach(bAddWeb);
                     
-                    // --- 2. ACTIVELY OVERCOMING ---
-                    addText(0, 110, 780, 30, L"2. ACTIVELY OVERCOMING", g_hFontTitle);
-                    g_hListBlocks = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 140, 740, 120, hwnd, (HMENU)ID_LIST_BLOCKS, NULL, NULL);
+                    addText(0, 100, 780, 30, L"2. ACTIVELY OVERCOMING", g_hFontTitle);
+                    g_hListBlocks = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 130, 740, 80, hwnd, (HMENU)ID_LIST_BLOCKS, NULL, NULL);
                     
-                    // --- 3. MOMENTUM CORE ---
-                    g_hMomentumText = addText(0, 270, 780, 50, L"0 MINS AVAILABLE", g_hFontGiant);
+                    addText(0, 220, 780, 30, L"3. HABIT SUBSTITUTION", g_hFontTitle);
+                    g_hComboRedirectTrigger = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL, 20, 250, 200, 200, hwnd, NULL, NULL, NULL);
+                    addText(230, 250, 40, 25, L"➡️", g_hFontEmoji);
+                    g_hComboRedirectTarget = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL, 280, 250, 200, 200, hwnd, NULL, NULL, NULL);
+                    for (const auto& t : curRedirectTargets) SendMessageW(g_hComboRedirectTarget, CB_ADDSTRING, 0, (LPARAM)RHC::Utils::utf8_to_wstring(t).c_str()); SendMessageW(g_hComboRedirectTarget, CB_SETCURSEL, 0, 0);
                     
-                    // --- 4. LEDGERS ---
-                    addText(20, 330, 360, 20, L"EARNED", g_hFontTitle);
-                    addText(400, 330, 360, 20, L"SPENT LEDGER", g_hFontTitle);
-                    g_hListEarned = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 360, 360, 120, hwnd, (HMENU)ID_LIST_EARNED, NULL, NULL);
-                    g_hListSpent = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 400, 360, 360, 120, hwnd, (HMENU)ID_LIST_SPENT, NULL, NULL);
+                    g_hEditRedirectCustom = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"Custom URL/Exe", WS_CHILD | WS_VISIBLE, 490, 250, 160, 25, hwnd, NULL, NULL, NULL);
+                    HWND bAddRedirect = CreateWindowExW(0, L"BUTTON", L"Link", WS_CHILD | WS_VISIBLE, 660, 250, 100, 25, hwnd, (HMENU)ID_BTN_ADD_REDIRECT, NULL, NULL);
+                    RHC::UI::SmoothButton::Attach(bAddRedirect);
+                    g_hListRedirects = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 285, 740, 60, hwnd, NULL, NULL, NULL);
 
-                    // --- 5. SPEND MOMENTUM (CATEGORIES) ---
-                    addText(0, 490, 780, 30, L"6. SPEND MOMENTUM", g_hFontTitle);
+                    g_hMomentumText = addText(0, 360, 780, 50, L"0 MINS AVAILABLE", g_hFontGiant);
                     
+                    addText(20, 420, 360, 20, L"EARNED", g_hFontTitle);
+                    addText(400, 420, 360, 20, L"SPENT LEDGER", g_hFontTitle);
+                    g_hListEarned = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 445, 360, 120, hwnd, (HMENU)ID_LIST_EARNED, NULL, NULL);
+                    g_hListSpent = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 400, 445, 360, 120, hwnd, (HMENU)ID_LIST_SPENT, NULL, NULL);
+
+                    addText(0, 580, 780, 30, L"6. SPEND MOMENTUM", g_hFontTitle);
                     auto buildCat = [hwnd](int x, int y, int cID, int bID, const std::string& cat) {
                         HWND hCombo = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL, x, y, 250, 200, hwnd, (HMENU)(UINT_PTR)cID, NULL, NULL);
                         HWND hBtn = CreateWindowExW(0, L"BUTTON", L"EXECUTE", WS_CHILD | WS_VISIBLE, x+260, y, 100, 25, hwnd, (HMENU)(UINT_PTR)bID, NULL, NULL);
@@ -296,29 +501,32 @@ namespace RHC {
                         SendMessageW(hCombo, CB_SETCURSEL, 0, 0); SendMessageW(hCombo, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
                         RHC::UI::SmoothButton::Attach(hBtn); return hCombo;
                     };
-                    
-                    g_hComboPhysical = buildCat(20, 530, ID_COMBO_PHYSICAL, ID_BTN_EXEC_PHYSICAL, "Physical");
-                    g_hComboMental   = buildCat(400, 530, ID_COMBO_MENTAL, ID_BTN_EXEC_MENTAL, "Mental");
-                    g_hComboWork     = buildCat(20, 570, ID_COMBO_WORK, ID_BTN_EXEC_WORK, "Work");
-                    g_hComboChores   = buildCat(400, 570, ID_COMBO_CHORES, ID_BTN_EXEC_CHORES, "Chores");
+                    g_hComboPhysical = buildCat(20, 610, ID_COMBO_PHYSICAL, ID_BTN_EXEC_PHYSICAL, "Physical");
+                    g_hComboMental   = buildCat(400, 610, ID_COMBO_MENTAL, ID_BTN_EXEC_MENTAL, "Mental");
+                    g_hComboWork     = buildCat(20, 650, ID_COMBO_WORK, ID_BTN_EXEC_WORK, "Work");
+                    g_hComboChores   = buildCat(400, 650, ID_COMBO_CHORES, ID_BTN_EXEC_CHORES, "Chores");
 
-                    // --- FAVORITES QUICK ACTIONS ---
-                    addText(0, 620, 780, 20, L"RECENT QUICK ACTIONS", g_hFontNormal);
-                    g_hBtnFav1 = CreateWindowExW(0, L"BUTTON", L"Fav 1", WS_CHILD, 20, 650, 230, 40, hwnd, (HMENU)ID_BTN_FAV1, NULL, NULL);
-                    g_hBtnFav2 = CreateWindowExW(0, L"BUTTON", L"Fav 2", WS_CHILD, 275, 650, 230, 40, hwnd, (HMENU)ID_BTN_FAV2, NULL, NULL);
-                    g_hBtnFav3 = CreateWindowExW(0, L"BUTTON", L"Fav 3", WS_CHILD, 530, 650, 230, 40, hwnd, (HMENU)ID_BTN_FAV3, NULL, NULL);
+                    addText(0, 700, 780, 20, L"RECENT QUICK ACTIONS", g_hFontNormal);
+                    g_hBtnFav1 = CreateWindowExW(0, L"BUTTON", L"Fav 1", WS_CHILD, 20, 730, 230, 40, hwnd, (HMENU)ID_BTN_FAV1, NULL, NULL);
+                    g_hBtnFav2 = CreateWindowExW(0, L"BUTTON", L"Fav 2", WS_CHILD, 275, 730, 230, 40, hwnd, (HMENU)ID_BTN_FAV2, NULL, NULL);
+                    g_hBtnFav3 = CreateWindowExW(0, L"BUTTON", L"Fav 3", WS_CHILD, 530, 730, 230, 40, hwnd, (HMENU)ID_BTN_FAV3, NULL, NULL);
                     RHC::UI::SmoothButton::Attach(g_hBtnFav1); RHC::UI::SmoothButton::Attach(g_hBtnFav2); RHC::UI::SmoothButton::Attach(g_hBtnFav3);
 
-                    // --- COMMAND STRIP ---
-                    HWND bTaskMgr = CreateWindowExW(0, L"BUTTON", L"🛡️ Secure Task Mgr", WS_CHILD | WS_VISIBLE, 20, 750, 230, 40, hwnd, (HMENU)ID_BTN_OPEN_TASKMGR, NULL, NULL);
-                    HWND bOverride = CreateWindowExW(0, L"BUTTON", L"⚙️ System Override", WS_CHILD | WS_VISIBLE, 275, 750, 230, 40, hwnd, (HMENU)ID_TRAY_OVERRIDE, NULL, NULL);
-                    HWND bNightfall = CreateWindowExW(0, L"BUTTON", L"🌙 Nightfall Schedule", WS_CHILD | WS_VISIBLE, 530, 750, 230, 40, hwnd, (HMENU)ID_TRAY_NIGHTFALL, NULL, NULL);
-                    RHC::UI::SmoothButton::Attach(bTaskMgr); RHC::UI::SmoothButton::Attach(bOverride); RHC::UI::SmoothButton::Attach(bNightfall);
+                    // Command Strip
+                    HWND bTaskMgr = CreateWindowExW(0, L"BUTTON", L"🛡️ Secure Task Mgr", WS_CHILD | WS_VISIBLE, 20, 800, 230, 40, hwnd, (HMENU)ID_BTN_OPEN_TASKMGR, NULL, NULL);
+                    HWND bOverride = CreateWindowExW(0, L"BUTTON", L"⚙️ System Override", WS_CHILD | WS_VISIBLE, 275, 800, 230, 40, hwnd, (HMENU)ID_TRAY_OVERRIDE, NULL, NULL);
+                    HWND bNightfall = CreateWindowExW(0, L"BUTTON", L"🌙 Nightfall Schedule", WS_CHILD | WS_VISIBLE, 530, 800, 230, 40, hwnd, (HMENU)ID_TRAY_NIGHTFALL, NULL, NULL);
+                    
+                    HWND bDevConsole = CreateWindowExW(0, L"BUTTON", L"💻 Dev Console (CLI)", WS_CHILD | WS_VISIBLE, 275, 850, 230, 40, hwnd, (HMENU)ID_BTN_DEV_CONSOLE, NULL, NULL);
+                    
+                    RHC::UI::SmoothButton::Attach(bTaskMgr); RHC::UI::SmoothButton::Attach(bOverride); 
+                    RHC::UI::SmoothButton::Attach(bNightfall); RHC::UI::SmoothButton::Attach(bDevConsole);
 
-                    // Font assignments
                     SendMessage(g_hComboAppBlock, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE); SendMessage(g_hEditAppTime, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
                     SendMessage(g_hEditWebBlock, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE); SendMessage(g_hEditWebTime, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
-                    SendMessage(g_hListBlocks, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
+                    SendMessage(g_hComboRedirectTrigger, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE); SendMessage(g_hComboRedirectTarget, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
+                    SendMessage(g_hEditRedirectCustom, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
+                    SendMessage(g_hListBlocks, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE); SendMessage(g_hListRedirects, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
                     SendMessage(g_hListEarned, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE); SendMessage(g_hListSpent, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
                     
                     RefreshBlockListUI();
@@ -329,6 +537,59 @@ namespace RHC {
                 case WM_CTLCOLOREDIT: { HDC hdcEdit = (HDC)wParam; SetTextColor(hdcEdit, RGB(255, 255, 255)); SetBkColor(hdcEdit, RGB(40, 40, 42)); return (LRESULT)CreateSolidBrush(RGB(40, 40, 42)); }
                 case WM_COMMAND: {
                     int id = LOWORD(wParam);
+                    
+                    if (HIWORD(wParam) == CBN_SELCHANGE && (HWND)lParam == g_hComboRedirectTarget) {
+                        int sel = SendMessageW(g_hComboRedirectTarget, CB_GETCURSEL, 0, 0);
+                        if (sel == curRedirectTargets.size() - 1) ShowWindow(g_hEditRedirectCustom, SW_SHOW);
+                        else ShowWindow(g_hEditRedirectCustom, SW_HIDE);
+                    }
+
+                    if (id == ID_BTN_DEV_CONSOLE) {
+                        if (!g_DebugMode) {
+                            AllocConsole();
+                            FILE* fp;
+                            freopen_s(&fp, "CONOUT$", "w", stdout);
+                            freopen_s(&fp, "CONOUT$", "w", stderr);
+                            std::cout << "========================================" << std::endl;
+                            std::cout << "  RHC DEVELOPER CONSOLE INITIALIZED" << std::endl;
+                            std::cout << "========================================" << std::endl;
+                            std::cout << "[INFO] Awaiting UI Automation Scans..." << std::endl;
+                            g_DebugMode = true;
+                        } else {
+                            FreeConsole();
+                            g_DebugMode = false;
+                        }
+                    }
+
+                    if (id == ID_BTN_BYPASS_HELP) {
+                        MessageBoxW(hwnd, 
+                            L"You CAN access this app or website during this time.\n\n"
+                            L"Cannot overwrite to extend the bypass window, but can overwrite it to be smaller.", 
+                            L"Bypass Window Info", 
+                            MB_OK | MB_ICONINFORMATION | MB_APPLMODAL | MB_SETFOREGROUND);
+                        return 0;
+                    }
+
+                    if (id == ID_BTN_ADD_REDIRECT) {
+                        int trigIdx = SendMessageW(g_hComboRedirectTrigger, CB_GETCURSEL, 0, 0);
+                        int targIdx = SendMessageW(g_hComboRedirectTarget, CB_GETCURSEL, 0, 0);
+                        if (trigIdx > 0 && targIdx > 0) {
+                            std::string trig = curRedirectTriggers[trigIdx];
+                            std::string targ = curRedirectTargets[targIdx];
+                            if (targ == "CUSTOM") {
+                                wchar_t buf[256]; GetWindowTextW(g_hEditRedirectCustom, buf, 256);
+                                targ = RHC::Utils::wstring_to_utf8(buf);
+                            }
+                            if (!targ.empty()) {
+                                RHC::DatabaseManager db("rhc_state.db");
+                                std::string cur = db.getString("REDIRECTS", "");
+                                std::string newEntry = trig + "|" + targ;
+                                db.putString("REDIRECTS", cur.empty() ? newEntry : cur + "," + newEntry);
+                                RefreshRedirectsUI();
+                            }
+                        }
+                    }
+
                     if (id == ID_BTN_OPEN_TASKMGR) RHC::CustomTaskManager::Show();
                     if (id == ID_TRAY_OVERRIDE) RHC::SystemOverride::Show();
                     if (id == ID_TRAY_NIGHTFALL) RHC::NightfallUI::Show();
@@ -336,12 +597,30 @@ namespace RHC {
                     if (id == ID_BTN_ADD_APP) {
                         wchar_t target[256], timeBuf[256]; 
                         GetWindowTextW(g_hComboAppBlock, target, 256); GetWindowTextW(g_hEditAppTime, timeBuf, 256);
-                        AddBlockItem(true, target, timeBuf); SetWindowTextW(g_hComboAppBlock, L""); SetWindowTextW(g_hEditAppTime, L"None");
+                        
+                        std::wstring timeStr(timeBuf);
+                        std::wstring errMsg;
+                        if (!RHC::Utils::ValidateTimeFormat(timeStr, errMsg)) {
+                            RHC::Utils::ShowErrorModal(hwnd, L"Format Error", errMsg);
+                        } else {
+                            AddBlockItem(true, target, timeBuf); 
+                            SetWindowTextW(g_hComboAppBlock, L""); 
+                            SetWindowTextW(g_hEditAppTime, L"");
+                        }
                     }
                     if (id == ID_BTN_ADD_WEB) {
                         wchar_t target[256], timeBuf[256]; 
                         GetWindowTextW(g_hEditWebBlock, target, 256); GetWindowTextW(g_hEditWebTime, timeBuf, 256);
-                        AddBlockItem(false, target, timeBuf); SetWindowTextW(g_hEditWebBlock, L""); SetWindowTextW(g_hEditWebTime, L"None");
+                        
+                        std::wstring timeStr(timeBuf);
+                        std::wstring errMsg;
+                        if (!RHC::Utils::ValidateTimeFormat(timeStr, errMsg)) {
+                            RHC::Utils::ShowErrorModal(hwnd, L"Format Error", errMsg);
+                        } else {
+                            AddBlockItem(false, target, timeBuf); 
+                            SetWindowTextW(g_hEditWebBlock, L""); 
+                            SetWindowTextW(g_hEditWebTime, L"");
+                        }
                     }
 
                     if (id == ID_BTN_EXEC_PHYSICAL) ProcessCategoryExecution(g_hComboPhysical);
@@ -364,13 +643,28 @@ namespace RHC {
 
 
 
+===== rhc-desktop/src/TrayUI.h =====
+#pragma once
+#include <windows.h>
+
+namespace RHC {
+    namespace TrayUI {
+        LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+        LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    }
+}
+
+
+
 ===== rhc-desktop/src/TrayUI.cpp =====
 #include "TrayUI.h"
 #include "Globals.h"
 #include "DashboardUI.h"
+#include "include/DatabaseManager.h"
 #include "ui/SmoothButton.h"
 #include <windows.h>
 #include <shellapi.h>
+#include <chrono>
 
 namespace RHC {
     namespace CustomTaskManager { void Show(); }
@@ -413,6 +707,13 @@ namespace RHC {
                         ShowWindow(hwnd, SW_HIDE); 
                     } 
                     return 0;
+                case WM_POWERBROADCAST:
+                    if (wParam == PBT_APMSUSPEND) {
+                        g_SystemIsSleeping = true;
+                    } else if (wParam == PBT_APMRESUMEAUTOMATIC || wParam == PBT_APMRESUMESUSPEND) {
+                        g_SystemIsSleeping = false;
+                    }
+                    return TRUE;
                 case WM_TRAYICON:
                     if (lParam == WM_LBUTTONDBLCLK) { 
                         RHC::DashboardUI::UpdateDashboardText(); 
@@ -426,7 +727,25 @@ namespace RHC {
                         AppendMenuW(hMenu, MF_STRING, ID_TRAY_TASKMGR, L"Open Task Manager"); 
                         if (GetAsyncKeyState(VK_SHIFT) & 0x8000) { 
                             AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL); 
-                            AppendMenuW(hMenu, MF_STRING, ID_TRAY_EXIT, L"Dev Exit Shield"); 
+                            
+                            RHC::DatabaseManager db("rhc_state.db");
+                            std::string unlockStr = db.getString("EXIT_UNLOCK_TIME", "0");
+                            long long unlockTime = unlockStr.empty() ? 0 : std::stoll(unlockStr);
+                            long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                            
+                            if (unlockTime == 0) {
+                                AppendMenuW(hMenu, MF_STRING, ID_TRAY_EXIT, L"Exit Dev (Initiate 6-Hour Delay)");
+                            } else if (now < unlockTime) {
+                                long long diffMs = unlockTime - now;
+                                long long hours = diffMs / 3600000;
+                                long long mins = (diffMs % 3600000) / 60000;
+                                long long secs = (diffMs % 60000) / 1000;
+                                wchar_t buf[256];
+                                swprintf_s(buf, L"Exit Dev Locked (Pending: %lldh %lldm %llds)", hours, mins, secs);
+                                AppendMenuW(hMenu, MF_GRAYED | MF_STRING, ID_TRAY_EXIT, buf);
+                            } else {
+                                AppendMenuW(hMenu, MF_STRING, ID_TRAY_EXIT, L"Exit Dev Shield (Ready)");
+                            }
                         } 
                         SetForegroundWindow(hwnd); 
                         TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, NULL); 
@@ -437,22 +756,38 @@ namespace RHC {
                     int id = LOWORD(wParam);
                     if (id == ID_TRAY_OPEN) { RHC::DashboardUI::UpdateDashboardText(); ShowWindow(g_hDashboardWindow, SW_RESTORE); SetForegroundWindow(g_hDashboardWindow); }
                     if (id == ID_TRAY_TASKMGR) RHC::CustomTaskManager::Show();
-                    if (id == ID_TRAY_EXIT) { Shell_NotifyIconW(NIM_DELETE, &nid); PostQuitMessage(0); }
+                    
+                    if (id == ID_TRAY_EXIT) { 
+                        RHC::DatabaseManager db("rhc_state.db");
+                        std::string unlockStr = db.getString("EXIT_UNLOCK_TIME", "0");
+                        long long unlockTime = unlockStr.empty() ? 0 : std::stoll(unlockStr);
+                        long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                        
+                        if (unlockTime == 0) {
+                            long long targetTime = now + (6LL * 60LL * 60LL * 1000LL); 
+                            db.putString("EXIT_UNLOCK_TIME", std::to_string(targetTime));
+                            MessageBoxW(hwnd, L"6-Hour exit delay started! You can close the shield once the delay expires.", L"Delay Initiated", MB_OK | MB_ICONINFORMATION);
+                        } else if (now >= unlockTime) {
+                            db.putString("EXIT_UNLOCK_TIME", "0");
+                            Shell_NotifyIconW(NIM_DELETE, &nid); 
+                            PostQuitMessage(0); 
+                        } else {
+                            MessageBoxW(hwnd, L"Bypass locked. Please wait for the 6-hour delay to expire.", L"Access Denied", MB_OK | MB_ICONWARNING);
+                        }
+                    }
                     
                     if (id == ID_BTN_NIGHT_SLEEP) {
-                        // FIX: Dynamically Load SetSuspendState to bypass MinGW linker errors
                         typedef BOOLEAN (WINAPI *PSetSuspendState)(BOOLEAN, BOOLEAN, BOOLEAN);
                         HMODULE hPowrProf = LoadLibraryA("PowrProf.dll");
                         if (hPowrProf) {
                             PSetSuspendState pSetSuspendState = (PSetSuspendState)GetProcAddress(hPowrProf, "SetSuspendState");
                             if (pSetSuspendState) {
-                                pSetSuspendState(FALSE, FALSE, FALSE); // Forces PC to Sleep
+                                pSetSuspendState(FALSE, FALSE, FALSE); 
                             }
                             FreeLibrary(hPowrProf);
                         }
                     }
                     if (id == ID_BTN_NIGHT_SHUTDOWN) {
-                        // Request privileges to shut down
                         HANDLE hToken; TOKEN_PRIVILEGES tkp;
                         OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
                         LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid);
@@ -470,7 +805,6 @@ namespace RHC {
 
                     bool isNightfall = (g_RedWallReason.find(L"Nightfall") != std::wstring::npos);
 
-                    // If Nightfall, paint pitch black. Otherwise, bright red.
                     if (isNightfall) {
                         FillRect(hdc, &rect, CreateSolidBrush(RGB(10, 10, 12))); 
                         SetTextColor(hdc, RGB(200, 200, 200)); 
@@ -489,7 +823,6 @@ namespace RHC {
                     if (isNightfall) {
                         DrawTextW(hdc, L"🌙 NIGHTFALL ACTIVE 🌙", -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER); 
                         
-                        // Show the Power Buttons at the bottom center of the screen
                         int midX = rect.right / 2;
                         SetWindowPos(hBtnSleep, NULL, midX - 160, rect.bottom - 100, 150, 40, SWP_NOZORDER);
                         SetWindowPos(hBtnShutDown, NULL, midX + 10, rect.bottom - 100, 150, 40, SWP_NOZORDER);
@@ -528,11 +861,424 @@ namespace RHC {
 
 
 
+===== rhc-desktop/src/NightfallUI.h =====
+#pragma once
+#include <windows.h>
+
+namespace RHC {
+    namespace NightfallUI {
+        void Initialize(HINSTANCE hInstance);
+        void Show();
+        HWND GetWindowHandle();
+        void UpdateOverlay(int mode, int param);
+    }
+}
+
+
+
+===== rhc-desktop/src/NightfallUI.cpp =====
+#include "NightfallUI.h"
+#include "include/DatabaseManager.h"
+#include <cstdio>
+
+namespace RHC {
+    namespace NightfallUI {
+        HWND hwnd = NULL; HWND hSleepEdit = NULL; HWND hWakeEdit = NULL;
+        HWND g_hOverlay = NULL; int g_OverlayMode = 0;
+
+        LRESULT CALLBACK OverlayProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+            switch(uMsg) {
+                case WM_ERASEBKGND: return 1;
+                case WM_PAINT: {
+                    PAINTSTRUCT ps; HDC hdc = BeginPaint(hwnd, &ps);
+                    HBRUSH hBrush = CreateSolidBrush(RGB(0,0,0)); FillRect(hdc, &ps.rcPaint, hBrush);
+                    DeleteObject(hBrush); EndPaint(hwnd, &ps); return 0;
+                }
+                case WM_TIMER: {
+                    if (g_OverlayMode == 2) {
+                        POINT pt; GetCursorPos(&pt);
+                        static POINT lastPt = {-1, -1};
+                        if (pt.x != lastPt.x || pt.y != lastPt.y) {
+                            lastPt = pt;
+                            int vx = GetSystemMetrics(SM_XVIRTUALSCREEN); int vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
+                            int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN); int vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+                            
+                            HRGN hRgn = CreateRectRgn(vx, vy, vx + vw, vy + vh);
+                            // Flashlight Hole Radius = 75px
+                            HRGN hHole = CreateEllipticRgn(pt.x - 75, pt.y - 75, pt.x + 75, pt.y + 75);
+                            CombineRgn(hRgn, hRgn, hHole, RGN_DIFF);
+                            SetWindowRgn(hwnd, hRgn, TRUE);
+                            DeleteObject(hHole); // hRgn is now owned by the system
+                        }
+                    }
+                    return 0;
+                }
+                case WM_NCHITTEST: return HTCLIENT; // Eat clicks outside the hole
+            }
+            return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+        }
+
+        void UpdateOverlay(int mode, int param) {
+            if (!g_hOverlay) return;
+            if (g_OverlayMode != mode) {
+                g_OverlayMode = mode;
+                if (mode == 0) {
+                    KillTimer(g_hOverlay, 1); ShowWindow(g_hOverlay, SW_HIDE);
+                } else if (mode == 1) {
+                    KillTimer(g_hOverlay, 1);
+                    SetWindowLong(g_hOverlay, GWL_EXSTYLE, WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+                    SetWindowRgn(g_hOverlay, NULL, TRUE);
+                    SetWindowPos(g_hOverlay, HWND_TOPMOST, GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN), GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN), SWP_NOACTIVATE);
+                    ShowWindow(g_hOverlay, SW_SHOWNA);
+                } else if (mode == 2) {
+                    SetWindowLong(g_hOverlay, GWL_EXSTYLE, WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED);
+                    SetLayeredWindowAttributes(g_hOverlay, 0, 255, LWA_ALPHA);
+                    SetWindowPos(g_hOverlay, HWND_TOPMOST, GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN), GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN), SWP_NOACTIVATE);
+                    SetTimer(g_hOverlay, 1, 16, NULL); // 60 FPS Flashlight Tracking
+                    ShowWindow(g_hOverlay, SW_SHOWNA);
+                }
+            }
+            if (mode == 1) SetLayeredWindowAttributes(g_hOverlay, 0, param, LWA_ALPHA);
+        }
+
+        LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+            switch (uMsg) {
+                case WM_CREATE: {
+                    HFONT hFont = CreateFontA(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, "Segoe UI");
+                    CreateWindowExA(0, "STATIC", "NIGHTFALL PROTOCOL", WS_CHILD | WS_VISIBLE | SS_CENTER, 0, 20, 300, 30, hwnd, NULL, NULL, NULL);
+                    CreateWindowExA(0, "STATIC", "Sleep Time (HH:MM 24h):", WS_CHILD | WS_VISIBLE, 30, 60, 240, 20, hwnd, NULL, NULL, NULL);
+                    hSleepEdit = CreateWindowExA(WS_EX_CLIENTEDGE, "EDIT", "22:30", WS_CHILD | WS_VISIBLE, 30, 80, 220, 30, hwnd, NULL, NULL, NULL);
+                    CreateWindowExA(0, "STATIC", "Wake Time (HH:MM 24h):", WS_CHILD | WS_VISIBLE, 30, 120, 240, 20, hwnd, NULL, NULL, NULL);
+                    hWakeEdit = CreateWindowExA(WS_EX_CLIENTEDGE, "EDIT", "06:00", WS_CHILD | WS_VISIBLE, 30, 140, 220, 30, hwnd, NULL, NULL, NULL);
+                    HWND hBtn = CreateWindowExA(0, "BUTTON", "Lock Schedule", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 30, 190, 220, 40, hwnd, (HMENU)1, NULL, NULL);
+                    
+                    EnumChildWindows(hwnd,[](HWND child, LPARAM font) { SendMessage(child, WM_SETFONT, font, TRUE); return TRUE; }, (LPARAM)hFont);
+                    
+                    RHC::DatabaseManager db("rhc_state.db");
+                    int nStart = db.getInt("NIGHTFALL_START", -1); int nEnd = db.getInt("NIGHTFALL_END", -1);
+                    if(nStart != -1) { char buf[10]; sprintf(buf, "%02d:%02d", nStart/60, nStart%60); SetWindowTextA(hSleepEdit, buf); }
+                    if(nEnd != -1) { char buf[10]; sprintf(buf, "%02d:%02d", nEnd/60, nEnd%60); SetWindowTextA(hWakeEdit, buf); }
+                    return 0;
+                }
+                case WM_COMMAND:
+                    if (LOWORD(wParam) == 1) {
+                        char sBuf[10], wBuf[10]; GetWindowTextA(hSleepEdit, sBuf, 10); GetWindowTextA(hWakeEdit, wBuf, 10);
+                        int sH, sM, wH, wM;
+                        if (sscanf(sBuf, "%d:%d", &sH, &sM) == 2 && sscanf(wBuf, "%d:%d", &wH, &wM) == 2) {
+                            RHC::DatabaseManager db("rhc_state.db"); db.putInt("NIGHTFALL_START", sH * 60 + sM); db.putInt("NIGHTFALL_END", wH * 60 + wM);
+                            MessageBoxA(hwnd, "Nightfall Schedule Locked!", "Success", MB_OK | MB_ICONINFORMATION); ShowWindow(hwnd, SW_HIDE);
+                        } else MessageBoxA(hwnd, "Invalid Format! Please use HH:MM (e.g. 22:30)", "Error", MB_ICONERROR);
+                    } return 0;
+                case WM_CTLCOLORSTATIC: SetTextColor((HDC)wParam, RGB(255, 255, 255)); SetBkColor((HDC)wParam, RGB(18, 18, 18)); return (LRESULT)CreateSolidBrush(RGB(18, 18, 18));
+                case WM_CLOSE: ShowWindow(hwnd, SW_HIDE); return 0;
+            }
+            return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+        }
+
+        void Initialize(HINSTANCE hInstance) {
+            WNDCLASSA wc = {0}; wc.lpfnWndProc = WndProc; wc.hInstance = hInstance; wc.lpszClassName = "RHC_Nightfall"; wc.hbrBackground = CreateSolidBrush(RGB(18, 18, 18)); RegisterClassA(&wc);
+            hwnd = CreateWindowExA(0, "RHC_Nightfall", "Nightfall Schedule", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 300, 300, NULL, NULL, hInstance, NULL);
+
+            WNDCLASSA owc = {0}; owc.lpfnWndProc = OverlayProc; owc.hInstance = hInstance; owc.lpszClassName = "RHC_Overlay"; RegisterClassA(&owc);
+            g_hOverlay = CreateWindowExA(WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED, "RHC_Overlay", "", WS_POPUP, 0, 0, 10, 10, NULL, NULL, hInstance, NULL);
+        }
+        void Show() { ShowWindow(hwnd, SW_RESTORE); SetForegroundWindow(hwnd); }
+        HWND GetWindowHandle() { return hwnd; }
+    }
+}
+
+
+
+===== rhc-desktop/src/CustomTaskManager.h =====
+#pragma once
+#include <windows.h>
+
+namespace RHC {
+    namespace CustomTaskManager {
+        void Initialize(HINSTANCE hInstance);
+        void Show();
+        void Hide();
+        HWND GetWindowHandle();
+    }
+}
+
+
+
+===== rhc-desktop/src/CustomTaskManager.cpp =====
+#include "CustomTaskManager.h"
+#include "DashboardUI.h"
+#include "DesktopUtils.h"
+#include "include/DatabaseManager.h"
+#include "include/StringUtils.h"
+#include <tlhelp32.h>
+#include <psapi.h>
+#include <commctrl.h>
+#include <string>
+#include <vector>
+
+namespace RHC {
+    namespace CustomTaskManager {
+        HWND hwnd = NULL;
+        HWND hListView = NULL;
+
+        void RefreshList() {
+            SendMessageW(hListView, LVM_DELETEALLITEMS, 0, 0);
+            HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if (hSnap != INVALID_HANDLE_VALUE) {
+                PROCESSENTRY32W pe32;
+                pe32.dwSize = sizeof(PROCESSENTRY32W);
+                int rowIndex = 0;
+                if (Process32FirstW(hSnap, &pe32)) {
+                    do {
+                        std::wstring exeName = pe32.szExeFile;
+                        std::wstring fullPath = L"";
+                        std::wstring memStr = L"N/A";
+                        
+                        HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, pe32.th32ProcessID);
+                        if (hProc) {
+                            wchar_t pathBuf[MAX_PATH]; DWORD size = MAX_PATH;
+                            if (QueryFullProcessImageNameW(hProc, 0, pathBuf, &size)) fullPath = pathBuf;
+
+                            PROCESS_MEMORY_COUNTERS pmc;
+                            if (GetProcessMemoryInfo(hProc, &pmc, sizeof(pmc))) memStr = std::to_wstring(pmc.WorkingSetSize / 1024) + L" K";
+                            CloseHandle(hProc);
+                        }
+
+                        // FIX: Check if an app is disguised as a system process
+                        std::string lowerExe = RHC::StringUtils::toLower(RHC::Utils::wstring_to_utf8(exeName));
+                        std::string lowerPath = RHC::StringUtils::toLower(RHC::Utils::wstring_to_utf8(fullPath));
+                        
+                        bool isFakeSystemProcess = false;
+                        if (lowerExe == "svchost.exe" || lowerExe == "conhost.exe" || lowerExe == "explorer.exe") {
+                            if (!lowerPath.empty() && lowerPath.find("\\windows\\") == std::string::npos) {
+                                isFakeSystemProcess = true; // Caught trying to hide outside C:\Windows!
+                            }
+                        }
+
+                        if (!isFakeSystemProcess && (lowerExe.find("rhc_desktop") != std::string::npos || 
+                            lowerExe.find("syncservices") != std::string::npos ||
+                            lowerExe.find("svchost") != std::string::npos ||
+                            lowerExe.find("conhost") != std::string::npos)) {
+                            continue;
+                        }
+
+                        std::wstring displayName = isFakeSystemProcess ? L"⚠️ FAKE: " + exeName : exeName;
+
+                        LVITEMW lvi = {0}; lvi.mask = LVIF_TEXT | LVIF_PARAM; lvi.iItem = rowIndex; lvi.iSubItem = 0;
+                        lvi.pszText = (LPWSTR)displayName.c_str(); lvi.lParam = pe32.th32ProcessID;
+                        SendMessageW(hListView, LVM_INSERTITEMW, 0, (LPARAM)&lvi);
+
+                        std::wstring pidStr = std::to_wstring(pe32.th32ProcessID);
+                        LVITEMW lviPid = {0}; lviPid.iSubItem = 1; lviPid.pszText = (LPWSTR)pidStr.c_str();
+                        SendMessageW(hListView, LVM_SETITEMTEXTW, rowIndex, (LPARAM)&lviPid);
+
+                        LVITEMW lviMem = {0}; lviMem.iSubItem = 2; lviMem.pszText = (LPWSTR)memStr.c_str();
+                        SendMessageW(hListView, LVM_SETITEMTEXTW, rowIndex, (LPARAM)&lviMem);
+                        rowIndex++;
+                    } while (Process32NextW(hSnap, &pe32));
+                }
+                CloseHandle(hSnap);
+            }
+        }
+
+        void ActionSelected(bool blockApp) {
+            int sel = SendMessageW(hListView, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+            if (sel != -1) {
+                LVITEMW lvi = {0}; lvi.iItem = sel; lvi.mask = LVIF_PARAM;
+                SendMessageW(hListView, LVM_GETITEMW, 0, (LPARAM)&lvi);
+                DWORD pid = (DWORD)lvi.lParam;
+
+                HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_TERMINATE, FALSE, pid);
+                if (hProc) {
+                    if (blockApp) {
+                        wchar_t exePath[MAX_PATH]; DWORD size = MAX_PATH;
+                        if (QueryFullProcessImageNameW(hProc, 0, exePath, &size)) {
+                            std::wstring path(exePath);
+                            size_t pos = path.find_last_of(L"\\/");
+                            std::wstring exeName = (pos != std::wstring::npos) ? path.substr(pos + 1) : path;
+                            
+                            std::string lowerExe = RHC::StringUtils::toLower(RHC::Utils::wstring_to_utf8(exeName));
+                            std::string lowerPath = RHC::StringUtils::toLower(RHC::Utils::wstring_to_utf8(path));
+                            
+                            // FIX: Ensure fake system processes bypass protection
+                            bool isFakeSystemProcess = (lowerExe == "svchost.exe" || lowerExe == "conhost.exe" || lowerExe == "explorer.exe") && (lowerPath.find("\\windows\\") == std::string::npos);
+
+                            std::vector<std::string> protectedExes = {"explorer.exe", "cmd.exe", "powershell.exe", "taskmgr.exe", "csrss.exe", "winlogon.exe", "lsass.exe", "smss.exe", "services.exe", "spoolsv.exe"};
+                            bool isProtected = false;
+                            
+                            if (!isFakeSystemProcess) {
+                                for(auto& p : protectedExes) if (lowerExe == p) isProtected = true;
+                            }
+                            
+                            if (isProtected) MessageBoxW(hwnd, L"Cannot block essential system apps!", L"Error", MB_ICONERROR);
+                            else {
+                                RHC::DatabaseManager db("rhc_state.db");
+                                std::string currentList = db.getString("BLOCKLIST_EXE", "");
+                                if (currentList.find(lowerExe) == std::string::npos) {
+                                    if (currentList.empty()) db.putString("BLOCKLIST_EXE", lowerExe);
+                                    else db.putString("BLOCKLIST_EXE", currentList + "," + lowerExe);
+                                    MessageBoxW(hwnd, L"App Blocked! It will auto-close.", L"Success", MB_OK);
+                                } else MessageBoxW(hwnd, L"App is already blocked.", L"Info", MB_OK);
+                            }
+                        }
+                    }
+                    TerminateProcess(hProc, 0); CloseHandle(hProc);
+                }
+                RefreshList(); RHC::DashboardUI::RefreshBlockListUI(); 
+            }
+        }
+
+        LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+            switch (uMsg) {
+                case WM_CREATE: {
+                    HFONT hFont = CreateFontW(14, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
+                    hListView = CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEWW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS, 20, 20, 440, 360, hwnd, NULL, NULL, NULL);
+                    SendMessageW(hListView, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
+                    SendMessageW(hListView, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+                    LVCOLUMNW lvc = {0}; lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+                    lvc.iSubItem = 0; lvc.cx = 220; lvc.fmt = LVCFMT_LEFT; lvc.pszText = (LPWSTR)L"Process Name"; SendMessageW(hListView, LVM_INSERTCOLUMNW, 0, (LPARAM)&lvc);
+                    lvc.iSubItem = 1; lvc.cx = 80; lvc.fmt = LVCFMT_LEFT; lvc.pszText = (LPWSTR)L"PID"; SendMessageW(hListView, LVM_INSERTCOLUMNW, 1, (LPARAM)&lvc);
+                    lvc.iSubItem = 2; lvc.cx = 110; lvc.fmt = LVCFMT_RIGHT; lvc.pszText = (LPWSTR)L"Memory"; SendMessageW(hListView, LVM_INSERTCOLUMNW, 2, (LPARAM)&lvc);
+
+                    HWND bRefresh = CreateWindowExW(0, L"BUTTON", L"Refresh", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, 390, 100, 35, hwnd, (HMENU)1, NULL, NULL);
+                    HWND bBlock = CreateWindowExW(0, L"BUTTON", L"Block App", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 240, 390, 100, 35, hwnd, (HMENU)3, NULL, NULL);
+                    HWND bKill = CreateWindowExW(0, L"BUTTON", L"End Task", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 360, 390, 100, 35, hwnd, (HMENU)2, NULL, NULL);
+                    
+                    SendMessageW(bRefresh, WM_SETFONT, (WPARAM)hFont, TRUE); SendMessageW(bBlock, WM_SETFONT, (WPARAM)hFont, TRUE); SendMessageW(bKill, WM_SETFONT, (WPARAM)hFont, TRUE);
+                    RefreshList(); return 0;
+                }
+                case WM_COMMAND:
+                    if (LOWORD(wParam) == 1) RefreshList();
+                    if (LOWORD(wParam) == 2) ActionSelected(false); 
+                    if (LOWORD(wParam) == 3) ActionSelected(true);  
+                    return 0;
+                case WM_CLOSE: Hide(); return 0;
+            }
+            return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+        }
+
+        void Initialize(HINSTANCE hInstance) {
+            INITCOMMONCONTROLSEX icex; icex.dwSize = sizeof(INITCOMMONCONTROLSEX); icex.dwICC = ICC_LISTVIEW_CLASSES; InitCommonControlsEx(&icex);
+            WNDCLASSW wc = {0}; wc.lpfnWndProc = WndProc; wc.hInstance = hInstance; wc.lpszClassName = L"RHC_TaskMgr"; wc.hbrBackground = CreateSolidBrush(RGB(240, 240, 240)); RegisterClassW(&wc);
+            hwnd = CreateWindowExW(0, L"RHC_TaskMgr", L"Task Manager", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 500, 480, NULL, NULL, hInstance, NULL);
+        }
+        void Show() { RefreshList(); ShowWindow(hwnd, SW_RESTORE); SetForegroundWindow(hwnd); }
+        void Hide() { ShowWindow(hwnd, SW_HIDE); }
+        HWND GetWindowHandle() { return hwnd; }
+    }
+}
+
+
+
+===== rhc-desktop/src/UIAScanner.h =====
+#pragma once
+#include <string>
+
+namespace RHC {
+    namespace UIAScanner {
+        std::string ScanForeground();
+    }
+}
+
+
+
+===== rhc-desktop/src/UIAScanner.cpp =====
+#include "UIAScanner.h"
+#include <windows.h>
+#include <uiautomation.h>
+
+namespace RHC {
+    namespace UIAScanner {
+        std::string ScanForeground() {
+            HWND hwnd = GetForegroundWindow();
+            if (!hwnd) return "";
+
+            char title[1024]; GetWindowTextA(hwnd, title, sizeof(title));
+            std::string result = std::string(title) + " ";
+
+            // FIX: Instantiate COM Object ONCE and keep it alive in memory.
+            // Drops CPU usage significantly and stops COM memory leak.
+            static IUIAutomation* pAutomation = NULL;
+            if (pAutomation == NULL) {
+                HRESULT hr = CoCreateInstance(__uuidof(CUIAutomation), NULL, CLSCTX_INPROC_SERVER, __uuidof(IUIAutomation), (void**)&pAutomation);
+                if (FAILED(hr)) return result; // Fallback to just scanning window title
+            }
+
+            if (pAutomation != NULL) {
+                IUIAutomationElement* pWindow = NULL;
+                HRESULT hr = pAutomation->ElementFromHandle(hwnd, &pWindow);
+                if (SUCCEEDED(hr) && pWindow != NULL) {
+                    IUIAutomationCondition* pCondition = NULL; 
+                    pAutomation->CreateTrueCondition(&pCondition);
+                    
+                    IUIAutomationElementArray* pArray = NULL; 
+                    pWindow->FindAll(TreeScope_Children, pCondition, &pArray); 
+                    
+                    if (pArray != NULL) {
+                        int count = 0; pArray->get_Length(&count);
+                        for (int i = 0; i < count; i++) {
+                            IUIAutomationElement* pChild = NULL;
+                            if (SUCCEEDED(pArray->GetElement(i, &pChild))) {
+                                BSTR name;
+                                if (SUCCEEDED(pChild->get_CurrentName(&name)) && name != NULL) {
+                                    int len = SysStringLen(name); 
+                                    int size_needed = WideCharToMultiByte(CP_UTF8, 0, name, len, NULL, 0, NULL, NULL);
+                                    std::string strTo(size_needed, 0); 
+                                    WideCharToMultiByte(CP_UTF8, 0, name, len, &strTo[0], size_needed, NULL, NULL);
+                                    result += strTo + " "; 
+                                    SysFreeString(name);
+                                }
+                                pChild->Release();
+                            }
+                        }
+                        pArray->Release();
+                    }
+                    if (pCondition) pCondition->Release(); 
+                    pWindow->Release();
+                }
+            }
+            return result;
+        }
+    }
+}
+
+
+
+===== rhc-desktop/src/DesktopUtils.h =====
+#pragma once
+#include <string>
+#include <windows.h>
+
+namespace RHC {
+    namespace Utils {
+        std::wstring utf8_to_wstring(const std::string& str);
+        std::string wstring_to_utf8(const std::wstring& wstr);
+        bool IsTimeAllowed(const std::string& timeWindow);
+        void InjectEvadeAction();
+        
+        // Modal & Validation Subsystem
+        bool ValidateTimeFormat(const std::wstring& timeStr, std::wstring& outErrorMsg);
+        void ShowErrorModal(HWND hwndParent, const std::wstring& title, const std::wstring& message);
+        
+        // Lock-in and AM/PM Time Formatting Helpers
+        int GetAllowedWindowDuration(const std::string& timeWindow);
+        std::string FormatTimeToAmPm(const std::string& timeWindow);
+    }
+}
+
+
+
 ===== rhc-desktop/src/DesktopUtils.cpp =====
 #include "DesktopUtils.h"
+#include "Globals.h"
 #include <windows.h>
 #include <ctime>
+#include <iostream>
 #include "../../rhc-common/include/StringUtils.h"
+
+bool g_DebugMode = false;
+bool g_SystemIsSleeping = false;
 
 namespace RHC {
     namespace Utils {
@@ -558,7 +1304,7 @@ namespace RHC {
             auto parts = RHC::StringUtils::split(timeWindow, '-');
             if (parts.size() != 2) return false;
             int sh, sm, eh, em;
-            if (sscanf(parts[0].c_str(), "%d:%d", &sh, &sm) != 2 || sscanf(parts[1].c_str(), "%d:%d", &eh, &em) != 2) return false;
+            if (sscanf_s(parts[0].c_str(), "%d:%d", &sh, &sm) != 2 || sscanf_s(parts[1].c_str(), "%d:%d", &eh, &em) != 2) return false;
             
             time_t t = time(nullptr); tm* now = localtime(&t);
             int cur = now->tm_hour * 60 + now->tm_min, start = sh * 60 + sm, end = eh * 60 + em;
@@ -574,538 +1320,373 @@ namespace RHC {
             SendInput(4, inputs, sizeof(INPUT));
         }
 
+        bool ValidateTimeFormat(const std::wstring& timeStr, std::wstring& outErrorMsg) {
+            std::wstring trimmed = timeStr;
+            trimmed.erase(0, trimmed.find_first_not_of(L" \t\r\n"));
+            trimmed.erase(trimmed.find_last_not_of(L" \t\r\n") + 1);
+
+            if (trimmed.empty() || trimmed == L"None" || trimmed == L"none") {
+                return true;
+            }
+
+            size_t dash = trimmed.find(L'-');
+            if (dash == std::wstring::npos) {
+                outErrorMsg = L"Format must be 'HH:MM-HH:MM' (e.g., 09:00-17:00).\nMissing '-' range separator.";
+                return false;
+            }
+
+            std::wstring start = trimmed.substr(0, dash);
+            std::wstring end = trimmed.substr(dash + 1);
+
+            int sh = -1, sm = -1, eh = -1, em = -1;
+            wchar_t extraStart = L'\0', extraEnd = L'\0';
+
+            if (swscanf_s(start.c_str(), L"%d:%d%c", &sh, &sm, &extraStart, 1) != 2 || sh < 0 || sh > 23 || sm < 0 || sm > 59) {
+                outErrorMsg = L"Invalid start time. Format must be 'HH:MM-HH:MM'.\nStart hour must be between 0-23 and minutes 0-59.";
+                return false;
+            }
+
+            if (swscanf_s(end.c_str(), L"%d:%d%c", &eh, &em, &extraEnd, 1) != 2 || eh < 0 || eh > 23 || em < 0 || em > 59) {
+                outErrorMsg = L"Invalid end time. Format must be 'HH:MM-HH:MM'.\nEnd hour must be between 0-23 and minutes 0-59.";
+                return false;
+            }
+
+            return true;
+        }
+
+        void ShowErrorModal(HWND hwndParent, const std::wstring& title, const std::wstring& message) {
+            MessageBoxW(hwndParent, message.c_str(), title.c_str(), MB_OK | MB_ICONERROR | MB_APPLMODAL | MB_SETFOREGROUND);
+        }
+
+        int GetAllowedWindowDuration(const std::string& timeWindow) {
+            if (timeWindow.empty() || timeWindow == "0" || timeWindow == "None" || timeWindow.find('-') == std::string::npos) {
+                return 0;
+            }
+            auto parts = RHC::StringUtils::split(timeWindow, '-');
+            if (parts.size() != 2) return 0;
+            int sh, sm, eh, em;
+            if (sscanf_s(parts[0].c_str(), "%d:%d", &sh, &sm) != 2 || sscanf_s(parts[1].c_str(), "%d:%d", &eh, &em) != 2) return 0;
+            
+            int start = sh * 60 + sm;
+            int end = eh * 60 + em;
+            if (start <= end) {
+                return end - start;
+            } else { 
+                return (1440 - start) + end;
+            }
+        }
+
+        std::string FormatTimeToAmPm(const std::string& timeWindow) {
+            if (timeWindow.empty() || timeWindow == "0" || timeWindow == "None" || timeWindow.find('-') == std::string::npos) {
+                return "Always Blocked";
+            }
+            auto parts = RHC::StringUtils::split(timeWindow, '-');
+            if (parts.size() != 2) return "Always Blocked";
+            int sh, sm, eh, em;
+            if (sscanf_s(parts[0].c_str(), "%d:%d", &sh, &sm) != 2 || sscanf_s(parts[1].c_str(), "%d:%d", &eh, &em) != 2) return "Always Blocked";
+            
+            auto formatHalf = [](int h, int m) -> std::string {
+                std::string ampm = (h >= 12) ? "PM" : "AM";
+                int displayH = h % 12;
+                if (displayH == 0) displayH = 12;
+                char buf[32];
+                sprintf_s(buf, "%d:%02d %s", displayH, m, ampm.c_str());
+                return std::string(buf);
+            };
+            
+            return formatHalf(sh, sm) + " to " + formatHalf(eh, em);
+        }
+
     }
 }
 
 
 
-===== rhc-desktop/src/CrashReporter.cpp =====
-#include "CrashReporter.h"
+===== rhc-desktop/cloak/SafeModeCloak.h =====
+#pragma once
+namespace RHC {
+    class CloakEngine {
+    public:
+        static void UncloakIfNeeded();
+        static void EngageDeadMansSwitch();
+        static void RegisterStartup();
+    };
+}
+
+
+
+===== rhc-desktop/cloak/SafeModeCloak.cpp =====
+#include "SafeModeCloak.h"
 #include <windows.h>
-#include <fstream>
+#include <string>
 
 namespace RHC {
-    namespace CrashReporter {
-        LONG WINAPI ExceptionFilter(EXCEPTION_POINTERS* ep) {
-            std::ofstream out("rhc_crash_log.txt", std::ios::app);
-            out << "--- RHC FATAL CRASH ---\n";
-            out << "Exception Code: 0x" << std::hex << ep->ExceptionRecord->ExceptionCode << "\n";
-            out << "Address: 0x" << ep->ExceptionRecord->ExceptionAddress << "\n\n";
-            out.close();
-
-            MessageBoxW(NULL, L"The Momentum Core encountered a critical instability.\nA detailed crash report has been saved to rhc_crash_log.txt.\nPlease forward this to the developer.", L"⚠️ SYSTEM FAILURE ⚠️", MB_ICONERROR | MB_OK);
-            return EXCEPTION_EXECUTE_HANDLER;
-        }
-        void Initialize() { SetUnhandledExceptionFilter(ExceptionFilter); }
-    }
-}
-
-
-
-===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/GameActivity.kt =====
-package com.rockhard.blocker
-
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.view.View
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
-
-class GameActivity : Activity() {
-    internal lateinit var tvConsole: TextView
-    internal lateinit var tvBag: TextView
-    internal lateinit var tvBagConsole: TextView
-    internal lateinit var tvAether: TextView
-    internal lateinit var partyContainer: LinearLayout
-    internal lateinit var qteContainer: LinearLayout
-    internal lateinit var prefs: SharedPreferences
-
-    internal var aetherSeconds = 600
-    internal var aetherDepleted = false
-    internal var exploreDifficulty = 50
-    internal var totalExpeds = 0
-    internal var graveyard = mutableListOf<Netbeast>()
-    internal var isFightAetherActive = false
-
-    internal var playerId = ""
-    internal var playerName = ""
-    internal var isUnderAttack = false
-    internal var isWildBattle = false
-    internal var battleOver = false
-    internal var playerLastStand = false
-    internal var playerHasTripleStrike = false
-    internal var playerHasEvasion = false
-    internal var currentEnemy: Netbeast? = null
-    internal var enemyParty = mutableListOf<Netbeast>()
-    internal var isTrainerBattle = false
-    internal var capturedRescueTarget: Netbeast? = null
-
-    internal var sprays = 0
-    internal var smallHpPots = 0
-    internal var largeHpPots = 0
-    internal var potions = 0
-    internal var nets = 0
-    internal var focusCoins = 0
-    internal var transfusers = 0
-    internal var party = mutableListOf<Netbeast>()
-    internal var activePetIndex = 0
-    internal var forSaleParty = mutableListOf<Netbeast>()
-    internal var marketBeasts = mutableListOf<Netbeast>()
-    internal val activeOffers = mutableMapOf<String, Int>()
-
-    internal var currentWeather = "Clear"
-    internal var weatherIcon = "☀️"
-    internal var currentCity = "Local Sanctuary"
-
-    internal val activeExpeditions = mutableMapOf<Int, Long>()
-    internal val activeQTEs = mutableMapOf<Int, View>()
-    internal val participatingPets = mutableSetOf<Int>()
-
-    internal var battleTimerRunnable: Runnable? = null
-    internal val mainHandler = Handler(Looper.getMainLooper())
-    private val exploreRunnable =
-        object : Runnable {
-            override fun run() {
-                performGlobalTick()
-                mainHandler.postDelayed(this, 4000)
-            }
-        }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_game)
-        prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
-
-        tvConsole = findViewById(R.id.tvConsole)
-        tvBag = findViewById(R.id.tvBag)
-        tvBagConsole = findViewById(R.id.tvBagConsole)
-        tvAether = findViewById(R.id.tvAether)
-        partyContainer = findViewById(R.id.partyContainer)
-        qteContainer = findViewById(R.id.qteContainer)
-
-        try {
-            loadSaveData()
-        } catch (e: Exception) {
-            wipeCorruptSave()
-        }
-
-        // Initialize Aether Engine!
-        if (aetherSeconds == 600 && !isUnderAttack) {
-            aetherSeconds = AetherEngine.calculateStartingAether(prefs)
-            val rems = prefs.getInt("CURRENT_REMNANTS", 0)
-            if (rems > 0) runOnUiThread { Toast.makeText(this, "$rems:00 unused aether remnants added!", Toast.LENGTH_LONG).show() }
-        }
-
-        generateMarket()
-        setupTabs()
-        setupShop()
-        setupEquipPanel()
-        setupBattleControls()
-        setupDispatchControl()
-        updatePartyScreen()
-        updateBagScreen()
-
-        findViewById<Button>(R.id.btnExit).setOnClickListener { finish() }
-
-        val seekDifficulty = findViewById<android.widget.SeekBar>(R.id.seekDifficulty)
-        seekDifficulty?.setOnSeekBarChangeListener(
-            object : android.widget.SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(
-                    seekBar: android.widget.SeekBar?,
-                    progress: Int,
-                    fromUser: Boolean,
-                ) {
-                    exploreDifficulty =
-                        progress
-                }
-
-                override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
-
-                override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {}
-            },
-        )
-
-        intent?.let { handleIncomingIntent(it) }
-    }
-
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        intent?.let { handleIncomingIntent(it) }
-    }
-
-    private fun handleIncomingIntent(i: Intent) {
-        isUnderAttack = i.getBooleanExtra("UNDER_ATTACK", false)
-        if (isUnderAttack) {
-            val triggerReason = i.getStringExtra("TRIGGER_REASON") ?: "Anomaly"
-            val bossName = i.getStringExtra("BOSS_NAME") ?: "The Dark One"
-
-            currentEnemy =
-                Netbeast(
-                    "[Ephemeral] [Elusive] [Colossal] $bossName",
-                    "Corrupted",
-                    8000,
-                    8000,
-                    "Doom",
-                    "Crash",
-                    "Annihilate",
-                    0L,
-                    0,
-                    0,
-                    0,
-                    false,
-                    "None",
-                    0,
-                    0,
-                    0,
-                    0,
-                    "None",
-                    0,
-                )
-
-            setUIState("BATTLE")
-            printLog("\n==================================")
-            printLog("⚠️ EMERGENCY: ${currentEnemy?.name} HAS INVADED!")
-            printLog("==================================")
-            if (party.isNotEmpty()) {
-                printLog("> You sent out ${party[activePetIndex].name} to defend!")
-                showBattleArena(party[activePetIndex].name, bossName)
-            } else {
-                playerLastStand = true
-                printLog("> You have no Netbeasts! Defend yourself!")
-                showBattleArena("YOU", bossName)
-            }
-            updateBattleUI()
-        } else {
-            setUIState("HUB")
-            printLog("> INITIALIZING NETBEAST SAFARI...")
-            printLog("> Welcome back, $playerName!")
-
-            WeatherEngine.fetchSilent(
-                this,
-                onSuccess = { city, weather, icon, terrain, debugStr ->
-                    currentCity = city
-                    currentWeather = weather
-                    weatherIcon = icon
-                    prefs
-                        .edit()
-                        .putString("CURRENT_CITY", city)
-                        .putString("DEBUG_API_DATA", debugStr)
-                        .apply()
-                    runOnUiThread {
-                        printLog("\n=== WEATHER UPLINK ===")
-                        printLog("> Base: $city")
-                        printLog("> Terrain: $terrain")
-                        printLog("> Weather: $weather $icon")
-                        printLog("> " + debugStr.replace("\n", "\n> "))
-                        printLog("======================")
-                        findViewById<Button>(R.id.btnInfuse)?.text = "INFUSE WITH CURRENT WEATHER ($icon)"
-                    }
-                },
-                onFail = { reason ->
-                    runOnUiThread {
-                        printLog(
-                            "\n> ⚠️ UPLINK FAILED: $reason\n> Base Locked: Local Sanctuary\n> Weather: Offline\n> Awaiting orders.",
-                        )
-                    }
-                },
-            )
-
-            processFleePenalty()
-            checkOfflineExpeditions()
-            mainHandler.postDelayed(exploreRunnable, 3000)
-        }
-    }
-
-    internal fun saveParty() {
-        SaveManager.saveParty(prefs, "PARTY_DATA", party)
-    }
-
-    internal fun saveItems() {
-        prefs
-            .edit()
-            .putInt("SPRAYS", sprays)
-            .putInt("POTIONS", potions)
-            .putInt("NETS", nets)
-            .putInt("COINS", focusCoins)
-            .putInt("TRANSFUSERS", transfusers)
-            .putInt("SMALL_HP_POTS", smallHpPots)
-            .putInt("LARGE_HP_POTS", largeHpPots)
-            .apply()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mainHandler.removeCallbacksAndMessages(null)
-        SaveManager.saveExpeditions(prefs, activeExpeditions)
-        AudioEngine.release()
-    }
-
-    internal fun printLog(msg: String) {
-        runOnUiThread {
-            tvConsole.text = "${tvConsole.text}\n$msg"
-            (tvConsole.parent as? android.widget.ScrollView)?.post {
-                (tvConsole.parent as? android.widget.ScrollView)?.fullScroll(android.view.View.FOCUS_DOWN)
-            }
-        }
-    }
-
-    internal fun printShopLog(msg: String) {
-        runOnUiThread {
-            tvBagConsole.text = "${tvBagConsole.text}\n$msg"
-            (tvBagConsole.parent as? android.widget.ScrollView)?.post {
-                (tvBagConsole.parent as? android.widget.ScrollView)?.fullScroll(android.view.View.FOCUS_DOWN)
-            }
-        }
-    }
-}
-
-
-
-===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/gameui/BattleUI.kt =====
-package com.rockhard.blocker
-
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.ScrollView
-import android.widget.TextView
-
-internal fun GameActivity.updateHealthBars() {
-    val pbPlayer = findViewById<ProgressBar>(R.id.pbPlayerHp)
-    val pbEnemy = findViewById<ProgressBar>(R.id.pbEnemyHp)
-    if (party.isNotEmpty()) { pbPlayer.max = party[activePetIndex].maxHp; pbPlayer.progress = party[activePetIndex].hp.coerceAtLeast(0) }
-    if (currentEnemy != null) { pbEnemy.max = currentEnemy!!.maxHp; pbEnemy.progress = currentEnemy!!.hp.coerceAtLeast(0) }
-}
-
-internal fun GameActivity.showBattleArena(playerName: String, enemyName: String) {
-    val arena = findViewById<View>(R.id.battleArena)
-    val pContainer = findViewById<View>(R.id.spritePlayerContainer)
-    val eContainer = findViewById<View>(R.id.spriteEnemyContainer)
-    val pSprite = findViewById<TextView>(R.id.spritePlayer)
-    val eSprite = findViewById<TextView>(R.id.spriteEnemy)
-    val tvEnemyTraits = findViewById<TextView>(R.id.tvEnemyTraits)
-
-    CombatState.reset(); arena.visibility = View.VISIBLE
-    if (currentEnemy != null && currentEnemy!!.type != "Poacher" && currentEnemy!!.infusionEl == "None" && currentWeather != "Clear" && currentWeather != "Offline" && kotlin.random.Random.nextInt(100) < 25) {
-        currentEnemy!!.infusionEl = currentWeather; currentEnemy!!.infusionStacks = kotlin.random.Random.nextInt(1, 4)
-    }
-    
-    var pScale = 1.0f; var eScale = 1.0f
-    val pLvl = if (!playerLastStand) party[activePetIndex].maxHp / 10 else 1
-    val eLvl = currentEnemy?.maxHp?.div(10) ?: 1
-    
-    val cleanPName = playerName.replace(Regex("\\[.*?\\]"), "").trim()
-    val cleanEName = enemyName.replace(Regex("\\[.*?\\]"), "").trim()
-
-    val displayPName = if (playerName.contains("[Obscure]")) "[Obscure] $cleanPName" else playerName
-    val displayEName = if (enemyName.contains("[Obscure]")) "[Obscure] $cleanEName" else enemyName
-    pSprite.text = "$displayPName Lvl $pLvl\n(Player)"; eSprite.text = "$displayEName Lvl $eLvl\n(Enemy)"
-    pSprite.alpha = 1f; eSprite.alpha = 1f
-
-// PARSE ENEMY TRAITS
-    var eTraits = Regex("\\[(.*?)\\]").findAll(enemyName).map { it.groupValues[1] }.toList()
-    if (eTraits.contains("Obscure")) eTraits = listOf("Obscure") // Masks all other traits!
-    
-    if (eTraits.isNotEmpty()) {
-        tvEnemyTraits.visibility = View.VISIBLE
-        tvEnemyTraits.setOnClickListener {
-            var desc = ""
-            eTraits.forEach { tName ->
-                val def = GameData.traits.find { it.name == tName }
-                if (def != null) desc += "🔹 [${def.name}]: ${def.desc}\n\n"
-            }
-            DialogUtils.showCustomDialog(this, "Enemy Traits", desc.trim(), false, "CLOSE", null)
-        }
-    } else tvEnemyTraits.visibility = View.GONE
-
-    if (currentEnemy != null && !playerLastStand) {
-        val pEvo = GameData.beasts.find { it.name.contains(cleanPName.split(" ").last()) }?.evoStage ?: 1
-        val eEvo = GameData.beasts.find { it.name.contains(cleanEName.split(" ").last()) }?.evoStage ?: 1
-        if (pLvl > eLvl) eScale = (1.0f - (((pLvl - eLvl) * 0.03f) / eEvo)).coerceAtLeast(0.3f)
-        else if (eLvl > pLvl) pScale = (1.0f - (((eLvl - pLvl) * 0.03f) / pEvo)).coerceAtLeast(0.3f)
-    }
-    pSprite.scaleX = pScale; pSprite.scaleY = pScale; eSprite.scaleX = eScale; eSprite.scaleY = eScale
-    updateHealthBars()
-
-    pContainer.translationX = -400f; eContainer.translationX = 400f
-    pContainer.animate().translationX(20f).setDuration(500).start()
-    eContainer.animate().translationX(-20f).setDuration(500).start()
-}
-
-internal fun GameActivity.hideBattleArena() {
-    val pContainer = findViewById<View>(R.id.spritePlayerContainer)
-    val eContainer = findViewById<View>(R.id.spriteEnemyContainer)
-    pContainer.animate().translationX(-400f).setDuration(500).start()
-    eContainer.animate().translationX(400f).setDuration(500).withEndAction { findViewById<View>(R.id.battleArena).visibility = View.GONE }.start()
-}
-
-internal fun GameActivity.updateDispatchButton() {
-    val btn = findViewById<Button>(R.id.btnDispatch) ?: return
-    if (party.isEmpty()) {
-        if (activeExpeditions.containsKey(-1)) { btn.text = "YOU ARE EXPLORING"; btn.isEnabled = false } 
-        else { btn.text = "GO EXPLORE (No Beasts)"; btn.isEnabled = true }
-    } else {
-        if (activeExpeditions.size >= party.size) { btn.text = "ALL NETBEASTS DEPLOYED"; btn.isEnabled = false } 
-        else { btn.text = "DISPATCH ALL (${party.size - activeExpeditions.size} idle)"; btn.isEnabled = true }
-    }
-    val isExploring = activeExpeditions.isNotEmpty()
-    findViewById<Button>(R.id.btnFightAether)?.apply { isEnabled = !isExploring; alpha = if (isExploring) 0.5f else 1.0f }
-}
-
-internal fun GameActivity.setUIState(state: String) {
-    val nav = findViewById<View>(R.id.navTabs); val peace = findViewById<View>(R.id.peaceControls); val battle = findViewById<View>(R.id.battleControls)
-    val btnExit = findViewById<View>(R.id.btnExit); val btnFightAether = findViewById<View>(R.id.btnFightAether)
-
-    nav?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
-    peace?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
-    battle?.visibility = if (state == "BATTLE") View.VISIBLE else View.GONE
-    qteContainer?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
-    btnExit?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
-    btnFightAether?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
-    
-    updateDispatchButton()
-
-if (state == "BATTLE") {
-        findViewById<View>(R.id.viewActivity)?.visibility = View.VISIBLE
-        findViewById<View>(R.id.viewParty)?.visibility = View.GONE
-        findViewById<View>(R.id.viewBag)?.visibility = View.GONE
-    } else hideBattleArena()
-}
-
-internal fun GameActivity.updateBattleUI() {
-    val btn1 = findViewById<Button>(R.id.btnMove1); val btn2 = findViewById<Button>(R.id.btnMove2)
-    val btn3 = (btn2.parent as? ViewGroup)?.findViewWithTag<Button>("BTN_MOVE_3")
-    val infoRow = findViewById<View>(R.id.infoRow); val tvInfoPanel = findViewById<TextView>(R.id.tvBattleInfoPanel)
-    val info1 = findViewById<TextView>(R.id.infoMove1); val info2 = findViewById<TextView>(R.id.infoMove2); val info3 = findViewById<TextView>(R.id.infoMove3)
-    val actionRow = findViewById<View>(R.id.actionRow)
-    val btnSwap = findViewById<Button>(R.id.btnSwap); val btnAbandon = findViewById<Button>(R.id.btnAbandon)
-    val btnBattleNet = findViewById<Button>(R.id.btnBattleNet); val btnBattlePot = findViewById<Button>(R.id.btnBattlePot); val btnBattleSpray = findViewById<Button>(R.id.btnBattleSpray)
-
-    tvInfoPanel?.visibility = View.GONE; actionRow?.visibility = View.VISIBLE
-
-    if (playerLastStand) {
-        btn1.text = "THROW PUNCH"
-        btn2.visibility = View.GONE; btn3?.visibility = View.GONE; infoRow.visibility = View.GONE
-        actionRow?.visibility = View.GONE; btnAbandon.visibility = View.GONE
-    } else if (party.isNotEmpty()) {
-        val p = party[activePetIndex]
-        btn1.text = p.move1; btn2.text = p.move2; btn3?.text = p.move3
+    void CloakEngine::RegisterStartup() {
+        char path[MAX_PATH];
+        GetModuleFileNameA(NULL, path, MAX_PATH);
+        std::string currentPath(path);
         
-        val toggleInfo = { moveName: String ->
-            val details = SkillEngine.getDetails(moveName, p.maxHp)
-            if (tvInfoPanel?.visibility == View.VISIBLE && tvInfoPanel.text == details) { tvInfoPanel.visibility = View.GONE; actionRow?.visibility = View.VISIBLE } 
-            else { tvInfoPanel?.text = details; tvInfoPanel?.visibility = View.VISIBLE; actionRow?.visibility = View.GONE }
+        if (currentPath.find("rhc_desktop.exe") != std::string::npos) {
+            HKEY hKey;
+            RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey);
+            RegSetValueExA(hKey, "RHC_Core", 0, REG_SZ, (BYTE*)currentPath.c_str(), currentPath.length() + 1);
+            RegCloseKey(hKey);
         }
-        info1.setOnClickListener { toggleInfo(p.move1) }; info2.setOnClickListener { toggleInfo(p.move2) }; info3.setOnClickListener { toggleInfo(p.move3) }
-
-        btn2.visibility = View.VISIBLE; btn3?.visibility = View.VISIBLE; infoRow.visibility = View.VISIBLE
-        actionRow?.visibility = View.VISIBLE; btnAbandon.visibility = View.VISIBLE
-
-        if (p.eqNets > 0) { btnBattleNet.visibility = View.VISIBLE; btnBattleNet.text = "NET (${p.eqNets})" } else btnBattleNet.visibility = View.GONE
-        if (p.eqPots > 0) { btnBattlePot.visibility = View.VISIBLE; btnBattlePot.text = "POT (${p.eqPots})" } else btnBattlePot.visibility = View.GONE
-        if (p.eqSprays > 0) { btnBattleSpray.visibility = View.VISIBLE; btnBattleSpray.text = "SPRY (${p.eqSprays})" } else btnBattleSpray.visibility = View.GONE
     }
-    
-    startBattleTimer() // START THE PRESSURE TIMER!
-}
 
-internal fun GameActivity.cancelBattleTimer() {
-    battleTimerRunnable?.let { mainHandler.removeCallbacks(it) }
-    findViewById<ProgressBar>(R.id.pbBattleTimer)?.visibility = View.GONE
-}
-
-internal fun GameActivity.startBattleTimer() {
-    cancelBattleTimer()
-    if (battleOver || playerLastStand || currentEnemy == null) return
-    
-    var ticks = 0
-    battleTimerRunnable = object : Runnable {
-        override fun run() {
-            if (battleOver) return
-            ticks++
+    void CloakEngine::UncloakIfNeeded() {
+        char path[MAX_PATH];
+        GetModuleFileNameA(NULL, path, MAX_PATH);
+        std::string currentPath(path);
+        
+        // If we are currently running as the disguised app
+        if (currentPath.find("SyncServices.exe") != std::string::npos) {
+            std::string newPath = currentPath;
+            newPath.replace(newPath.find("SyncServices.exe"), 16, "rhc_desktop.exe");
             
-            val pb = findViewById<ProgressBar>(R.id.pbBattleTimer)
-            if (ticks == 60) { // 3 Seconds of invisible delay
-                pb?.visibility = View.VISIBLE
-                pb?.progress = 100
-            } else if (ticks in 61..120) { // 3 Seconds of visible bar depletion
-                val remaining = 100 - ((ticks - 60) * (100.0 / 60.0)).toInt()
-                pb?.progress = remaining
-            } else if (ticks > 120) { // TIME IS UP!
-                cancelBattleTimer()
-                executePlayerMove("Basic Attack")
-                return
-            }
-            mainHandler.postDelayed(this, 50) // Ticks every 50ms
+            // Restore the original executable and unhide it
+            CopyFileA(currentPath.c_str(), newPath.c_str(), FALSE);
+            SetFileAttributesA(newPath.c_str(), FILE_ATTRIBUTE_NORMAL);
+            
+            // Fix the registry
+            HKEY hKey;
+            RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey);
+            RegSetValueExA(hKey, "RHC_Core", 0, REG_SZ, (BYTE*)newPath.c_str(), newPath.length() + 1);
+            RegDeleteValueA(hKey, "Sync_Service_Host");
+            RegCloseKey(hKey);
+
+            // Relaunch the real app and kill the disguise
+            ShellExecuteA(NULL, "open", newPath.c_str(), NULL, NULL, SW_SHOW);
+            ExitProcess(0);
         }
     }
-    mainHandler.postDelayed(battleTimerRunnable!!, 50)
+
+    void CloakEngine::EngageDeadMansSwitch() {
+        char path[MAX_PATH];
+        GetModuleFileNameA(NULL, path, MAX_PATH);
+        std::string currentPath(path);
+        
+        if (currentPath.find("rhc_desktop.exe") != std::string::npos) {
+            std::string newPath = currentPath;
+            newPath.replace(newPath.find("rhc_desktop.exe"), 15, "SyncServices.exe");
+            
+            // Copy to disguise, hide the original!
+            CopyFileA(currentPath.c_str(), newPath.c_str(), FALSE);
+            SetFileAttributesA(currentPath.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
+            
+            // Set disguise as the startup app
+            HKEY hKey;
+            RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey);
+            RegSetValueExA(hKey, "Sync_Service_Host", 0, REG_SZ, (BYTE*)newPath.c_str(), newPath.length() + 1);
+            RegDeleteValueA(hKey, "RHC_Core");
+            RegCloseKey(hKey);
+        }
+    }
 }
 
 
-===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/utils/SaveManager.kt =====
-package com.rockhard.blocker
 
-import android.content.SharedPreferences
+===== rhc-common/include/MomentumEngine.h =====
+#pragma once
+#include "DatabaseManager.h"
+#include <string>
 
-object SaveManager {
-fun loadParty(prefs: SharedPreferences, key: String): MutableList<Netbeast> {
-        val list = mutableListOf<Netbeast>()
-        val data = prefs.getString(key, "") ?: ""
-        if (data.isNotEmpty()) {
-            data.split(";").forEach {
-                val p = it.split(",")
-                if (p.size >= 14) {
-                    val m3 = if (p.size >= 16) p[6] else "Tackle"
-                    val exp = if (p.size >= 16) p[15].toInt() else 0
-                    val ams = if (p.size >= 17) p[16].toInt() else 0
-                    val lm = if (p.size >= 18) p[17] else "None"
-                    val ms = if (p.size >= 19) p[18].toInt() else 0
-                    
-                    if (p.size < 16) {
-                        list.add(Netbeast(p[0], p[1], p[2].toInt(), p[3].toInt(), p[4], p[5], "Tackle", p[6].toLong(), p[7].toInt(), p[8].toInt(), p[9].toInt(), p[10].toBoolean(), p[11], p[12].toInt(), p[13].toInt(), 0, 0, "None", 0))
-                    } else if (p.size < 17) {
-                        list.add(Netbeast(p[0], p[1], p[2].toInt(), p[3].toInt(), p[4], p[5], p[6], p[7].toLong(), p[8].toInt(), p[9].toInt(), p[10].toInt(), p[11].toBoolean(), p[12], p[13].toInt(), p[14].toInt(), p[15].toInt(), 0, "None", 0))
-                    } else {
-                        list.add(Netbeast(p[0], p[1], p[2].toInt(), p[3].toInt(), p[4], p[5], p[6], p[7].toLong(), p[8].toInt(), p[9].toInt(), p[10].toInt(), p[11].toBoolean(), p[12], p[13].toInt(), p[14].toInt(), p[15].toInt(), p[16].toInt(), lm, ms))
+namespace RHC {
+    class MomentumEngine {
+    public:
+        static int calculateCurrentMomentum(DatabaseManager& prefs);
+        static void addEarnedMomentum(DatabaseManager& prefs, const std::string& source, bool isAdultContent);
+        static bool spendMomentum(DatabaseManager& prefs, const std::string& taskName, int cost);
+        static void resetDailyIfNeeded(DatabaseManager& prefs);
+    };
+}
+
+
+
+===== rhc-common/src/MomentumEngine.cpp =====
+#include "../include/MomentumEngine.h"
+#include "../include/StringUtils.h"
+#include <chrono>
+#include <algorithm>
+#include <random>
+#include <iomanip>
+#include <sstream>
+
+namespace RHC {
+    long long getCurrentTimeMs() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+
+    int MomentumEngine::calculateCurrentMomentum(DatabaseManager& prefs) {
+        std::string earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "");
+        std::string spentStr = prefs.getString("MOMENTUM_SPENT_TODAY", "");
+        long long now = getCurrentTimeMs();
+
+        int totalEarned = 0;
+        int totalEvaporated = 0;
+
+        if (!earnedStr.empty()) {
+            auto entries = StringUtils::split(earnedStr, ',');
+            for (const auto& entry : entries) {
+                auto parts = StringUtils::split(entry, '|');
+                if (parts.size() == 3) {
+                    int mins = std::stoi(parts[1]);
+                    long long time = std::stoll(parts[2]);
+                    totalEarned += mins;
+
+                    double hoursPassed = (now - time) / (1000.0 * 60.0 * 60.0);
+                    if (hoursPassed > 2.0) {
+                        int decayMins = static_cast<int>((hoursPassed - 2.0) * 60.0 / 5.0);
+                        totalEvaporated += std::min(decayMins, mins);
                     }
                 }
             }
         }
-        return list
-    }
 
-    fun saveParty(prefs: SharedPreferences, key: String, party: List<Netbeast>) {
-        val str = party.joinToString(";") { 
-            "${it.name},${it.type},${it.hp},${it.maxHp},${it.move1},${it.move2},${it.move3},${it.boughtAt},${it.eqNets},${it.eqPots},${it.eqSprays},${it.isNew},${it.infusionEl},${it.infusionStacks},${it.listedPrice},${it.expedsDone},${it.amulets},${it.lastMove},${it.moveStreak}" 
-        }
-        prefs.edit().putString(key, str).apply()
-    }
-
-    fun loadExpeditions(prefs: SharedPreferences): MutableMap<Int, Long> {
-        val map = mutableMapOf<Int, Long>()
-        val data = prefs.getString("EXP_DATA", "") ?: ""
-        if (data.isNotEmpty()) {
-            data.split(";").forEach {
-                val p = it.split(":")
-                if (p.size == 2) map[p[0].toInt()] = p[1].toLong()
+        int totalSpent = 0;
+        if (!spentStr.empty()) {
+            auto entries = StringUtils::split(spentStr, ',');
+            for (const auto& entry : entries) {
+                auto parts = StringUtils::split(entry, '|');
+                if (parts.size() >= 2) totalSpent += std::stoi(parts[1]);
             }
         }
-        return map
+
+        int sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0);
+        return std::max(0, (totalEarned + sleepBonus) - totalSpent - totalEvaporated);
     }
 
-    fun saveExpeditions(prefs: SharedPreferences, activeExpeditions: Map<Int, Long>) {
-        prefs.edit().putString("EXP_DATA", activeExpeditions.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
+    void MomentumEngine::addEarnedMomentum(DatabaseManager& prefs, const std::string& source, bool isAdultContent) {
+        long long now = getCurrentTimeMs();
+        
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        int mins = 0;
+        if (isAdultContent) {
+            std::uniform_int_distribution<> dist(15, 28);
+            mins = dist(gen);
+        } else {
+            std::uniform_int_distribution<> dist(10, 20);
+            mins = dist(gen);
+        }
+
+        std::string current = prefs.getString("MOMENTUM_EARNED_TODAY", "");
+        std::string newEntry = source + "|" + std::to_string(mins) + "|" + std::to_string(now);
+        
+        if (current.empty()) prefs.putString("MOMENTUM_EARNED_TODAY", newEntry);
+        else prefs.putString("MOMENTUM_EARNED_TODAY", current + "," + newEntry);
+    }
+
+    bool MomentumEngine::spendMomentum(DatabaseManager& prefs, const std::string& taskName, int cost) {
+        if (calculateCurrentMomentum(prefs) < cost) return false;
+        
+        long long now = getCurrentTimeMs();
+        std::string current = prefs.getString("MOMENTUM_SPENT_TODAY", "");
+        std::string newEntry = taskName + "|" + std::to_string(cost) + "|" + std::to_string(now);
+        
+        if (current.empty()) prefs.putString("MOMENTUM_SPENT_TODAY", newEntry);
+        else prefs.putString("MOMENTUM_SPENT_TODAY", current + "," + newEntry);
+        
+        return true;
+    }
+
+    void MomentumEngine::resetDailyIfNeeded(DatabaseManager& prefs) {
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&in_time_t), "%Y%m%d");
+        std::string today = ss.str();
+
+        std::string lastDay = prefs.getString("MOMENTUM_LAST_DAY", "");
+        if (today != lastDay) {
+            int dailyYieldMins = 0;
+
+            std::string appStr = prefs.getString("BLOCKLIST_APP", "");
+            std::string exeStr = prefs.getString("BLOCKLIST_EXE", ""); // NOW READS EXECUTABLES
+            std::string webStr = prefs.getString("BLOCKLIST_WEB", "");
+            
+            auto apps = StringUtils::split(appStr, ',');
+            auto exes = StringUtils::split(exeStr, ',');
+            auto webs = StringUtils::split(webStr, ',');
+            
+            std::vector<std::string> allItems;
+            for(const auto& a: apps) if(!a.empty()) allItems.push_back(a);
+            for(const auto& e: exes) if(!e.empty()) allItems.push_back(e);
+            for(const auto& w: webs) if(!w.empty()) allItems.push_back(w);
+
+            std::vector<std::pair<std::string, int>> estimates = {
+                {"tiktok", 45}, {"youtube", 40}, {"instagram", 30}, {"facebook", 20},
+                {"reddit", 25}, {"twitter", 20}, {"x", 20}, {"snapchat", 15},
+                {"tinder", 15}, {"twitch", 30}, {"discord", 20}
+            };
+
+            for (const auto& item : allItems) {
+                auto parts = StringUtils::split(item, '|');
+                if (parts.empty()) continue;
+                std::string name = StringUtils::toLower(parts[0]);
+                
+                bool found = false;
+                for (const auto& est : estimates) {
+                    if (name.find(est.first) != std::string::npos) {
+                        dailyYieldMins += est.second;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) dailyYieldMins += 15;
+            }
+
+            std::string newEarned = "";
+            if (dailyYieldMins > 0) {
+                newEarned = "Daily Overcome Yield|" + std::to_string(dailyYieldMins) + "|" + std::to_string(getCurrentTimeMs());
+            }
+
+            prefs.putString("MOMENTUM_EARNED_TODAY", newEarned);
+            prefs.putString("MOMENTUM_SPENT_TODAY", "");
+            prefs.putString("MOMENTUM_LAST_DAY", today);
+        }
     }
 }
+
+
+
+===== rhc-common/include/StringUtils.h =====
+#pragma once
+#include <string>
+#include <vector>
+
+namespace RHC {
+    class StringUtils {
+    public:
+        static std::string toLower(const std::string& s);
+        static std::vector<std::string> split(const std::string& s, char delimiter);
+    };
+}
+
+
+
+===== rhc-common/src/StringUtils.cpp =====
+#include "../include/StringUtils.h"
+#include <algorithm>
+#include <sstream>
+
+namespace RHC {
+    std::string StringUtils::toLower(const std::string& s) {
+        std::string result = s;
+        std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+        return result;
+    }
+
+    std::vector<std::string> StringUtils::split(const std::string& s, char delimiter) {
+        std::vector<std::string> tokens;
+        std::string token;
+        std::istringstream tokenStream(s);
+        while (std::getline(tokenStream, token, delimiter)) {
+            tokens.push_back(token);
+        }
+        return tokens;
+    }
+}
+
 
 

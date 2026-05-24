@@ -18,7 +18,7 @@ namespace RHC {
     }
 
     std::string DatabaseManager::getString(const std::string& key, const std::string& defValue) {
-        sqlite3_stmt* stmt;
+        sqlite3_stmt* stmt = nullptr;
         const char* sql = "SELECT value FROM prefs WHERE key = ?";
         if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
             sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_STATIC);
@@ -33,7 +33,7 @@ namespace RHC {
     }
 
     void DatabaseManager::putString(const std::string& key, const std::string& value) {
-        sqlite3_stmt* stmt;
+        sqlite3_stmt* stmt = nullptr;
         const char* sql = "INSERT OR REPLACE INTO prefs (key, value) VALUES (?, ?)";
         if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
             sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_STATIC);

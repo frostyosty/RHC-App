@@ -6,7 +6,7 @@ import java.util.*
 
 sealed class ShieldAction {
     object Allow : ShieldAction()
-    data class Block(val reason: String, val canDefend: Boolean) : ShieldAction()
+    data class Block(val reason: String, val canDefend: Boolean, val redirectTarget: String? = null) : ShieldAction()
     data class RewardApp(val triggerWord: String) : ShieldAction()
     data class RewardWeb(val triggerWord: String, val context: String) : ShieldAction()
     data class WeatherBuff(val element: String) : ShieldAction()
@@ -15,6 +15,7 @@ sealed class ShieldAction {
 class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName: String) {
 
     private val safeDomains = listOf("aistudio", "github", "codespaces")
+    private val safePackages = listOf("org.thoughtcrime.securesms", "com.whatsapp", "com.rockhard")
     private val hardWords = listOf("nsfw", "porno", "色情", "黄片", "xvideo", "pornhub", "onlyfans", "redtube", "brazzers", "xhamster", "rule34")
     private val softWords = listOf("explicit", "sensitive content", "fuck", "bitch", "nude", "naked", "sex", "erotic")
     private val protectedPkgs = listOf(
@@ -28,7 +29,6 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         "launcher", "home", "trebuchet", "quickstep", "nova", "apex", "smartlauncher", "actionlauncher"
     )
     
-    // FIX: Removed "sec" because it was catching "org.thoughtcrime.securesms" (Signal) and "com.sec.android.app.launcher" (Samsung Home)
     private val antiTamperPkgs = listOf(
         "settings", "securitycenter", "packageinstaller", "permission",
         "coloros", "vivo", "oplus", "huawei", "samsung",
@@ -46,43 +46,96 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         "twitch" to "tv.twitch.android.app", "spotify" to "com.spotify.music"
     )
 
+    private fun getRedirect(triggerWord: String): String? {
+        val redirects = prefs.getString("REDIRECTS", "") ?: ""
+        for (r in redirects.split(",")) {
+            val parts = r.split("|")
+            if (parts.size == 2 && triggerWord.contains(parts[0], ignoreCase = true)) {
+                return parts[1]
+            }
+        }
+        return null
+    }
+
     fun evaluate(packageName: String, className: String, rootNode: AccessibilityNodeInfo?, isAdminActive: Boolean): ShieldAction {
         val lowerPkg = packageName.lowercase()
         val lowerClass = className.lowercase()
         
-        // 1. Core System Whitelist (Always allow the launcher & our app so the phone isn't hard-bricked)
-        val isHomeLauncher = listOf("launcher", "home", "trebuchet", "quickstep").any { lowerPkg.contains(it) || lowerClass.contains(it) }
+        // FIX: Prevent "FinderHomeAffinityUI" or other screen activities containing "home" from false-matching as launchers
+        val isHomeLauncher = listOf("launcher", "trebuchet", "quickstep").any { lowerPkg.contains(it) || lowerClass.contains(it) } || 
+                             lowerPkg.contains("home") || 
+                             (lowerClass.contains("home") && (lowerPkg.contains("launcher") || lowerPkg.contains("home") || lowerPkg.contains("systemui")))
         if (isHomeLauncher) return ShieldAction.Allow
-        if (lowerPkg.contains("com.rockhard.blocker") || (protectedPkgs.any { lowerPkg.contains(it) } && !lowerPkg.contains(appName.lowercase()) && !lowerPkg.contains("miui") && !lowerPkg.contains("coloros") && !lowerPkg.contains("huawei"))) {
-            return ShieldAction.Allow
-        }
-
-        // 2. Nightfall Protocol
-        val action = checkNightfall(lowerPkg)
-        if (action is ShieldAction.Block) return action
 
         val isGodModeActive = System.currentTimeMillis() < prefs.getLong("ALLOW_SETTINGS_UNTIL", 0L)
 
-        // 3. DRASTIC OVERCOMING MODES (Enforced ONLY if God Mode is OFF)
+        var lazyAllText: String? = null
+        fun getAllText(): String {
+            if (rootNode == null) return ""
+            if (lazyAllText == null) lazyAllText = ScannerUtils.extractAllText(rootNode)
+            return lazyAllText!!
+        }
+
         if (!isGodModeActive) {
-            // DRASTIC A: Calls and Texts ONLY
             if (prefs.getBoolean("DRASTIC_CALLS_ONLY", false)) {
                 val allowedCallsOnly = listOf("dialer", "contacts", "telecom", "messages", "mms", "android.phone", "keyboard", "inputmethod", "incallui")
                 if (!allowedCallsOnly.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("Nuclear Option: Calls and Texts ONLY", false)
             }
-            // DRASTIC B: Dumb Phone Mode
-            else if (prefs.getBoolean("DRASTIC_DUMB_PHONE", false)) {
-                val allowedDumbPhone = listOf("dialer", "contacts", "telecom", "messages", "mms", "android.phone", "keyboard", "inputmethod", "incallui", "calculator", "calendar", "clock", "alarm", "camera", "gallery", "weather", "maps", "navigation", "deskclock")
-                if (!allowedDumbPhone.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("Dumb Phone Mode Active", false)
+            else if (prefs.getBoolean("DRASTIC_DUMB_PHONE_NO_CAMERA", false)) {
+                val allowedDumbPhone = listOf("dialer", "contacts", "telecom", "messages", "mms", "android.phone", "keyboard", "inputmethod", "incallui", "calculator", "calendar", "clock", "alarm", "weather", "maps", "navigation", "deskclock")
+                if (!allowedDumbPhone.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("Dumb Phone (No Camera) Active", false)
             }
-            // DRASTIC C: No Internet
+            else if (prefs.getBoolean("DRASTIC_DUMB_PHONE_CAMERA", false)) {
+                val allowedDumbPhone = listOf("dialer", "contacts", "telecom", "messages", "mms", "android.phone", "keyboard", "inputmethod", "incallui", "calculator", "calendar", "clock", "alarm", "camera", "gallery", "photo", "weather", "maps", "navigation", "deskclock")
+                if (!allowedDumbPhone.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("Dumb Phone (With Camera) Active", false)
+            }
             else if (prefs.getBoolean("DRASTIC_NO_INTERNET", false)) {
                 val internetPkgs = listOf("chrome", "firefox", "browser", "duckduckgo", "edge", "opera", "brave", "samsung.internet", "vending", "play.store", "galaxy.store", "appmarket", "market", "youtube", "netflix", "tiktok", "instagram", "facebook", "twitter", "reddit", "snapchat")
                 if (internetPkgs.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("No Internet Mode Active", false)
             }
+            else if (prefs.getBoolean("DRASTIC_NO_VIDEOS", false)) {
+                val videoPkgs = listOf("youtube", "netflix", "hulu", "twitch", "primevideo", "disney", "max", "crunchyroll", "mxtech.videoplayer")
+                if (videoPkgs.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("No Videos Mode: Video App Blocked", false)
+
+                val fullText = getAllText()
+                val urlBar = ScannerUtils.extractUrlBarText(rootNode)?.lowercase() ?: ""
+                
+                val isGab = lowerPkg.contains("gab") || urlBar.contains("gab") || fullText.contains("gab.com") || fullText.contains("gab social")
+                
+                if (!isGab) {
+                    if (lowerPkg.contains("tencent.mm") && lowerClass.contains("finder")) {
+                        return ShieldAction.Block("No Videos Mode: WeChat Video Feed Detected", false)
+                    }
+
+                    if (lowerPkg.contains("tencent.mm")) {
+                        val hasEng = fullText.contains("follow") && fullText.contains("friends") && fullText.contains("hot")
+                        val hasChi = fullText.contains("关注") && fullText.contains("朋友") && fullText.contains("推荐")
+                        if (hasEng || hasChi) return ShieldAction.Block("No Videos Mode: WeChat Video Text Detected", false)
+                    }
+
+                    fun hasVideoControls(node: AccessibilityNodeInfo?): Boolean {
+                        if (node == null) return false
+                        val nClass = node.className?.toString()?.lowercase() ?: ""
+                        val nText = (node.contentDescription ?: node.text)?.toString()?.lowercase() ?: ""
+                        val resName = node.viewIdResourceName?.lowercase() ?: ""
+                        
+                        if (nClass.contains("videoview") || nClass.contains("playerview") || nClass.contains("pictureinpicture")) return true
+                        if (nText == "fullscreen" || nText == "play video" || nText == "pause video" || nText.contains("youtube video player")) return true
+                        
+                        if (resName.contains("finder") || nClass.contains("finder")) return true
+                        if (nText == "channels" || nText == "视频号") return true
+                        
+                        for (i in 0 until node.childCount) {
+                            if (hasVideoControls(node.getChild(i))) return true
+                        }
+                        return false
+                    }
+                    
+                    if (hasVideoControls(rootNode)) return ShieldAction.Block("No Videos Mode: Video Player Detected", false)
+                }
+            }
         }
 
-        // 4. Anti-Tamper Core
         val isSettings = antiTamperPkgs.any { lowerPkg.contains(it) }
         if (isSettings && !isGodModeActive) return ShieldAction.Block("Anti-Tamper: System Settings Locked!", true)
 
@@ -93,7 +146,6 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
             if (tamperAction is ShieldAction.Block) return tamperAction
         }
 
-        // 5. Standard User Blocklists
         val blockedApps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
         val triggeredAppEntry = blockedApps.firstOrNull { blockEntry ->
             val blockTarget = blockEntry.split("|")[0].lowercase()
@@ -104,19 +156,19 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         if (triggeredAppEntry != null) {
             val appDisplayWord = triggeredAppEntry.split("|")[0]
             val isFirstTime = !prefs.getBoolean("FIRST_OVERCOME_APP_$appDisplayWord", false)
-            return if (isFirstTime) ShieldAction.RewardApp(appDisplayWord) else ShieldAction.Block("App Overcome: $appDisplayWord", true)
+            return if (isFirstTime) ShieldAction.RewardApp(appDisplayWord) else ShieldAction.Block("App Overcome: $appDisplayWord", true, getRedirect(appDisplayWord))
         }
 
-        var lazyAllText: String? = null
-        fun getAllText(): String {
-            if (lazyAllText == null) lazyAllText = ScannerUtils.extractAllText(rootNode)
-            return lazyAllText!!
+        if (safePackages.any { lowerPkg.contains(it) } || (protectedPkgs.any { lowerPkg.contains(it) } && !lowerPkg.contains(appName.lowercase()) && !lowerPkg.contains("miui") && !lowerPkg.contains("coloros") && !lowerPkg.contains("huawei"))) {
+            return ShieldAction.Allow
         }
+
         val lowerAllText = getAllText()
 
-        // FIX: Hard Words checked BEFORE Safe Domains!
+        if (safeDomains.any { lowerAllText.contains(it) }) return ShieldAction.Allow
+
         val foundHard = hardWords.firstOrNull { lowerAllText.contains(it) }
-        if (foundHard != null) return ShieldAction.Block("Content Guard: $foundHard", true)
+        if (foundHard != null) return ShieldAction.Block("Content Guard: $foundHard", true, getRedirect(foundHard))
 
         val isBrowserApp = lowerPkg.contains("chrome") || lowerPkg.contains("firefox") || lowerPkg.contains("browser") ||
                            lowerPkg.contains("edge") || lowerPkg.contains("opera") || lowerPkg.contains("duckduckgo") ||
@@ -144,34 +196,14 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
                 }
                 if (ctx != null) {
                     val isFirstTime = !prefs.getBoolean("FIRST_OVERCOME_WEB_$rawWord", false)
-                    return if (isFirstTime) ShieldAction.RewardWeb(rawWord, ctx) else ShieldAction.Block("Hyperlink Overcome: $ctx", true)
+                    return if (isFirstTime) ShieldAction.RewardWeb(rawWord, ctx) else ShieldAction.Block("Hyperlink Overcome: $ctx", true, getRedirect(rawWord))
                 }
             }
         }
-
-        // FIX: Safe Domains checked after blocklists, but before soft words
-        if (safeDomains.any { lowerAllText.contains(it) }) return ShieldAction.Allow
 
         val foundSoft = softWords.filter { lowerAllText.contains(it) }
         if (foundSoft.size >= 3) return ShieldAction.Block("Content Guard: ${foundSoft.joinToString(" & ")}", true)
 
-        return ShieldAction.Allow
-    }
-
-    private fun checkNightfall(packageName: String): ShieldAction {
-        val nfStart = prefs.getInt("NIGHTFALL_START", -1)
-        val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
-        if (nfStart != -1 && nfEnd != -1) {
-            val cal = Calendar.getInstance()
-            val currentMins = (cal.get(Calendar.HOUR_OF_DAY) * 60) + cal.get(Calendar.MINUTE)
-            val isNightfall = if (nfStart < nfEnd) { currentMins in nfStart..nfEnd } else { currentMins >= nfStart || currentMins <= nfEnd }
-            if (isNightfall) {
-                val sleepAllowed = listOf("systemui", "launcher", "nexus", "pixel", "clock", "alarm", "dialer", "contacts", "com.android.phone", "com.google.android.dialer")
-                if (!sleepAllowed.any { packageName.contains(it, ignoreCase = true) }) {
-                    return ShieldAction.Block("Nightfall Protocol Active. Go to sleep.", false)
-                }
-            }
-        }
         return ShieldAction.Allow
     }
 

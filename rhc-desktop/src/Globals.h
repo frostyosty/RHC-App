@@ -4,6 +4,11 @@
 #include <vector>
 #include <map>
 
+// Cue Banner Message ID for Edit Controls
+#ifndef EM_SETCUEBANNER
+#define EM_SETCUEBANNER 0x1501
+#endif
+
 // --- SHARED WINDOW HANDLES ---
 extern HWND g_hMainWindow;
 extern HWND g_hDashboardWindow;
@@ -31,6 +36,8 @@ extern NOTIFYICONDATAW nid;
 // --- SHARED STATE ---
 extern std::wstring g_RedWallReason;
 extern HFONT g_hFontTitle, g_hFontNormal, g_hFontEmoji, g_hFontSmall, g_hFontGiant;
+extern bool g_DebugMode;
+extern bool g_SystemIsSleeping;
 
 struct TaskItem { 
     std::wstring name; 
@@ -66,6 +73,7 @@ extern std::map<std::string, std::vector<TaskItem>> g_CategorizedTasks;
 #define ID_LIST_EARNED 2020
 #define ID_LIST_SPENT 2021
 #define ID_BTN_OPEN_TASKMGR 2022
+#define ID_BTN_DEV_CONSOLE 4003
 
 // --- NIGHTFALL BUTTONS ---
 #define ID_BTN_NIGHT_SLEEP 4001

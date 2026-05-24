@@ -24,8 +24,11 @@ namespace RHC {
             for (const auto& entry : entries) {
                 auto parts = StringUtils::split(entry, '|');
                 if (parts.size() == 3) {
-                    int mins = std::stoi(parts[1]);
-                    long long time = std::stoll(parts[2]);
+                    int mins = 0; long long time = 0;
+                    try {
+                        mins = std::stoi(parts[1]);
+                        time = std::stoll(parts[2]);
+                    } catch (...) { continue; }
                     totalEarned += mins;
 
                     double hoursPassed = (now - time) / (1000.0 * 60.0 * 60.0);
@@ -42,7 +45,7 @@ namespace RHC {
             auto entries = StringUtils::split(spentStr, ',');
             for (const auto& entry : entries) {
                 auto parts = StringUtils::split(entry, '|');
-                if (parts.size() >= 2) totalSpent += std::stoi(parts[1]);
+                if (parts.size() >= 2) { try { totalSpent += std::stoi(parts[1]); } catch (...) {} }
             }
         }
 

@@ -26,7 +26,6 @@ internal fun MainActivity.setupSystemOverrideUI() {
     btnToggleOverride.setOnClickListener {
         if (llOverrideDetails.visibility == View.GONE) {
             llOverrideDetails.visibility = View.VISIBLE
-            // FIX 1: Automatically scroll down so the user actually sees the menu open
             btnToggleOverride.postDelayed({
                 val scrollView = btnToggleOverride.parent.parent as? ScrollView
                 scrollView?.fullScroll(View.FOCUS_DOWN)
@@ -56,15 +55,24 @@ internal fun MainActivity.setupSystemOverrideUI() {
 
         if (unlockTime > now) {
             val sdf = java.text.SimpleDateFormat("MMM dd, hh:mm a", java.util.Locale.getDefault())
-            tvOverrideStatus.text = "$unlockType unlocks on: ${sdf.format(java.util.Date(unlockTime))}"
+            val daysText = when(prefs.getInt("OVERRIDE_MIN_PROGRESS", 0)) { 0 -> "1 DAY"; 1 -> "3 DAY"; 2 -> "5 DAY"; 3 -> "1 WEEK"; 4 -> "2 WEEK"; else -> "1 DAY"}
+            
+            tvOverrideStatus.text = "$daysText $unlockType unlocks on:\n${sdf.format(java.util.Date(unlockTime))}"
             tvOverrideStatus.setTextColor(Color.parseColor("#FF9800"))
             seekOverride.isEnabled = false
-            btnSchedPause.isEnabled = false
-            btnSchedUninstall.isEnabled = false
-            btnSchedPause.text = "LOCKED"
-            btnSchedUninstall.text = "LOCKED"
+            
+            if (unlockType == "PAUSE") {
+                btnSchedPause.isEnabled = true
+                btnSchedPause.text = "CANCEL PAUSE"
+                btnSchedUninstall.isEnabled = false
+                btnSchedUninstall.text = "UNAVAILABLE"
+            } else {
+                btnSchedUninstall.isEnabled = true
+                btnSchedUninstall.text = "CANCEL UNINSTALL"
+                btnSchedPause.isEnabled = false
+                btnSchedPause.text = "UNAVAILABLE"
+            }
         } else if (unlockTime > 0 && now >= unlockTime) {
-            // FIX 2: Timer finished! Enable the correct execution button.
             tvOverrideStatus.text = "SYSTEM UNLOCKED! You may proceed with $unlockType."
             tvOverrideStatus.setTextColor(Color.parseColor("#4CAF50"))
             seekOverride.isEnabled = false
@@ -94,7 +102,7 @@ internal fun MainActivity.setupSystemOverrideUI() {
     updateOverrideUI()
 
     fun scheduleOverride(type: String) {
-        val days = when(seekOverride.progress) { 0 -> 3; 1 -> 5; 2 -> 7; 3 -> 14; else -> 3 }
+        val days = when(seekOverride.progress) { 0 -> 1; 1 -> 3; 2 -> 5; 3 -> 7; 4 -> 14; else -> 1 }
         val unlockTime = System.currentTimeMillis() + (days * 24 * 60 * 60 * 1000L)
         prefs.edit().putLong("OVERRIDE_UNLOCK_TIME", unlockTime).putString("OVERRIDE_TYPE", type).apply()
         updateOverrideUI()
@@ -104,7 +112,13 @@ internal fun MainActivity.setupSystemOverrideUI() {
     btnSchedPause.setOnClickListener { 
         val unlockTime = prefs.getLong("OVERRIDE_UNLOCK_TIME", 0L)
         val unlockType = prefs.getString("OVERRIDE_TYPE", "")
-        if (unlockTime > 0 && System.currentTimeMillis() >= unlockTime && unlockType == "PAUSE") {
+        
+        if (unlockTime > System.currentTimeMillis() && unlockType == "PAUSE") {
+            // CANCEL PENDING PAUSE
+            prefs.edit().putLong("OVERRIDE_UNLOCK_TIME", 0L).putString("OVERRIDE_TYPE", "").apply()
+            Toast.makeText(activity, "Pause Schedule Cancelled.", Toast.LENGTH_SHORT).show()
+            updateOverrideUI()
+        } else if (unlockTime > 0 && System.currentTimeMillis() >= unlockTime && unlockType == "PAUSE") {
             // EXECUTE PAUSE: Give 2 hours of God Mode
             prefs.edit().putLong("ALLOW_SETTINGS_UNTIL", System.currentTimeMillis() + (2 * 60 * 60 * 1000L))
                  .putLong("OVERRIDE_UNLOCK_TIME", 0L) // Reset the override
@@ -120,16 +134,20 @@ internal fun MainActivity.setupSystemOverrideUI() {
     btnSchedUninstall.setOnClickListener { 
         val unlockTime = prefs.getLong("OVERRIDE_UNLOCK_TIME", 0L)
         val unlockType = prefs.getString("OVERRIDE_TYPE", "")
-        if (unlockTime > 0 && System.currentTimeMillis() >= unlockTime && unlockType == "UNINSTALL") {
-            // FIX 3: EXECUTE UNINSTALL
+        
+        if (unlockTime > System.currentTimeMillis() && unlockType == "UNINSTALL") {
+            // CANCEL PENDING UNINSTALL
+            prefs.edit().putLong("OVERRIDE_UNLOCK_TIME", 0L).putString("OVERRIDE_TYPE", "").apply()
+            Toast.makeText(activity, "Uninstall Schedule Cancelled.", Toast.LENGTH_SHORT).show()
+            updateOverrideUI()
+        } else if (unlockTime > 0 && System.currentTimeMillis() >= unlockTime && unlockType == "UNINSTALL") {
+            // EXECUTE UNINSTALL
             try {
-                // Unbind Device Admin so it can actually be uninstalled
                 val dpm = activity.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
                 val compName = ComponentName(activity, AdminReceiver::class.java)
                 if (dpm.isAdminActive(compName)) {
                     dpm.removeActiveAdmin(compName)
                 }
-                // Launch Android's standard package removal intent
                 val intent = Intent(Intent.ACTION_DELETE)
                 intent.data = Uri.parse("package:${activity.packageName}")
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK

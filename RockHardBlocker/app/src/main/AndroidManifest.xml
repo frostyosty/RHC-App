@@ -9,8 +9,14 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    
+    <!-- Permissions for Keep-Alive SyncAdapter & Whitelisted Wakelock Tags -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
 
-    <!-- FIX: Added label to application so it shows correctly in Android Settings -->
     <application android:allowBackup="true" android:supportsRtl="true" android:theme="@android:style/Theme.NoTitleBar" android:label="@string/app_name">
         
         <activity android:name=".MainActivity" android:exported="true" android:label="@string/app_name" />
@@ -18,7 +24,6 @@
         <activity android:name=".GameActivity" android:exported="false" android:launchMode="singleTask" android:label="Netbeasts Safari" />
         <activity android:name=".MomentumActivity" android:exported="false" android:launchMode="singleTask" />
         
-        <!-- FIX: Added labels to the Launchers so your Home Screen is correct! -->
         <activity-alias android:name=".DefaultLauncher" android:enabled="true" android:exported="true" android:icon="@mipmap/ic_launcher" android:targetActivity=".MainActivity" android:label="@string/app_name">
             <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
         </activity-alias>
@@ -27,7 +32,6 @@
             <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
         </activity-alias>
 
-        <!-- FIX: Added labels to the Services so they look right in Security Settings -->
         <service android:name=".GuardianService" android:foregroundServiceType="specialUse" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/app_name">
             <intent-filter> <action android:name="android.accessibilityservice.AccessibilityService" /> </intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/guardian_config" />
@@ -62,5 +66,25 @@
         </activity>
 
         <receiver android:name=".WatchdogReceiver" android:exported="false" />
+
+        <!-- SyncAdapter & Authenticator Services -->
+        <service android:name=".sync.StubAuthenticatorService" android:exported="true">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data android:name="android.accounts.AccountAuthenticator" android:resource="@xml/authenticator" />
+        </service>
+
+        <service android:name=".sync.DummySyncService" android:exported="true" android:process=":sync">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter" android:resource="@xml/syncadapter" />
+        </service>
+
+        <provider android:name=".sync.StubContentProvider"
+            android:authorities="com.rockhard.blocker.provider"
+            android:exported="false"
+            android:syncable="true" />
 </application>
 </manifest>

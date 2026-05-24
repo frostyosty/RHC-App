@@ -5,7 +5,63 @@
 namespace RHC {
     namespace NightfallUI {
         HWND hwnd = NULL; HWND hSleepEdit = NULL; HWND hWakeEdit = NULL;
-        
+        HWND g_hOverlay = NULL; int g_OverlayMode = 0;
+
+        LRESULT CALLBACK OverlayProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+            switch(uMsg) {
+                case WM_ERASEBKGND: return 1;
+                case WM_PAINT: {
+                    PAINTSTRUCT ps; HDC hdc = BeginPaint(hwnd, &ps);
+                    HBRUSH hBrush = CreateSolidBrush(RGB(0,0,0)); FillRect(hdc, &ps.rcPaint, hBrush);
+                    DeleteObject(hBrush); EndPaint(hwnd, &ps); return 0;
+                }
+                case WM_TIMER: {
+                    if (g_OverlayMode == 2) {
+                        POINT pt; GetCursorPos(&pt);
+                        static POINT lastPt = {-1, -1};
+                        if (pt.x != lastPt.x || pt.y != lastPt.y) {
+                            lastPt = pt;
+                            int vx = GetSystemMetrics(SM_XVIRTUALSCREEN); int vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
+                            int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN); int vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+                            
+                            HRGN hRgn = CreateRectRgn(vx, vy, vx + vw, vy + vh);
+                            // Flashlight Hole Radius = 75px
+                            HRGN hHole = CreateEllipticRgn(pt.x - 75, pt.y - 75, pt.x + 75, pt.y + 75);
+                            CombineRgn(hRgn, hRgn, hHole, RGN_DIFF);
+                            SetWindowRgn(hwnd, hRgn, TRUE);
+                            DeleteObject(hHole); // hRgn is now owned by the system
+                        }
+                    }
+                    return 0;
+                }
+                case WM_NCHITTEST: return HTCLIENT; // Eat clicks outside the hole
+            }
+            return DefWindowProcA(hwnd, uMsg, wParam, lParam);
+        }
+
+        void UpdateOverlay(int mode, int param) {
+            if (!g_hOverlay) return;
+            if (g_OverlayMode != mode) {
+                g_OverlayMode = mode;
+                if (mode == 0) {
+                    KillTimer(g_hOverlay, 1); ShowWindow(g_hOverlay, SW_HIDE);
+                } else if (mode == 1) {
+                    KillTimer(g_hOverlay, 1);
+                    SetWindowLong(g_hOverlay, GWL_EXSTYLE, WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+                    SetWindowRgn(g_hOverlay, NULL, TRUE);
+                    SetWindowPos(g_hOverlay, HWND_TOPMOST, GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN), GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN), SWP_NOACTIVATE);
+                    ShowWindow(g_hOverlay, SW_SHOWNA);
+                } else if (mode == 2) {
+                    SetWindowLong(g_hOverlay, GWL_EXSTYLE, WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED);
+                    SetLayeredWindowAttributes(g_hOverlay, 0, 255, LWA_ALPHA);
+                    SetWindowPos(g_hOverlay, HWND_TOPMOST, GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN), GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN), SWP_NOACTIVATE);
+                    SetTimer(g_hOverlay, 1, 16, NULL); // 60 FPS Flashlight Tracking
+                    ShowWindow(g_hOverlay, SW_SHOWNA);
+                }
+            }
+            if (mode == 1) SetLayeredWindowAttributes(g_hOverlay, 0, param, LWA_ALPHA);
+        }
+
         LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch (uMsg) {
                 case WM_CREATE: {
@@ -39,9 +95,13 @@ namespace RHC {
             }
             return DefWindowProcA(hwnd, uMsg, wParam, lParam);
         }
+
         void Initialize(HINSTANCE hInstance) {
             WNDCLASSA wc = {0}; wc.lpfnWndProc = WndProc; wc.hInstance = hInstance; wc.lpszClassName = "RHC_Nightfall"; wc.hbrBackground = CreateSolidBrush(RGB(18, 18, 18)); RegisterClassA(&wc);
             hwnd = CreateWindowExA(0, "RHC_Nightfall", "Nightfall Schedule", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 300, 300, NULL, NULL, hInstance, NULL);
+
+            WNDCLASSA owc = {0}; owc.lpfnWndProc = OverlayProc; owc.hInstance = hInstance; owc.lpszClassName = "RHC_Overlay"; RegisterClassA(&owc);
+            g_hOverlay = CreateWindowExA(WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED, "RHC_Overlay", "", WS_POPUP, 0, 0, 10, 10, NULL, NULL, hInstance, NULL);
         }
         void Show() { ShowWindow(hwnd, SW_RESTORE); SetForegroundWindow(hwnd); }
         HWND GetWindowHandle() { return hwnd; }

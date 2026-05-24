@@ -12,10 +12,13 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <iostream>
 
 #define ID_BTN_FAV1 3001
 #define ID_BTN_FAV2 3002
 #define ID_BTN_FAV3 3003
+#define ID_BTN_ADD_REDIRECT 3004
+#define ID_BTN_BYPASS_HELP 3005
 
 namespace RHC {
     namespace CustomTaskManager { void Show(); }
@@ -30,7 +33,21 @@ namespace RHC {
         HWND g_hBtnFav1 = NULL;
         HWND g_hBtnFav2 = NULL;
         HWND g_hBtnFav3 = NULL;
+        
+        HWND g_hComboRedirectTrigger = NULL;
+        HWND g_hComboRedirectTarget = NULL;
+        HWND g_hEditRedirectCustom = NULL;
+        HWND g_hListRedirects = NULL;
+
         std::vector<TaskItem> recentFavorites;
+        std::vector<std::string> curRedirectTriggers;
+        std::vector<std::string> curRedirectTargets = {
+            "- Select Productive Destination -",
+            "https://en.wikipedia.org/wiki/Special:Random",
+            "https://khanacademy.org",
+            "https://freecodecamp.org",
+            "CUSTOM"
+        };
 
         void SyncHostsFileFromDB() {
             RHC::DatabaseManager db("rhc_state.db");
@@ -93,6 +110,32 @@ namespace RHC {
             UpdateFavoritesUI();
         }
 
+        void RefreshRedirectsUI() {
+            SendMessageW(g_hComboRedirectTrigger, CB_RESETCONTENT, 0, 0);
+            SendMessageW(g_hListRedirects, LB_RESETCONTENT, 0, 0);
+            RHC::DatabaseManager db("rhc_state.db");
+            
+            curRedirectTriggers.clear();
+            curRedirectTriggers.push_back("- Select Trigger -");
+            
+            auto parseTriggers = [](const std::string& str) {
+                for (const auto& entry : RHC::StringUtils::split(str, ',')) {
+                    if (!entry.empty()) curRedirectTriggers.push_back(RHC::StringUtils::split(entry, '|')[0]);
+                }
+            };
+            parseTriggers(db.getString("BLOCKLIST_EXE", ""));
+            parseTriggers(db.getString("BLOCKLIST_WEB", ""));
+            
+            for (const auto& t : curRedirectTriggers) SendMessageW(g_hComboRedirectTrigger, CB_ADDSTRING, 0, (LPARAM)RHC::Utils::utf8_to_wstring(t).c_str());
+            SendMessageW(g_hComboRedirectTrigger, CB_SETCURSEL, 0, 0);
+
+            for (const auto& r : RHC::StringUtils::split(db.getString("REDIRECTS", ""), ',')) {
+                if (r.empty()) continue;
+                auto parts = RHC::StringUtils::split(r, '|');
+                if (parts.size() == 2) SendMessageW(g_hListRedirects, LB_ADDSTRING, 0, (LPARAM)RHC::Utils::utf8_to_wstring("⚡ " + parts[0] + " -> " + parts[1]).c_str());
+            }
+        }
+
         void RefreshBlockListUI() {
             SendMessageW(g_hListBlocks, LB_RESETCONTENT, 0, 0);
             RHC::DatabaseManager db("rhc_state.db");
@@ -111,6 +154,7 @@ namespace RHC {
             parseAndAdd(db.getString("BLOCKLIST_EXE", ""), "🖥️");
             parseAndAdd(db.getString("BLOCKLIST_WEB", ""), "🌐");
             RefreshLogsUI();
+            RefreshRedirectsUI(); // Keep redirects combo synced with blocks
         }
 
         void PopulateInstalledAppsCombo(HWND hCombo) {
@@ -154,17 +198,60 @@ namespace RHC {
             std::string utf8Target = RHC::Utils::wstring_to_utf8(target);
             std::string utf8Time = RHC::Utils::wstring_to_utf8(timeRestr);
             if (utf8Target.empty() || utf8Target == "None") return;
-            if (utf8Time.empty()) utf8Time = "None"; // Ensure explicit None string
+            if (utf8Time.empty() || utf8Time == "HH:MM-HH:MM") utf8Time = "None"; // Ensure explicit None string
 
             RHC::DatabaseManager db("rhc_state.db");
-            auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-            std::stringstream ss; ss << std::put_time(std::localtime(&now), "%b %d");
-            
-            std::string newEntry = utf8Target + "|" + ss.str() + "|0|" + utf8Time;
             std::string key = isExe ? "BLOCKLIST_EXE" : "BLOCKLIST_WEB";
-            
             std::string currentList = db.getString(key, "");
-            db.putString(key, currentList.empty() ? newEntry : currentList + "," + newEntry);
+            auto entries = RHC::StringUtils::split(currentList, ',');
+            
+            bool found = false;
+            std::string newList = "";
+            std::string oldTime = "None";
+
+            for (auto& entry : entries) {
+                if (entry.empty()) continue;
+                auto parts = RHC::StringUtils::split(entry, '|');
+                if (RHC::StringUtils::toLower(parts[0]) == RHC::StringUtils::toLower(utf8Target)) {
+                    found = true;
+                    oldTime = (parts.size() >= 4) ? parts[3] : "None";
+
+                    // Enforce lock-in constraint (allowed minutes must decrease or stay same)
+                    int oldDuration = RHC::Utils::GetAllowedWindowDuration(oldTime);
+                    int newDuration = RHC::Utils::GetAllowedWindowDuration(utf8Time);
+
+                    if (newDuration > oldDuration) {
+                        RHC::Utils::ShowErrorModal(g_hDashboardWindow, L"Security Restriction", 
+                            L"You can only DECREASE your allowed bypass window, not increase it!\n\n"
+                            L"Current Allowed Limit: " + RHC::Utils::utf8_to_wstring(std::to_string(oldDuration)) + L" mins\n"
+                            L"Attempted New Limit: " + RHC::Utils::utf8_to_wstring(std::to_string(newDuration)) + L" mins");
+                        return; // Abort
+                    }
+
+                    // Rebuild the updated row in place
+                    std::string dateStr = (parts.size() > 1) ? parts[1] : "Today";
+                    std::string defeatsStr = (parts.size() > 2) ? parts[2] : "0";
+                    entry = parts[0] + "|" + dateStr + "|" + defeatsStr + "|" + utf8Time;
+                }
+                if (!newList.empty()) newList += ",";
+                newList += entry;
+            }
+
+            if (found) {
+                db.putString(key, newList);
+
+                // Compile and save spent ledger update string
+                std::string logMsg = utf8Target + " hours updated from " + RHC::Utils::FormatTimeToAmPm(oldTime) + " --> " + RHC::Utils::FormatTimeToAmPm(utf8Time);
+                std::string currentSpent = db.getString("MOMENTUM_SPENT_TODAY", "");
+                std::string newLogEntry = logMsg + "|0|" + std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+                db.putString("MOMENTUM_SPENT_TODAY", currentSpent.empty() ? newLogEntry : currentSpent + "," + newLogEntry);
+            } else {
+                auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+                std::stringstream ss; ss << std::put_time(std::localtime(&now), "%b %d");
+                std::string newEntry = utf8Target + "|" + ss.str() + "|0|" + utf8Time;
+                db.putString(key, currentList.empty() ? newEntry : currentList + "," + newEntry);
+            }
+
             if(!isExe) SyncHostsFileFromDB();
             RefreshBlockListUI();
         }
@@ -211,12 +298,10 @@ namespace RHC {
                 if (task.category == "reading") db.putInt("TOTAL_READING", db.getInt("TOTAL_READING", 0) + task.cost);
                 if (task.category == "physical") db.putInt("TOTAL_PHYSICAL", db.getInt("TOTAL_PHYSICAL", 0) + task.cost);
                 
-                // Update Recent Favorites String
                 std::string currentRt = db.getString("RECENT_TASKS", "");
                 std::string newTaskStr = RHC::Utils::wstring_to_utf8(task.name) + "|" + std::to_string(task.cost);
                 
-                std::vector<std::string> uniques;
-                uniques.push_back(newTaskStr);
+                std::vector<std::string> uniques; uniques.push_back(newTaskStr);
                 for (const auto& p : RHC::StringUtils::split(currentRt, ',')) {
                     if (p != newTaskStr && !p.empty() && uniques.size() < 3) uniques.push_back(p);
                 }
@@ -235,17 +320,20 @@ namespace RHC {
         }
 
         void ProcessCategoryExecution(HWND hCombo) {
-            wchar_t buf[256];
-            GetWindowTextW(hCombo, buf, 256);
-            std::wstring taskName = buf;
-            for (const auto& t : g_Tasks) {
-                if (t.name == taskName) { ExecuteSpendTime(t); return; }
+            wchar_t buf[256] = {0};
+            int sel = SendMessageW(hCombo, CB_GETCURSEL, 0, 0);
+            if (sel != CB_ERR) {
+                SendMessageW(hCombo, CB_GETLBTEXT, sel, (LPARAM)buf);
             }
+            std::wstring taskName = buf;
+            for (const auto& t : g_Tasks) if (t.name == taskName) { ExecuteSpendTime(t); return; }
         }
 
         LRESULT CALLBACK DashboardProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch (uMsg) {
                 case WM_CREATE: {
+                    SetWindowPos(hwnd, NULL, 0, 0, 800, 1000, SWP_NOMOVE | SWP_NOZORDER);
+
                     g_hFontGiant = CreateFontW(40, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
                     g_hFontTitle = CreateFontW(22, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
                     g_hFontNormal = CreateFontW(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
@@ -254,40 +342,56 @@ namespace RHC {
 
                     auto addText = [hwnd](int x, int y, int w, int h, const wchar_t* txt, HFONT font) { HWND t = CreateWindowExW(0, L"STATIC", txt, WS_CHILD | WS_VISIBLE | SS_CENTER, x, y, w, h, hwnd, NULL, NULL, NULL); SendMessage(t, WM_SETFONT, (WPARAM)font, TRUE); return t; };
                     
-                    // --- 1. NEW OVERCOME SECTION ---
                     addText(0, 10, 780, 30, L"1. NEW OVERCOME", g_hFontTitle);
-                    addText(20, 40, 360, 20, L"--- APPLICATION ---", g_hFontNormal);
-                    addText(400, 40, 360, 20, L"--- WEBSITE ---", g_hFontNormal);
                     
-                    // App Row
+                    // Column labels position directly above controls
+                    addText(20, 42, 180, 15, L"App Name (.exe)", g_hFontSmall);
+                    addText(210, 42, 80, 15, L"Bypass Window", g_hFontSmall);
+                    HWND hBtnAppHelp = CreateWindowExW(0, L"BUTTON", L"?", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 292, 39, 16, 16, hwnd, (HMENU)ID_BTN_BYPASS_HELP, NULL, NULL);
+
+                    addText(400, 42, 180, 15, L"Domain (e.g. site.com)", g_hFontSmall);
+                    addText(590, 42, 80, 15, L"Bypass Window", g_hFontSmall);
+                    HWND hBtnWebHelp = CreateWindowExW(0, L"BUTTON", L"?", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 672, 39, 16, 16, hwnd, (HMENU)ID_BTN_BYPASS_HELP, NULL, NULL);
+
+                    SendMessage(hBtnAppHelp, WM_SETFONT, (WPARAM)g_hFontSmall, TRUE);
+                    SendMessage(hBtnWebHelp, WM_SETFONT, (WPARAM)g_hFontSmall, TRUE);
+                    
                     g_hComboAppBlock = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | WS_VSCROLL, 20, 60, 180, 200, hwnd, NULL, NULL, NULL);
-                    g_hEditAppTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"None", WS_CHILD | WS_VISIBLE, 210, 60, 80, 25, hwnd, NULL, NULL, NULL);
+                    g_hEditAppTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, 210, 60, 80, 25, hwnd, NULL, NULL, NULL);
                     HWND bAddApp = CreateWindowExW(0, L"BUTTON", L"Block App", WS_CHILD | WS_VISIBLE, 300, 60, 80, 25, hwnd, (HMENU)ID_BTN_ADD_APP, NULL, NULL);
                     PopulateInstalledAppsCombo(g_hComboAppBlock);
                     
-                    // Web Row
                     g_hEditWebBlock = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"reddit.com", WS_CHILD | WS_VISIBLE, 400, 60, 180, 25, hwnd, NULL, NULL, NULL);
-                    g_hEditWebTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"None", WS_CHILD | WS_VISIBLE, 590, 60, 80, 25, hwnd, NULL, NULL, NULL);
+                    g_hEditWebTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, 590, 60, 80, 25, hwnd, NULL, NULL, NULL);
                     HWND bAddWeb = CreateWindowExW(0, L"BUTTON", L"Block Web", WS_CHILD | WS_VISIBLE, 680, 60, 80, 25, hwnd, (HMENU)ID_BTN_ADD_WEB, NULL, NULL);
+
+                    SendMessageW(g_hEditAppTime, EM_SETCUEBANNER, FALSE, (LPARAM)L"HH:MM-HH:MM");
+                    SendMessageW(g_hEditWebTime, EM_SETCUEBANNER, FALSE, (LPARAM)L"HH:MM-HH:MM");
 
                     RHC::UI::SmoothButton::Attach(bAddApp); RHC::UI::SmoothButton::Attach(bAddWeb);
                     
-                    // --- 2. ACTIVELY OVERCOMING ---
-                    addText(0, 110, 780, 30, L"2. ACTIVELY OVERCOMING", g_hFontTitle);
-                    g_hListBlocks = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 140, 740, 120, hwnd, (HMENU)ID_LIST_BLOCKS, NULL, NULL);
+                    addText(0, 100, 780, 30, L"2. ACTIVELY OVERCOMING", g_hFontTitle);
+                    g_hListBlocks = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 130, 740, 80, hwnd, (HMENU)ID_LIST_BLOCKS, NULL, NULL);
                     
-                    // --- 3. MOMENTUM CORE ---
-                    g_hMomentumText = addText(0, 270, 780, 50, L"0 MINS AVAILABLE", g_hFontGiant);
+                    addText(0, 220, 780, 30, L"3. HABIT SUBSTITUTION", g_hFontTitle);
+                    g_hComboRedirectTrigger = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL, 20, 250, 200, 200, hwnd, NULL, NULL, NULL);
+                    addText(230, 250, 40, 25, L"➡️", g_hFontEmoji);
+                    g_hComboRedirectTarget = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL, 280, 250, 200, 200, hwnd, NULL, NULL, NULL);
+                    for (const auto& t : curRedirectTargets) SendMessageW(g_hComboRedirectTarget, CB_ADDSTRING, 0, (LPARAM)RHC::Utils::utf8_to_wstring(t).c_str()); SendMessageW(g_hComboRedirectTarget, CB_SETCURSEL, 0, 0);
                     
-                    // --- 4. LEDGERS ---
-                    addText(20, 330, 360, 20, L"EARNED", g_hFontTitle);
-                    addText(400, 330, 360, 20, L"SPENT LEDGER", g_hFontTitle);
-                    g_hListEarned = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 360, 360, 120, hwnd, (HMENU)ID_LIST_EARNED, NULL, NULL);
-                    g_hListSpent = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 400, 360, 360, 120, hwnd, (HMENU)ID_LIST_SPENT, NULL, NULL);
+                    g_hEditRedirectCustom = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"Custom URL/Exe", WS_CHILD | WS_VISIBLE, 490, 250, 160, 25, hwnd, NULL, NULL, NULL);
+                    HWND bAddRedirect = CreateWindowExW(0, L"BUTTON", L"Link", WS_CHILD | WS_VISIBLE, 660, 250, 100, 25, hwnd, (HMENU)ID_BTN_ADD_REDIRECT, NULL, NULL);
+                    RHC::UI::SmoothButton::Attach(bAddRedirect);
+                    g_hListRedirects = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 285, 740, 60, hwnd, NULL, NULL, NULL);
 
-                    // --- 5. SPEND MOMENTUM (CATEGORIES) ---
-                    addText(0, 490, 780, 30, L"6. SPEND MOMENTUM", g_hFontTitle);
+                    g_hMomentumText = addText(0, 360, 780, 50, L"0 MINS AVAILABLE", g_hFontGiant);
                     
+                    addText(20, 420, 360, 20, L"EARNED", g_hFontTitle);
+                    addText(400, 420, 360, 20, L"SPENT LEDGER", g_hFontTitle);
+                    g_hListEarned = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 20, 445, 360, 120, hwnd, (HMENU)ID_LIST_EARNED, NULL, NULL);
+                    g_hListSpent = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOINTEGRALHEIGHT, 400, 445, 360, 120, hwnd, (HMENU)ID_LIST_SPENT, NULL, NULL);
+
+                    addText(0, 580, 780, 30, L"6. SPEND MOMENTUM", g_hFontTitle);
                     auto buildCat = [hwnd](int x, int y, int cID, int bID, const std::string& cat) {
                         HWND hCombo = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL, x, y, 250, 200, hwnd, (HMENU)(UINT_PTR)cID, NULL, NULL);
                         HWND hBtn = CreateWindowExW(0, L"BUTTON", L"EXECUTE", WS_CHILD | WS_VISIBLE, x+260, y, 100, 25, hwnd, (HMENU)(UINT_PTR)bID, NULL, NULL);
@@ -295,29 +399,32 @@ namespace RHC {
                         SendMessageW(hCombo, CB_SETCURSEL, 0, 0); SendMessageW(hCombo, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
                         RHC::UI::SmoothButton::Attach(hBtn); return hCombo;
                     };
-                    
-                    g_hComboPhysical = buildCat(20, 530, ID_COMBO_PHYSICAL, ID_BTN_EXEC_PHYSICAL, "Physical");
-                    g_hComboMental   = buildCat(400, 530, ID_COMBO_MENTAL, ID_BTN_EXEC_MENTAL, "Mental");
-                    g_hComboWork     = buildCat(20, 570, ID_COMBO_WORK, ID_BTN_EXEC_WORK, "Work");
-                    g_hComboChores   = buildCat(400, 570, ID_COMBO_CHORES, ID_BTN_EXEC_CHORES, "Chores");
+                    g_hComboPhysical = buildCat(20, 610, ID_COMBO_PHYSICAL, ID_BTN_EXEC_PHYSICAL, "Physical");
+                    g_hComboMental   = buildCat(400, 610, ID_COMBO_MENTAL, ID_BTN_EXEC_MENTAL, "Mental");
+                    g_hComboWork     = buildCat(20, 650, ID_COMBO_WORK, ID_BTN_EXEC_WORK, "Work");
+                    g_hComboChores   = buildCat(400, 650, ID_COMBO_CHORES, ID_BTN_EXEC_CHORES, "Chores");
 
-                    // --- FAVORITES QUICK ACTIONS ---
-                    addText(0, 620, 780, 20, L"RECENT QUICK ACTIONS", g_hFontNormal);
-                    g_hBtnFav1 = CreateWindowExW(0, L"BUTTON", L"Fav 1", WS_CHILD, 20, 650, 230, 40, hwnd, (HMENU)ID_BTN_FAV1, NULL, NULL);
-                    g_hBtnFav2 = CreateWindowExW(0, L"BUTTON", L"Fav 2", WS_CHILD, 275, 650, 230, 40, hwnd, (HMENU)ID_BTN_FAV2, NULL, NULL);
-                    g_hBtnFav3 = CreateWindowExW(0, L"BUTTON", L"Fav 3", WS_CHILD, 530, 650, 230, 40, hwnd, (HMENU)ID_BTN_FAV3, NULL, NULL);
+                    addText(0, 700, 780, 20, L"RECENT QUICK ACTIONS", g_hFontNormal);
+                    g_hBtnFav1 = CreateWindowExW(0, L"BUTTON", L"Fav 1", WS_CHILD, 20, 730, 230, 40, hwnd, (HMENU)ID_BTN_FAV1, NULL, NULL);
+                    g_hBtnFav2 = CreateWindowExW(0, L"BUTTON", L"Fav 2", WS_CHILD, 275, 730, 230, 40, hwnd, (HMENU)ID_BTN_FAV2, NULL, NULL);
+                    g_hBtnFav3 = CreateWindowExW(0, L"BUTTON", L"Fav 3", WS_CHILD, 530, 730, 230, 40, hwnd, (HMENU)ID_BTN_FAV3, NULL, NULL);
                     RHC::UI::SmoothButton::Attach(g_hBtnFav1); RHC::UI::SmoothButton::Attach(g_hBtnFav2); RHC::UI::SmoothButton::Attach(g_hBtnFav3);
 
-                    // --- COMMAND STRIP ---
-                    HWND bTaskMgr = CreateWindowExW(0, L"BUTTON", L"🛡️ Secure Task Mgr", WS_CHILD | WS_VISIBLE, 20, 750, 230, 40, hwnd, (HMENU)ID_BTN_OPEN_TASKMGR, NULL, NULL);
-                    HWND bOverride = CreateWindowExW(0, L"BUTTON", L"⚙️ System Override", WS_CHILD | WS_VISIBLE, 275, 750, 230, 40, hwnd, (HMENU)ID_TRAY_OVERRIDE, NULL, NULL);
-                    HWND bNightfall = CreateWindowExW(0, L"BUTTON", L"🌙 Nightfall Schedule", WS_CHILD | WS_VISIBLE, 530, 750, 230, 40, hwnd, (HMENU)ID_TRAY_NIGHTFALL, NULL, NULL);
-                    RHC::UI::SmoothButton::Attach(bTaskMgr); RHC::UI::SmoothButton::Attach(bOverride); RHC::UI::SmoothButton::Attach(bNightfall);
+                    // Command Strip
+                    HWND bTaskMgr = CreateWindowExW(0, L"BUTTON", L"🛡️ Secure Task Mgr", WS_CHILD | WS_VISIBLE, 20, 800, 230, 40, hwnd, (HMENU)ID_BTN_OPEN_TASKMGR, NULL, NULL);
+                    HWND bOverride = CreateWindowExW(0, L"BUTTON", L"⚙️ System Override", WS_CHILD | WS_VISIBLE, 275, 800, 230, 40, hwnd, (HMENU)ID_TRAY_OVERRIDE, NULL, NULL);
+                    HWND bNightfall = CreateWindowExW(0, L"BUTTON", L"🌙 Nightfall Schedule", WS_CHILD | WS_VISIBLE, 530, 800, 230, 40, hwnd, (HMENU)ID_TRAY_NIGHTFALL, NULL, NULL);
+                    
+                    HWND bDevConsole = CreateWindowExW(0, L"BUTTON", L"💻 Dev Console (CLI)", WS_CHILD | WS_VISIBLE, 275, 850, 230, 40, hwnd, (HMENU)ID_BTN_DEV_CONSOLE, NULL, NULL);
+                    
+                    RHC::UI::SmoothButton::Attach(bTaskMgr); RHC::UI::SmoothButton::Attach(bOverride); 
+                    RHC::UI::SmoothButton::Attach(bNightfall); RHC::UI::SmoothButton::Attach(bDevConsole);
 
-                    // Font assignments
                     SendMessage(g_hComboAppBlock, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE); SendMessage(g_hEditAppTime, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
                     SendMessage(g_hEditWebBlock, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE); SendMessage(g_hEditWebTime, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
-                    SendMessage(g_hListBlocks, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
+                    SendMessage(g_hComboRedirectTrigger, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE); SendMessage(g_hComboRedirectTarget, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
+                    SendMessage(g_hEditRedirectCustom, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
+                    SendMessage(g_hListBlocks, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE); SendMessage(g_hListRedirects, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
                     SendMessage(g_hListEarned, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE); SendMessage(g_hListSpent, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
                     
                     RefreshBlockListUI();
@@ -328,6 +435,59 @@ namespace RHC {
                 case WM_CTLCOLOREDIT: { HDC hdcEdit = (HDC)wParam; SetTextColor(hdcEdit, RGB(255, 255, 255)); SetBkColor(hdcEdit, RGB(40, 40, 42)); return (LRESULT)CreateSolidBrush(RGB(40, 40, 42)); }
                 case WM_COMMAND: {
                     int id = LOWORD(wParam);
+                    
+                    if (HIWORD(wParam) == CBN_SELCHANGE && (HWND)lParam == g_hComboRedirectTarget) {
+                        int sel = SendMessageW(g_hComboRedirectTarget, CB_GETCURSEL, 0, 0);
+                        if (sel == curRedirectTargets.size() - 1) ShowWindow(g_hEditRedirectCustom, SW_SHOW);
+                        else ShowWindow(g_hEditRedirectCustom, SW_HIDE);
+                    }
+
+                    if (id == ID_BTN_DEV_CONSOLE) {
+                        if (!g_DebugMode) {
+                            AllocConsole();
+                            FILE* fp;
+                            freopen_s(&fp, "CONOUT$", "w", stdout);
+                            freopen_s(&fp, "CONOUT$", "w", stderr);
+                            std::cout << "========================================" << std::endl;
+                            std::cout << "  RHC DEVELOPER CONSOLE INITIALIZED" << std::endl;
+                            std::cout << "========================================" << std::endl;
+                            std::cout << "[INFO] Awaiting UI Automation Scans..." << std::endl;
+                            g_DebugMode = true;
+                        } else {
+                            FreeConsole();
+                            g_DebugMode = false;
+                        }
+                    }
+
+                    if (id == ID_BTN_BYPASS_HELP) {
+                        MessageBoxW(hwnd, 
+                            L"You CAN access this app or website during this time.\n\n"
+                            L"Cannot overwrite to extend the bypass window, but can overwrite it to be smaller.", 
+                            L"Bypass Window Info", 
+                            MB_OK | MB_ICONINFORMATION | MB_APPLMODAL | MB_SETFOREGROUND);
+                        return 0;
+                    }
+
+                    if (id == ID_BTN_ADD_REDIRECT) {
+                        int trigIdx = SendMessageW(g_hComboRedirectTrigger, CB_GETCURSEL, 0, 0);
+                        int targIdx = SendMessageW(g_hComboRedirectTarget, CB_GETCURSEL, 0, 0);
+                        if (trigIdx > 0 && targIdx > 0) {
+                            std::string trig = curRedirectTriggers[trigIdx];
+                            std::string targ = curRedirectTargets[targIdx];
+                            if (targ == "CUSTOM") {
+                                wchar_t buf[256]; GetWindowTextW(g_hEditRedirectCustom, buf, 256);
+                                targ = RHC::Utils::wstring_to_utf8(buf);
+                            }
+                            if (!targ.empty()) {
+                                RHC::DatabaseManager db("rhc_state.db");
+                                std::string cur = db.getString("REDIRECTS", "");
+                                std::string newEntry = trig + "|" + targ;
+                                db.putString("REDIRECTS", cur.empty() ? newEntry : cur + "," + newEntry);
+                                RefreshRedirectsUI();
+                            }
+                        }
+                    }
+
                     if (id == ID_BTN_OPEN_TASKMGR) RHC::CustomTaskManager::Show();
                     if (id == ID_TRAY_OVERRIDE) RHC::SystemOverride::Show();
                     if (id == ID_TRAY_NIGHTFALL) RHC::NightfallUI::Show();
@@ -335,12 +495,30 @@ namespace RHC {
                     if (id == ID_BTN_ADD_APP) {
                         wchar_t target[256], timeBuf[256]; 
                         GetWindowTextW(g_hComboAppBlock, target, 256); GetWindowTextW(g_hEditAppTime, timeBuf, 256);
-                        AddBlockItem(true, target, timeBuf); SetWindowTextW(g_hComboAppBlock, L""); SetWindowTextW(g_hEditAppTime, L"None");
+                        
+                        std::wstring timeStr(timeBuf);
+                        std::wstring errMsg;
+                        if (!RHC::Utils::ValidateTimeFormat(timeStr, errMsg)) {
+                            RHC::Utils::ShowErrorModal(hwnd, L"Format Error", errMsg);
+                        } else {
+                            AddBlockItem(true, target, timeBuf); 
+                            SetWindowTextW(g_hComboAppBlock, L""); 
+                            SetWindowTextW(g_hEditAppTime, L"");
+                        }
                     }
                     if (id == ID_BTN_ADD_WEB) {
                         wchar_t target[256], timeBuf[256]; 
                         GetWindowTextW(g_hEditWebBlock, target, 256); GetWindowTextW(g_hEditWebTime, timeBuf, 256);
-                        AddBlockItem(false, target, timeBuf); SetWindowTextW(g_hEditWebBlock, L""); SetWindowTextW(g_hEditWebTime, L"None");
+                        
+                        std::wstring timeStr(timeBuf);
+                        std::wstring errMsg;
+                        if (!RHC::Utils::ValidateTimeFormat(timeStr, errMsg)) {
+                            RHC::Utils::ShowErrorModal(hwnd, L"Format Error", errMsg);
+                        } else {
+                            AddBlockItem(false, target, timeBuf); 
+                            SetWindowTextW(g_hEditWebBlock, L""); 
+                            SetWindowTextW(g_hEditWebTime, L"");
+                        }
                     }
 
                     if (id == ID_BTN_EXEC_PHYSICAL) ProcessCategoryExecution(g_hComboPhysical);
