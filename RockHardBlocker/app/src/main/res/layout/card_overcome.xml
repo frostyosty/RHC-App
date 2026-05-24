@@ -1,21 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:background="@drawable/bg_card"
+    android:padding="16dp" android:layout_marginTop="16dp" android:layout_marginBottom="16dp"
+    android:id="@+id/cardOvercomeApp">
 
-    <!-- APPS CARD (Moved to top) -->
-    <LinearLayout android:id="@+id/cardOvercomeApp" style="@style/AppCard" android:visibility="gone">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp" android:text="OVERCOME APPS" />
-        <Spinner android:id="@+id/spinApps" android:layout_width="match_parent" android:layout_height="50dp" android:backgroundTint="#FFFFFF" />
-        <Button android:id="@+id/btnAddApp" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_btn_danger" android:textColor="#FFFFFF" android:text="OVERCOME SELECTED APP" android:layout_marginTop="8dp"/>
-        <LinearLayout android:id="@+id/llBannedApps" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="OVERCOME APPS" android:textAlignment="center" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" />
+
+    <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:columnCount="2" android:layout_marginTop="8dp">
+
+        <Spinner android:id="@+id/spinSocialApps" android:layout_width="0dp" android:layout_height="48dp" android:layout_columnWeight="1" android:layout_margin="4dp" android:backgroundTint="#4CAF50" />
+        <Spinner android:id="@+id/spinVideoApps" android:layout_width="0dp" android:layout_height="48dp" android:layout_columnWeight="1" android:layout_margin="4dp" android:backgroundTint="#4CAF50" />
+        <Spinner android:id="@+id/spinNewsApps" android:layout_width="0dp" android:layout_height="48dp" android:layout_columnWeight="1" android:layout_margin="4dp" android:backgroundTint="#4CAF50" />
+        <Spinner android:id="@+id/spinAllApps" android:layout_width="0dp" android:layout_height="48dp" android:layout_columnWeight="1" android:layout_margin="4dp" android:backgroundTint="#4CAF50" />
+    </GridLayout>
+
+    <LinearLayout android:id="@+id/llBannedApps" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp"/>
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="OVERCOME WEBSITES" android:textAlignment="center" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="24dp"
+        android:id="@+id/cardOvercomeWeb"/>
+
+    <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:columnCount="2" android:layout_marginTop="8dp">
+
+        <Spinner android:id="@+id/spinSocialWeb" android:layout_width="0dp" android:layout_height="48dp" android:layout_columnWeight="1" android:layout_margin="4dp" android:backgroundTint="#2196F3" />
+        <Spinner android:id="@+id/spinVideoWeb" android:layout_width="0dp" android:layout_height="48dp" android:layout_columnWeight="1" android:layout_margin="4dp" android:backgroundTint="#2196F3" />
+        <Spinner android:id="@+id/spinNewsWeb" android:layout_width="0dp" android:layout_height="48dp" android:layout_columnWeight="1" android:layout_margin="4dp" android:backgroundTint="#2196F3" />
+        <Spinner android:id="@+id/spinSearchWeb" android:layout_width="0dp" android:layout_height="48dp" android:layout_columnWeight="1" android:layout_margin="4dp" android:backgroundTint="#2196F3" />
+    </GridLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <EditText android:id="@+id/etCustomWeb" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:hint="Or enter custom URL..." android:textColorHint="#666" android:textColor="#FFF" android:backgroundTint="#FFF" android:singleLine="true"/>
+        <Button android:id="@+id/btnAddWeb" android:layout_width="wrap_content" android:layout_height="48dp" android:text="OVERCOME" android:backgroundTint="#2196F3" android:textColor="#FFF" android:layout_marginStart="8dp"/>
     </LinearLayout>
 
-    <!-- WEB CARD (Moved to bottom) -->
-    <LinearLayout android:id="@+id/cardOvercomeWeb" style="@style/AppCard" android:visibility="gone" android:layout_marginTop="16dp">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp" android:text="OVERCOME WEBSITES" />
-        <EditText android:id="@+id/etCustomWeb" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="e.g. reddit.com" android:textColor="#FFFFFF" android:textColorHint="#888" android:inputType="textUri"/>
-        <Button android:id="@+id/btnAddWeb" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_btn_danger" android:textColor="#FFFFFF" android:text="OVERCOME WEBSITE" android:layout_marginTop="8dp"/>
-        <LinearLayout android:id="@+id/llBannedWebs" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp"/>
-    </LinearLayout>
-
+    <LinearLayout android:id="@+id/llBannedWebs" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp"/>
 </LinearLayout>

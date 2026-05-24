@@ -35,251 +35,322 @@
 19    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 19-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:11:5-79
 19-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:11:22-76
-20    <!-- FIX: Added label to application so it shows correctly in Android Settings -->
-21    <application
-21-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:14:5-65:15
-22        android:allowBackup="true"
-22-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:14:18-44
-23        android:extractNativeLibs="false"
-24        android:label="@string/app_name"
-24-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:14:120-152
-25        android:supportsRtl="true"
-25-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:14:45-71
-26        android:theme="@android:style/Theme.NoTitleBar" >
-26-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:14:72-119
-27        <activity
-27-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:9-107
-28            android:name="com.rockhard.blocker.MainActivity"
-28-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:19-47
-29            android:exported="true"
-29-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:48-71
-30            android:label="@string/app_name" />
-30-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:72-104
-31
-32        <activity-alias
-32-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:9-54:26
-33            android:name="com.rockhard.blocker.CloakLauncher"
-33-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:25-54
-34            android:enabled="false"
-34-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:55-78
-35            android:exported="true"
-35-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:79-102
-36            android:icon="@drawable/ic_sys_sync"
-36-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:103-139
-37            android:label="Sync Services"
-37-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:179-208
-38            android:targetActivity="com.rockhard.blocker.MainActivity" >
-38-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:140-178
-39            <intent-filter>
-39-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:13-159
-40                <action android:name="android.intent.action.MAIN" />
-40-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:29-81
-40-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:37-78
-41
-42                <category android:name="android.intent.category.LAUNCHER" />
-42-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:82-142
-42-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:92-139
-43            </intent-filter>
-44        </activity-alias>
-45        <activity-alias
-45-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:9-28:26
-46            android:name="com.rockhard.blocker.GameLauncher"
-46-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:25-53
-47            android:enabled="false"
-47-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:54-77
-48            android:exported="true"
-48-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:78-101
-49            android:icon="@mipmap/ic_game"
-49-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:102-132
-50            android:label="Netbeasts"
-50-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:172-197
-51            android:targetActivity="com.rockhard.blocker.MainActivity" >
-51-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:26:133-171
-52            <intent-filter>
-52-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:13-159
-53                <action android:name="android.intent.action.MAIN" />
-53-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:29-81
-53-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:37-78
-54
-55                <category android:name="android.intent.category.LAUNCHER" />
-55-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:82-142
-55-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:92-139
-56            </intent-filter>
-57        </activity-alias> <!-- FIX: Added labels to the Launchers so your Home Screen is correct! -->
-58        <activity-alias
-58-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:9-24:26
-59            android:name="com.rockhard.blocker.DefaultLauncher"
-59-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:25-56
-60            android:enabled="true"
-60-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:57-79
-61            android:exported="true"
-61-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:80-103
-62            android:icon="@mipmap/ic_launcher"
-62-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:104-138
-63            android:label="@string/app_name"
-63-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:178-210
-64            android:targetActivity="com.rockhard.blocker.MainActivity" >
-64-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:139-177
-65            <intent-filter>
-65-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:13-159
-66                <action android:name="android.intent.action.MAIN" />
-66-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:29-81
-66-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:37-78
-67
-68                <category android:name="android.intent.category.LAUNCHER" />
-68-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:82-142
-68-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:92-139
-69            </intent-filter>
-70        </activity-alias>
-71
-72        <activity
-72-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:17:9-107
-73            android:name="com.rockhard.blocker.TrapActivity"
-73-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:17:19-47
-74            android:exported="false"
-74-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:17:48-72
-75            android:launchMode="singleTask" />
-75-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:17:73-104
-76        <activity
-76-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:9-140
-77            android:name="com.rockhard.blocker.GameActivity"
-77-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:19-47
-78            android:exported="false"
-78-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:48-72
-79            android:label="Netbeasts Safari"
-79-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:105-137
-80            android:launchMode="singleTask" />
-80-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:73-104
-81        <activity
-81-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:19:9-111
-82            android:name="com.rockhard.blocker.MomentumActivity"
-82-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:19:19-51
-83            android:exported="false"
-83-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:19:52-76
-84            android:launchMode="singleTask" />
-84-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:19:77-108
-85
-86        <!-- FIX: Added labels to the Services so they look right in Security Settings -->
-87        <service
-87-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:9-34:19
-88            android:name="com.rockhard.blocker.GuardianService"
-88-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:18-49
-89            android:exported="true"
-89-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:160-183
-90            android:foregroundServiceType="specialUse"
-90-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:50-92
-91            android:label="@string/app_name"
-91-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:184-216
-92            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
-92-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:93-159
-93            <intent-filter>
-93-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:32:13-121
-94                <action android:name="android.accessibilityservice.AccessibilityService" />
-94-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:32:29-104
-94-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:32:37-101
-95            </intent-filter>
-96
-97            <meta-data
-97-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:33:13-110
-98                android:name="android.accessibilityservice"
-98-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:33:24-67
-99                android:resource="@xml/guardian_config" />
-99-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:33:68-107
-100        </service>
-101
-102        <receiver
-102-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:9-38:20
-103            android:name="com.rockhard.blocker.AdminReceiver"
-103-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:19-48
-104            android:description="@string/app_name"
-104-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:164-202
-105            android:exported="true"
-105-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:107-130
-106            android:label="@string/app_name"
-106-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:131-163
-107            android:permission="android.permission.BIND_DEVICE_ADMIN" >
-107-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:49-106
-108            <meta-data
-108-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:36:13-103
-109                android:name="android.app.device_admin"
-109-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:36:24-63
-110                android:resource="@xml/device_admin" />
-110-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:36:64-100
-111
-112            <intent-filter>
-112-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:13-111
-113                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-113-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:29-94
-113-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:37-91
-114            </intent-filter>
-115        </receiver>
-116        <receiver
-116-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:9-44:20
-117            android:name="com.rockhard.blocker.guardian.BootReceiver"
-117-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:19-56
-118            android:enabled="true"
-118-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:57-79
-119            android:exported="true" >
-119-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:80-103
-120            <intent-filter>
-120-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:40:13-43:29
-121                <action android:name="android.intent.action.BOOT_COMPLETED" />
-121-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:41:17-79
-121-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:41:25-76
-122                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-122-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:42:17-82
-122-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:42:25-79
-123            </intent-filter>
-124        </receiver>
-125        <receiver
-125-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:46:9-51:20
-126            android:name="com.rockhard.blocker.ShutdownReceiver"
-126-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:46:19-51
-127            android:exported="true" >
-127-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:46:52-75
-128            <intent-filter>
-128-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:47:13-50:29
-129                <action android:name="android.intent.action.ACTION_SHUTDOWN" />
-129-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:48:17-80
-129-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:48:25-77
-130                <action android:name="android.intent.action.QUICKBOOT_POWEROFF" />
-130-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:49:17-83
-130-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:49:25-80
-131            </intent-filter>
-132        </receiver>
-133
-134        <activity
-134-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:9-62:20
-135            android:name="com.rockhard.blocker.ProcessTextActivity"
-135-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:19-54
-136            android:exported="true"
-136-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:127-150
-137            android:label="Overcome"
-137-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:55-79
-138            android:theme="@android:style/Theme.NoDisplay" >
-138-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:80-126
-139            <intent-filter>
-139-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:57:13-61:29
-140                <action android:name="android.intent.action.PROCESS_TEXT" />
-140-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:58:17-77
-140-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:58:25-74
-141
-142                <category android:name="android.intent.category.DEFAULT" />
-142-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:59:17-76
-142-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:59:27-73
-143
-144                <data android:mimeType="text/plain" />
-144-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:60:17-55
-144-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:60:23-52
-145            </intent-filter>
-146        </activity>
+20    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+20-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:12:5-77
+20-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:12:22-74
+21
+22    <!-- Permissions for Keep-Alive SyncAdapter & Whitelisted Wakelock Tags -->
+23    <uses-permission android:name="android.permission.WAKE_LOCK" />
+23-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:15:5-68
+23-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:15:22-65
+24    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+24-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:5-77
+24-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:16:22-74
+25    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+25-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:17:5-78
+25-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:17:22-75
+26    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+26-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:5-80
+26-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:18:22-77
+27
+28    <application
+28-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:5-89:15
+29        android:allowBackup="true"
+29-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:18-44
+30        android:extractNativeLibs="false"
+31        android:label="@string/app_name"
+31-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:120-152
+32        android:supportsRtl="true"
+32-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:45-71
+33        android:theme="@android:style/Theme.NoTitleBar" >
+33-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:72-119
+34        <activity
+34-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:9-107
+35            android:name="com.rockhard.blocker.MainActivity"
+35-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:19-47
+36            android:exported="true"
+36-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:48-71
+37            android:label="@string/app_name" />
+37-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:72-104
+38
+39        <activity-alias
+39-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:9-58:26
+40            android:name="com.rockhard.blocker.CloakLauncher"
+40-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:25-54
+41            android:enabled="false"
+41-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:55-78
+42            android:exported="true"
+42-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:79-102
+43            android:icon="@drawable/ic_sys_sync"
+43-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:103-139
+44            android:label="Sync Services"
+44-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:179-208
+45            android:targetActivity="com.rockhard.blocker.MainActivity" >
+45-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:56:140-178
+46            <intent-filter>
+46-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:13-159
+47                <action android:name="android.intent.action.MAIN" />
+47-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:29-81
+47-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:37-78
+48
+49                <category android:name="android.intent.category.LAUNCHER" />
+49-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:82-142
+49-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:92-139
+50            </intent-filter>
+51        </activity-alias>
+52        <activity-alias
+52-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:9-33:26
+53            android:name="com.rockhard.blocker.GameLauncher"
+53-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:25-53
+54            android:enabled="false"
+54-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:54-77
+55            android:exported="true"
+55-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:78-101
+56            android:icon="@mipmap/ic_game"
+56-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:102-132
+57            android:label="Netbeasts"
+57-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:172-197
+58            android:targetActivity="com.rockhard.blocker.MainActivity" >
+58-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:31:133-171
+59            <intent-filter>
+59-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:13-159
+60                <action android:name="android.intent.action.MAIN" />
+60-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:29-81
+60-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:37-78
+61
+62                <category android:name="android.intent.category.LAUNCHER" />
+62-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:82-142
+62-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:92-139
+63            </intent-filter>
+64        </activity-alias>
+65        <activity-alias
+65-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:9-29:26
+66            android:name="com.rockhard.blocker.DefaultLauncher"
+66-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:25-56
+67            android:enabled="true"
+67-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:57-79
+68            android:exported="true"
+68-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:80-103
+69            android:icon="@mipmap/ic_launcher"
+69-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:104-138
+70            android:label="@string/app_name"
+70-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:178-210
+71            android:targetActivity="com.rockhard.blocker.MainActivity" >
+71-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:27:139-177
+72            <intent-filter>
+72-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:13-159
+73                <action android:name="android.intent.action.MAIN" />
+73-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:29-81
+73-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:37-78
+74
+75                <category android:name="android.intent.category.LAUNCHER" />
+75-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:82-142
+75-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:28:92-139
+76            </intent-filter>
+77        </activity-alias>
+78
+79        <activity
+79-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:9-107
+80            android:name="com.rockhard.blocker.TrapActivity"
+80-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:19-47
+81            android:exported="false"
+81-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:48-72
+82            android:launchMode="singleTask" />
+82-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:23:73-104
+83        <activity
+83-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:24:9-140
+84            android:name="com.rockhard.blocker.GameActivity"
+84-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:24:19-47
+85            android:exported="false"
+85-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:24:48-72
+86            android:label="Netbeasts Safari"
+86-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:24:105-137
+87            android:launchMode="singleTask" />
+87-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:24:73-104
+88        <activity
+88-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:9-111
+89            android:name="com.rockhard.blocker.MomentumActivity"
+89-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:19-51
+90            android:exported="false"
+90-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:52-76
+91            android:launchMode="singleTask" />
+91-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:25:77-108
+92
+93        <service
+93-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:9-38:19
+94            android:name="com.rockhard.blocker.GuardianService"
+94-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:18-49
+95            android:exported="true"
+95-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:160-183
+96            android:foregroundServiceType="specialUse"
+96-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:50-92
+97            android:label="@string/app_name"
+97-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:184-216
+98            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+98-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:35:93-159
+99            <intent-filter>
+99-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:36:13-121
+100                <action android:name="android.accessibilityservice.AccessibilityService" />
+100-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:36:29-104
+100-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:36:37-101
+101            </intent-filter>
+102
+103            <meta-data
+103-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:13-110
+104                android:name="android.accessibilityservice"
+104-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:24-67
+105                android:resource="@xml/guardian_config" />
+105-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:37:68-107
+106        </service>
+107
+108        <receiver
+108-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:9-42:20
+109            android:name="com.rockhard.blocker.AdminReceiver"
+109-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:19-48
+110            android:description="@string/app_name"
+110-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:164-202
+111            android:exported="true"
+111-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:107-130
+112            android:label="@string/app_name"
+112-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:131-163
+113            android:permission="android.permission.BIND_DEVICE_ADMIN" >
+113-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:39:49-106
+114            <meta-data
+114-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:40:13-103
+115                android:name="android.app.device_admin"
+115-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:40:24-63
+116                android:resource="@xml/device_admin" />
+116-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:40:64-100
+117
+118            <intent-filter>
+118-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:41:13-111
+119                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+119-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:41:29-94
+119-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:41:37-91
+120            </intent-filter>
+121        </receiver>
+122        <receiver
+122-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:43:9-48:20
+123            android:name="com.rockhard.blocker.guardian.BootReceiver"
+123-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:43:19-56
+124            android:enabled="true"
+124-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:43:57-79
+125            android:exported="true" >
+125-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:43:80-103
+126            <intent-filter>
+126-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:44:13-47:29
+127                <action android:name="android.intent.action.BOOT_COMPLETED" />
+127-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:45:17-79
+127-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:45:25-76
+128                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+128-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:46:17-82
+128-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:46:25-79
+129            </intent-filter>
+130        </receiver>
+131        <receiver
+131-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:50:9-55:20
+132            android:name="com.rockhard.blocker.ShutdownReceiver"
+132-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:50:19-51
+133            android:exported="true" >
+133-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:50:52-75
+134            <intent-filter>
+134-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:51:13-54:29
+135                <action android:name="android.intent.action.ACTION_SHUTDOWN" />
+135-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:17-80
+135-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:52:25-77
+136                <action android:name="android.intent.action.QUICKBOOT_POWEROFF" />
+136-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:53:17-83
+136-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:53:25-80
+137            </intent-filter>
+138        </receiver>
+139
+140        <activity
+140-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:60:9-66:20
+141            android:name="com.rockhard.blocker.ProcessTextActivity"
+141-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:60:19-54
+142            android:exported="true"
+142-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:60:127-150
+143            android:label="Overcome"
+143-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:60:55-79
+144            android:theme="@android:style/Theme.NoDisplay" >
+144-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:60:80-126
+145            <intent-filter>
+145-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:61:13-65:29
+146                <action android:name="android.intent.action.PROCESS_TEXT" />
+146-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:62:17-77
+146-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:62:25-74
 147
-148        <receiver
-148-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:64:9-79
-149            android:name="com.rockhard.blocker.WatchdogReceiver"
-149-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:64:19-51
-150            android:exported="false" />
-150-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:64:52-76
-151    </application>
-152
-153</manifest>
+148                <category android:name="android.intent.category.DEFAULT" />
+148-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:63:17-76
+148-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:63:27-73
+149
+150                <data android:mimeType="text/plain" />
+150-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:64:17-55
+150-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:64:23-52
+151            </intent-filter>
+152        </activity>
+153
+154        <receiver
+154-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:68:9-79
+155            android:name="com.rockhard.blocker.WatchdogReceiver"
+155-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:68:19-51
+156            android:exported="false" />
+156-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:68:52-76
+157
+158        <!-- SyncAdapter & Authenticator Services -->
+159        <service
+159-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:71:9-76:19
+160            android:name="com.rockhard.blocker.sync.StubAuthenticatorService"
+160-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:71:18-63
+161            android:exported="true" >
+161-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:71:64-87
+162            <intent-filter>
+162-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:72:13-74:29
+163                <action android:name="android.accounts.AccountAuthenticator" />
+163-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:73:17-80
+163-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:73:25-77
+164            </intent-filter>
+165
+166            <meta-data
+166-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:75:13-117
+167                android:name="android.accounts.AccountAuthenticator"
+167-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:75:24-76
+168                android:resource="@xml/authenticator" />
+168-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:75:77-114
+169        </service>
+170        <service
+170-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:78:9-83:19
+171            android:name="com.rockhard.blocker.sync.DummySyncService"
+171-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:78:18-55
+172            android:exported="true"
+172-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:78:56-79
+173            android:process=":sync" >
+173-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:78:80-103
+174            <intent-filter>
+174-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:79:13-81:29
+175                <action android:name="android.content.SyncAdapter" />
+175-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:80:17-70
+175-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:80:25-67
+176            </intent-filter>
+177
+178            <meta-data
+178-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:82:13-105
+179                android:name="android.content.SyncAdapter"
+179-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:82:24-66
+180                android:resource="@xml/syncadapter" />
+180-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:82:67-102
+181        </service>
+182
+183        <provider
+183-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:85:9-88:39
+184            android:name="com.rockhard.blocker.sync.StubContentProvider"
+184-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:85:19-59
+185            android:authorities="com.rockhard.blocker.provider"
+185-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:86:13-64
+186            android:exported="false"
+186-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:87:13-37
+187            android:syncable="true" />
+187-->/workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:88:13-36
+188    </application>
+189
+190</manifest>

@@ -5,6 +5,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.CountDownTimer
 import android.os.Handler
@@ -18,6 +19,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 
 class GuardianService : AccessibilityService() {
@@ -36,36 +38,40 @@ class GuardianService : AccessibilityService() {
 
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
+    private var nightfallDimView: View? = null
     private var isOverlayShowing = false
+    private var isNightfallDimShowing = false
     private var bossTimer: CountDownTimer? = null
     private lateinit var ruleEngine: ShieldRuleEngine
+    private lateinit var dpm: DevicePolicyManager
+    private lateinit var compName: ComponentName
     
     private var lastScanTime = 0L
     private val CONTENT_SCAN_COOLDOWN_MS = 1500L
+    
+    private var currentActivityClass: String = ""
+
+    // Whitelisted wake lock to bypass aggressive Honor/Huawei/Meizu standby kills
+    private var wakeLock: android.os.PowerManager.WakeLock? = null
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val nightfallRunnable = object : Runnable {
+        override fun run() {
+            checkNightfallTick()
+            handler.postDelayed(this, 1000)
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "HEARTBEAT_TICK") {
-            val time = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault()).format(java.util.Date())
-            val builder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                android.app.Notification.Builder(this, "shield_channel")
-            } else {
-                @Suppress("DEPRECATION") android.app.Notification.Builder(this)
-            }
-            val notification = builder.setContentTitle("Rock Hard Shield Active")
-                .setContentText("Guarding your digital environment. Last check: $time")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setOngoing(true)
-                .build()
-            
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-            nm.notify(1011, notification)
-        }
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        compName = ComponentName(this, AdminReceiver::class.java)
+        
         val dynamicAppName = packageManager.getApplicationLabel(applicationInfo).toString()
         ruleEngine = ShieldRuleEngine(getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE), dynamicAppName)
 
@@ -87,6 +93,12 @@ class GuardianService : AccessibilityService() {
             .build()
         
         startForeground(1011, notification)
+        handler.post(nightfallRunnable)
+
+        // WakeLock Tag Hack initiation
+        val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "LocationManagerService")
+        wakeLock?.acquire()
 
         addLog("Service Connected.")
         Toast.makeText(this, "Rock Hard Shield Activated!", Toast.LENGTH_LONG).show()
@@ -97,6 +109,69 @@ class GuardianService : AccessibilityService() {
         }, 500)
     }
 
+    private fun checkNightfallTick() {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        val nfStart = prefs.getInt("NIGHTFALL_START", -1)
+        val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
+
+        if (nfStart != -1 && nfEnd != -1 && nfStart != nfEnd) {
+            val cal = Calendar.getInstance()
+            val currentMins = (cal.get(Calendar.HOUR_OF_DAY) * 60) + cal.get(Calendar.MINUTE)
+            val isNightfall = if (nfStart < nfEnd) { currentMins in nfStart..nfEnd } else { currentMins >= nfStart || currentMins <= nfEnd }
+            
+            var warnStart = nfStart - 5
+            if (warnStart < 0) warnStart += 1440
+            val isWarn = if (warnStart < nfStart) { currentMins in warnStart until nfStart } else { currentMins >= warnStart || currentMins < nfStart }
+
+            if (isNightfall) {
+                updateNightfallDimmer(0f) 
+                if (dpm.isAdminActive(compName)) {
+                    Toast.makeText(this, "Overcoming sleeplessness. Time to rest.", Toast.LENGTH_SHORT).show()
+                    dpm.lockNow()
+                }
+            } else if (isWarn) {
+                val currSecs = currentMins * 60 + cal.get(Calendar.SECOND)
+                val wStartSecs = warnStart * 60
+                var diff = currSecs - wStartSecs
+                if (diff < 0) diff += 86400
+                var alpha = diff / 300f
+                if (alpha > 0.95f) alpha = 0.95f
+                updateNightfallDimmer(alpha)
+            } else {
+                updateNightfallDimmer(0f)
+            }
+        } else {
+            updateNightfallDimmer(0f)
+        }
+    }
+
+    private fun updateNightfallDimmer(alpha: Float) {
+        if (alpha <= 0f) {
+            if (isNightfallDimShowing && nightfallDimView != null) {
+                windowManager?.removeView(nightfallDimView)
+                nightfallDimView = null
+                isNightfallDimShowing = false
+            }
+            return
+        }
+
+        if (!isNightfallDimShowing) {
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+            ).apply { gravity = Gravity.CENTER }
+            
+            nightfallDimView = View(this).apply { setBackgroundColor(Color.BLACK) }
+            try { 
+                windowManager?.addView(nightfallDimView, params)
+                isNightfallDimShowing = true 
+            } catch (e: Exception) {}
+        }
+        nightfallDimView?.alpha = alpha
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || System.currentTimeMillis() < pauseUntil) return
 
@@ -105,12 +180,28 @@ class GuardianService : AccessibilityService() {
         val now = System.currentTimeMillis()
         val isWindowStateChange = event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 
-        // --- LIVE UI DEBUGGER FOR CHINESE ROMS ---
         if (isWindowStateChange) {
-            val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
-            if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
-                Toast.makeText(this, "PKG: $packageName\nCLS: $className", Toast.LENGTH_SHORT).show()
-                addLog("VISIT: $packageName | $className")
+            val time = appTimeTrackers[packageName] ?: 0L
+            appTimeTrackers[packageName] = time + 1000L
+            currentActivityClass = className
+        }
+
+        val rootNode = rootInActiveWindow
+        val isAdminActive = dpm.isAdminActive(compName)
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+        if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
+            if (packageName.contains("tencent.mm")) {
+                if (isWindowStateChange) {
+                    addLog("[WND] $className") 
+                }
+                if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+                    val node = event.source
+                    val resId = node?.viewIdResourceName?.substringAfterLast("/") ?: "null"
+                    val txt = node?.text ?: node?.contentDescription ?: "null"
+                    addLog("[CLICK] ID=$resId | TXT=$txt") 
+                    node?.recycle()
+                }
             }
         }
 
@@ -119,29 +210,50 @@ class GuardianService : AccessibilityService() {
         }
         lastScanTime = now
 
-        if (isWindowStateChange) {
-            val time = appTimeTrackers[packageName] ?: 0L
-            appTimeTrackers[packageName] = time + 1000L
-        }
-
-        val rootNode = rootInActiveWindow
-        
-        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val compName = ComponentName(this, AdminReceiver::class.java)
-        val isAdminActive = dpm.isAdminActive(compName)
-
-        val action = ruleEngine.evaluate(packageName, className, rootNode, isAdminActive)
+        val action = ruleEngine.evaluate(packageName, currentActivityClass, rootNode, isAdminActive)
 
         when (action) {
             is ShieldAction.Block -> {
                 if (rootNode != null && !rootNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) performGlobalAction(GLOBAL_ACTION_BACK)
                 performGlobalAction(GLOBAL_ACTION_HOME)
-                triggerBossInvasion(action.reason, action.canDefend)
+                
+                if (action.redirectTarget != null) {
+                    handleRedirect(action.redirectTarget)
+                } else {
+                    triggerBossInvasion(action.reason, action.canDefend)
+                }
             }
             is ShieldAction.RewardApp -> handleReward(action.triggerWord, "BLOCKLIST_APP")
             is ShieldAction.RewardWeb -> handleReward(action.triggerWord, "BLOCKLIST_WEB")
             is ShieldAction.WeatherBuff -> handleWeatherBuff(action.element)
             ShieldAction.Allow -> { /* Do nothing */ }
+        }
+    }
+
+    private fun handleRedirect(target: String) {
+        pauseUntil = System.currentTimeMillis() + 4000L
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(this, "⚡ Urge Defeated! Energy Redirected!", Toast.LENGTH_LONG).show()
+            try {
+                if (target.startsWith("package:")) {
+                    val pkg = target.removePrefix("package:")
+                    val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(launchIntent)
+                    } else {
+                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                } else {
+                    var url = target
+                    if (!url.startsWith("http")) url = "https://$url"
+                    val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(browserIntent)
+                }
+            } catch (e: Exception) {
+                addLog("Redirect failed: ${e.message}")
+            }
         }
     }
 
@@ -166,7 +278,11 @@ class GuardianService : AccessibilityService() {
                 Toast.makeText(this, "You found an orphaned $bName!", Toast.LENGTH_LONG).show()
             }
         } else {
-            MomentumEngine.addEarnedMomentum(prefs, triggerWord, false)
+            val now = System.currentTimeMillis()
+            val mins = kotlin.random.Random.nextInt(10, 20)
+            val current = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+            val newEntry = "$triggerWord|$mins|$now"
+            prefs.edit().putString("MOMENTUM_EARNED_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
             Handler(Looper.getMainLooper()).post {
                 Toast.makeText(this, "First time overcoming $triggerWord! Momentum Gained!", Toast.LENGTH_LONG).show()
             }
@@ -257,10 +373,10 @@ class GuardianService : AccessibilityService() {
             }
 
             if (!canDefend) {
-                tvTitle?.text = "🌙 REST PROTECTED 🌙"
-                tvMsg?.text = "Sleep block active.\n\nGo to sleep."
+                tvTitle?.text = "🛑 SYSTEM LOCKED 🛑"
+                tvMsg?.text = "$debugReason\n\nThis action cannot be bypassed without a System Override."
                 btnDefend?.visibility = View.GONE
-                btnYield?.text = "Praise God"
+                btnYield?.text = "Understood"
                 btnYield?.setOnClickListener { fleeLogic() }
             } else {
                 if (isGamers) {
@@ -319,6 +435,14 @@ class GuardianService : AccessibilityService() {
             windowManager?.removeView(overlayView)
             overlayView = null
             isOverlayShowing = false
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(nightfallRunnable)
+        if (wakeLock?.isHeld == true) {
+            wakeLock?.release()
         }
     }
 

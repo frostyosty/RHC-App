@@ -24,6 +24,10 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/mipmap-xxhdpi/ic_game.png"
     },
     {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/xml_syncadapter.xml.flat",
+        "source": "com.rockhard.blocker.app-main-5:/xml/syncadapter.xml"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/layout_game_nav_tabs.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/game_nav_tabs.xml"
     },
@@ -38,6 +42,10 @@
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_cacheon.png.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_cacheon.png"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/xml_authenticator.xml.flat",
+        "source": "com.rockhard.blocker.app-main-5:/xml/authenticator.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/xml_device_admin.xml.flat",
@@ -82,10 +90,6 @@
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/layout_card_onboarding.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/card_onboarding.xml"
-    },
-    {
-        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/layout_activity_main.xml.flat",
-        "source": "com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable_ic_sys_sync.xml.flat",

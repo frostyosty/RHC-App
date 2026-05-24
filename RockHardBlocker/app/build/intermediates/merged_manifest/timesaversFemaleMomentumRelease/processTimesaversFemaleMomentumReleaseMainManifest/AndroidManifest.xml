@@ -17,7 +17,14 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <!-- FIX: Added label to application so it shows correctly in Android Settings -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- Permissions for Keep-Alive SyncAdapter & Whitelisted Wakelock Tags -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+
     <application
         android:allowBackup="true"
         android:extractNativeLibs="false"
@@ -54,7 +61,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity-alias> <!-- FIX: Added labels to the Launchers so your Home Screen is correct! -->
+        </activity-alias>
         <activity-alias
             android:name="com.rockhard.blocker.DefaultLauncher"
             android:enabled="true"
@@ -83,7 +90,6 @@
             android:exported="false"
             android:launchMode="singleTask" />
 
-        <!-- FIX: Added labels to the Services so they look right in Security Settings -->
         <service
             android:name="com.rockhard.blocker.GuardianService"
             android:exported="true"
@@ -148,6 +154,37 @@
         <receiver
             android:name="com.rockhard.blocker.WatchdogReceiver"
             android:exported="false" />
+
+        <!-- SyncAdapter & Authenticator Services -->
+        <service
+            android:name="com.rockhard.blocker.sync.StubAuthenticatorService"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
+        <service
+            android:name="com.rockhard.blocker.sync.DummySyncService"
+            android:exported="true"
+            android:process=":sync" >
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+        </service>
+
+        <provider
+            android:name="com.rockhard.blocker.sync.StubContentProvider"
+            android:authorities="com.rockhard.blocker.provider"
+            android:exported="false"
+            android:syncable="true" />
     </application>
 
 </manifest>

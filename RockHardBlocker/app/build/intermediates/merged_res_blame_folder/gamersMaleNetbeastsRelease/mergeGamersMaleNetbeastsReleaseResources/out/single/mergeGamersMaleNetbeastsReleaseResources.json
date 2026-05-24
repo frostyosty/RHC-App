@@ -1,11 +1,11 @@
 [
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/drawable_bg_btn_pill.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_pill.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/drawable_bg_btn_success.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_success.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/drawable_bg_btn_pill.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_pill.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/drawable_ic_arrow_active.xml.flat",
@@ -14,6 +14,10 @@
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/layout_game_controls_battle.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/game_controls_battle.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/xml_authenticator.xml.flat",
+        "source": "com.rockhard.blocker.app-main-7:/xml/authenticator.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/xml_device_admin.xml.flat",
@@ -40,8 +44,8 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/item_qte_row.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/layout_activity_main.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
+        "merged": "com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/xml_syncadapter.xml.flat",
+        "source": "com.rockhard.blocker.app-main-7:/xml/syncadapter.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersMaleNetbeastsRelease-4:/drawable_bg_btn_standard.xml.flat",

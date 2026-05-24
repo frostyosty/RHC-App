@@ -39,13 +39,35 @@
 
         <include layout="@layout/card_overcome"/>
 
-        <!-- NEW: SCHEDULE OVERRIDE SYSTEM -->
-        <!-- NEW: DRASTIC OVERCOMING -->
+        <!-- HABIT SUBSTITUTION (REDIRECT) -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="HABIT SUBSTITUTION" android:textAlignment="center" android:textColor="#4CAF50" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Redirect bad habits instantly into productive ones." android:textAlignment="center" android:textColor="#888" android:textSize="12sp" android:layout_marginBottom="16dp"/>
+            
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="When I try to access:" android:textColor="#FFF" android:textSize="14sp" />
+            <Spinner android:id="@+id/spinRedirectTrigger" android:layout_width="match_parent" android:layout_height="48dp" android:backgroundTint="#4CAF50" android:layout_marginBottom="12dp"/>
+            
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Channel energy to:" android:textColor="#FFF" android:textSize="14sp" />
+            <Spinner android:id="@+id/spinRedirectTarget" android:layout_width="match_parent" android:layout_height="48dp" android:backgroundTint="#4CAF50" android:layout_marginBottom="8dp"/>
+            
+            <EditText android:id="@+id/etCustomRedirect" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Enter custom URL (e.g. en.wikipedia.org)" android:textColorHint="#666" android:textColor="#FFF" android:backgroundTint="#FFF" android:singleLine="true" android:visibility="gone" android:layout_marginBottom="8dp"/>
+            <Spinner android:id="@+id/spinCustomApp" android:layout_width="match_parent" android:layout_height="48dp" android:backgroundTint="#4CAF50" android:visibility="gone" android:layout_marginBottom="8dp"/>
+            
+            <Button android:id="@+id/btnAddRedirect" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_success" android:text="ADD REDIRECT" android:textColor="#FFFFFF" />
+            
+            <LinearLayout android:id="@+id/llRedirects" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="16dp"/>
+        </LinearLayout>
+
+        <!-- DRASTIC OVERCOMING -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="24dp" android:layout_marginBottom="16dp">
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="DRASTIC OVERCOMING" android:textAlignment="center" android:textColor="#F44336" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="These nuclear options can be engaged instantly, but can ONLY be disabled by scheduling a System Override Pause below." android:textAlignment="center" android:textColor="#888888" android:textSize="12sp" android:layout_marginBottom="16dp"/>
-            <Button android:id="@+id/btnDrasticDumbPhone" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Make My Phone a Dumb Phone" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            
+            <Button android:id="@+id/btnDrasticDumbPhoneCamera" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Dumb Phone (WITH Camera)" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDrasticDumbPhoneNoCamera" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Dumb Phone (NO Camera)" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            
             <Button android:id="@+id/btnDrasticNoInternet" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Remove Internet From My Phone" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDrasticNoVideos" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Block All Videos System-Wide" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
             <Button android:id="@+id/btnDrasticCallsOnly" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_danger" android:text="Calls and Texts ONLY" android:textColor="#FFFFFF"/>
         </LinearLayout>
 
@@ -56,22 +78,20 @@
                 <TextView android:id="@+id/tvTerminalOutput" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="10sp" android:fontFamily="monospace"/>
             </ScrollView>
         </LinearLayout>
-        <Button android:id="@+id/btnToggleOverride" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginTop="24dp" android:background="@drawable/bg_btn_standard" android:text="SYSTEM OVERRIDE (UNINSTALL/PAUSE)" android:textColor="#FFFFFF" />
         
+        <!-- SYSTEM OVERRIDE -->
+        <Button android:id="@+id/btnToggleOverride" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginTop="24dp" android:background="@drawable/bg_btn_standard" android:text="SYSTEM OVERRIDE (UNINSTALL/PAUSE)" android:textColor="#FFFFFF" />
         <LinearLayout android:id="@+id/llOverrideDetails" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="8dp" android:layout_marginBottom="40dp">
             <TextView android:id="@+id/tvOverrideStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Select delay before unlock:" android:textColor="#FFFFFF" android:textSize="14sp" android:layout_marginBottom="12dp"/>
-            
-            <SeekBar android:id="@+id/seekOverride" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="3" android:progress="0" />
-            
+            <SeekBar android:id="@+id/seekOverride" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="4" android:progress="0" />
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="3 Days" android:textColor="#888" android:textSize="12sp" android:gravity="start"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="5 Days" android:textColor="#888" android:textSize="12sp" android:gravity="center"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="1 Week" android:textColor="#888" android:textSize="12sp" android:gravity="center"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="2 Weeks" android:textColor="#888" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="1D" android:textColor="#888" android:textSize="11sp" android:gravity="start"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="3D" android:textColor="#888" android:textSize="11sp" android:gravity="center"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="5D" android:textColor="#888" android:textSize="11sp" android:gravity="center"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="1W" android:textColor="#888" android:textSize="11sp" android:gravity="center"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="2W" android:textColor="#888" android:textSize="11sp" android:gravity="end"/>
             </LinearLayout>
-            
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Note: You can only increase this delay, never decrease it." android:textColor="#F44336" android:textSize="12sp" android:layout_marginTop="8dp" android:layout_marginBottom="16dp" android:textStyle="italic"/>
-            
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
                 <Button android:id="@+id/btnSchedPause" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_btn_warning" android:text="SCHED PAUSE" android:textColor="#FFFFFF" android:layout_marginEnd="4dp"/>
                 <Button android:id="@+id/btnSchedUninstall" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_btn_danger" android:text="SCHED UNINSTALL" android:textColor="#FFFFFF" android:layout_marginStart="4dp"/>

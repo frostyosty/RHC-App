@@ -15,7 +15,7 @@ id barMomentum
 id battleArena
 id battleControls
 id btnAbandon
-id btnAddApp
+id btnAddRedirect
 id btnAddWeb
 id btnBattleNet
 id btnBattlePot
@@ -33,8 +33,10 @@ id btnDialogPositive
 id btnDispatch
 id btnDistribute
 id btnDrasticCallsOnly
-id btnDrasticDumbPhone
+id btnDrasticDumbPhoneCamera
+id btnDrasticDumbPhoneNoCamera
 id btnDrasticNoInternet
+id btnDrasticNoVideos
 id btnEqNet
 id btnEqPot
 id btnEqSpray
@@ -73,6 +75,7 @@ id btnUnequip
 id btnYield
 id cardOvercomeApp
 id cardOvercomeWeb
+id etCustomRedirect
 id etCustomWeb
 id infoMove1
 id infoMove2
@@ -88,6 +91,7 @@ id llLeaderList
 id llMomentumContainer
 id llOnboarding
 id llOverrideDetails
+id llRedirects
 id llSafariCard
 id llShopContainer
 id llSpentList
@@ -101,7 +105,17 @@ id peaceControls
 id qteContainer
 id seekDifficulty
 id seekOverride
-id spinApps
+id spinAllApps
+id spinCustomApp
+id spinNewsApps
+id spinNewsWeb
+id spinRedirectTarget
+id spinRedirectTrigger
+id spinSearchWeb
+id spinSocialApps
+id spinSocialWeb
+id spinVideoApps
+id spinVideoWeb
 id spriteEnemy
 id spriteEnemyContainer
 id spritePlayer
@@ -161,5 +175,7 @@ style AppCard
 style AppTheme
 style TextConsole
 style TextHeader
+xml authenticator
 xml device_admin
 xml guardian_config
+xml syncadapter

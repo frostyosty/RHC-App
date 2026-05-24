@@ -6,5 +6,6 @@ namespace RHC {
         void Initialize(HINSTANCE hInstance);
         void Show();
         HWND GetWindowHandle();
+        void UpdateOverlay(int mode, int param);
     }
 }
