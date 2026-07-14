@@ -1,7 +1,9 @@
 #include "DesktopUtils.h"
 #include "Globals.h"
+#include "ui/CustomModal.h"
 #include <windows.h>
 #include <ctime>
+#include <dwmapi.h>
 #include <iostream>
 #include "../../rhc-common/include/StringUtils.h"
 
@@ -83,7 +85,7 @@ namespace RHC {
         }
 
         void ShowErrorModal(HWND hwndParent, const std::wstring& title, const std::wstring& message) {
-            MessageBoxW(hwndParent, message.c_str(), title.c_str(), MB_OK | MB_ICONERROR | MB_APPLMODAL | MB_SETFOREGROUND);
+            RHC::UI::CustomModal::Show(hwndParent, title, message);
         }
 
         int GetAllowedWindowDuration(const std::string& timeWindow) {
@@ -123,6 +125,45 @@ namespace RHC {
             };
             
             return formatHalf(sh, sm) + " to " + formatHalf(eh, em);
+        }
+
+        bool IsStrictSubset(const std::string& oldTime, const std::string& newTime) {
+            if (oldTime == "None" || oldTime.empty()) return false;
+            if (newTime == "None" || newTime.empty()) return true;
+
+            auto oldParts = RHC::StringUtils::split(oldTime, '-');
+            if (oldParts.size() != 2) return false;
+            int osh, osm, oeh, oem;
+            if (std::sscanf(oldParts[0].c_str(), "%d:%d", &osh, &osm) != 2 || std::sscanf(oldParts[1].c_str(), "%d:%d", &oeh, &oem) != 2) return false;
+
+            auto newParts = RHC::StringUtils::split(newTime, '-');
+            if (newParts.size() != 2) return false;
+            int nsh, nsm, neh, nem;
+            if (std::sscanf(newParts[0].c_str(), "%d:%d", &nsh, &nsm) != 2 || std::sscanf(newParts[1].c_str(), "%d:%d", &neh, &nem) != 2) return false;
+
+            int oldStart = osh * 60 + osm;
+            int oldEnd   = oeh * 60 + oem;
+            int newStart = nsh * 60 + nsm;
+            int newEnd   = neh * 60 + nem;
+
+            if (oldStart > oldEnd) {
+                if (newStart > newEnd) {
+                    return (newStart >= oldStart && newEnd <= oldEnd);
+                } else {
+                    return (newStart >= oldStart || newEnd <= oldEnd);
+                }
+            } else {
+                if (newStart > newEnd) return false;
+                return (newStart >= oldStart && newEnd <= oldEnd);
+            }
+        }
+
+        void ApplyDarkTitleBar(HWND hwnd) {
+            #ifndef DWMWA_USE_DARK_MODE
+            #define DWMWA_USE_DARK_MODE 20
+            #endif
+            BOOL useDarkMode = TRUE;
+            DwmSetWindowAttribute(hwnd, DWMWA_USE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
         }
 
     }

@@ -46,6 +46,8 @@ id btnFightAether
 id btnGame
 id btnGraveyard
 id btnInfuse
+id btnMainNightfallEnd
+id btnMainNightfallStart
 id btnMove1
 id btnMove2
 id btnMove3
@@ -53,6 +55,7 @@ id btnPauseBlocker
 id btnQteAmbush
 id btnQteAvoid
 id btnQteNet
+id btnSafeAppManager
 id btnSchedPause
 id btnSchedUninstall
 id btnSellNet
@@ -75,6 +78,7 @@ id btnUnequip
 id btnYield
 id cardOvercomeApp
 id cardOvercomeWeb
+id cbMainNightfall
 id etCustomRedirect
 id etCustomWeb
 id infoMove1
@@ -88,7 +92,10 @@ id llDebugTerminal
 id llDialogContent
 id llEarnedList
 id llLeaderList
+id llMainContent
+id llMainNightfallTimes
 id llMomentumContainer
+id llNightfallCard
 id llOnboarding
 id llOverrideDetails
 id llRedirects

@@ -56,34 +56,6 @@ adb uninstall [apk name]
 
 
 
-cd /workspaces/RHC-App/RockHardBlocker
-
-# 1. Compile all four flavors
-./gradlew assembleGamersMaleNetbeastsRelease
-./gradlew assembleGamersFemaleHomevisitsRelease
-./gradlew assembleTimesaversMaleMomentumRelease
-./gradlew assembleTimesaversFemaleMomentumRelease
-
-# 2. Copy and rename them to match the website's JS fileMap
-cp app/build/outputs/apk/gamersMaleNetbeasts/release/app-gamersMaleNetbeasts-release.apk ../rhc_netbeasts.apk
-cp app/build/outputs/apk/gamersFemaleHomevisits/release/app-gamersFemaleHomevisits-release.apk ../rhc_homevisits.apk
-cp app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk ../rhc_momentum_m.apk
-cp app/build/outputs/apk/timesaversFemaleMomentum/release/app-timesaversFemaleMomentum-release.apk ../rhc_momentum_f.apk
-
-# 3. Create the release and upload ALL 4 APKs at once
-cd /workspaces/RHC-App
-TAG="v$(date +%Y%m%d%H%M%S)"
-GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" \
-  ./rhc_netbeasts.apk \
-  ./rhc_homevisits.apk \
-  ./rhc_momentum_m.apk \
-  ./rhc_momentum_f.apk \
-  --repo frostyosty/htc-downloads-rhc \
-  --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
-  --notes "Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
-
-
-
 
 
   # Navigate to the Desktop project directory

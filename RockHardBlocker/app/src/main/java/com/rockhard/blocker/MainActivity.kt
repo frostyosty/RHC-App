@@ -110,10 +110,46 @@ class MainActivity : Activity() {
         }
 
         findViewById<Button>(R.id.btnGame).setOnClickListener { startActivity(Intent(this, GameActivity::class.java)) }
+        
+        // --- NEW: Attach Uninstaller listener to the main layout button ---
+        findViewById<Button>(R.id.btnSafeAppManager)?.setOnClickListener { showSafeUninstaller() }
+        
+        findViewById<Button>(R.id.btnTestFilter)?.setOnClickListener {
+            refreshUI()
+            val step1 = isAccessibilityServiceEnabled(this, GuardianService::class.java)
+            val step2 = dpm.isAdminActive(compName)
+            val pow = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            val step3 = pow.isIgnoringBatteryOptimizations(packageName)
+            val isChinese = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
+            val step4 = prefs.getBoolean("STEP4_CLICKED", false)
+            val step5 = prefs.getBoolean("STEP5_CLICKED", false)
+            val done = (step1 && step2 && step3 && (!isChinese || (step4 && step5)))
+            if (done) {
+                Toast.makeText(this, "🛡️ ALL SYSTEMS VERIFIED! Reward Unlocked!", Toast.LENGTH_LONG).show()
+            } else {
+                val missing = mutableListOf<String>()
+                if (!step1) missing.add("Step 1 (Accessibility)")
+                if (!step2) missing.add("Step 2 (Device Admin)")
+                if (!step3) missing.add("Step 3 (Battery Optimization)")
+                if (isChinese && !step4) missing.add("Step 4 (Autostart)")
+                if (isChinese && !step5) missing.add("Step 5 (Secure Manager)")
+                Toast.makeText(this, "⚠️ Setup incomplete! Missing: " + missing.joinToString(", "), Toast.LENGTH_LONG).show()
+            }
+        }
+
 
         setupCategorizedSpinners()
         setupRedirectUI()
         setupSyncAdapter()
+
+        findViewById<EditText>(R.id.etCustomWeb)?.apply {
+            setTextColor(Color.parseColor("#121212"))
+            setHintTextColor(Color.parseColor("#757575"))
+        }
+        findViewById<EditText>(R.id.etCustomRedirect)?.apply {
+            setTextColor(Color.parseColor("#121212"))
+            setHintTextColor(Color.parseColor("#757575"))
+        }
 
         findViewById<Button>(R.id.btnAddWeb).setOnClickListener { 
             val webInput = findViewById<EditText>(R.id.etCustomWeb).text.toString().trim().lowercase()
@@ -155,9 +191,9 @@ class MainActivity : Activity() {
         updateDrasticUI()
 
         val confirmDrastic = { key: String, title: String, msg: String ->
-            val isGodModeActive = System.currentTimeMillis() < prefs.getLong("ALLOW_SETTINGS_UNTIL", 0L)
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
             if (prefs.getBoolean(key, false)) {
-                if (isGodModeActive) {
+                if (isPauseActive) {
                     prefs.edit().putBoolean(key, false).apply(); updateDrasticUI(); Toast.makeText(this, "Drastic Mode Disabled.", Toast.LENGTH_SHORT).show()
                 } else { Toast.makeText(this, "Must schedule System Override (Pause) and execute it to disable.", Toast.LENGTH_LONG).show() }
             } else {
@@ -171,7 +207,7 @@ class MainActivity : Activity() {
         btnNoVideos.setOnClickListener { confirmDrastic("DRASTIC_NO_VIDEOS", "Block All Videos?", "This will forcefully close video players and explicitly block major video apps system-wide.\n\nCannot be undone without scheduling a System Override.") }
         btnCallsOnly.setOnClickListener { confirmDrastic("DRASTIC_CALLS_ONLY", "Engage Calls/Texts ONLY?", "NUCLEAR OPTION.\n\nYour smartphone will become a brick that can only make phone calls and send SMS text messages.\n\nCannot be undone without scheduling a System Override.") }
 
-        setupSystemOverrideUI()
+        setupSystemOverrideUI(); setupMainNightfallUI()
     }
 
     private fun setupSyncAdapter() {
@@ -371,8 +407,76 @@ class MainActivity : Activity() {
         val isChinesePhone = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
         val isPremium = prefs.getBoolean("REWARD_PREMIUM", false)
 
+        // System Shield Diagnostics Check
+        val llMainContent = findViewById<LinearLayout>(R.id.llMainContent)
+        var statusCard = llMainContent?.findViewWithTag<LinearLayout>("system_status_card")
+        if (statusCard == null && llMainContent != null) {
+            statusCard = LinearLayout(this).apply {
+                tag = "system_status_card"
+                orientation = LinearLayout.VERTICAL
+                setPadding(32, 32, 32, 32)
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 24) }
+            }
+            llMainContent.addView(statusCard, 2) // Insert right below description
+        }
+
+        if (statusCard != null) {
+            statusCard.removeAllViews()
+            val issues = mutableListOf<String>()
+            if (!step1Done) issues.add("• Accessibility Service (Step 1) is DISABLED")
+            if (!step2Done) issues.add("• Device Admin Lock (Step 2) is INACTIVE")
+            if (!stepBatteryDone) issues.add("• Battery Optimization is OPTIMIZED (Step 3)")
+            if (isChinesePhone && !step4Done) issues.add("• Autostart (Step 4) is PENDING")
+            if (isChinesePhone && !step5Done) issues.add("• Secure App Manager (Step 5) is PENDING")
+
+            if (issues.isEmpty()) {
+                statusCard.setBackgroundResource(R.drawable.bg_card)
+                statusCard.background?.setTint(Color.parseColor("#1B5E20")) // Dark Green
+                statusCard.addView(TextView(this).apply {
+                    text = "🛡️ SHIELDS: FULLY ENGAGED"
+                    setTextColor(Color.WHITE)
+                    textSize = 16f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    gravity = android.view.Gravity.CENTER
+                })
+                statusCard.addView(TextView(this).apply {
+                    text = "All background enforcement, anti-tamper, and rule systems are running smoothly."
+                    setTextColor(Color.parseColor("#C8E6C9"))
+                    textSize = 12f
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(0, 8, 0, 0)
+                })
+            } else {
+                statusCard.setBackgroundResource(R.drawable.bg_card)
+                statusCard.background?.setTint(Color.parseColor("#B71C1C")) // Dark Red
+                statusCard.addView(TextView(this).apply {
+                    text = "⚠️ SHIELDS: COMPROMISED!"
+                    setTextColor(Color.WHITE)
+                    textSize = 16f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                    gravity = android.view.Gravity.CENTER
+                })
+                statusCard.addView(TextView(this).apply {
+                    text = "The background protection is impaired. Complete the setup steps below to secure your system:"
+                    setTextColor(Color.parseColor("#FFCDD2"))
+                    textSize = 12f
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(0, 8, 0, 8)
+                })
+                issues.forEach { issue ->
+                    statusCard.addView(TextView(this).apply {
+                        text = issue
+                        setTextColor(Color.WHITE)
+                        textSize = 12f
+                        setPadding(16, 4, 16, 4)
+                    })
+                }
+            }
+        }
+
         btn2.isEnabled = step1Done; btnBatteryOpt.isEnabled = step1Done && step2Done
-        btn4?.isEnabled = step1Done && step2Done && stepBatteryDone; btn5?.isEnabled = step1Done && step2Done && stepBatteryDone && step4Done
+        btn4?.isEnabled = step1Done && step2Done && stepBatteryDone
+        btn5?.isEnabled = step1Done && step2Done && stepBatteryDone && step4Done
 
         if (step1Done) { btn1.text = "STEP 1: VERIFIED ✔️"; btn1.setBackgroundResource(R.drawable.bg_btn_success) }
         if (step2Done) { btn2.text = "STEP 2: VERIFIED ✔️"; btn2.setBackgroundResource(R.drawable.bg_btn_success) }
@@ -394,6 +498,10 @@ class MainActivity : Activity() {
         
         findViewById<View>(R.id.cardOvercomeApp)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
         findViewById<View>(R.id.cardOvercomeWeb)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
+        
+        // --- NEW: Toggle the Uninstaller button based on setup state ---
+        findViewById<View>(R.id.btnSafeAppManager)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
+
         if (isSetupDone) { 
             renderBlockList(findViewById(R.id.llBannedWebs), "BLOCKLIST_WEB")
             renderBlockList(findViewById(R.id.llBannedApps), "BLOCKLIST_APP")
@@ -413,12 +521,7 @@ class MainActivity : Activity() {
             content.addView(cbGame)
             content.addView(cbDefault)
             
-            content.addView(Button(this).apply {
-                text = "Safe App Manager (Uninstall Apps)"
-                setBackgroundResource(R.drawable.bg_btn_standard); setTextColor(android.graphics.Color.WHITE)
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 16, 0, 0) }
-                setOnClickListener { showSafeUninstaller(); dialog.dismiss() }
-            })
+            // --- FIX: The Safe App Manager button was removed from here ---
             
             val powMan = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
             val isIgnoringDoze = powMan.isIgnoringBatteryOptimizations(packageName)
@@ -478,21 +581,104 @@ class MainActivity : Activity() {
         // Auto-waking foreground accessibility lifecycle on app entry
         val step1Done = isAccessibilityServiceEnabled(this, GuardianService::class.java)
         if (step1Done) {
-            val intent = Intent(this, GuardianService::class.java).apply { action = "HEARTBEAT_TICK" }
-            try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    startForegroundService(intent)
-                } else {
-                    startService(intent)
-                }
-            } catch (e: Exception) {
-                GuardianService.addLog("Shield auto-start triggered from MainActivity.")
-            }
+            GuardianService.addLog("Shield verified active from MainActivity.")
         }
 
         refreshUI()
         if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
             findViewById<View>(R.id.llDebugTerminal)?.visibility = View.VISIBLE
+        }
+    }
+
+    private var isNightfallNewlyEnabled = false
+
+    private fun setupMainNightfallUI() {
+        val cbNightfall = findViewById<CheckBox>(R.id.cbMainNightfall) ?: return
+        val llTimes = findViewById<LinearLayout>(R.id.llMainNightfallTimes) ?: return
+        val btnStart = findViewById<Button>(R.id.btnMainNightfallStart) ?: return
+        val btnEnd = findViewById<Button>(R.id.btnMainNightfallEnd) ?: return
+
+        cbNightfall.isChecked = prefs.getInt("NIGHTFALL_START", -1) != -1
+        llTimes.visibility = if (cbNightfall.isChecked) View.VISIBLE else View.GONE
+
+        fun formatTime(mins: Int): String {
+            if (mins == -1) return "Not Set"
+            val h = mins / 60
+            val m = mins % 60
+            val ampm = if (h >= 12) "PM" else "AM"
+            val h12 = if (h % 12 == 0) 12 else h % 12
+            return String.format("%02d:%02d %s", h12, m, ampm)
+        }
+
+        var startMins = prefs.getInt("NIGHTFALL_START", 1320)
+        var endMins = prefs.getInt("NIGHTFALL_END", 360)
+        if (startMins == -1) startMins = 1320
+        if (endMins == -1) endMins = 360
+
+        btnStart.text = "Start: " + formatTime(startMins)
+        btnEnd.text = "End: " + formatTime(endMins)
+
+        cbNightfall.setOnCheckedChangeListener { buttonView, isChecked ->
+            val wasEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+
+            if (wasEnabled && !isChecked && !isPauseActive) {
+                buttonView.setOnCheckedChangeListener(null)
+                buttonView.isChecked = true
+                setupMainNightfallUI()
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to disable Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnCheckedChangeListener
+            }
+
+            if (isChecked && !wasEnabled) {
+                isNightfallNewlyEnabled = true
+            }
+
+            llTimes.visibility = if (isChecked) View.VISIBLE else View.GONE
+            val editor = prefs.edit()
+            if (isChecked) {
+                editor.putInt("NIGHTFALL_START", startMins)
+                editor.putInt("NIGHTFALL_END", endMins)
+            } else {
+                editor.putInt("NIGHTFALL_START", -1)
+                editor.putInt("NIGHTFALL_END", -1)
+                isNightfallNewlyEnabled = false
+            }
+            editor.apply()
+        }
+
+        btnStart.setOnClickListener {
+            val isCurrentlyEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isCurrentlyEnabled && !isPauseActive && !isNightfallNewlyEnabled) {
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to modify Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            val h = startMins / 60
+            val m = startMins % 60
+            android.app.TimePickerDialog(this, { _, selectedHour, selectedMinute ->
+                startMins = selectedHour * 60 + selectedMinute
+                btnStart.text = "Start: " + formatTime(startMins)
+                if (cbNightfall.isChecked) prefs.edit().putInt("NIGHTFALL_START", startMins).apply()
+            }, h, m, false).show()
+        }
+
+        btnEnd.setOnClickListener {
+            val isCurrentlyEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isCurrentlyEnabled && !isPauseActive && !isNightfallNewlyEnabled) {
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to modify Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            val h = endMins / 60
+            val m = endMins % 60
+            android.app.TimePickerDialog(this, { _, selectedHour, selectedMinute ->
+                endMins = selectedHour * 60 + selectedMinute
+                btnEnd.text = "End: " + formatTime(endMins)
+                if (cbNightfall.isChecked) prefs.edit().putInt("NIGHTFALL_END", endMins).apply()
+            }, h, m, false).show()
         }
     }
 }

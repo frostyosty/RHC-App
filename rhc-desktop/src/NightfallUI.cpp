@@ -1,4 +1,5 @@
 #include "NightfallUI.h"
+#include "ui/CustomModal.h"
 #include "include/DatabaseManager.h"
 #include <cstdio>
 
@@ -87,8 +88,8 @@ namespace RHC {
                         int sH, sM, wH, wM;
                         if (sscanf(sBuf, "%d:%d", &sH, &sM) == 2 && sscanf(wBuf, "%d:%d", &wH, &wM) == 2) {
                             RHC::DatabaseManager db("rhc_state.db"); db.putInt("NIGHTFALL_START", sH * 60 + sM); db.putInt("NIGHTFALL_END", wH * 60 + wM);
-                            MessageBoxA(hwnd, "Nightfall Schedule Locked!", "Success", MB_OK | MB_ICONINFORMATION); ShowWindow(hwnd, SW_HIDE);
-                        } else MessageBoxA(hwnd, "Invalid Format! Please use HH:MM (e.g. 22:30)", "Error", MB_ICONERROR);
+                            RHC::UI::CustomModal::Show(hwnd, L"Success", L"Nightfall Schedule Locked!"); ShowWindow(hwnd, SW_HIDE);
+                        } else RHC::UI::CustomModal::Show(hwnd, L"Error", L"Invalid Format! Please use HH:MM (e.g. 22:30)");
                     } return 0;
                 case WM_CTLCOLORSTATIC: SetTextColor((HDC)wParam, RGB(255, 255, 255)); SetBkColor((HDC)wParam, RGB(18, 18, 18)); return (LRESULT)CreateSolidBrush(RGB(18, 18, 18));
                 case WM_CLOSE: ShowWindow(hwnd, SW_HIDE); return 0;

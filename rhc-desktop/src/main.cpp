@@ -11,6 +11,8 @@
 #include "DashboardUI.h"
 #include "TrayUI.h"
 #include "ui/SmoothButton.h"
+#include "ui/CustomModal.h"
+#include "ui/Renderer.h"
 #include "include/DatabaseManager.h"
 
 // --- Unity Build Includes ---
@@ -73,7 +75,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     RHC::CrashReporter::Initialize(); 
     RHC::CloakEngine::UncloakIfNeeded(); 
     RHC::CloakEngine::RegisterStartup(); 
-    InitCommonControls(); 
+    InitCommonControls();
+    RHC::UI::Renderer::Initialize(); 
 
     // Build the Categorized Map for the dynamic UI
     for (const auto& t : g_Tasks) {
@@ -108,14 +111,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         if (db.getInt("FIRST_LAUNCH", 0) == 0) { 
             db.putInt("FIRST_LAUNCH", 1); 
             RHC::DashboardUI::UpdateDashboardText(); 
-            ShowWindow(g_hDashboardWindow, SW_RESTORE); SetForegroundWindow(g_hDashboardWindow); 
+            // Apply dark caption title bar
+            RHC::Utils::ApplyDarkTitleBar(g_hMainWindow);
+            RHC::Utils::ApplyDarkTitleBar(g_hDashboardWindow);
+            
+            // Aggressively steal foreground window focus on initial install
+            ShowWindow(g_hDashboardWindow, SW_RESTORE); 
+            SetWindowPos(g_hDashboardWindow, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            SetWindowPos(g_hDashboardWindow, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            HWND hFore = GetForegroundWindow();
+            DWORD foreThread = GetWindowThreadProcessId(hFore, NULL);
+            DWORD appThread = GetCurrentThreadId();
+            if (foreThread != appThread) {
+                AttachThreadInput(appThread, foreThread, TRUE);
+                SetForegroundWindow(g_hDashboardWindow);
+                AttachThreadInput(appThread, foreThread, FALSE);
+            } else {
+                SetForegroundWindow(g_hDashboardWindow);
+            } 
             RHC::CustomTaskManager::Show(); 
-            MessageBoxW(g_hDashboardWindow, L"Welcome to the Momentum Core.\n\nThis is your new impenetrable Task Manager.", L"Secure Task Manager Initialized", MB_OK | MB_ICONINFORMATION);
+            RHC::UI::CustomModal::Show(g_hDashboardWindow, L"Secure Task Manager Initialized", L"Welcome to the Momentum Core.\n\nThis is your new impenetrable Task Manager.");
         } 
     }
 
     std::thread guardian(RHC::GuardianThread); guardian.detach();
-    MSG msg = {0}; while (GetMessage(&msg, NULL, 0, 0)) { TranslateMessage(&msg); DispatchMessage(&msg); }
+    MSG msg = {0};
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        HWND hActive = GetActiveWindow();
+        if (hActive && IsDialogMessageW(hActive, &msg)) {
+            continue;
+        }
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
     if (g_hKeyboardHook) UnhookWindowsHookEx(g_hKeyboardHook);
+    RHC::UI::Renderer::Shutdown();
     return 0;
 }

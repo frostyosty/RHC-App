@@ -2,6 +2,7 @@
 #include "Globals.h"
 #include "DesktopUtils.h"
 #include "ui/SmoothButton.h"
+#include "ui/CustomModal.h"
 #include "include/DatabaseManager.h"
 #include "include/MomentumEngine.h"
 #include "include/LeaderboardEngine.h"
@@ -311,11 +312,11 @@ namespace RHC {
                 db.putString("RECENT_TASKS", newRt);
 
                 RHC::LeaderboardEngine::submitScoreAsync(db, task.cost);
-                MessageBoxW(g_hDashboardWindow, L"Momentum Spent! Logged to Ledgers.", L"Success", MB_OK | MB_ICONINFORMATION);
+                RHC::UI::CustomModal::Show(g_hDashboardWindow, L"Success", L"Momentum Spent! Logged to Ledgers.");
                 UpdateDashboardText();
                 RefreshLogsUI();
             } else {
-                MessageBoxW(g_hDashboardWindow, L"Not enough Momentum. Overcome urges first!", L"Error", MB_OK | MB_ICONERROR);
+                RHC::UI::CustomModal::Show(g_hDashboardWindow, L"Error", L"Not enough Momentum. Overcome urges first!");
             }
         }
 
@@ -460,11 +461,7 @@ namespace RHC {
                     }
 
                     if (id == ID_BTN_BYPASS_HELP) {
-                        MessageBoxW(hwnd, 
-                            L"You CAN access this app or website during this time.\n\n"
-                            L"Cannot overwrite to extend the bypass window, but can overwrite it to be smaller.", 
-                            L"Bypass Window Info", 
-                            MB_OK | MB_ICONINFORMATION | MB_APPLMODAL | MB_SETFOREGROUND);
+                        RHC::UI::CustomModal::Show(hwnd, L"Bypass Window Info", L"You CAN access this app or website during this time.\n\nCannot overwrite to extend the bypass window, but can overwrite it to be smaller.");
                         return 0;
                     }
 

@@ -74,13 +74,13 @@ INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.x
 	android:extractNativeLibs
 		INJECTED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml
 	android:supportsRtl
-		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:45-71
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:46-72
 	android:label
-		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:120-152
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:121-153
 	android:allowBackup
-		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:18-44
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:18-45
 	android:theme
-		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:72-119
+		ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:20:73-120
 activity#com.rockhard.blocker.MainActivity
 ADDED from /workspaces/RHC-App/RockHardBlocker/app/src/main/AndroidManifest.xml:22:9-107
 	android:label

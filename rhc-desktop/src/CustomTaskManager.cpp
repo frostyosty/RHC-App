@@ -1,4 +1,5 @@
 #include "CustomTaskManager.h"
+#include "ui/CustomModal.h"
 #include "DashboardUI.h"
 #include "DesktopUtils.h"
 #include "include/DatabaseManager.h"
@@ -103,15 +104,15 @@ namespace RHC {
                                 for(auto& p : protectedExes) if (lowerExe == p) isProtected = true;
                             }
                             
-                            if (isProtected) MessageBoxW(hwnd, L"Cannot block essential system apps!", L"Error", MB_ICONERROR);
+                            if (isProtected) RHC::UI::CustomModal::Show(hwnd, L"Error", L"Cannot block essential system apps!");
                             else {
                                 RHC::DatabaseManager db("rhc_state.db");
                                 std::string currentList = db.getString("BLOCKLIST_EXE", "");
                                 if (currentList.find(lowerExe) == std::string::npos) {
                                     if (currentList.empty()) db.putString("BLOCKLIST_EXE", lowerExe);
                                     else db.putString("BLOCKLIST_EXE", currentList + "," + lowerExe);
-                                    MessageBoxW(hwnd, L"App Blocked! It will auto-close.", L"Success", MB_OK);
-                                } else MessageBoxW(hwnd, L"App is already blocked.", L"Info", MB_OK);
+                                    RHC::UI::CustomModal::Show(hwnd, L"Success", L"App Blocked! It will auto-close.");
+                                } else RHC::UI::CustomModal::Show(hwnd, L"Info", L"App is already blocked.");
                             }
                         }
                     }

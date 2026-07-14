@@ -28,10 +28,6 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/game_bag.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/xml_authenticator.xml.flat",
-        "source": "com.rockhard.blocker.app-main-5:/xml/authenticator.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/mipmap-xxhdpi_ic_game.png.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/mipmap-xxhdpi/ic_game.png"
     },
@@ -58,6 +54,10 @@
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/mipmap-xxhdpi_ic_launcher.png.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/xml_syncadapter.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/syncadapter.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/layout_game_arena.xml.flat",
@@ -88,6 +88,14 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/card_onboarding.xml"
     },
     {
+        "merged": "com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/xml_authenticator.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/authenticator.xml"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/layout_dialog_custom.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/dialog_custom.xml"
     },
@@ -96,20 +104,16 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_btn_accent.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/xml_syncadapter.xml.flat",
-        "source": "com.rockhard.blocker.app-main-5:/xml/syncadapter.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/drawable_bg_btn_success.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_btn_success.xml"
     },
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/xml_device_admin.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/device_admin.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/xml_guardian_config.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/guardian_config.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/xml_device_admin.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/device_admin.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversMaleMomentumRelease-4:/layout_activity_trap.xml.flat",

@@ -27,7 +27,7 @@ namespace RHC {
                     pAutomation->CreateTrueCondition(&pCondition);
                     
                     IUIAutomationElementArray* pArray = NULL; 
-                    pWindow->FindAll(TreeScope_Children, pCondition, &pArray); 
+                    pWindow->FindAll(TreeScope_Descendants, pCondition, &pArray); 
                     
                     if (pArray != NULL) {
                         int count = 0; pArray->get_Length(&count);

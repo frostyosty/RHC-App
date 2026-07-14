@@ -12,6 +12,10 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/mipmap-xxhdpi/ic_game.png"
     },
     {
+        "merged": "com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/layout_activity_main.xml.flat",
+        "source": "com.rockhard.blocker.app-main-7:/layout/activity_main.xml"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/layout_activity_game.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/activity_game.xml"
     },
@@ -36,16 +40,12 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_danger.xml"
     },
     {
-        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/layout_card_overcome.xml.flat",
-        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/card_overcome.xml"
-    },
-    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/drawable_bg_btn_success.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/bg_btn_success.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/xml_syncadapter.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/xml/syncadapter.xml"
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/layout_card_overcome.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/layout/card_overcome.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/layout_overlay_guard.xml.flat",
@@ -72,8 +72,16 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable/ic_sys_sync.xml"
     },
     {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/xml_authenticator.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/xml/authenticator.xml"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/xml_guardian_config.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/xml/guardian_config.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/xml_syncadapter.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/xml/syncadapter.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/xml_device_admin.xml.flat",
@@ -102,10 +110,6 @@
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/drawable-nodpi_spr_cacheon.png.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-7:/drawable-nodpi/spr_cacheon.png"
-    },
-    {
-        "merged": "com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/xml_authenticator.xml.flat",
-        "source": "com.rockhard.blocker.app-main-7:/xml/authenticator.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-gamersFemaleHomevisitsRelease-4:/layout_activity_trap.xml.flat",
