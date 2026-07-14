@@ -70,6 +70,30 @@ GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" \
 
 
 
+
+
+  # Navigate to the Desktop project directory
+cd /workspaces/RHC-App/rhc-desktop
+
+# 1. Run the build script
+./build.sh
+
+# 2. Navigate back to the root and create the GitHub Release
+cd /workspaces/RHC-App
+TAG="v$(date +%Y%m%d%H%M%S)-desktop"
+
+# IMPORTANT: Make sure your GITHUB_TOKEN is set
+gh release create "$TAG" \
+  ./rhc-desktop/rhc_desktop.exe \
+  --repo frostyosty/htc-downloads-rhc \
+  --title "Desktop Build $TAG" \
+  --notes "Latest build of the Win32 C++ Momentum Core. Includes all server-side logic from the Android build."
+
+
+
+
+  
+
 cd /workspaces/RHC-App/RockHardBlocker
 
 # 1. Compile all four flavors
@@ -94,26 +118,6 @@ GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" \
   ./rhc_momentum_f.apk \
   --repo frostyosty/htc-downloads-rhc \
   --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
-  --notes "Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
+  --notes "eg Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
 
 
-
-
-
-
-  # Navigate to the Desktop project directory
-cd /workspaces/RHC-App/rhc-desktop
-
-# 1. Run the build script
-./build.sh
-
-# 2. Navigate back to the root and create the GitHub Release
-cd /workspaces/RHC-App
-TAG="v$(date +%Y%m%d%H%M%S)-desktop"
-
-# IMPORTANT: Make sure your GITHUB_TOKEN is set
-gh release create "$TAG" \
-  ./rhc-desktop/rhc_desktop.exe \
-  --repo frostyosty/htc-downloads-rhc \
-  --title "Desktop Build $TAG" \
-  --notes "Latest build of the Win32 C++ Momentum Core. Includes all server-side logic from the Android build."

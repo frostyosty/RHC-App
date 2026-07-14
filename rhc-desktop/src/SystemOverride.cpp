@@ -1,4 +1,5 @@
 #include "SystemOverride.h"
+#include "ui/CustomModal.h"
 #include "Globals.h"
 #include "HostsBlocker.h"
 #include "include/DatabaseManager.h"
@@ -124,12 +125,12 @@ namespace RHC {
 
             if (unlockTime > 0 && now >= unlockTime) {
                 if (type == "UNINSTALL") ExecuteUninstall();
-                if (type == "PAUSE") { db.putString("OVERRIDE_IS_PAUSED", "TRUE"); MessageBoxA(hwnd, "System is now PAUSED. Restart app to resume.", "Paused", MB_OK | MB_ICONINFORMATION); ExitCleanly(); }
+                if (type == "PAUSE") { db.putString("OVERRIDE_IS_PAUSED", "TRUE"); RHC::UI::CustomModal::Show(hwnd, L"Paused", L"System is now PAUSED. Restart app to resume."); ExitCleanly(); }
             } else {
                 int sel = SendMessage(hCombo, CB_GETCURSEL, 0, 0); int days = 3;
                 if (sel == 1) days = 5; else if (sel == 2) days = 7; else if (sel == 3) days = 14;
                 int minDays = db.getInt("OVERRIDE_MIN_DAYS", 0);
-                if (days < minDays) { MessageBoxA(hwnd, "You cannot decrease a previously selected delay!", "Error", MB_ICONERROR); return; }
+                if (days < minDays) { RHC::UI::CustomModal::Show(hwnd, L"Error", L"You cannot decrease a previously selected delay!"); return; }
                 long long newUnlock = now + (days * 24LL * 60LL * 60LL * 1000LL);
                 db.putString("OVERRIDE_UNLOCK_TIME", std::to_string(newUnlock)); db.putString("OVERRIDE_TYPE", type); db.putInt("OVERRIDE_MIN_DAYS", days);
                 UpdateUI();

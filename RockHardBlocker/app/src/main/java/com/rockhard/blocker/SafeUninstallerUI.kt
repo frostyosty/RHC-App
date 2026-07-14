@@ -56,8 +56,9 @@ internal fun MainActivity.showSafeUninstaller() {
 
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, 20, 0, 20)
+            setPadding(0, 24, 0, 24)
             weightSum = 1f
+            gravity = android.view.Gravity.CENTER_VERTICAL // Perfect alignment
         }
 
         val nameView = TextView(this).apply {
@@ -71,7 +72,8 @@ internal fun MainActivity.showSafeUninstaller() {
             text = "Uninstall"
             setBackgroundResource(R.drawable.bg_btn_danger)
             setTextColor(Color.WHITE)
-            setPadding(20, 0, 20, 0)
+            setPadding(30, 0, 30, 0)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             setOnClickListener {
                 val intent = Intent(Intent.ACTION_DELETE, Uri.parse("package:$pkgName"))
                 startActivity(intent)
@@ -81,6 +83,15 @@ internal fun MainActivity.showSafeUninstaller() {
         row.addView(nameView)
         row.addView(btnUninstall)
         listLayout.addView(row)
+
+        // Injecting the faint divider line here
+        val divider = android.view.View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2).apply {
+                setMargins(0, 0, 0, 0)
+            }
+            setBackgroundColor(Color.parseColor("#2A2A2A"))
+        }
+        listLayout.addView(divider)
     }
 
     scrollView.addView(listLayout)

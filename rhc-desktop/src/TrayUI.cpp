@@ -1,4 +1,5 @@
 #include "TrayUI.h"
+#include "ui/CustomModal.h"
 #include "Globals.h"
 #include "DashboardUI.h"
 #include "include/DatabaseManager.h"
@@ -107,13 +108,13 @@ namespace RHC {
                         if (unlockTime == 0) {
                             long long targetTime = now + (6LL * 60LL * 60LL * 1000LL); 
                             db.putString("EXIT_UNLOCK_TIME", std::to_string(targetTime));
-                            MessageBoxW(hwnd, L"6-Hour exit delay started! You can close the shield once the delay expires.", L"Delay Initiated", MB_OK | MB_ICONINFORMATION);
+                            RHC::UI::CustomModal::Show(hwnd, L"Delay Initiated", L"6-Hour exit delay started! You can close the shield once the delay expires.");
                         } else if (now >= unlockTime) {
                             db.putString("EXIT_UNLOCK_TIME", "0");
                             Shell_NotifyIconW(NIM_DELETE, &nid); 
                             PostQuitMessage(0); 
                         } else {
-                            MessageBoxW(hwnd, L"Bypass locked. Please wait for the 6-hour delay to expire.", L"Access Denied", MB_OK | MB_ICONWARNING);
+                            RHC::UI::CustomModal::Show(hwnd, L"Access Denied", L"Bypass locked. Please wait for the 6-hour delay to expire.");
                         }
                     }
                     

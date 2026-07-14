@@ -15,7 +15,11 @@ object ScannerUtils {
         node.text?.let { sb.append(it).append(" ") }
         node.contentDescription?.let { sb.append(it).append(" ") }
         for (i in 0 until node.childCount) {
-            node.getChild(i)?.let { extractTextRecursive(it, sb) }
+            val child = node.getChild(i)
+            if (child != null) {
+                extractTextRecursive(child, sb)
+                child.recycle()
+            }
         }
     }
 
@@ -27,17 +31,47 @@ object ScannerUtils {
 
         val isUrlBarCandidate = resName.contains("url") || resName.contains("address") ||
                                 resName.contains("omnibox") || resName.contains("search_box") ||
-                                (className.contains("edittext") && (resName.contains("search") || resName.contains("input") || resName.contains("query")))
+                                resName.contains("location") || resName.contains("searchbar") ||
+                                (className.contains("edittext") && (resName.contains("search") || resName.contains("input") || resName.contains("query") || resName.contains("text")))
         
-        if (isUrlBarCandidate) {
-            return node.text?.toString() ?: node.contentDescription?.toString()
+        val txt = node.text?.toString() ?: node.contentDescription?.toString() ?: ""
+        val looksLikeUrl = txt.isNotBlank() && (txt.startsWith("http") || 
+                           (txt.contains(".") && !txt.contains(" ") && txt.length > 4 && 
+                            (txt.endsWith(".com") || txt.endsWith(".org") || txt.endsWith(".net") || txt.contains(".com/") || txt.contains(".org/") || txt.contains(".net/"))))
+
+        if (isUrlBarCandidate || (className.contains("edittext") && looksLikeUrl)) {
+            val txtStr = node.text?.toString() ?: node.contentDescription?.toString()
+            if (!txtStr.isNullOrBlank()) {
+                return txtStr
+            }
         }
 
         for (i in 0 until node.childCount) {
-            val urlText = extractUrlBarText(node.getChild(i))
-            if (urlText != null) return urlText
+            val child = node.getChild(i)
+            if (child != null) {
+                val urlText = extractUrlBarText(child)
+                child.recycle()
+                if (urlText != null) return urlText
+            }
         }
         return null
+    }
+
+    fun countImages(node: AccessibilityNodeInfo?): Int {
+        if (node == null) return 0
+        var count = 0
+        val className = node.className?.toString()?.lowercase() ?: ""
+        if (className.contains("imageview") || className.contains("image") || node.viewIdResourceName?.lowercase()?.contains("image") == true) {
+            count++
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i)
+            if (child != null) {
+                count += countImages(child)
+                child.recycle()
+            }
+        }
+        return count
     }
 
     fun extractDangerousContext(node: AccessibilityNodeInfo?, word: String): String? {
@@ -52,7 +86,11 @@ object ScannerUtils {
                     isInteractable = true
                     break
                 }
-                currentNode = currentNode.parent
+                val parentNode = currentNode.parent
+                if (currentNode != node) {
+                    currentNode.recycle()
+                }
+                currentNode = parentNode
             }
 
             if (isInteractable) {
@@ -63,8 +101,12 @@ object ScannerUtils {
             }
         }
         for (i in 0 until node.childCount) {
-            val res = extractDangerousContext(node.getChild(i), word)
-            if (res != null) return res
+            val child = node.getChild(i)
+            if (child != null) {
+                val res = extractDangerousContext(child, word)
+                child.recycle()
+                if (res != null) return res
+            }
         }
         return null
     }

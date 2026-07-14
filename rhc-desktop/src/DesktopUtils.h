@@ -16,5 +16,7 @@ namespace RHC {
         // Lock-in and AM/PM Time Formatting Helpers
         int GetAllowedWindowDuration(const std::string& timeWindow);
         std::string FormatTimeToAmPm(const std::string& timeWindow);
+        bool IsStrictSubset(const std::string& oldTime, const std::string& newTime);
+        void ApplyDarkTitleBar(HWND hwnd);
     }
 }

@@ -26,12 +26,16 @@ x86_64-w64-mingw32-g++ -O2 -std=c++17 -s \
     rhc-desktop/src/UIAScanner.cpp \
     rhc-desktop/src/HostsBlocker.cpp \
     rhc-desktop/src/ui/SmoothButton.cpp \
+    rhc-desktop/src/ui/FlexEngine.cpp \
+    rhc-desktop/src/ui/CSSEngine.cpp \
+    rhc-desktop/src/ui/Renderer.cpp \
+    rhc-desktop/src/ui/CustomModal.cpp \
     rhc-desktop/cloak/SafeModeCloak.cpp \
     rhc-desktop/app.res \
     StringUtils.o DatabaseManager.o MomentumEngine.o ShieldRuleEngine.o LeaderboardEngine.o sqlite3.o \
     -o rhc-desktop/rhc_desktop.exe \
     -static -static-libgcc -static-libstdc++ \
-    -mwindows -lgdi32 -luser32 -lole32 -loleaut32 -lwinhttp -lrpcrt4 -lcomctl32 -luuid -lpowrprof
+    -mwindows -lgdi32 -luser32 -lole32 -loleaut32 -lwinhttp -lrpcrt4 -lcomctl32 -luuid -lpowrprof -lgdiplus -ldwmapi
 
 rm *.o rhc-desktop/app.res
 echo "✅ SUCCESS! rhc_desktop.exe generated."

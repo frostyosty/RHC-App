@@ -68,7 +68,7 @@ internal fun MainActivity.setupSystemOverrideUI() {
                 btnSchedUninstall.text = "UNAVAILABLE"
             } else {
                 btnSchedUninstall.isEnabled = true
-                btnSchedUninstall.text = "CANCEL UNINSTALL"
+                btnSchedUninstall.text = "CANCEL UNINSTALL SLOT"
                 btnSchedPause.isEnabled = false
                 btnSchedPause.text = "UNAVAILABLE"
             }
@@ -115,12 +115,22 @@ internal fun MainActivity.setupSystemOverrideUI() {
         
         if (unlockTime > System.currentTimeMillis() && unlockType == "PAUSE") {
             // CANCEL PENDING PAUSE
-            prefs.edit().putLong("OVERRIDE_UNLOCK_TIME", 0L).putString("OVERRIDE_TYPE", "").apply()
+            prefs.edit()
+            .putLong("OVERRIDE_UNLOCK_TIME", 0L)
+            .putString("OVERRIDE_TYPE", "")
+            .putLong("ALLOW_SETTINGS_UNTIL", System.currentTimeMillis() + 300000L) // 5 Minutes of God Mode to allow the package installer
+            .putBoolean("DRASTIC_DUMB_PHONE_CAMERA", false)
+            .putBoolean("DRASTIC_DUMB_PHONE_NO_CAMERA", false)
+            .putBoolean("DRASTIC_NO_INTERNET", false)
+            .putBoolean("DRASTIC_NO_VIDEOS", false)
+            .putBoolean("DRASTIC_CALLS_ONLY", false)
+            .apply()
             Toast.makeText(activity, "Pause Schedule Cancelled.", Toast.LENGTH_SHORT).show()
             updateOverrideUI()
         } else if (unlockTime > 0 && System.currentTimeMillis() >= unlockTime && unlockType == "PAUSE") {
             // EXECUTE PAUSE: Give 2 hours of God Mode
             prefs.edit().putLong("ALLOW_SETTINGS_UNTIL", System.currentTimeMillis() + (2 * 60 * 60 * 1000L))
+                 .putLong("SYSTEM_PAUSE_UNTIL", System.currentTimeMillis() + (2 * 60 * 60 * 1000L))
                  .putLong("OVERRIDE_UNLOCK_TIME", 0L) // Reset the override
                  .putString("OVERRIDE_TYPE", "")
                  .apply()
@@ -142,6 +152,9 @@ internal fun MainActivity.setupSystemOverrideUI() {
             updateOverrideUI()
         } else if (unlockTime > 0 && System.currentTimeMillis() >= unlockTime && unlockType == "UNINSTALL") {
             // EXECUTE UNINSTALL
+            // Reset override preferences so they do not persist across reinstallations/cancellations
+            prefs.edit().putLong("OVERRIDE_UNLOCK_TIME", 0L).putString("OVERRIDE_TYPE", "").apply()
+            updateOverrideUI()
             try {
                 val dpm = activity.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
                 val compName = ComponentName(activity, AdminReceiver::class.java)

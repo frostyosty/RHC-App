@@ -19,7 +19,6 @@ namespace RHC {
             
             states[hWnd] = state;
             
-            // Remove BS_OWNERDRAW if set, we will hijack WM_PAINT directly for total control
             LONG_PTR style = GetWindowLongPtr(hWnd, GWL_STYLE);
             SetWindowLongPtr(hWnd, GWL_STYLE, style & ~BS_OWNERDRAW);
             
@@ -33,12 +32,12 @@ namespace RHC {
                 case WM_MOUSEMOVE: {
                     if (!state.isHovered) {
                         state.isHovered = true;
-                        state.progress = 0.0f; // Reset animation progress
+                        state.progress = 0.0f;
                         
                         TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE, hWnd, 0 };
                         TrackMouseEvent(&tme);
                         
-                        SetTimer(hWnd, ANIM_TIMER_ID, 16, NULL); // ~60 FPS
+                        SetTimer(hWnd, ANIM_TIMER_ID, 16, NULL);
                     }
                     break;
                 }
@@ -62,7 +61,7 @@ namespace RHC {
                 }
                 case WM_TIMER: {
                     if (wParam == ANIM_TIMER_ID) {
-                        state.progress += 0.08f; // Animation Speed
+                        state.progress += 0.08f;
                         
                         if (state.progress >= 1.0f) {
                             state.progress = 1.0f;
@@ -87,26 +86,52 @@ namespace RHC {
                     RECT rc;
                     GetClientRect(hWnd, &rc);
 
-                    // DOUBLE BUFFERING - All drawing happens in memory to prevent flicker
                     {
                         DoubleBuffer buffer(hdcPaint, &rc);
                         HDC hdc = buffer.getDC();
 
-                        // 1. Draw Background
+                        // 1. Draw solid base background
                         HBRUSH hBrush = CreateSolidBrush(state.currentBg);
                         FillRect(hdc, &rc, hBrush);
                         DeleteObject(hBrush);
 
-                        // 2. Draw Border
+                        // 2. Draw tactile 3D light-source Highlights and Shadows
+                        COLORREF highlightColor = Easing::LerpColor(state.currentBg, RGB(255, 255, 255), 0.12f);
+                        COLORREF shadowColor = Easing::LerpColor(state.currentBg, RGB(0, 0, 0), 0.22f);
+
+                        HPEN hPenHighlight = CreatePen(PS_SOLID, 1, state.isPressed ? shadowColor : highlightColor);
+                        HPEN hPenShadow    = CreatePen(PS_SOLID, 1, state.isPressed ? highlightColor : shadowColor);
+
+                        HGDIOBJ hOldPen = SelectObject(hdc, hPenHighlight);
+                        // Top Highlight line
+                        MoveToEx(hdc, rc.left + 1, rc.top + 1, NULL);
+                        LineTo(hdc, rc.right - 1, rc.top + 1);
+                        // Left Highlight line
+                        MoveToEx(hdc, rc.left + 1, rc.top + 1, NULL);
+                        LineTo(hdc, rc.left + 1, rc.bottom - 1);
+
+                        // Bottom Shadow line
+                        SelectObject(hdc, hPenShadow);
+                        MoveToEx(hdc, rc.left + 1, rc.bottom - 2, NULL);
+                        LineTo(hdc, rc.right - 1, rc.bottom - 2);
+                        // Right Shadow line
+                        MoveToEx(hdc, rc.right - 2, rc.top + 1, NULL);
+                        LineTo(hdc, rc.right - 2, rc.bottom - 1);
+
+                        SelectObject(hdc, hOldPen);
+                        DeleteObject(hPenHighlight);
+                        DeleteObject(hPenShadow);
+
+                        // 3. Draw border line
                         HPEN hPen = CreatePen(PS_SOLID, 1, state.currentBorder);
-                        HGDIOBJ hOldPen = SelectObject(hdc, hPen);
+                        HGDIOBJ hOldPenBorder = SelectObject(hdc, hPen);
                         HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
                         Rectangle(hdc, rc.left, rc.top, rc.right, rc.bottom);
-                        SelectObject(hdc, hOldPen);
+                        SelectObject(hdc, hOldPenBorder);
                         SelectObject(hdc, hOldBrush);
                         DeleteObject(hPen);
 
-                        // 3. Draw Text
+                        // 4. Draw button text
                         wchar_t text[256];
                         GetWindowTextW(hWnd, text, 256);
                         
@@ -116,16 +141,15 @@ namespace RHC {
                         SetTextColor(hdc, state.isHovered ? state.theme.textHover : state.theme.textNormal);
                         SetBkMode(hdc, TRANSPARENT);
                         
-                        // Slightly shift text down if pressed for tactile feel
                         RECT textRect = rc;
                         if (state.isPressed) { textRect.top += 2; textRect.left += 2; }
                         
                         DrawTextW(hdc, text, -1, &textRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
                         SelectObject(hdc, hOldFont);
-                    } // Buffer is blasted to screen here
+                    }
 
                     EndPaint(hWnd, &ps);
-                    return 0; // We handled painting, don't pass to DefSubclassProc
+                    return 0;
                 }
                 case WM_DESTROY: {
                     states.erase(hWnd);

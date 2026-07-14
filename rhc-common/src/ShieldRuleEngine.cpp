@@ -25,13 +25,17 @@ namespace RHC {
         int softCount = 0;
         std::string caughtWords = "";
         for (const auto& word : softWords) {
-            if (text.find(word) != std::string::npos) {
+            size_t pos = text.find(word, 0);
+            while (pos != std::string::npos) {
                 softCount++;
-                caughtWords += word + " ";
+                if (caughtWords.find(word) == std::string::npos) {
+                    caughtWords += word + " ";
+                }
+                pos = text.find(word, pos + word.length());
             }
         }
-        if (softCount >= 3) {
-            return {ShieldAction::BLOCK_CONTENT, "Content Guard: " + caughtWords};
+        if (softCount >= 4) {
+            return {ShieldAction::BLOCK_CONTENT, "Content Guard: " + caughtWords + "(" + std::to_string(softCount) + " times)"};
         }
 
         return {ShieldAction::ALLOW, ""};

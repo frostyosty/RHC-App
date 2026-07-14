@@ -41,6 +41,7 @@ class GuardianService : AccessibilityService() {
     private var nightfallDimView: View? = null
     private var isOverlayShowing = false
     private var isNightfallDimShowing = false
+    private var nightfallDimParams: WindowManager.LayoutParams? = null
     private var bossTimer: CountDownTimer? = null
     private lateinit var ruleEngine: ShieldRuleEngine
     private lateinit var dpm: DevicePolicyManager
@@ -63,7 +64,19 @@ class GuardianService : AccessibilityService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return super.onStartCommand(intent, flags, startId)
+        // Fail-safe: Always start foreground on start command to satisfy startForegroundService constraints
+        val channelId = "shield_channel"
+        val notification = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(this, channelId)
+        } else {
+            @Suppress("DEPRECATION") android.app.Notification.Builder(this)
+        }.setContentTitle("Rock Hard Shield Active")
+            .setContentText("Guarding your digital environment.")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true)
+            .build()
+        startForeground(1011, notification)
+        return START_STICKY
     }
 
     override fun onServiceConnected() {
@@ -125,10 +138,7 @@ class GuardianService : AccessibilityService() {
 
             if (isNightfall) {
                 updateNightfallDimmer(0f) 
-                if (dpm.isAdminActive(compName)) {
-                    Toast.makeText(this, "Overcoming sleeplessness. Time to rest.", Toast.LENGTH_SHORT).show()
-                    dpm.lockNow()
-                }
+                // Removed device locks so ShieldRuleEngine soft-blocks non-calls instead
             } else if (isWarn) {
                 val currSecs = currentMins * 60 + cal.get(Calendar.SECOND)
                 val wStartSecs = warnStart * 60
@@ -150,6 +160,7 @@ class GuardianService : AccessibilityService() {
             if (isNightfallDimShowing && nightfallDimView != null) {
                 windowManager?.removeView(nightfallDimView)
                 nightfallDimView = null
+                nightfallDimParams = null
                 isNightfallDimShowing = false
             }
             return
@@ -159,17 +170,31 @@ class GuardianService : AccessibilityService() {
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN or 
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or 
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                 PixelFormat.TRANSLUCENT
-            ).apply { gravity = Gravity.CENTER }
-            
+            ).apply { 
+                gravity = Gravity.CENTER
+                this.alpha = alpha
+            }
+            nightfallDimParams = params
             nightfallDimView = View(this).apply { setBackgroundColor(Color.BLACK) }
             try { 
                 windowManager?.addView(nightfallDimView, params)
                 isNightfallDimShowing = true 
             } catch (e: Exception) {}
+        } else {
+            val view = nightfallDimView
+            val params = nightfallDimParams
+            if (view != null && params != null) {
+                params.alpha = alpha
+                try {
+                    windowManager?.updateViewLayout(view, params)
+                } catch (e: Exception) {}
+            }
         }
-        nightfallDimView?.alpha = alpha
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -205,7 +230,11 @@ class GuardianService : AccessibilityService() {
             }
         }
 
-        if (!isWindowStateChange && now - lastScanTime < CONTENT_SCAN_COOLDOWN_MS) {
+        val isUrlTextChange = event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || 
+                              event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED
+
+        if (!isWindowStateChange && !isUrlTextChange && now - lastScanTime < CONTENT_SCAN_COOLDOWN_MS) {
+            rootNode?.recycle()
             return
         }
         lastScanTime = now
@@ -228,6 +257,7 @@ class GuardianService : AccessibilityService() {
             is ShieldAction.WeatherBuff -> handleWeatherBuff(action.element)
             ShieldAction.Allow -> { /* Do nothing */ }
         }
+        rootNode?.recycle()
     }
 
     private fun handleRedirect(target: String) {
@@ -376,7 +406,7 @@ class GuardianService : AccessibilityService() {
                 tvTitle?.text = "🛑 SYSTEM LOCKED 🛑"
                 tvMsg?.text = "$debugReason\n\nThis action cannot be bypassed without a System Override."
                 btnDefend?.visibility = View.GONE
-                btnYield?.text = "Understood"
+                btnYield?.text = "Momentum of a boss"
                 btnYield?.setOnClickListener { fleeLogic() }
             } else {
                 if (isGamers) {

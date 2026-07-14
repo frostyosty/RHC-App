@@ -18,16 +18,7 @@ class WatchdogReceiver : BroadcastReceiver() {
         if (!isServiceRunning) {
             fireAlert(context)
         } else {
-            val serviceIntent = Intent(context, GuardianService::class.java)
-            serviceIntent.action = "HEARTBEAT_TICK"
-            try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    context.startForegroundService(serviceIntent)
-                } else {
-                    context.startService(serviceIntent)
-                }
-            } catch (e: Exception) {
-            }
+            // Service is active and system-managed. No manual starting needed.
         }
         
         scheduleWatchdog(context) 
