@@ -79,6 +79,7 @@ id btnYield
 id cardOvercomeApp
 id cardOvercomeWeb
 id cbMainNightfall
+id cbNightfallNotes
 id etCustomRedirect
 id etCustomWeb
 id infoMove1
@@ -148,6 +149,7 @@ id tvOverlayMessage
 id tvOverlayTitle
 id tvOverrideStatus
 id tvQteDesc
+id tvShieldStatusIcon
 id tvTerminalOutput
 id viewActivity
 id viewBag

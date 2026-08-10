@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">RHC</string>
+    <string name="app_name" translatable="false">Momentum</string>
     <string name="brick_message" translatable="false">Your time is valuable. Protect it.</string>
     <string name="essay_prompt" translatable="false">MOMENTUM_MODE</string>
     <string name="flavor_id" translatable="false">momentum_female</string>

@@ -73,8 +73,12 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         val redirects = prefs.getString("REDIRECTS", "") ?: ""
         for (r in redirects.split(",")) {
             val parts = r.split("|")
-            if (parts.size == 2 && triggerWord.contains(parts[0], ignoreCase = true)) {
-                return parts[1]
+            if (parts.size >= 2) {
+                val trigger = parts[0].trim()
+                val dest = parts[1].trim()
+                if (triggerWord.trim().equals(trigger, ignoreCase = true) || triggerWord.trim().contains(trigger, ignoreCase = true)) {
+                    return dest
+                }
             }
         }
         return null
@@ -99,29 +103,120 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         if (isHomeLauncher) return ShieldAction.Allow
 
         // PERMANENT SAFE HAVENS: Productivity, Utilities, Banks, Navigation, and Security
-        val permanentSafeHavens = listOf(
-            // Notes & Tasks
-            "notion", "evernote", "simplenote", "zoho", "onenote", "microsoft.notes", 
-            "keep", "docs.google", "notes", "notepad", "journal", "journey", "dayone", 
-            "obsidian", "standardnotes", "logseq", "upnote", "joplin", "bear", 
-            "craft", "notability", "goodnotes", "todoist", "ticktick", "anydo", "tasks",
-            
-            // Utilities (Clock, Calculator, Recorder)
-            "calculator", "calc", "clock", "alarm", "timer", "stopwatch", "deskclock",
-            "recorder", "voicememo", "soundrecorder", "audiorecorder",
-            
-            // Finance, Banking & Wallets
-            "bank", "finance", "banking", "paypal", "venmo", "cashapp", "monzo", "revolut", 
-            "chase", "wellsfargo", "citi", "amex", "discover", "barclays", "santander", 
-            "hsbc", "capitalone", "pay", "wallet", "stripe", "square",
-            
-            // Navigation & Rideshare (Crucial for Physical Safety)
-            "maps", "navigation", "waze", "uber", "lyft", "bolt", "grab", "transit",
-            
-            // Security, 2FA, & Password Managers
-            "authenticator", "2fa", "authy", "duosecurity", "okta", "bitwarden", "1password", "lastpass", "dashlane"
-        )
-        if (permanentSafeHavens.any { lowerPkg.contains(it) }) return ShieldAction.Allow
+    val allowNotesAtNight =
+        prefs.getBoolean("NIGHTFALL_ALLOW_NOTES", true)
+
+    val notesApps = listOf(
+        "notion",
+        "evernote",
+        "simplenote",
+        "zoho",
+        "onenote",
+        "microsoft.notes",
+        "keep",
+        "docs.google",
+        "notes",
+        "notepad",
+        "journal",
+        "journey",
+        "dayone",
+        "obsidian",
+        "standardnotes",
+        "logseq",
+        "upnote",
+        "joplin",
+        "bear",
+        "craft",
+        "notability",
+        "goodnotes",
+        "todoist",
+        "ticktick",
+        "anydo",
+        "tasks"
+    )
+
+    val permanentSafeHavens = listOf(
+        "calculator",
+        "calc",
+        "clock",
+        "alarm",
+        "timer",
+        "stopwatch",
+        "deskclock",
+        "recorder",
+        "voicememo",
+        "soundrecorder",
+        "audiorecorder",
+        "bank",
+        "finance",
+        "banking",
+        "paypal",
+        "venmo",
+        "cashapp",
+        "monzo",
+        "revolut",
+        "chase",
+        "wellsfargo",
+        "citi",
+        "amex",
+        "discover",
+        "barclays",
+        "santander",
+        "hsbc",
+        "capitalone",
+        "pay",
+        "wallet",
+        "stripe",
+        "square",
+        "maps",
+        "navigation",
+        "waze",
+        "uber",
+        "lyft",
+        "bolt",
+        "grab",
+        "transit",
+        "authenticator",
+        "2fa",
+        "authy",
+        "duosecurity",
+        "okta",
+        "bitwarden",
+        "1password",
+        "lastpass",
+        "dashlane"
+    )
+
+    if (permanentSafeHavens.any { lowerPkg.contains(it) }) {
+        return ShieldAction.Allow
+    }
+
+    // Check Nightfall timing early for Notes logic.
+    val nfStart = prefs.getInt("NIGHTFALL_START", -1)
+    val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
+
+    var isNightfallActive = false
+
+    if (nfStart != -1 && nfEnd != -1 && nfStart != nfEnd) {
+        val cal = java.util.Calendar.getInstance()
+
+        val currentMins =
+            (cal.get(java.util.Calendar.HOUR_OF_DAY) * 60) +
+            cal.get(java.util.Calendar.MINUTE)
+
+        isNightfallActive =
+            if (nfStart < nfEnd) {
+                currentMins in nfStart..nfEnd
+            } else {
+                currentMins >= nfStart || currentMins <= nfEnd
+            }
+    }
+
+    if (notesApps.any { lowerPkg.contains(it) }) {
+        if (!isNightfallActive || allowNotesAtNight) {
+            return ShieldAction.Allow
+        }
+    }
 
         val isGodModeActive = System.currentTimeMillis() < prefs.getLong("ALLOW_SETTINGS_UNTIL", 0L)
 
@@ -193,9 +288,9 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
             }
 
             if (isNightfall) {
-                val allowedCallsOnly = listOf("dialer", "contacts", "telecom", "android.phone", "keyboard", "inputmethod", "incallui", "systemui")
+                val allowedCallsOnly = listOf("dialer", "contacts", "telecom", "android.phone", "keyboard", "inputmethod", "incallui", "systemui", "swiftkey", "honeyboard", "gboard", "touchpal", "sogou", "baidu")
                 if (!allowedCallsOnly.any { lowerPkg.contains(it) || lowerClass.contains(it) }) {
-                    return ShieldAction.Block("Nightfall Mode: Only Calls Allowed!", false)
+                    return ShieldAction.Block("Nightfall Mode: Restricted App!", false)
                 }
             }
             else if (prefs.getBoolean("DRASTIC_CALLS_ONLY", false)) {
@@ -295,13 +390,20 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
 
         val blockedApps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
         val triggeredAppEntry = blockedApps.firstOrNull { blockEntry ->
-            val blockTarget = blockEntry.split("|")[0].lowercase()
-            val actualBlockPkg = popularAppPackageMap[blockTarget] ?: blockTarget
-            lowerPkg.contains(actualBlockPkg)
+            val parts = blockEntry.split("|")
+            val appName = parts.getOrNull(0)?.trim()?.lowercase() ?: ""
+            val pkgName = parts.getOrNull(1)?.trim()?.lowercase() ?: ""
+            
+            if (pkgName.isNotEmpty() && lowerPkg.contains(pkgName)) {
+                true
+            } else {
+                val actualBlockPkg = popularAppPackageMap[appName] ?: appName
+                lowerPkg.contains(actualBlockPkg)
+            }
         }
 
         if (triggeredAppEntry != null) {
-            val appDisplayWord = triggeredAppEntry.split("|")[0]
+            val appDisplayWord = triggeredAppEntry.split("|")[0].trim()
             val isFirstTime = !prefs.getBoolean("FIRST_OVERCOME_APP_$appDisplayWord", false)
             return if (isFirstTime) ShieldAction.RewardApp(appDisplayWord) else {
                 GuardianService.addLog("App block: matched package '" + packageName + "'")
@@ -317,22 +419,55 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
 
         if (safeDomains.any { lowerAllText.contains(it) }) return ShieldAction.Allow
 
-        val wholeWordRequired = listOf("ass", "butt", "strip", "sex", "tits", "fap", "milf", "anal")
+        val wholeWordRequired = listOf("ass", "butt", "strip", "sex", "tits", "fap", "milf", "anal", "breast", "breasts", "mature", "nude", "naked", "dick", "cock", "pussy", "cum")
+        
+        // --- PRE-PROCESSING: SAFE PHRASES ---
+        // Completely erases fixed safe phrases before any logic runs
+        val safePhrases = listOf("chicken breast", "turkey breast", "breast cancer", "weather stripping", "power strip", "comic strip", "strip mall", "sex education", "fair sex")
+        var sanitizedText = lowerAllText
+        for (phrase in safePhrases) {
+            sanitizedText = sanitizedText.replace(phrase, "***")
+        }
+
+        // --- CONTEXTUAL PROXIMITY MAPPING ---
+        // If a word is found, check the surrounding words. If they match these, it's safe.
+        val safeContextMap = mapOf(
+            "breast" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
+            "breasts" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
+            "mature" to listOf("cheese", "cheddar", "tree", "forest", "nature", "audience", "rating", "market", "economy", "student", "age"),
+            "strip" to listOf("weather", "power", "comic", "mall", "led", "light", "bacon", "steak", "pork", "beef", "wood", "metal", "plastic", "stripes"),
+            "naked" to listOf("eye", "truth", "mole rat", "gun", "snake", "bike", "motorcycle", "short", "option"),
+            "nude" to listOf("lipstick", "makeup", "color", "colour", "shoe", "heels", "palette", "nails", "painting", "art", "museum")
+        )
+
+        fun isMatchValid(word: String, index: Int, text: String): Boolean {
+            val isWholeWord = if (wholeWordRequired.contains(word)) {
+                val beforeChar = if (index > 0) text[index - 1] else ' '
+                val afterChar = if (index + word.length < text.length) text[index + word.length] else ' '
+                // NOTE: '-' is not a letter/digit, so "-ass-" counts as a valid boundary and WILL be flagged.
+                !beforeChar.isLetterOrDigit() && !afterChar.isLetterOrDigit()
+            } else true
+
+            if (!isWholeWord) return false
+
+            // Window Proximity Check (Only runs IF the word was found, saving massive battery)
+            if (safeContextMap.containsKey(word)) {
+                val start = Math.max(0, index - 40)
+                val end = Math.min(text.length, index + word.length + 40)
+                val window = text.substring(start, end)
+                // If any safe modifier is found within 40 characters, invalidate the flag
+                if (safeContextMap[word]!!.any { window.contains(it) }) return false
+            }
+            return true
+        }
+
         val foundHard = hardWords.firstOrNull { word ->
             var index = 0
             var found = false
             while (true) {
-                index = lowerAllText.indexOf(word, index)
+                index = sanitizedText.indexOf(word, index)
                 if (index == -1) break
-                
-                val isMatch = if (wholeWordRequired.contains(word)) {
-                    val beforeChar = if (index > 0) lowerAllText[index - 1] else ' '
-                    val afterChar = if (index + word.length < lowerAllText.length) lowerAllText[index + word.length] else ' '
-                    !beforeChar.isLetterOrDigit() && !afterChar.isLetterOrDigit()
-                } else {
-                    true
-                }
-                if (isMatch) {
+                if (isMatchValid(word, index, sanitizedText)) {
                     found = true
                     break
                 }
@@ -352,31 +487,92 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
 
         val blockedWebs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
         for (entry in blockedWebs) {
-            val rawWord = entry.split("|")[0].lowercase()
-            val baseWord = rawWord.replace("www.", "").replace(".com", "").replace(".org", "").replace(".net", "")
-            
-            if (lowerAllText.contains(baseWord)) {
-                var ctx: String? = null
-                if (isBrowserApp) {
-                    if (urlBarText != null && !isSearchEngineUrl && urlBarText.contains(rawWord)) {
-                        ctx = "URL Bar: " + urlBarText
-                    } else if (!isOnWhitelistedSite && listOf(baseWord + ".com", "m." + baseWord + ".com", baseWord + ".org", "www." + baseWord + ".com", "youtu.be", baseWord + ".net").any { lowerAllText.contains(it) }) {
-                        ctx = "Browser Match: " + baseWord
+        val parts = entry.split("|")
+
+        val displayWord = parts[0]
+            .lowercase()
+            .trim()
+
+        val domainWord = parts
+            .getOrNull(1)
+            ?.lowercase()
+            ?.trim()
+            ?: displayWord
+
+        val baseWord = domainWord
+            .replace("www.", "")
+            .replace(".com", "")
+            .replace(".org", "")
+            .replace(".net", "")
+
+        if (
+            lowerAllText.contains(baseWord) ||
+            lowerAllText.contains(displayWord)
+        ) {
+            var ctx: String? = null
+
+            if (isBrowserApp) {
+                if (
+                    urlBarText != null &&
+                    !isSearchEngineUrl &&
+                    (
+                        urlBarText.contains(baseWord) ||
+                        urlBarText.contains(domainWord)
+                    )
+                ) {
+                    ctx = "URL Bar: " + urlBarText
+
+                } else if (
+                    !isOnWhitelistedSite &&
+                    listOf(
+                        baseWord + ".com",
+                        "m." + baseWord + ".com",
+                        baseWord + ".org",
+                        "www." + baseWord + ".com",
+                        "youtu.be",
+                        baseWord + ".net"
+                    ).any {
+                        lowerAllText.contains(it)
                     }
-                } else {
-                    ctx = ScannerUtils.extractDangerousContext(rootNode, rawWord)
+                ) {
+                    ctx = "Browser Match: " + baseWord
                 }
-                if (ctx != null) {
-                    val isFirstTime = !prefs.getBoolean("FIRST_OVERCOME_WEB_$rawWord", false)
-                    return if (isFirstTime) ShieldAction.RewardWeb(rawWord, ctx) else {
-                        GuardianService.addLog("Web block: matched '" + rawWord + "' context '" + ctx + "'")
-                        ShieldAction.Block("Hyperlink Overcome: " + ctx, true, getRedirect(rawWord))
-                    }
+
+            } else {
+                ctx = ScannerUtils.extractDangerousContext(
+                    rootNode,
+                    baseWord
+                )
+            }
+
+            if (ctx != null) {
+                val isFirstTime =
+                    !prefs.getBoolean(
+                        "FIRST_OVERCOME_WEB_$displayWord",
+                        false
+                    )
+
+                return if (isFirstTime) {
+                    ShieldAction.RewardWeb(
+                        displayWord,
+                        ctx
+                    )
+                } else {
+                    GuardianService.addLog(
+                        "Web block: matched '$displayWord' context '$ctx'"
+                    )
+
+                    ShieldAction.Block(
+                        "Hyperlink Overcome: " + ctx,
+                        true,
+                        getRedirect(displayWord)
+                    )
                 }
             }
         }
+    }
 
-        val imageCount = if (rootNode != null) ScannerUtils.countImages(rootNode) else 0
+    val imageCount = if (rootNode != null) ScannerUtils.countImages(rootNode) else 0
         val softThreshold = if (imageCount >= 8) 2 else 4
 
         var softCount = 0
@@ -384,18 +580,10 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         for (word in softWords) {
             var index = 0
             while (true) {
-                index = lowerAllText.indexOf(word, index)
+                index = sanitizedText.indexOf(word, index)
                 if (index == -1) break
                 
-                val isMatch = if (wholeWordRequired.contains(word)) {
-                    val beforeChar = if (index > 0) lowerAllText[index - 1] else ' '
-                    val afterChar = if (index + word.length < lowerAllText.length) lowerAllText[index + word.length] else ' '
-                    !beforeChar.isLetterOrDigit() && !afterChar.isLetterOrDigit()
-                } else {
-                    true
-                }
-                
-                if (isMatch) {
+                if (isMatchValid(word, index, sanitizedText)) {
                     softCount++
                     caughtWords.add(word)
                 }
@@ -438,7 +626,7 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
             return exists
         }
 
-        val hasAppTarget = hasText(appName) || hasText("RHC") || hasText("Sync Services")
+        val hasAppTarget = hasText(appName) || hasText("Momentum") || hasText("Sync Services")
 
         // Only block generic managers if we are explicitly on an App Details or Info page.
         // This prevents blocking list navigation screens like Accessibility Settings (Step 1) and Autostart / Permission center (Step 4).
