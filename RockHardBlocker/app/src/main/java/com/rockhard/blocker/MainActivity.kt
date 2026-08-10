@@ -1,5 +1,6 @@
 package com.rockhard.blocker
 
+import android.widget.CheckBox
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.app.Activity
@@ -44,6 +45,40 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+    // --- CLEANUP BAD NUMERIC ENTRIES (Fixes the 2026 Bug) ---
+    val appList = prefs.getString("BLOCKLIST_APP", "")
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?: emptyList()
+
+    val webList = prefs.getString("BLOCKLIST_WEB", "")
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?: emptyList()
+
+    val cleanApp = appList
+        .filter {
+            !it.split("|")[0]
+                .trim()
+                .matches(Regex("^[0-9]+$"))
+        }
+        .joinToString(",")
+
+    val cleanWeb = webList
+        .filter {
+            !it.split("|")[0]
+                .trim()
+                .matches(Regex("^[0-9]+$"))
+        }
+        .joinToString(",")
+
+    prefs.edit()
+        .putString("BLOCKLIST_APP", cleanApp)
+        .putString("BLOCKLIST_WEB", cleanWeb)
+        .apply()
+
+    // --------------------------------------------------------
         try { prefs.getString("PARTY_DATA", "") } catch (e: Exception) { prefs.edit().clear().apply() }
         if (!prefs.contains("INSTALL_TIME")) prefs.edit().putLong("INSTALL_TIME", System.currentTimeMillis()).apply()
 
@@ -154,9 +189,18 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btnAddWeb).setOnClickListener { 
             val webInput = findViewById<EditText>(R.id.etCustomWeb).text.toString().trim().lowercase()
             if (webInput.isNotEmpty()) {
+                if (webInput.matches(Regex("^[0-9]+$"))) {
+                    Toast.makeText(
+                        this,
+                        "Numeric-only blocks are too broad (e.g. blocking a year).",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@setOnClickListener
+                }
+
                 addBlockItem("BLOCKLIST_WEB", webInput, webInput)
-                findViewById<EditText>(R.id.etCustomWeb).setText("") 
             }
+            findViewById<EditText>(R.id.etCustomWeb).setText("") 
         }
 
         val btnDumbPhoneCamera = findViewById<Button>(R.id.btnDrasticDumbPhoneCamera)
@@ -265,7 +309,11 @@ class MainActivity : Activity() {
         spinTarget.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 etCustom.visibility = if (targets[position].second == "CUSTOM_URL") View.VISIBLE else View.GONE
-                spinCustomApp.visibility = if (targets[position].second == "CUSTOM_APP") View.VISIBLE else View.GONE
+                val isCustomApp = targets[position].second == "CUSTOM_APP"
+                spinCustomApp.visibility = if (isCustomApp) View.VISIBLE else View.GONE
+                if (isCustomApp) {
+                    spinCustomApp.post { spinCustomApp.performClick() }
+                }
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -359,13 +407,26 @@ class MainActivity : Activity() {
         val newsApps = mutableListOf<Pair<String, String>>()
         val allApps = mutableListOf<Pair<String, String>>()
 
-        for (info in resolveInfos) {
+        
+    val blockedAppsStr = prefs.getString("BLOCKLIST_APP", "") ?: ""
+    val blockedPkgNames = blockedAppsStr
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map {
+            it.split("|").getOrNull(1)?.trim()?.lowercase()
+                ?: it.split("|")[0].trim().lowercase()
+        }
+for (info in resolveInfos) {
             val appName = info.loadLabel(pm).toString()
             val pkgName = info.activityInfo.packageName
             val lowerPkg = pkgName.lowercase()
             val lowerName = appName.lowercase()
             
-            if (!protectedPkgs.any { lowerPkg.contains(it) } && pkgName != packageName) {
+            if (
+            !protectedPkgs.any { lowerPkg.contains(it) } &&
+            pkgName != packageName &&
+            !blockedPkgNames.contains(lowerPkg)
+        ) {
                 val pair = Pair(appName, pkgName)
                 allApps.add(pair)
                 
@@ -381,11 +442,21 @@ class MainActivity : Activity() {
         setupBlockSpinner(R.id.spinVideoApps, "📺 Video Apps...", videoApps.sortedBy { it.first.lowercase() }, true)
         setupBlockSpinner(R.id.spinNewsApps, "📰 News Apps...", newsApps.sortedBy { it.first.lowercase() }, true)
         setupBlockSpinner(R.id.spinAllApps, "📦 All Apps...", allAppsList, true)
+    val blockedWebsStr = prefs.getString("BLOCKLIST_WEB", "") ?: ""
+    val blockedWebDomains = blockedWebsStr
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map {
+            it.split("|").getOrNull(1)?.trim()?.lowercase()
+                ?: it.split("|")[0].trim().lowercase()
+        }
 
-        val socialWeb = listOf(Pair("Instagram", "instagram.com"), Pair("Facebook", "facebook.com"), Pair("TikTok", "tiktok.com"), Pair("Twitter / X", "twitter.com"), Pair("Reddit", "reddit.com"))
-        val videoWeb = listOf(Pair("YouTube", "youtube.com"), Pair("Twitch", "twitch.tv"), Pair("Netflix", "netflix.com"), Pair("Hulu", "hulu.com"))
-        val newsWeb = listOf(Pair("CNN", "cnn.com"), Pair("Fox News", "foxnews.com"), Pair("BBC", "bbc.com"), Pair("NY Times", "nytimes.com"))
-        val searchWeb = listOf(Pair("Google Images", "google.com/search?tbm=isch"), Pair("Bing Video Search", "bing.com/videos"), Pair("Yahoo Search", "search.yahoo.com"))
+
+
+        val socialWeb = listOf(Pair("Instagram", "instagram.com"), Pair("Facebook", "facebook.com"), Pair("TikTok", "tiktok.com"), Pair("Twitter / X", "twitter.com"), Pair("Reddit", "reddit.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val videoWeb = listOf(Pair("YouTube", "youtube.com"), Pair("Twitch", "twitch.tv"), Pair("Netflix", "netflix.com"), Pair("Hulu", "hulu.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val newsWeb = listOf(Pair("CNN", "cnn.com"), Pair("Fox News", "foxnews.com"), Pair("BBC", "bbc.com"), Pair("NY Times", "nytimes.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val searchWeb = listOf(Pair("Google Images", "google.com/search?tbm=isch"), Pair("Bing Video Search", "bing.com/videos"), Pair("Yahoo Search", "search.yahoo.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
 
         setupBlockSpinner(R.id.spinSocialWeb, "🌐 Social Sites...", socialWeb, false)
         setupBlockSpinner(R.id.spinVideoWeb, "🎬 Video Sites...", videoWeb, false)
@@ -407,74 +478,41 @@ class MainActivity : Activity() {
         val isChinesePhone = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
         val isPremium = prefs.getBoolean("REWARD_PREMIUM", false)
 
-        // System Shield Diagnostics Check
-        val llMainContent = findViewById<LinearLayout>(R.id.llMainContent)
-        var statusCard = llMainContent?.findViewWithTag<LinearLayout>("system_status_card")
-        if (statusCard == null && llMainContent != null) {
-            statusCard = LinearLayout(this).apply {
-                tag = "system_status_card"
-                orientation = LinearLayout.VERTICAL
-                setPadding(32, 32, 32, 32)
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 24) }
-            }
-            llMainContent.addView(statusCard, 2) // Insert right below description
+        
+    // System Shield Diagnostics Check
+    val issues = mutableListOf<String>()
+
+    if (!step1Done) issues.add("Accessibility (Step 1) DISABLED")
+    if (!step2Done) issues.add("Device Admin (Step 2) INACTIVE")
+    if (!stepBatteryDone) issues.add("Battery Opt. (Step 3) OPTIMIZED")
+    if (isChinesePhone && !step4Done) issues.add("Autostart (Step 4) PENDING")
+    if (isChinesePhone && !step5Done) issues.add("Secure App Mgr (Step 5) PENDING")
+
+    val shieldIcon = findViewById<TextView>(R.id.tvShieldStatusIcon)
+
+    if (issues.isEmpty()) {
+        shieldIcon.text = "🛡️"
+    } else {
+        shieldIcon.text = "⚠️"
+    }
+
+    shieldIcon.setOnClickListener {
+        if (issues.isEmpty()) {
+            Toast.makeText(
+                this,
+                "🛡️ SHIELDS FULLY ENGAGED",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(
+                this,
+                "⚠️ SHIELDS COMPROMISED:\n" + issues.joinToString("\n"),
+                Toast.LENGTH_LONG
+            ).show()
         }
+    }
 
-        if (statusCard != null) {
-            statusCard.removeAllViews()
-            val issues = mutableListOf<String>()
-            if (!step1Done) issues.add("• Accessibility Service (Step 1) is DISABLED")
-            if (!step2Done) issues.add("• Device Admin Lock (Step 2) is INACTIVE")
-            if (!stepBatteryDone) issues.add("• Battery Optimization is OPTIMIZED (Step 3)")
-            if (isChinesePhone && !step4Done) issues.add("• Autostart (Step 4) is PENDING")
-            if (isChinesePhone && !step5Done) issues.add("• Secure App Manager (Step 5) is PENDING")
-
-            if (issues.isEmpty()) {
-                statusCard.setBackgroundResource(R.drawable.bg_card)
-                statusCard.background?.setTint(Color.parseColor("#1B5E20")) // Dark Green
-                statusCard.addView(TextView(this).apply {
-                    text = "🛡️ SHIELDS: FULLY ENGAGED"
-                    setTextColor(Color.WHITE)
-                    textSize = 16f
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                    gravity = android.view.Gravity.CENTER
-                })
-                statusCard.addView(TextView(this).apply {
-                    text = "All background enforcement, anti-tamper, and rule systems are running smoothly."
-                    setTextColor(Color.parseColor("#C8E6C9"))
-                    textSize = 12f
-                    gravity = android.view.Gravity.CENTER
-                    setPadding(0, 8, 0, 0)
-                })
-            } else {
-                statusCard.setBackgroundResource(R.drawable.bg_card)
-                statusCard.background?.setTint(Color.parseColor("#B71C1C")) // Dark Red
-                statusCard.addView(TextView(this).apply {
-                    text = "⚠️ SHIELDS: COMPROMISED!"
-                    setTextColor(Color.WHITE)
-                    textSize = 16f
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                    gravity = android.view.Gravity.CENTER
-                })
-                statusCard.addView(TextView(this).apply {
-                    text = "The background protection is impaired. Complete the setup steps below to secure your system:"
-                    setTextColor(Color.parseColor("#FFCDD2"))
-                    textSize = 12f
-                    gravity = android.view.Gravity.CENTER
-                    setPadding(0, 8, 0, 8)
-                })
-                issues.forEach { issue ->
-                    statusCard.addView(TextView(this).apply {
-                        text = issue
-                        setTextColor(Color.WHITE)
-                        textSize = 12f
-                        setPadding(16, 4, 16, 4)
-                    })
-                }
-            }
-        }
-
-        btn2.isEnabled = step1Done; btnBatteryOpt.isEnabled = step1Done && step2Done
+btn2.isEnabled = step1Done; btnBatteryOpt.isEnabled = step1Done && step2Done
         btn4?.isEnabled = step1Done && step2Done && stepBatteryDone
         btn5?.isEnabled = step1Done && step2Done && stepBatteryDone && step4Done
 
@@ -505,7 +543,8 @@ class MainActivity : Activity() {
         if (isSetupDone) { 
             renderBlockList(findViewById(R.id.llBannedWebs), "BLOCKLIST_WEB")
             renderBlockList(findViewById(R.id.llBannedApps), "BLOCKLIST_APP")
-            setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
+                    setupCategorizedSpinners() // Dynamically re-filter dropdowns to hide banned/uninstalled apps
+setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
         }
         if (isPremium) findViewById<View>(R.id.llOnboarding).visibility = View.GONE
     } 
@@ -597,6 +636,42 @@ class MainActivity : Activity() {
         val llTimes = findViewById<LinearLayout>(R.id.llMainNightfallTimes) ?: return
         val btnStart = findViewById<Button>(R.id.btnMainNightfallStart) ?: return
         val btnEnd = findViewById<Button>(R.id.btnMainNightfallEnd) ?: return
+
+    val cbNightfallNotes = findViewById<CheckBox>(R.id.cbNightfallNotes)
+
+    if (cbNightfallNotes != null) {
+        cbNightfallNotes.isChecked =
+            prefs.getBoolean("NIGHTFALL_ALLOW_NOTES", true)
+
+        cbNightfallNotes.setOnCheckedChangeListener { buttonView, isChecked ->
+            val isPauseActive =
+                System.currentTimeMillis() <
+                prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+
+            // If they try to re-tick it without an override,
+            // immediately turn it back off.
+            if (isChecked && !isPauseActive) {
+                buttonView.setOnCheckedChangeListener(null)
+                buttonView.isChecked = false
+
+                setupMainNightfallUI()
+
+                Toast.makeText(
+                    this,
+                    "Must schedule System Override (Pause) to allow Notes again.",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                return@setOnCheckedChangeListener
+            }
+
+            prefs.edit()
+                .putBoolean("NIGHTFALL_ALLOW_NOTES", isChecked)
+                .apply()
+        }
+    }
+
+
 
         cbNightfall.isChecked = prefs.getInt("NIGHTFALL_START", -1) != -1
         llTimes.visibility = if (cbNightfall.isChecked) View.VISIBLE else View.GONE

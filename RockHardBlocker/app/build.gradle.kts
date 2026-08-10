@@ -44,7 +44,7 @@ android {
         create("gamersMaleNetbeasts") {
             dimension = "version"
             applicationIdSuffix = ".netbeasts"
-            resValue("string", "app_name", "RHC")
+            resValue("string", "app_name", "Momentum")
             resValue("string", "flavor_id", "rhc") 
             resValue("string", "overlay_title", "NOT TODAY.")
             resValue("string", "brick_message", "Stay strong. Defend your Netbeasts.")
@@ -53,7 +53,7 @@ android {
         create("gamersFemaleHomevisits") {
             dimension = "version"
             applicationIdSuffix = ".homevisits"
-            resValue("string", "app_name", "RHC")
+            resValue("string", "app_name", "Momentum")
             resValue("string", "flavor_id", "female_gamers")
             resValue("string", "overlay_title", "AVERT YOUR EYES.")
             resValue("string", "brick_message", "Take a deep breath and step away.")
@@ -62,7 +62,7 @@ android {
         create("timesaversMaleMomentum") {
             dimension = "version"
             applicationIdSuffix = ".momentum_m"
-            resValue("string", "app_name", "RHC")
+            resValue("string", "app_name", "Momentum")
             resValue("string", "flavor_id", "momentum_male")
             resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
             resValue("string", "brick_message", "Your time is valuable. Protect it.")
@@ -71,7 +71,7 @@ android {
         create("timesaversFemaleMomentum") {
             dimension = "version"
             applicationIdSuffix = ".momentum_f"
-            resValue("string", "app_name", "RHC")
+            resValue("string", "app_name", "Momentum")
             resValue("string", "flavor_id", "momentum_female")
             resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
             resValue("string", "brick_message", "Your time is valuable. Protect it.")

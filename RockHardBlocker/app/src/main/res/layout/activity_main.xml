@@ -6,13 +6,14 @@
         android:layout_width="match_parent" android:layout_height="wrap_content">
 
         <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
+            <TextView android:id="@+id/tvShieldStatusIcon" android:layout_width="40dp" android:layout_height="40dp" android:text="🛡️" android:textSize="20sp" android:gravity="center" android:layout_alignParentStart="true" android:layout_centerVertical="true"/>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/app_name" android:textColor="#FFFFFF" android:textSize="26sp" android:textStyle="bold" android:layout_centerInParent="true"/>
             <Button android:id="@+id/btnSettings" android:layout_width="40dp" android:layout_height="40dp" android:text="⚙️" android:textSize="18sp" android:backgroundTint="#222" android:textColor="#FFF" android:layout_alignParentEnd="true" android:layout_centerVertical="true"/>
         </RelativeLayout>
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="- Converts overcome domains into negative gameplay\n- Overcomes illicit and obscene material\n- Overcomes VPNs and self-uninstall\n- Supports custom write-only overcome list\n- Overcomes self-removal via safe mode"
-            android:textColor="#AAAAAA" android:textSize="13sp" android:layout_marginBottom="24dp" android:lineSpacingExtra="6dp"/>
+        
+
+        <include layout="@layout/card_onboarding"/>
 
         <Button android:id="@+id/btnSafeAppManager" android:layout_width="match_parent" android:layout_height="60dp" android:text="SAFE APP MANAGER (UNINSTALL APPS)" android:background="@drawable/bg_btn_accent" android:textColor="#FFFFFF" android:visibility="gone" android:layout_marginBottom="16dp"/>
 
@@ -33,7 +34,7 @@
             <LinearLayout android:id="@+id/llLeaderList" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp" android:visibility="gone"/>
         </LinearLayout>
 
-        <include layout="@layout/card_onboarding"/>
+        
 
         <LinearLayout android:id="@+id/llSafariCard" style="@style/AppCard">
             <Button android:id="@+id/btnGame" style="@style/AppButton.Accent" android:backgroundTint="#FF9800" android:text="OPEN NETBEAST SAFARI" android:layout_marginBottom="0dp"/>
@@ -62,9 +63,10 @@
 
         <!-- NIGHTFALL SHIELD -->
         <LinearLayout android:id="@+id/llNightfallCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🌙 NIGHTFALL SHIELD" android:textAlignment="center" android:textColor="#00BCD4" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Locks out non-essential apps during rest hours, allowing only calls and messages." android:textAlignment="center" android:textColor="#888" android:textSize="12sp" android:layout_marginBottom="16dp"/>
+            
+            
             <CheckBox android:id="@+id/cbMainNightfall" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Enable Nightfall Mode (Calls Only)" android:textColor="#FFF" android:textSize="14sp" android:layout_marginBottom="12dp"/>
+            <CheckBox android:id="@+id/cbNightfallNotes" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Allow writing notes at night" android:textColor="#FFF" android:textSize="14sp" android:layout_marginBottom="12dp" android:checked="true"/>
             <LinearLayout android:id="@+id/llMainNightfallTimes" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:visibility="gone" android:layout_marginBottom="8dp">
                 <Button android:id="@+id/btnMainNightfallStart" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_btn_standard" android:text="Start: Not Set" android:textColor="#FFFFFF" android:layout_marginEnd="4dp"/>
                 <Button android:id="@+id/btnMainNightfallEnd" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_btn_standard" android:text="End: Not Set" android:textColor="#FFFFFF" android:layout_marginStart="4dp"/>
