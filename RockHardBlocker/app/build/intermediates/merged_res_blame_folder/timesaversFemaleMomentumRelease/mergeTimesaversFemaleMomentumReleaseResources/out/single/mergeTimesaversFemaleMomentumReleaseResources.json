@@ -4,12 +4,20 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/mipmap-xxhdpi/ic_launcher.png"
     },
     {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_grindlord_faint.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_grindlord_faint.gif"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/xml_syncadapter.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/syncadapter.xml"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/mipmap-xhdpi_ic_launcher.png.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_laser_evade.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_laser_evade.gif"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable_bg_btn_accent.xml.flat",
@@ -24,12 +32,24 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/mipmap-xxxhdpi/ic_launcher.png"
     },
     {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_net_idle.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_net_idle.gif"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable_bg_btn_danger.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_btn_danger.xml"
     },
     {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_chirplet_hit.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_chirplet_hit.gif"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/layout_dialog_custom.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/dialog_custom.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_cartini_attack.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_cartini_attack.gif"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/mipmap-xxhdpi_ic_game.png.flat",
@@ -56,8 +76,20 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/mipmap-mdpi/ic_launcher.png"
     },
     {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_aegis_attack.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_aegis_attack.gif"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/xml_device_admin.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/xml/device_admin.xml"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_viralia_idle.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_viralia_idle.gif"
+    },
+    {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_cacheon_idle.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_cacheon_idle.gif"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable_bg_btn_success.xml.flat",
@@ -80,6 +112,10 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/game_controls_battle.xml"
     },
     {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_bite_explore.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_bite_explore.gif"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/layout_game_bag.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/game_bag.xml"
     },
@@ -96,12 +132,16 @@
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/drawable/bg_btn_standard.xml"
     },
     {
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_fx_bingewyrm.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/fx_bingewyrm.gif"
+    },
+    {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/layout_card_onboarding.xml.flat",
         "source": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-main-5:/layout/card_onboarding.xml"
     },
     {
-        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/layout_activity_main.xml.flat",
-        "source": "com.rockhard.blocker.app-main-5:/layout/activity_main.xml"
+        "merged": "com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable-nodpi_spr_bufferoo_victory.gif.flat",
+        "source": "com.rockhard.blocker.app-main-5:/drawable-nodpi/spr_bufferoo_victory.gif"
     },
     {
         "merged": "/home/codespace/.gradle/daemon/8.7/com.rockhard.blocker.app-timesaversFemaleMomentumRelease-4:/drawable_ic_sys_sync.xml.flat",

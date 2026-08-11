@@ -58,19 +58,30 @@ adb uninstall [apk name]
 
 
 
-  # Navigate to the Desktop project directory
-cd /workspaces/RHC-App/rhc-desktop
+cd /workspaces/RHC-App/RockHardBlocker
 
-# 1. Run the build script
-./build.sh
+# 1. Compile all four flavors
+./gradlew assembleGamersMaleNetbeastsRelease
+./gradlew assembleGamersFemaleHomevisitsRelease
+./gradlew assembleTimesaversMaleMomentumRelease
+./gradlew assembleTimesaversFemaleMomentumRelease
 
-# 2. Navigate back to the root and create the GitHub Release
+# 2. Copy and rename them to match the website's JS fileMap
+cp app/build/outputs/apk/gamersMaleNetbeasts/release/app-gamersMaleNetbeasts-release.apk ../rhc_netbeasts.apk
+cp app/build/outputs/apk/gamersFemaleHomevisits/release/app-gamersFemaleHomevisits-release.apk ../rhc_homevisits.apk
+cp app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk ../rhc_momentum_m.apk
+cp app/build/outputs/apk/timesaversFemaleMomentum/release/app-timesaversFemaleMomentum-release.apk ../rhc_momentum_f.apk
+
+# 3. Create the release and upload ALL 4 APKs at once
 cd /workspaces/RHC-App
-TAG="v$(date +%Y%m%d%H%M%S)-desktop"
-
-# IMPORTANT: Make sure your GITHUB_TOKEN is set
-gh release create "$TAG" \
-  ./rhc-desktop/rhc_desktop.exe \
+TAG="v$(date +%Y%m%d%H%M%S)"
+GITHUB_TOKEN="" GH_TOKEN="" gh release create "$TAG" \
+  ./rhc_netbeasts.apk \
+  ./rhc_homevisits.apk \
+  ./rhc_momentum_m.apk \
+  ./rhc_momentum_f.apk \
   --repo frostyosty/htc-downloads-rhc \
-  --title "Desktop Build $TAG" \
-  --notes "Latest build of the Win32 C++ Momentum Core. Includes all server-side logic from the Android build."
+  --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
+  --notes "eg Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
+
+
