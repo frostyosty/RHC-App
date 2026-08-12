@@ -1,0 +1,3421 @@
+===== RockHardBlocker/app/build.gradle.kts =====
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    buildFeatures {
+        buildConfig = true
+    }
+    namespace = "com.rockhard.blocker"
+    compileSdk = 34
+    defaultConfig {
+        applicationId = "com.rockhard.blocker"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+    }
+    signingConfigs {
+        create("release") {
+            storeFile = file("rockhard-keystore.jks")
+            storePassword = "rockhard123"
+            keyAlias = "key0"
+            keyPassword = "rockhard123"
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+    lint { abortOnError = false }
+
+    flavorDimensions += "version"
+    
+    productFlavors {
+        create("gamersMaleNetbeasts") {
+            dimension = "version"
+            applicationIdSuffix = ".netbeasts"
+            resValue("string", "app_name", "Momentum")
+            resValue("string", "flavor_id", "rhc") 
+            resValue("string", "overlay_title", "NOT TODAY.")
+            resValue("string", "brick_message", "Stay strong. Defend your Netbeasts.")
+            resValue("string", "essay_prompt", "GAME_MODE")
+        }
+        create("gamersFemaleHomevisits") {
+            dimension = "version"
+            applicationIdSuffix = ".homevisits"
+            resValue("string", "app_name", "Momentum")
+            resValue("string", "flavor_id", "female_gamers")
+            resValue("string", "overlay_title", "AVERT YOUR EYES.")
+            resValue("string", "brick_message", "Take a deep breath and step away.")
+            resValue("string", "essay_prompt", "GAME_MODE")
+        }
+        create("timesaversMaleMomentum") {
+            dimension = "version"
+            applicationIdSuffix = ".momentum_m"
+            resValue("string", "app_name", "Momentum")
+            resValue("string", "flavor_id", "momentum_male")
+            resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
+            resValue("string", "brick_message", "Your time is valuable. Protect it.")
+            resValue("string", "essay_prompt", "MOMENTUM_MODE")
+        }
+        create("timesaversFemaleMomentum") {
+            dimension = "version"
+            applicationIdSuffix = ".momentum_f"
+            resValue("string", "app_name", "Momentum")
+            resValue("string", "flavor_id", "momentum_female")
+            resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
+            resValue("string", "brick_message", "Your time is valuable. Protect it.")
+            resValue("string", "essay_prompt", "MOMENTUM_MODE")
+        }
+    }
+}
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/Config.kt =====
+package com.rockhard.blocker
+
+object Config {
+    // Toggled via CLI. If false, the Shield allows access to Android Settings so you can uninstall.
+    const val UNINSTALL_PROTECTION_ENABLED = true
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/GameState.kt =====
+package com.rockhard.blocker
+
+import java.util.UUID
+import kotlin.random.Random
+
+internal fun GameActivity.loadSaveData() {
+    sprays = prefs.getInt("SPRAYS", 0)
+    potions = prefs.getInt("POTIONS", 0)
+    nets = prefs.getInt("NETS", 0)
+    focusCoins = prefs.getInt("COINS", 0)
+    transfusers = prefs.getInt("TRANSFUSERS", 0)
+    smallHpPots = prefs.getInt("SMALL_HP_POTS", 0)
+    largeHpPots = prefs.getInt("LARGE_HP_POTS", 0)
+    activePetIndex = prefs.getInt("ACTIVE_PET_INDEX", 0)
+    totalExpeds = prefs.getInt("TOTAL_EXPEDS", 0)
+    graveyard = SaveManager.loadParty(prefs, "GRAVEYARD_DATA")
+
+    playerId = prefs.getString("PLAYER_ID", "") ?: ""
+    playerName = prefs.getString("PLAYER_NAME", "") ?: ""
+
+    if (playerId.isEmpty()) {
+        playerId = UUID.randomUUID().toString()
+        val adjs = listOf("Neon", "Cyber", "Void", "Quantum", "Shadow", "Rogue", "Iron", "Aura")
+        val nouns = listOf("Runner", "Ghost", "Paladin", "Hacker", "Samurai", "Vanguard", "Ninja")
+        playerName = "${adjs.random()}_${nouns.random()}_${Random.nextInt(10, 99)}"
+        prefs.edit().putString("PLAYER_ID", playerId).putString("PLAYER_NAME", playerName).apply()
+    }
+
+    party = SaveManager.loadParty(prefs, "PARTY_DATA")
+    forSaleParty = SaveManager.loadParty(prefs, "FORSALE_DATA")
+    marketBeasts = SaveManager.loadParty(prefs, "MARKET_DATA")
+    if (activePetIndex >= party.size) activePetIndex = 0
+
+    activeExpeditions.clear()
+    activeExpeditions.putAll(SaveManager.loadExpeditions(prefs))
+}
+
+internal fun GameActivity.wipeCorruptSave() {
+    prefs.edit().clear().apply()
+    party.clear()
+    party.add(Netbeast("Cacheon", "Tech", 120, 120, "Digital Swipe", "Overclock", "System Wipe", 0L, 0, 0, 0, false, "None", 0, 0, 0, 0, "None", 0))
+    activeExpeditions.clear()
+    sprays = 0; potions = 0; nets = 0; focusCoins = 0; transfusers = 0; smallHpPots = 0; largeHpPots = 0
+    SaveManager.saveParty(prefs, "PARTY_DATA", party)
+    saveItems()
+    printLog("> ⚠️ WARNING: Save file wiped. Recovery Protocol Initialized.")
+}
+
+internal fun GameActivity.processFleePenalty() {
+    if (prefs.getBoolean("FLED_BATTLE", false)) {
+        prefs.edit().putBoolean("FLED_BATTLE", false).apply()
+        val fBoss = prefs.getString("FLED_BOSS", "A Corrupted Beast") ?: "A Corrupted Beast"
+        nets /= 2; potions /= 2; sprays /= 2; focusCoins /= 2; smallHpPots /= 2; largeHpPots /= 2
+        
+        var killedCount = 0
+        party.sortBy { it.maxHp }
+        val removedBeasts = mutableListOf<String>()
+        while (party.isNotEmpty() && killedCount < 3) {
+            removedBeasts.add(party[0].name)
+            party.removeAt(0)
+            killedCount++
+        }
+        activePetIndex = 0
+        prefs.edit().putInt("ACTIVE_PET_INDEX", 0).apply()
+        saveParty(); saveItems(); updateBagScreen(); updatePartyScreen(); updateBattleUI()
+        
+        printLog("\n==================================")
+        printLog("⚠️ DEVASTATION REPORT ⚠️")
+        printLog("Your Netbeasts were attacked by $fBoss while you fled!")
+        printLog("Your stockpiles were ransacked (Lost 50% of items/coins).")
+        if (removedBeasts.isNotEmpty()) printLog("You lost: ${removedBeasts.joinToString(", ")}.")
+        if (party.isEmpty()) printLog("You have no Netbeasts left...")
+        printLog("==================================\n")
+    }
+}
+
+internal fun GameActivity.generateMarket() {
+    if (marketBeasts.isEmpty()) {
+        for (i in 0 until 3) {
+            val b = GameData.beasts.random()
+            val lvl = Random.nextInt(5, 20)
+            val cost = (lvl * 5) + Random.nextInt(-10, 10)
+            marketBeasts.add(Netbeast(b.name, b.type, lvl * 10, lvl * 10, b.m1, b.m2, "Tackle", System.currentTimeMillis(), 0, 0, 0, true, "None", 0, cost.coerceAtLeast(10), 0, 0, "None", 0))
+        }
+        SaveManager.saveParty(prefs, "MARKET_DATA", marketBeasts)
+    }
+}
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/GameModels.kt =====
+package com.rockhard.blocker
+
+data class Netbeast(
+    var name: String, val type: String, var hp: Int, var maxHp: Int, 
+    var move1: String, var move2: String, var move3: String, val boughtAt: Long, 
+    var eqNets: Int, var eqPots: Int, var eqSprays: Int, 
+    var isNew: Boolean, var infusionEl: String, var infusionStacks: Int, var listedPrice: Int = 0,
+    var expedsDone: Int = 0, var amulets: Int = 0,
+    var lastMove: String = "None", var moveStreak: Int = 0
+) {
+    fun isGrouchy(): Boolean = (System.currentTimeMillis() - boughtAt) < (24 * 60 * 60 * 1000) && boughtAt > 0
+}
+
+object GameData {
+    val bossNames = listOf("Pronosaur", "Gorella", "Fleshwire", "Lustrot", "The Dark One")
+
+    data class BeastDef(val name: String, val type: String, val baseHp: Int, val m1: String, val m2: String, val category: String, val evoStage: Int)
+    data class TraitDef(val name: String, val rarityWeight: Int, val trigger: String, val hpMult: Double, val desc: String)
+
+    val traits = listOf(
+        TraitDef("Ordinary", 100, "None", 1.0, "Standard stats."),
+        TraitDef("Frail", 40, "None", 0.8, "Reduced maximum HP."),
+        TraitDef("Strong", 30, "None", 1.2, "Increased maximum HP."),
+        TraitDef("Savage", 10, "None", 1.5, "Massively increased HP."),
+        TraitDef("Battle-Hardened", 5, "None", 1.6, "Extremely resilient. High HP."),
+        TraitDef("Veteran", 2, "None", 1.8, "A legendary survivor. Incredible HP."),
+        TraitDef("Slick", 20, "Rain", 1.15, "Thrives in the rain."),
+        TraitDef("Radiant", 20, "Clear", 1.25, "Absorbs solar energy."),
+        TraitDef("Frostbitten", 20, "Snow", 1.1, "Numb to the cold."),
+        TraitDef("Charged", 15, "Storm", 1.4, "Crackling with storm energy."),
+        TraitDef("Aggressive", 25, "Gaming", 1.3, "Hyper-competitive. High HP."),
+        TraitDef("Skittish", 25, "Social", 0.85, "Easily distracted. Lower HP."),
+        TraitDef("Glitchy", 15, "Tech", 1.35, "Anomalous health readings."),
+        TraitDef("Lethargic", 30, "Streaming", 0.9, "Slow to react. Lower HP."),
+        TraitDef("Regenerative", 10, "None", 1.0, "Heals 20% of Max HP after surviving a battle."),
+        TraitDef("Persistence", 10, "Repetition", 1.0, "+15% Damage per consecutive repeated attack."),
+        TraitDef("Dynamism", 10, "Variation", 1.0, "+15% Damage per consecutive alternating attack."),
+        TraitDef("Will to Live", 0, "Rescue", 1.0, "Heals 15% of Max HP after returning from exploration."),
+        TraitDef("Vampiric", 10, "Combat Mutation", 1.0, "Heals 15% of damage dealt."),
+        TraitDef("Thick-Skinned", 10, "Combat Mutation", 1.2, "Takes 15% less damage."),
+        TraitDef("Frenzy", 10, "Combat Mutation", 0.9, "+15% Critical Hit Chance."),
+        TraitDef("Swift", 15, "Combat Mutation", 0.8, "+10% Evasion."),
+        TraitDef("Looter", 15, "Combat Mutation", 1.0, "Finds coins after victories."),
+        TraitDef("Obscure", 10, "Wild Mutation", 1.0, "Hides all other traits from being identified."), TraitDef("Wary", 0, "Trauma", 1.0, "-10% Attack Damage."), TraitDef("Worried", 0, "Trauma", 1.0, "-20% Attack Damage."), TraitDef("Petrified", 0, "Trauma", 1.0, "-50% Attack Damage."),
+        TraitDef("Ephemeral", 0, "Boss", 1.0, "Killing this entity yields no XP or Levels."),
+        TraitDef("Elusive", 0, "Boss", 1.0, "+30% flat Evasion rate."),
+        TraitDef("Colossal", 0, "Boss", 1.0, "Absolute immunity to Stun and Terrify."),
+        TraitDef("Spiked", 10, "Wild Mutation", 1.0, "Reflects 10% of damage taken back to the attacker."),
+        TraitDef("Enraged", 10, "Wild Mutation", 1.0, "Deals 30% more damage, but takes 20% more damage.")
+    )
+
+    val beasts = listOf(
+        BeastDef("Bytelet", "Tech", 50, "Ping", "Dodge", "Tech", 1),
+        BeastDef("Cacheon", "Tech", 120, "Digital Swipe", "Overclock", "Tech", 2),
+        BeastDef("Technophasia", "Tech", 220, "System Wipe", "Firewall", "Tech", 3),
+        BeastDef("Chirplet", "Social", 40, "Tweet", "Flee", "Social", 1),
+        BeastDef("Viralia", "Social", 110, "Viral Surge", "Cancel", "Social", 2),
+        BeastDef("Trendrake", "Social", 200, "Ratio", "Doxx", "Social", 3),
+        BeastDef("Noobit", "Gaming", 60, "Spam Click", "Cry", "Gaming", 1),
+        BeastDef("Skirmalot", "Gaming", 130, "XP Boost", "Critical Strike", "Gaming", 2),
+        BeastDef("Grindlord", "Gaming", 250, "Rage Quit", "G-Fuel", "Gaming", 3),
+        BeastDef("Bufferoo", "Streaming", 50, "Lag", "Skip", "Streaming", 1),
+        BeastDef("Streamlet", "Streaming", 110, "Binge", "Autoplay", "Streaming", 2),
+        BeastDef("Bingewyrm", "Streaming", 210, "Marathon", "Hypnotize", "Streaming", 3),
+        BeastDef("Zephyrlet", "Flying", 35, "Tackle", "Aero Beam", "Flying", 1),
+        BeastDef("Airstream", "Flying", 75, "Swipe", "Chrono Blast", "Flying", 2),
+        BeastDef("Stratolord", "Flying", 130, "Bite", "Sky-Breaker", "Flying", 3),
+        BeastDef("Cartini", "Shopping", 45, "Browse", "Wishlist", "Shopping", 1)
+    )
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/GameSetup.kt =====
+package com.rockhard.blocker
+
+import android.graphics.Color
+import android.view.MotionEvent
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.Toast
+import kotlin.random.Random
+
+internal fun GameActivity.setupBattleControls() {
+    val btn1 = findViewById<Button>(R.id.btnMove1)
+    val btn2 = findViewById<Button>(R.id.btnMove2)
+    val btn3 = findViewById<Button>(R.id.btnMove3)
+
+    btn1.setOnClickListener { if (playerLastStand) executeHumanPunch() else executePlayerMove(party[activePetIndex].move1) }
+    btn2.setOnClickListener { executePlayerMove(party[activePetIndex].move2) }
+    btn3.setOnClickListener { executePlayerMove(party[activePetIndex].move3) }
+
+    findViewById<Button>(R.id.btnSwap).setOnClickListener {
+        cancelBattleTimer()
+        if (battleOver || party.size <= 1 || playerLastStand || currentEnemy == null) return@setOnClickListener
+        val wildLvl = currentEnemy!!.maxHp / 10
+        val options = party.mapIndexed { index, p -> val diff = (p.maxHp / 10) - wildLvl; "${p.name} Lvl ${p.maxHp / 10} (${if (diff >= 0) "+$diff" else diff})" }.toTypedArray()
+        
+        DialogUtils.showCustomDialog(this, "Swap to who?", null, true, "", null) { content, dialog ->
+            party.forEachIndexed { index, p ->
+                val btn = Button(this).apply { text = options[index]; setBackgroundResource(R.drawable.bg_btn_standard); setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 16) }
+                    setOnClickListener {
+                        if (index == activePetIndex) printLog("\n> ${p.name} is already fighting!") 
+                        else { activePetIndex = index; prefs.edit().putInt("ACTIVE_PET_INDEX", activePetIndex).apply(); printLog("\n> You swapped to ${party[activePetIndex].name}!"); showBattleArena(party[activePetIndex].name, currentEnemy!!.name); updateBattleUI(); triggerEnemyCounterAttack() }
+                        dialog.dismiss()
+                    }
+                }; content.addView(btn)
+            }
+        }
+    }
+
+    // MID-BATTLE POTION
+    findViewById<Button>(R.id.btnBattlePot).setOnClickListener {
+    cancelBattleTimer()
+        if (battleOver || playerLastStand) return@setOnClickListener
+        val pet = party[activePetIndex]
+        if (pet.eqPots > 0) {
+            pet.eqPots--
+            val effect = Random.nextInt(3)
+            if (effect == 0) { playerHasTripleStrike = true; printLog("\n> 🧪 Potion glows RED! Next attack will be a TRIPLE STRIKE!") } 
+            else if (effect == 1) { playerHasEvasion = true; printLog("\n> 🧪 Potion glows BLUE! Guaranteed EVASION!") } 
+            else { pet.maxHp += 10; pet.hp = (pet.hp + 10).coerceAtMost(pet.maxHp); printLog("\n> 🧪 Potion glows GREEN! Max HP increased!") }
+            saveParty(); updatePartyScreen(); updateBattleUI()
+            triggerEnemyCounterAttack()
+        }
+    }
+
+    // MID-BATTLE SPRAY
+    findViewById<Button>(R.id.btnBattleSpray).setOnClickListener {
+    cancelBattleTimer()
+        if (battleOver || playerLastStand) return@setOnClickListener
+        val pet = party[activePetIndex]
+        if (pet.eqSprays > 0) {
+            pet.eqSprays--
+            printLog("\n> 💨 ${pet.name} used a Repel Spray!")
+            saveParty(); updatePartyScreen(); updateBattleUI()
+            
+            if (isUnderAttack && Random.nextInt(100) < 5) { printLog("> CRITICAL SUCCESS! Boss flees."); endBattle() } 
+            else if (isWildBattle && Random.nextInt(100) < 60) { printLog("> The wild ${currentEnemy?.name} was blinded and ran away!"); endBattle() } 
+            else { printLog("> No effect..."); triggerEnemyCounterAttack() }
+        }
+    }
+
+    // MID-BATTLE NET (Takes a turn!)
+    findViewById<Button>(R.id.btnBattleNet).setOnClickListener {
+    cancelBattleTimer()
+        if (battleOver || playerLastStand || currentEnemy == null) return@setOnClickListener
+        val pet = party[activePetIndex]
+        if (pet.eqNets <= 0) return@setOnClickListener
+        
+        pet.eqNets--
+        saveParty(); updatePartyScreen(); updateBattleUI()
+
+        printLog("\n--- PLAYER TURN ---")
+        printLog("> You threw a Net at ${currentEnemy?.name}!")
+
+        if (currentEnemy?.type == "EventBoss" || isTrainerBattle) {
+            printLog("> ❌ You cannot catch this beast! The net bounced off!")
+            mainHandler.postDelayed({ triggerEnemyCounterAttack() }, 1000)
+            return@setOnClickListener
+        }
+
+        // QTE Catch Math
+        val totalNets = nets + party.sumOf { it.eqNets }
+        val baseCatchChance = 15 + (25.0 * Math.exp(-0.05 * totalNets)).toInt()
+        val isClear = pet.infusionStacks > 0 && pet.infusionEl == "Clear"
+        val catchPenalty = (exploreDifficulty / 100f * 20).toInt()
+        val catchChance = (if (isClear) baseCatchChance + 15 else baseCatchChance) - catchPenalty
+        
+        if (Random.nextInt(100) < catchChance) {
+            printLog("> 🌟 SUCCESS! You caught ${currentEnemy?.name} mid-battle!")
+            currentEnemy!!.isNew = true; party.add(currentEnemy!!)
+            saveParty(); updatePartyScreen(); updateDispatchButton(); endBattle()
+        } else {
+            printLog("> 💢 The net broke! ${currentEnemy?.name} breaks free!")
+            mainHandler.postDelayed({ triggerEnemyCounterAttack() }, 1000)
+        }
+    }
+
+    findViewById<Button>(R.id.btnAbandon).setOnClickListener {
+    cancelBattleTimer()
+        if (battleOver || playerLastStand) return@setOnClickListener
+        DialogUtils.showCustomDialog(this, "Abandon Netbeast?", "If you flee now, ${party[activePetIndex].name} will be lost forever. Are you sure?", true, "ABANDON", { printLog("\n> You ABANDONED ${party[activePetIndex].name} to save yourself!"); AnimUtils.animDeath(findViewById(R.id.spritePlayer)); party.removeAt(activePetIndex); activePetIndex = 0; saveParty(); endBattle() }, null)
+    }
+}
+
+internal fun GameActivity.setupDispatchControl() {
+    findViewById<Button>(R.id.btnDispatch).setOnClickListener {
+        if (aetherDepleted) { Toast.makeText(this, "Aether depleted! Return tomorrow.", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+        if (party.isEmpty()) {
+            if (activeExpeditions.containsKey(-1)) printLog("> You are already exploring!") else { activeExpeditions[-1] = System.currentTimeMillis() + (180 * 1000); printLog("\n> You bravely step out into the wild to explore..."); SaveManager.saveExpeditions(prefs, activeExpeditions); updateDispatchButton() }
+            return@setOnClickListener
+        }
+        val availablePets = party.indices.filter { !activeExpeditions.containsKey(it) }
+        if (availablePets.isEmpty()) { printLog("> All Netbeasts are exploring!"); return@setOnClickListener }
+
+        var dispatched = 0
+        for (idx in availablePets) { activeExpeditions[idx] = System.currentTimeMillis() + (180 * 1000); printLog("\n> Dispatched ${party[idx].name} to explore..."); dispatched++ }
+        if (dispatched > 0) { SaveManager.saveExpeditions(prefs, activeExpeditions); updateDispatchButton() }
+    }
+
+    val btnFightAether = findViewById<Button>(R.id.btnFightAether)
+    val aetherRunnable = object : Runnable {
+        override fun run() {
+            if (isFightAetherActive && activeExpeditions.isEmpty()) {
+                aetherSeconds++
+                tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
+                tvAether.setTextColor(android.graphics.Color.parseColor("#E040FB"))
+                mainHandler.postDelayed(this, 1250)
+            }
+        }
+    }
+    
+    btnFightAether.setOnTouchListener { _, event ->
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> { if (activeExpeditions.isEmpty()) { isFightAetherActive = true; mainHandler.postDelayed(aetherRunnable, 1250) } }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { isFightAetherActive = false; tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4")); mainHandler.removeCallbacks(aetherRunnable) }
+        }
+        false
+    }
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/MainActivity.kt =====
+package com.rockhard.blocker
+
+import android.widget.CheckBox
+import android.accounts.Account
+import android.accounts.AccountManager
+import android.app.Activity
+import android.app.admin.DevicePolicyManager
+import android.content.*
+import android.graphics.Color
+import android.net.Uri
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
+import android.text.TextUtils
+import android.view.View
+import android.widget.*
+
+class MainActivity : Activity() {
+    internal lateinit var dpm: DevicePolicyManager
+    internal lateinit var compName: ComponentName
+    internal lateinit var prefs: SharedPreferences
+    
+    internal val mainHandler = Handler(Looper.getMainLooper())
+    
+    internal val tickRunnable = object : Runnable {
+        override fun run() {
+            if (!BuildConfig.FLAVOR.lowercase().contains("gamers")) updateMomentumUI()
+            
+            if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
+                findViewById<View>(R.id.llDebugTerminal)?.visibility = View.VISIBLE
+                val terminalText = GuardianService.actionLogs.joinToString("\n")
+                findViewById<TextView>(R.id.tvTerminalOutput)?.text = terminalText
+            } else {
+                findViewById<View>(R.id.llDebugTerminal)?.visibility = View.GONE
+            }
+            mainHandler.postDelayed(this, 1000)
+        }
+    }
+
+    internal var setupPollHandler: Handler? = null
+    internal var setupPollRunnable: Runnable? = null
+    internal var allAppsList = listOf<Pair<String, String>>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+    // --- CLEANUP BAD NUMERIC ENTRIES (Fixes the 2026 Bug) ---
+    val appList = prefs.getString("BLOCKLIST_APP", "")
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?: emptyList()
+
+    val webList = prefs.getString("BLOCKLIST_WEB", "")
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?: emptyList()
+
+    val cleanApp = appList
+        .filter {
+            !it.split("|")[0]
+                .trim()
+                .matches(Regex("^[0-9]+$"))
+        }
+        .joinToString(",")
+
+    val cleanWeb = webList
+        .filter {
+            !it.split("|")[0]
+                .trim()
+                .matches(Regex("^[0-9]+$"))
+        }
+        .joinToString(",")
+
+    prefs.edit()
+        .putString("BLOCKLIST_APP", cleanApp)
+        .putString("BLOCKLIST_WEB", cleanWeb)
+        .apply()
+
+    // --------------------------------------------------------
+        try { prefs.getString("PARTY_DATA", "") } catch (e: Exception) { prefs.edit().clear().apply() }
+        if (!prefs.contains("INSTALL_TIME")) prefs.edit().putLong("INSTALL_TIME", System.currentTimeMillis()).apply()
+
+        val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+        CloakEngine.uncloak(this, prefs.getBoolean("LAUNCH_GAME_DEFAULT", false))
+
+        if (prefs.getBoolean("LAUNCH_GAME_DEFAULT", false) && !intent.getBooleanExtra("FROM_GAME", false)) {
+            if (isGamers) { startActivity(Intent(this, GameActivity::class.java)); finish(); return }
+        }
+        setContentView(R.layout.activity_main)
+        
+        WatchdogReceiver.scheduleWatchdog(this)
+        
+        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        compName = ComponentName(this, AdminReceiver::class.java)
+
+        if (!isGamers) { MomentumEngine.resetDailyIfNeeded(prefs); setupMomentumUI() }
+        mainHandler.postDelayed(tickRunnable, 1000)
+
+        findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.llSafariCard).visibility = if (isGamers) View.VISIBLE else View.GONE
+
+        WeatherEngine.fetchSilent(this, onSuccess = { city, weather, icon, terrain, debugStr -> prefs.edit().putString("CURRENT_CITY", city).putString("DEBUG_API_DATA", debugStr).apply() }, {})
+
+        if (!prefs.getBoolean("INITIALIZED", false)) {
+            val starterParty = "Cacheon,Tech,120,120,Ping,Glitch,System Wipe,0,0,0,0,false,None,0,0,0,0,None,0;Cardiol,Fitness,150,150,Momentum,Heavy Lift,Flex,0,0,0,0,false,None,0,0,0,0,None,0"
+            prefs.edit().putString("PARTY_DATA", starterParty).putInt("NETS", 5).putInt("SPRAYS", 2).putInt("POTIONS", 3).putBoolean("INITIALIZED", true).putBoolean("VIBRATION", true).apply()
+        }
+
+        findViewById<Button>(R.id.btnSettings).setOnClickListener { openSettingsMenu() }
+
+        val grantSettingsAccess = { prefs.edit().putLong("ALLOW_SETTINGS_UNTIL", System.currentTimeMillis() + 120000L).apply() }
+        findViewById<Button>(R.id.btnStep1).setOnClickListener { if (!isAccessibilityServiceEnabled(this, GuardianService::class.java)) { grantSettingsAccess(); DialogUtils.showCustomDialog(this, "Step 1: Rock Hard Shield", "Android hides this setting for security.\n\n→ Tap 'Downloaded apps' or 'Installed services'.\n→ Find '${getString(R.string.app_name)}'.\n→ Turn the switch ON.", true, "GO TO SETTINGS", { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }) } }
+        findViewById<Button>(R.id.btnStep2).setOnClickListener { if (!dpm.isAdminActive(compName)) { grantSettingsAccess(); DialogUtils.showCustomDialog(this, "Step 2: Lock App", "This prevents the app from being uninstalled.", true, "LOCK APP", { startActivity(Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply { putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName); putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Locks app down.") }) }) } }
+        findViewById<Button>(R.id.btnStepBatteryOpt).setOnClickListener { grantSettingsAccess(); val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }; try { startActivity(intent) } catch (e: Exception) { Toast.makeText(this, "Setting unavailable.", Toast.LENGTH_SHORT).show() } }
+
+        val isChinesePhone = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
+        val btn4 = findViewById<Button>(R.id.btnStep4); val btn5 = findViewById<Button>(R.id.btnStep5) 
+        if (isChinesePhone && btn4 != null && btn5 != null) {
+            btn4.visibility = View.VISIBLE; btn5.visibility = View.VISIBLE
+            btn4.text = "STEP 4: FIX AUTOSTART"; 
+            btn4.setOnClickListener { 
+                prefs.edit().putBoolean("AWAITING_STEP4", true).apply()
+                grantSettingsAccess()
+                DialogUtils.showCustomDialog(this, "Step 4: Autostart", "Set 'Autostart' to ON so the background process survives.", true, "FIX NOW", { 
+                    val intents = listOf(
+                        Intent().setComponent(ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")),
+                        Intent().setComponent(ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity")),
+                        Intent().setComponent(ComponentName("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity")),
+                        Intent().setComponent(ComponentName("com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity")),
+                        Intent().setComponent(ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity")),
+                        Intent().setComponent(ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager")),
+                        Intent().setComponent(ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity")),
+                        Intent().setComponent(ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"))
+                    )
+                    var success = false
+                    for (intent in intents) {
+                        try { startActivity(intent); success = true; break } catch (e: Exception) {}
+                    }
+                    if (!success) startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.parse("package:$packageName") })
+                }) 
+            }
+            btn5.text = "STEP 5: SECURE APP MANAGER"; btn5.setOnClickListener { prefs.edit().putBoolean("STEP5_CLICKED", true).apply(); DialogUtils.showCustomDialog(this, "Step 5: App Manager", "We will now aggressively block the Android/MIUI 'Manage Apps' list screen so the shield cannot be bypassed.", true, "SECURE IT", { refreshUI() }) }
+        }
+
+        findViewById<Button>(R.id.btnGame).setOnClickListener { startActivity(Intent(this, GameActivity::class.java)) }
+        
+        // --- NEW: Attach Uninstaller listener to the main layout button ---
+        findViewById<Button>(R.id.btnSafeAppManager)?.setOnClickListener { showSafeUninstaller() }
+        
+        findViewById<Button>(R.id.btnTestFilter)?.setOnClickListener {
+            refreshUI()
+            val step1 = isAccessibilityServiceEnabled(this, GuardianService::class.java)
+            val step2 = dpm.isAdminActive(compName)
+            val pow = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            val step3 = pow.isIgnoringBatteryOptimizations(packageName)
+            val isChinese = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
+            val step4 = prefs.getBoolean("STEP4_CLICKED", false)
+            val step5 = prefs.getBoolean("STEP5_CLICKED", false)
+            val done = (step1 && step2 && step3 && (!isChinese || (step4 && step5)))
+            if (done) {
+                Toast.makeText(this, "🛡️ ALL SYSTEMS VERIFIED! Reward Unlocked!", Toast.LENGTH_LONG).show()
+            } else {
+                val missing = mutableListOf<String>()
+                if (!step1) missing.add("Step 1 (Accessibility)")
+                if (!step2) missing.add("Step 2 (Device Admin)")
+                if (!step3) missing.add("Step 3 (Battery Optimization)")
+                if (isChinese && !step4) missing.add("Step 4 (Autostart)")
+                if (isChinese && !step5) missing.add("Step 5 (Secure Manager)")
+                Toast.makeText(this, "⚠️ Setup incomplete! Missing: " + missing.joinToString(", "), Toast.LENGTH_LONG).show()
+            }
+        }
+
+
+        setupCategorizedSpinners()
+        setupRedirectUI()
+        setupSyncAdapter()
+
+        findViewById<EditText>(R.id.etCustomWeb)?.apply {
+            setTextColor(Color.parseColor("#121212"))
+            setHintTextColor(Color.parseColor("#757575"))
+        }
+        findViewById<EditText>(R.id.etCustomRedirect)?.apply {
+            setTextColor(Color.parseColor("#121212"))
+            setHintTextColor(Color.parseColor("#757575"))
+        }
+
+        findViewById<Button>(R.id.btnAddWeb).setOnClickListener { 
+            val webInput = findViewById<EditText>(R.id.etCustomWeb).text.toString().trim().lowercase()
+            if (webInput.isNotEmpty()) {
+                if (webInput.matches(Regex("^[0-9]+$"))) {
+                    Toast.makeText(
+                        this,
+                        "Numeric-only blocks are too broad (e.g. blocking a year).",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@setOnClickListener
+                }
+
+                addBlockItem("BLOCKLIST_WEB", webInput, webInput)
+            }
+            findViewById<EditText>(R.id.etCustomWeb).setText("") 
+        }
+
+        val btnDumbPhoneCamera = findViewById<Button>(R.id.btnDrasticDumbPhoneCamera)
+        val btnDumbPhoneNoCamera = findViewById<Button>(R.id.btnDrasticDumbPhoneNoCamera)
+        val btnNoInternet = findViewById<Button>(R.id.btnDrasticNoInternet)
+        val btnNoVideos = findViewById<Button>(R.id.btnDrasticNoVideos)
+        val btnCallsOnly = findViewById<Button>(R.id.btnDrasticCallsOnly)
+
+        fun updateDrasticUI() {
+            val isDumbCamera = prefs.getBoolean("DRASTIC_DUMB_PHONE_CAMERA", false)
+            val isDumbNoCamera = prefs.getBoolean("DRASTIC_DUMB_PHONE_NO_CAMERA", false)
+            val isNoInternet = prefs.getBoolean("DRASTIC_NO_INTERNET", false)
+            val isNoVideos = prefs.getBoolean("DRASTIC_NO_VIDEOS", false)
+            val isCallsOnly = prefs.getBoolean("DRASTIC_CALLS_ONLY", false)
+
+            btnDumbPhoneCamera.text = if (isDumbCamera) "Dumb Phone (With Camera): ACTIVE" else "Dumb Phone (WITH Camera)"
+            btnDumbPhoneCamera.setBackgroundResource(if (isDumbCamera) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+            
+            btnDumbPhoneNoCamera.text = if (isDumbNoCamera) "Dumb Phone (No Camera): ACTIVE" else "Dumb Phone (NO Camera)"
+            btnDumbPhoneNoCamera.setBackgroundResource(if (isDumbNoCamera) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+            
+            btnNoInternet.text = if (isNoInternet) "No Internet Mode: ACTIVE" else "Remove Internet From My Phone"
+            btnNoInternet.setBackgroundResource(if (isNoInternet) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+
+            btnNoVideos.text = if (isNoVideos) "No Videos Mode: ACTIVE" else "Block All Videos System-Wide"
+            btnNoVideos.setBackgroundResource(if (isNoVideos) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+
+            btnCallsOnly.text = if (isCallsOnly) "Calls/Texts Only: ACTIVE" else "Calls and Texts ONLY"
+            btnCallsOnly.setBackgroundResource(if (isCallsOnly) R.drawable.bg_btn_success else R.drawable.bg_btn_danger)
+        }
+
+        updateDrasticUI()
+
+        val confirmDrastic = { key: String, title: String, msg: String ->
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (prefs.getBoolean(key, false)) {
+                if (isPauseActive) {
+                    prefs.edit().putBoolean(key, false).apply(); updateDrasticUI(); Toast.makeText(this, "Drastic Mode Disabled.", Toast.LENGTH_SHORT).show()
+                } else { Toast.makeText(this, "Must schedule System Override (Pause) and execute it to disable.", Toast.LENGTH_LONG).show() }
+            } else {
+                DialogUtils.showCustomDialog(this, title, msg, true, "ENGAGE", { prefs.edit().putBoolean(key, true).apply(); updateDrasticUI() })
+            }
+        }
+
+        btnDumbPhoneCamera.setOnClickListener { confirmDrastic("DRASTIC_DUMB_PHONE_CAMERA", "Engage Dumb Phone (With Camera)?", "This will block EVERYTHING except Calculator, Calendar, Camera, Gallery, Maps, Weather, Calls, and Texts.\n\nCannot be undone without scheduling a System Override.") }
+        btnDumbPhoneNoCamera.setOnClickListener { confirmDrastic("DRASTIC_DUMB_PHONE_NO_CAMERA", "Engage Dumb Phone (No Camera)?", "This will block EVERYTHING except Calculator, Calendar, Maps, Weather, Calls, and Texts.\n\nCamera and Photos will be blocked.\n\nCannot be undone without scheduling a System Override.") }
+        btnNoInternet.setOnClickListener { confirmDrastic("DRASTIC_NO_INTERNET", "Remove Internet?", "This will aggressively block ALL web browsers, app stores, and known social media.\n\nCannot be undone without scheduling a System Override.") }
+        btnNoVideos.setOnClickListener { confirmDrastic("DRASTIC_NO_VIDEOS", "Block All Videos?", "This will forcefully close video players and explicitly block major video apps system-wide.\n\nCannot be undone without scheduling a System Override.") }
+        btnCallsOnly.setOnClickListener { confirmDrastic("DRASTIC_CALLS_ONLY", "Engage Calls/Texts ONLY?", "NUCLEAR OPTION.\n\nYour smartphone will become a brick that can only make phone calls and send SMS text messages.\n\nCannot be undone without scheduling a System Override.") }
+
+        setupSystemOverrideUI(); setupMainNightfallUI()
+    }
+
+    private fun setupSyncAdapter() {
+        val accountName = "RHC_Guard_Account"
+        val accountType = "com.rockhard.blocker.account"
+        val authority = "com.rockhard.blocker.provider"
+        val account = Account(accountName, accountType)
+        val am = getSystemService(Context.ACCOUNT_SERVICE) as AccountManager
+
+        try {
+            if (am.addAccountExplicitly(account, null, null)) {
+                // Initialize background keep-alive system sync parameters (interval: 30 minutes / 1800s)
+                ContentResolver.setIsSyncable(account, authority, 1)
+                ContentResolver.setSyncAutomatically(account, authority, true)
+                ContentResolver.addPeriodicSync(account, authority, Bundle.EMPTY, 1800L)
+            }
+        } catch (e: Exception) {
+            // Fails silently if account exists
+        }
+    }
+
+    private fun setupRedirectUI() {
+        val spinTrigger = findViewById<Spinner>(R.id.spinRedirectTrigger)
+        val spinTarget = findViewById<Spinner>(R.id.spinRedirectTarget)
+        val etCustom = findViewById<EditText>(R.id.etCustomRedirect)
+        val spinCustomApp = findViewById<Spinner>(R.id.spinCustomApp)
+        val btnAdd = findViewById<Button>(R.id.btnAddRedirect)
+
+        val triggers = mutableListOf<String>("- Select Blocked App/Website -")
+        val blockedApps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+        val blockedWebs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+        (blockedApps + blockedWebs).forEach {
+            val name = it.split("|").getOrNull(0) ?: ""
+            if (name.isNotEmpty()) triggers.add(name)
+        }
+        spinTrigger.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, triggers)
+
+        val targets = listOf(
+            Pair("- Select Productive Destination -", ""),
+            Pair("📚 Wikipedia (Random)", "https://en.wikipedia.org/wiki/Special:Random"),
+            Pair("🦉 Duolingo", "package:com.duolingo"),
+            Pair("📖 Amazon Kindle", "package:com.amazon.kindle"),
+            Pair("📝 Notion", "package:notion.id"),
+            Pair("✅ Todoist", "package:com.todoist"),
+            Pair("🎓 Khan Academy", "https://khanacademy.org"),
+            Pair("🌐 Custom URL...", "CUSTOM_URL"),
+            Pair("📱 Custom App...", "CUSTOM_APP")
+        )
+        spinTarget.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, targets.map { it.first })
+
+        val appDisplayList = mutableListOf("- Select App from Phone -")
+        appDisplayList.addAll(allAppsList.map { it.first })
+        spinCustomApp.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, appDisplayList)
+
+        spinTarget.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                etCustom.visibility = if (targets[position].second == "CUSTOM_URL") View.VISIBLE else View.GONE
+                val isCustomApp = targets[position].second == "CUSTOM_APP"
+                spinCustomApp.visibility = if (isCustomApp) View.VISIBLE else View.GONE
+                if (isCustomApp) {
+                    spinCustomApp.post { spinCustomApp.performClick() }
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        btnAdd.setOnClickListener {
+            val tIdx = spinTrigger.selectedItemPosition
+            val targIdx = spinTarget.selectedItemPosition
+            if (tIdx == 0 || targIdx == 0) {
+                Toast.makeText(this, "Select both a trigger and a destination.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            val trigger = triggers[tIdx]
+            var destination = targets[targIdx].second
+            
+            if (destination == "CUSTOM_URL") {
+                destination = etCustom.text.toString().trim()
+                if (destination.isEmpty()) { Toast.makeText(this, "Enter a custom URL.", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+            } else if (destination == "CUSTOM_APP") {
+                val appIdx = spinCustomApp.selectedItemPosition
+                if (appIdx == 0) { Toast.makeText(this, "Select a Custom App.", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+                destination = "package:${allAppsList[appIdx - 1].second}"
+            }
+
+            val currentStr = prefs.getString("REDIRECTS", "") ?: ""
+            val newEntry = "$trigger|$destination"
+            prefs.edit().putString("REDIRECTS", if (currentStr.isEmpty()) newEntry else "$currentStr,$newEntry").apply()
+            
+            Toast.makeText(this, "Habit Substitution Saved!", Toast.LENGTH_SHORT).show()
+            etCustom.setText("")
+            spinCustomApp.setSelection(0)
+            spinTrigger.setSelection(0)
+            spinTarget.setSelection(0)
+            renderRedirects()
+        }
+        renderRedirects()
+    }
+
+    private fun renderRedirects() {
+        val ll = findViewById<LinearLayout>(R.id.llRedirects)
+        ll.removeAllViews()
+        val data = prefs.getString("REDIRECTS", "") ?: ""
+        if (data.isEmpty()) return
+        
+        data.split(",").filter { it.isNotEmpty() }.forEach { entry ->
+            val parts = entry.split("|")
+            if (parts.size == 2) {
+                ll.addView(TextView(this).apply {
+                    text = "⚡ When ${parts[0]} is blocked,\n   ↳ Open ${parts[1]}"
+                    setTextColor(Color.parseColor("#4CAF50"))
+                    textSize = 12f
+                    setPadding(0, 8, 0, 8)
+                })
+            }
+        }
+    }
+
+    private fun setupBlockSpinner(spinnerId: Int, prompt: String, items: List<Pair<String, String>>, isApp: Boolean) {
+        val spinner = findViewById<Spinner>(spinnerId) ?: return
+        val displayList = mutableListOf(prompt)
+        displayList.addAll(items.map { it.first })
+        
+        spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, displayList)
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (position > 0) {
+                    val selectedDisplay = items[position - 1].first
+                    val target = items[position - 1].second
+                    if (isApp) addBlockItem("BLOCKLIST_APP", selectedDisplay, target) else addBlockItem("BLOCKLIST_WEB", selectedDisplay, target)
+                    spinner.setSelection(0) 
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+    }
+
+    private fun setupCategorizedSpinners() {
+        val pm = packageManager
+        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
+        val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+        
+        val protectedPkgs = listOf(
+            "com.android.systemui", "com.android.settings", "com.android.launcher", "nexuslauncher", 
+            "com.android.contacts", "com.android.dialer", "com.google.android.dialer", "com.miui.securitycenter", 
+            "com.samsung.android.settings", "com.android.permissioncontroller", "com.android.providers",
+            "filemanager", "documentsui", "gallery", "camera", "photos", "sec.android.app.myfiles"
+        )
+        
+        val socialApps = mutableListOf<Pair<String, String>>()
+        val videoApps = mutableListOf<Pair<String, String>>()
+        val newsApps = mutableListOf<Pair<String, String>>()
+        val allApps = mutableListOf<Pair<String, String>>()
+
+        
+    val blockedAppsStr = prefs.getString("BLOCKLIST_APP", "") ?: ""
+    val blockedPkgNames = blockedAppsStr
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map {
+            it.split("|").getOrNull(1)?.trim()?.lowercase()
+                ?: it.split("|")[0].trim().lowercase()
+        }
+for (info in resolveInfos) {
+            val appName = info.loadLabel(pm).toString()
+            val pkgName = info.activityInfo.packageName
+            val lowerPkg = pkgName.lowercase()
+            val lowerName = appName.lowercase()
+            
+            if (
+            !protectedPkgs.any { lowerPkg.contains(it) } &&
+            pkgName != packageName &&
+            !blockedPkgNames.contains(lowerPkg)
+        ) {
+                val pair = Pair(appName, pkgName)
+                allApps.add(pair)
+                
+                if (listOf("instagram", "facebook", "tiktok", "snapchat", "reddit", "twitter", "x", "threads", "bereal").any { lowerPkg.contains(it) || lowerName.contains(it) }) socialApps.add(pair)
+                else if (listOf("youtube", "netflix", "hulu", "twitch", "prime", "disney", "max", "crunchyroll", "video", "player").any { lowerPkg.contains(it) || lowerName.contains(it) }) videoApps.add(pair)
+                else if (listOf("cnn", "bbc", "fox", "news", "nytimes", "wsj", "flipboard").any { lowerPkg.contains(it) || lowerName.contains(it) }) newsApps.add(pair)
+            }
+        }
+
+        allAppsList = allApps.sortedBy { it.first.lowercase() }
+
+        setupBlockSpinner(R.id.spinSocialApps, "📱 Social Apps...", socialApps.sortedBy { it.first.lowercase() }, true)
+        setupBlockSpinner(R.id.spinVideoApps, "📺 Video Apps...", videoApps.sortedBy { it.first.lowercase() }, true)
+        setupBlockSpinner(R.id.spinNewsApps, "📰 News Apps...", newsApps.sortedBy { it.first.lowercase() }, true)
+        setupBlockSpinner(R.id.spinAllApps, "📦 All Apps...", allAppsList, true)
+    val blockedWebsStr = prefs.getString("BLOCKLIST_WEB", "") ?: ""
+    val blockedWebDomains = blockedWebsStr
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map {
+            it.split("|").getOrNull(1)?.trim()?.lowercase()
+                ?: it.split("|")[0].trim().lowercase()
+        }
+
+
+
+        val socialWeb = listOf(Pair("Instagram", "instagram.com"), Pair("Facebook", "facebook.com"), Pair("TikTok", "tiktok.com"), Pair("Twitter / X", "twitter.com"), Pair("Reddit", "reddit.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val videoWeb = listOf(Pair("YouTube", "youtube.com"), Pair("Twitch", "twitch.tv"), Pair("Netflix", "netflix.com"), Pair("Hulu", "hulu.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val newsWeb = listOf(Pair("CNN", "cnn.com"), Pair("Fox News", "foxnews.com"), Pair("BBC", "bbc.com"), Pair("NY Times", "nytimes.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val searchWeb = listOf(Pair("Google Images", "google.com/search?tbm=isch"), Pair("Bing Video Search", "bing.com/videos"), Pair("Yahoo Search", "search.yahoo.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+
+        setupBlockSpinner(R.id.spinSocialWeb, "🌐 Social Sites...", socialWeb, false)
+        setupBlockSpinner(R.id.spinVideoWeb, "🎬 Video Sites...", videoWeb, false)
+        setupBlockSpinner(R.id.spinNewsWeb, "🗞️ News Sites...", newsWeb, false)
+        setupBlockSpinner(R.id.spinSearchWeb, "🔍 Search Engines...", searchWeb, false)
+    }
+
+    internal fun refreshUI() {
+        val btn1 = findViewById<Button>(R.id.btnStep1); val btn2 = findViewById<Button>(R.id.btnStep2); val btnBatteryOpt = findViewById<Button>(R.id.btnStepBatteryOpt)
+        val btn4 = findViewById<Button>(R.id.btnStep4); val btn5 = findViewById<Button>(R.id.btnStep5)
+        
+        val step1Done = isAccessibilityServiceEnabled(this, GuardianService::class.java)
+        val step2Done = dpm.isAdminActive(compName)
+        val powMan = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        val stepBatteryDone = powMan.isIgnoringBatteryOptimizations(packageName)
+        val step4Done = prefs.getBoolean("STEP4_CLICKED", false)
+        val step5Done = prefs.getBoolean("STEP5_CLICKED", false)
+        
+        val isChinesePhone = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
+        val isPremium = prefs.getBoolean("REWARD_PREMIUM", false)
+
+        
+    // System Shield Diagnostics Check
+    val issues = mutableListOf<String>()
+
+    if (!step1Done) issues.add("Accessibility (Step 1) DISABLED")
+    if (!step2Done) issues.add("Device Admin (Step 2) INACTIVE")
+    if (!stepBatteryDone) issues.add("Battery Opt. (Step 3) OPTIMIZED")
+    if (isChinesePhone && !step4Done) issues.add("Autostart (Step 4) PENDING")
+    if (isChinesePhone && !step5Done) issues.add("Secure App Mgr (Step 5) PENDING")
+
+    val shieldIcon = findViewById<TextView>(R.id.tvShieldStatusIcon)
+
+    if (issues.isEmpty()) {
+        shieldIcon.text = "🛡️"
+    } else {
+        shieldIcon.text = "⚠️"
+    }
+
+    shieldIcon.setOnClickListener {
+        if (issues.isEmpty()) {
+            Toast.makeText(
+                this,
+                "🛡️ SHIELDS FULLY ENGAGED",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(
+                this,
+                "⚠️ SHIELDS COMPROMISED:\n" + issues.joinToString("\n"),
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+btn2.isEnabled = step1Done; btnBatteryOpt.isEnabled = step1Done && step2Done
+        btn4?.isEnabled = step1Done && step2Done && stepBatteryDone
+        btn5?.isEnabled = step1Done && step2Done && stepBatteryDone && step4Done
+
+        if (step1Done) { btn1.text = "STEP 1: VERIFIED ✔️"; btn1.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (step2Done) { btn2.text = "STEP 2: VERIFIED ✔️"; btn2.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (stepBatteryDone) { btnBatteryOpt.text = "STEP 3: VERIFIED ✔️"; btnBatteryOpt.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (btn4?.visibility == View.VISIBLE && step4Done) { btn4.text = "STEP 4: VERIFIED ✔️"; btn4.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (btn5?.visibility == View.VISIBLE && step5Done) { btn5.text = "STEP 5: VERIFIED ✔️"; btn5.setBackgroundResource(R.drawable.bg_btn_success) }
+
+        val isSetupDone = (step1Done && step2Done && stepBatteryDone && (!isChinesePhone || (step4Done && step5Done))) || isPremium
+
+        if (isSetupDone && !isPremium) {
+            prefs.edit().putBoolean("REWARD_PREMIUM", true).apply()
+            if (BuildConfig.FLAVOR.lowercase().contains("gamers")) {
+                val legendary = if (kotlin.random.Random.nextBoolean()) "Aegis,Legendary,250,250,Light Pulse,Nova Shield,Orbital Cannon,0,0,0,0,true,None,0,0,0,0,None,0" else "Titan,Legendary,280,280,Feral Strike,Parry,Apex Predator,0,0,0,0,true,None,0,0,0,0,None,0"
+                val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
+                prefs.edit().putString("PARTY_DATA", if(partyStr.isEmpty()) legendary else "$partyStr;$legendary").apply()
+                Toast.makeText(this, "SYSTEM SECURED! Legendary Netbeast Unlocked!", Toast.LENGTH_LONG).show()
+            } else { MomentumEngine.addEarnedMomentum(prefs, "System Secured Bonus", false); Toast.makeText(this, "SYSTEM SECURED! Gained 20 minutes of Momentum!", Toast.LENGTH_LONG).show() }
+        }
+        
+        findViewById<View>(R.id.cardOvercomeApp)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.cardOvercomeWeb)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
+        
+        // --- NEW: Toggle the Uninstaller button based on setup state ---
+        findViewById<View>(R.id.btnSafeAppManager)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
+
+        if (isSetupDone) { 
+            renderBlockList(findViewById(R.id.llBannedWebs), "BLOCKLIST_WEB")
+            renderBlockList(findViewById(R.id.llBannedApps), "BLOCKLIST_APP")
+                    setupCategorizedSpinners() // Dynamically re-filter dropdowns to hide banned/uninstalled apps
+setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
+        }
+        if (isPremium) findViewById<View>(R.id.llOnboarding).visibility = View.GONE
+    } 
+
+    private fun openSettingsMenu() {
+        DialogUtils.showCustomDialog(this, "Settings", null, true, "SAVE", null) { content, dialog ->
+            val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+            val cbGame = CheckBox(this).apply { text = if(isGamers) "Enable Gamification" else "Enable Momentum Tracking"; isChecked = prefs.getBoolean("GAMIFICATION", true); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
+            val cbDefault = CheckBox(this).apply { text = if(isGamers) "Set Netbeasts as Default Home App" else "Set Momentum as Default Home App"; isChecked = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
+            val cbDebug = CheckBox(this).apply { text = "Enable UI Debugger"; isChecked = prefs.getBoolean("DEBUG_UI_TOASTS", false); setTextColor(android.graphics.Color.YELLOW); textSize = 16f; setPadding(16, 16, 16, 16) }
+            
+            content.addView(cbDebug)
+            content.addView(cbGame)
+            content.addView(cbDefault)
+            
+            // --- FIX: The Safe App Manager button was removed from here ---
+            
+            val powMan = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            val isIgnoringDoze = powMan.isIgnoringBatteryOptimizations(packageName)
+            content.addView(Button(this).apply {
+                text = if (isIgnoringDoze) "Doze Mode Disabled ✔️" else "Disable Doze Mode (Fixes Sleep Bug)"
+                setBackgroundResource(if (isIgnoringDoze) R.drawable.bg_btn_success else R.drawable.bg_btn_danger); setTextColor(android.graphics.Color.WHITE)
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 16, 0, 0) }
+                isEnabled = !isIgnoringDoze
+                setOnClickListener { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }); dialog.dismiss() }
+            })
+            dialog.findViewById<Button>(R.id.btnDialogPositive)?.setOnClickListener { 
+                prefs.edit().putBoolean("GAMIFICATION", cbGame.isChecked).putBoolean("LAUNCH_GAME_DEFAULT", cbDefault.isChecked).putBoolean("DEBUG_UI_TOASTS", cbDebug.isChecked).apply()
+                CloakEngine.uncloak(this@MainActivity, cbDefault.isChecked)
+                dialog.dismiss() 
+            }
+        }
+    }
+
+    override fun onDestroy() { super.onDestroy(); mainHandler.removeCallbacks(tickRunnable) }
+    
+    internal fun isAccessibilityServiceEnabled(context: Context, accessibilityService: Class<*>): Boolean {
+        val setting = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        val expected = ComponentName(context, accessibilityService)
+        val splitter = TextUtils.SimpleStringSplitter(':'); splitter.setString(setting)
+        while (splitter.hasNext()) if (ComponentName.unflattenFromString(splitter.next()) == expected) return true
+        return false
+    }
+
+    override fun onPause() {
+        super.onPause()
+        val powMan = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        val stepBatteryDone = powMan.isIgnoringBatteryOptimizations(packageName)
+        val step4Done = prefs.getBoolean("STEP4_CLICKED", false)
+
+        if (!stepBatteryDone || !step4Done) {
+            setupPollHandler = Handler(Looper.getMainLooper())
+            setupPollRunnable = object : Runnable {
+                override fun run() {
+                    val nowBattery = powMan.isIgnoringBatteryOptimizations(packageName)
+                    val nowStep4 = prefs.getBoolean("STEP4_CLICKED", false)
+                    
+                    if ((!stepBatteryDone && nowBattery) || (!step4Done && nowStep4)) {
+                        val intent = Intent(this@MainActivity, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) }
+                        try { startActivity(intent); setupPollHandler?.removeCallbacksAndMessages(null) } catch (e: Exception) {}
+                    } else setupPollHandler?.postDelayed(this, 1000)
+                }
+            }
+            setupPollHandler?.postDelayed(setupPollRunnable!!, 1000)
+        }
+    }
+
+    override fun onResume() { 
+        super.onResume()
+        setupPollHandler?.removeCallbacksAndMessages(null)
+        if (prefs.getBoolean("AWAITING_STEP4", false)) prefs.edit().putBoolean("STEP4_CLICKED", true).putBoolean("AWAITING_STEP4", false).apply()
+        
+        // Auto-waking foreground accessibility lifecycle on app entry
+        val step1Done = isAccessibilityServiceEnabled(this, GuardianService::class.java)
+        if (step1Done) {
+            GuardianService.addLog("Shield verified active from MainActivity.")
+        }
+
+        refreshUI()
+        if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
+            findViewById<View>(R.id.llDebugTerminal)?.visibility = View.VISIBLE
+        }
+    }
+
+    private var isNightfallNewlyEnabled = false
+
+    private fun setupMainNightfallUI() {
+        val cbNightfall = findViewById<CheckBox>(R.id.cbMainNightfall) ?: return
+        val llTimes = findViewById<LinearLayout>(R.id.llMainNightfallTimes) ?: return
+        val btnStart = findViewById<Button>(R.id.btnMainNightfallStart) ?: return
+        val btnEnd = findViewById<Button>(R.id.btnMainNightfallEnd) ?: return
+
+    val cbNightfallNotes = findViewById<CheckBox>(R.id.cbNightfallNotes)
+
+    if (cbNightfallNotes != null) {
+        cbNightfallNotes.isChecked =
+            prefs.getBoolean("NIGHTFALL_ALLOW_NOTES", true)
+
+        cbNightfallNotes.setOnCheckedChangeListener { buttonView, isChecked ->
+            val isPauseActive =
+                System.currentTimeMillis() <
+                prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+
+            // If they try to re-tick it without an override,
+            // immediately turn it back off.
+            if (isChecked && !isPauseActive) {
+                buttonView.setOnCheckedChangeListener(null)
+                buttonView.isChecked = false
+
+                setupMainNightfallUI()
+
+                Toast.makeText(
+                    this,
+                    "Must schedule System Override (Pause) to allow Notes again.",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                return@setOnCheckedChangeListener
+            }
+
+            prefs.edit()
+                .putBoolean("NIGHTFALL_ALLOW_NOTES", isChecked)
+                .apply()
+        }
+    }
+
+
+
+        cbNightfall.isChecked = prefs.getInt("NIGHTFALL_START", -1) != -1
+        llTimes.visibility = if (cbNightfall.isChecked) View.VISIBLE else View.GONE
+
+        fun formatTime(mins: Int): String {
+            if (mins == -1) return "Not Set"
+            val h = mins / 60
+            val m = mins % 60
+            val ampm = if (h >= 12) "PM" else "AM"
+            val h12 = if (h % 12 == 0) 12 else h % 12
+            return String.format("%02d:%02d %s", h12, m, ampm)
+        }
+
+        var startMins = prefs.getInt("NIGHTFALL_START", 1320)
+        var endMins = prefs.getInt("NIGHTFALL_END", 360)
+        if (startMins == -1) startMins = 1320
+        if (endMins == -1) endMins = 360
+
+        btnStart.text = "Start: " + formatTime(startMins)
+        btnEnd.text = "End: " + formatTime(endMins)
+
+        cbNightfall.setOnCheckedChangeListener { buttonView, isChecked ->
+            val wasEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+
+            if (wasEnabled && !isChecked && !isPauseActive) {
+                buttonView.setOnCheckedChangeListener(null)
+                buttonView.isChecked = true
+                setupMainNightfallUI()
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to disable Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnCheckedChangeListener
+            }
+
+            if (isChecked && !wasEnabled) {
+                isNightfallNewlyEnabled = true
+            }
+
+            llTimes.visibility = if (isChecked) View.VISIBLE else View.GONE
+            val editor = prefs.edit()
+            if (isChecked) {
+                editor.putInt("NIGHTFALL_START", startMins)
+                editor.putInt("NIGHTFALL_END", endMins)
+            } else {
+                editor.putInt("NIGHTFALL_START", -1)
+                editor.putInt("NIGHTFALL_END", -1)
+                isNightfallNewlyEnabled = false
+            }
+            editor.apply()
+        }
+
+        btnStart.setOnClickListener {
+            val isCurrentlyEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isCurrentlyEnabled && !isPauseActive && !isNightfallNewlyEnabled) {
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to modify Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            val h = startMins / 60
+            val m = startMins % 60
+            android.app.TimePickerDialog(this, { _, selectedHour, selectedMinute ->
+                startMins = selectedHour * 60 + selectedMinute
+                btnStart.text = "Start: " + formatTime(startMins)
+                if (cbNightfall.isChecked) prefs.edit().putInt("NIGHTFALL_START", startMins).apply()
+            }, h, m, false).show()
+        }
+
+        btnEnd.setOnClickListener {
+            val isCurrentlyEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isCurrentlyEnabled && !isPauseActive && !isNightfallNewlyEnabled) {
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to modify Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            val h = endMins / 60
+            val m = endMins % 60
+            android.app.TimePickerDialog(this, { _, selectedHour, selectedMinute ->
+                endMins = selectedHour * 60 + selectedMinute
+                btnEnd.text = "End: " + formatTime(endMins)
+                if (cbNightfall.isChecked) prefs.edit().putInt("NIGHTFALL_END", endMins).apply()
+            }, h, m, false).show()
+        }
+    }
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/GameActivity.kt =====
+package com.rockhard.blocker
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
+
+class GameActivity : Activity() {
+    internal lateinit var tvConsole: TextView
+    internal lateinit var tvBag: TextView
+    internal lateinit var tvBagConsole: TextView
+    internal lateinit var tvAether: TextView
+    internal lateinit var partyContainer: LinearLayout
+    internal lateinit var qteContainer: LinearLayout
+    internal lateinit var prefs: SharedPreferences
+
+    internal var aetherSeconds = 600
+    internal var aetherDepleted = false
+    internal var exploreDifficulty = 50
+    internal var totalExpeds = 0
+    internal var graveyard = mutableListOf<Netbeast>()
+    internal var isFightAetherActive = false
+
+    internal var playerId = ""
+    internal var playerName = ""
+    internal var isUnderAttack = false
+    internal var isWildBattle = false
+    internal var battleOver = false
+    internal var playerLastStand = false
+    internal var playerHasTripleStrike = false
+    internal var playerHasEvasion = false
+    internal var currentEnemy: Netbeast? = null
+    internal var enemyParty = mutableListOf<Netbeast>()
+    internal var isTrainerBattle = false
+    internal var capturedRescueTarget: Netbeast? = null
+
+    internal var sprays = 0
+    internal var smallHpPots = 0
+    internal var largeHpPots = 0
+    internal var potions = 0
+    internal var nets = 0
+    internal var focusCoins = 0
+    internal var transfusers = 0
+    internal var party = mutableListOf<Netbeast>()
+    internal var activePetIndex = 0
+    internal var forSaleParty = mutableListOf<Netbeast>()
+    internal var marketBeasts = mutableListOf<Netbeast>()
+    internal val activeOffers = mutableMapOf<String, Int>()
+
+    internal var currentWeather = "Clear"
+    internal var weatherIcon = "☀️"
+    internal var currentCity = "Local Sanctuary"
+
+    internal val activeExpeditions = mutableMapOf<Int, Long>()
+    internal val activeQTEs = mutableMapOf<Int, View>()
+    internal val participatingPets = mutableSetOf<Int>()
+
+    internal var battleTimerRunnable: Runnable? = null
+    internal val mainHandler = Handler(Looper.getMainLooper())
+    private val exploreRunnable =
+        object : Runnable {
+            override fun run() {
+                performGlobalTick()
+                mainHandler.postDelayed(this, 4000)
+            }
+        }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_game)
+        prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+        tvConsole = findViewById(R.id.tvConsole)
+        tvBag = findViewById(R.id.tvBag)
+        tvBagConsole = findViewById(R.id.tvBagConsole)
+        tvAether = findViewById(R.id.tvAether)
+        partyContainer = findViewById(R.id.partyContainer)
+        qteContainer = findViewById(R.id.qteContainer)
+
+        try {
+            loadSaveData()
+        } catch (e: Exception) {
+            wipeCorruptSave()
+        }
+
+        // Initialize Aether Engine!
+        if (aetherSeconds == 600 && !isUnderAttack) {
+            aetherSeconds = AetherEngine.calculateStartingAether(prefs)
+            val rems = prefs.getInt("CURRENT_REMNANTS", 0)
+            if (rems > 0) runOnUiThread { Toast.makeText(this, "$rems:00 unused aether remnants added!", Toast.LENGTH_LONG).show() }
+        }
+
+        generateMarket()
+        setupTabs()
+        setupShop()
+        setupEquipPanel()
+        setupBattleControls()
+        setupDispatchControl()
+        updatePartyScreen()
+        updateBagScreen()
+
+        findViewById<Button>(R.id.btnExit).setOnClickListener { finish() }
+
+        val seekDifficulty = findViewById<android.widget.SeekBar>(R.id.seekDifficulty)
+        seekDifficulty?.setOnSeekBarChangeListener(
+            object : android.widget.SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    seekBar: android.widget.SeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    exploreDifficulty =
+                        progress
+                }
+
+                override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
+
+                override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {}
+            },
+        )
+
+        intent?.let { handleIncomingIntent(it) }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent?.let { handleIncomingIntent(it) }
+    }
+
+    private fun handleIncomingIntent(i: Intent) {
+        isUnderAttack = i.getBooleanExtra("UNDER_ATTACK", false)
+        if (isUnderAttack) {
+            val triggerReason = i.getStringExtra("TRIGGER_REASON") ?: "Anomaly"
+            val bossName = i.getStringExtra("BOSS_NAME") ?: "The Dark One"
+
+            currentEnemy =
+                Netbeast(
+                    "[Ephemeral] [Elusive] [Colossal] $bossName",
+                    "Corrupted",
+                    8000,
+                    8000,
+                    "Doom",
+                    "Crash",
+                    "Annihilate",
+                    0L,
+                    0,
+                    0,
+                    0,
+                    false,
+                    "None",
+                    0,
+                    0,
+                    0,
+                    0,
+                    "None",
+                    0,
+                )
+
+            setUIState("BATTLE")
+            printLog("\n==================================")
+            printLog("⚠️ EMERGENCY: ${currentEnemy?.name} HAS INVADED!")
+            printLog("==================================")
+            if (party.isNotEmpty()) {
+                printLog("> You sent out ${party[activePetIndex].name} to defend!")
+                showBattleArena(party[activePetIndex].name, bossName)
+            } else {
+                playerLastStand = true
+                printLog("> You have no Netbeasts! Defend yourself!")
+                showBattleArena("YOU", bossName)
+            }
+            updateBattleUI()
+        } else {
+            setUIState("HUB")
+            printLog("> INITIALIZING NETBEAST SAFARI...")
+            printLog("> Welcome back, $playerName!")
+
+            WeatherEngine.fetchSilent(
+                this,
+                onSuccess = { city, weather, icon, terrain, debugStr ->
+                    currentCity = city
+                    currentWeather = weather
+                    weatherIcon = icon
+                    prefs
+                        .edit()
+                        .putString("CURRENT_CITY", city)
+                        .putString("DEBUG_API_DATA", debugStr)
+                        .apply()
+                    runOnUiThread {
+                        printLog("\n=== WEATHER UPLINK ===")
+                        printLog("> Base: $city")
+                        printLog("> Terrain: $terrain")
+                        printLog("> Weather: $weather $icon")
+                        printLog("> " + debugStr.replace("\n", "\n> "))
+                        printLog("======================")
+                        findViewById<Button>(R.id.btnInfuse)?.text = "INFUSE WITH CURRENT WEATHER ($icon)"
+                    }
+                },
+                onFail = { reason ->
+                    runOnUiThread {
+                        printLog(
+                            "\n> ⚠️ UPLINK FAILED: $reason\n> Base Locked: Local Sanctuary\n> Weather: Offline\n> Awaiting orders.",
+                        )
+                    }
+                },
+            )
+
+            processFleePenalty()
+            checkOfflineExpeditions()
+            mainHandler.postDelayed(exploreRunnable, 3000)
+        }
+    }
+
+    internal fun saveParty() {
+        SaveManager.saveParty(prefs, "PARTY_DATA", party)
+    }
+
+    internal fun saveItems() {
+        prefs
+            .edit()
+            .putInt("SPRAYS", sprays)
+            .putInt("POTIONS", potions)
+            .putInt("NETS", nets)
+            .putInt("COINS", focusCoins)
+            .putInt("TRANSFUSERS", transfusers)
+            .putInt("SMALL_HP_POTS", smallHpPots)
+            .putInt("LARGE_HP_POTS", largeHpPots)
+            .apply()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mainHandler.removeCallbacksAndMessages(null)
+        SaveManager.saveExpeditions(prefs, activeExpeditions)
+        AudioEngine.release()
+    }
+
+    internal fun printLog(msg: String) {
+        runOnUiThread {
+            tvConsole.text = "${tvConsole.text}\n$msg"
+            (tvConsole.parent as? android.widget.ScrollView)?.post {
+                (tvConsole.parent as? android.widget.ScrollView)?.fullScroll(android.view.View.FOCUS_DOWN)
+            }
+        }
+    }
+
+    internal fun printShopLog(msg: String) {
+        runOnUiThread {
+            tvBagConsole.text = "${tvBagConsole.text}\n$msg"
+            (tvBagConsole.parent as? android.widget.ScrollView)?.post {
+                (tvBagConsole.parent as? android.widget.ScrollView)?.fullScroll(android.view.View.FOCUS_DOWN)
+            }
+        }
+    }
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/MomentumActivity.kt =====
+package com.rockhard.blocker
+
+import android.app.Activity
+import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.Color
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
+import android.widget.*
+
+class MomentumActivity : Activity() {
+    private lateinit var prefs: SharedPreferences
+    private lateinit var tvMomentum: TextView
+    private lateinit var barMomentum: ProgressBar
+    private lateinit var llEarned: LinearLayout
+    private lateinit var llSpent: LinearLayout
+    
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val tickRunnable = object : Runnable {
+        override fun run() {
+            updateUI()
+            mainHandler.postDelayed(this, 10000) // Update every 10 secs
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_momentum)
+        prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        MomentumEngine.resetDailyIfNeeded(prefs)
+
+        tvMomentum = findViewById(R.id.tvMomentumText)
+        barMomentum = findViewById(R.id.barMomentum)
+        llEarned = findViewById(R.id.llEarnedList)
+        llSpent = findViewById(R.id.llSpentList)
+
+        val btnTabEarned = findViewById<Button>(R.id.btnTabEarned)
+        val btnTabSpent = findViewById<Button>(R.id.btnTabSpent)
+        val svEarned = findViewById<ScrollView>(R.id.svEarned)
+        val svSpent = findViewById<ScrollView>(R.id.svSpent)
+
+        btnTabEarned.setOnClickListener {
+            svEarned.visibility = View.VISIBLE; svSpent.visibility = View.GONE
+            btnTabEarned.setBackgroundResource(R.drawable.bg_btn_accent)
+            btnTabSpent.setBackgroundResource(R.drawable.bg_btn_standard)
+        }
+        btnTabSpent.setOnClickListener {
+            svEarned.visibility = View.GONE; svSpent.visibility = View.VISIBLE
+            btnTabEarned.setBackgroundResource(R.drawable.bg_btn_standard)
+            btnTabSpent.setBackgroundResource(R.drawable.bg_btn_accent)
+        }
+
+        findViewById<Button>(R.id.btnExitMomentum).setOnClickListener { finish() }
+
+        populateSpendingTasks()
+        updateUI()
+        mainHandler.postDelayed(tickRunnable, 10000)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mainHandler.removeCallbacks(tickRunnable)
+    }
+
+    private fun updateUI() {
+        val currentMins = MomentumEngine.calculateCurrentMomentum(prefs)
+        tvMomentum.text = "$currentMins MINS AVAILABLE"
+        barMomentum.progress = Math.min(100, (currentMins.toFloat() / 120f * 100).toInt()) // Assuming 120 mins is a "full bar"
+
+        // Red bar if low, Green if high
+        if (currentMins < 15) barMomentum.progressDrawable.setTint(Color.parseColor("#F44336"))
+        else barMomentum.progressDrawable.setTint(Color.parseColor("#4CAF50"))
+
+        renderEarnedList()
+    }
+
+    private fun renderEarnedList() {
+        llEarned.removeAllViews()
+        val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        if (earnedStr.isEmpty() && prefs.getInt("SLEEP_MOMENTUM_BONUS", 0) == 0) {
+            llEarned.addView(TextView(this).apply { text = "No momentum reclaimed today."; setTextColor(Color.GRAY) })
+            return
+        }
+
+        val sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+        if (sleepBonus > 0) {
+            llEarned.addView(createRow("🌙 Sleep Guard Reclaimed", "+$sleepBonus mins", "#00BCD4"))
+        }
+
+        earnedStr.split(",").reversed().forEach { entry ->
+            val parts = entry.split("|")
+            if (parts.size == 3) {
+                val source = parts[0]
+                val mins = parts[1]
+                val timeStr = java.text.SimpleDateFormat("hh:mm a").format(java.util.Date(parts[2].toLong()))
+                llEarned.addView(createRow("🛡️ Overcame: $source", "+$mins mins\n@ $timeStr", "#4CAF50"))
+            }
+        }
+    }
+
+    private fun populateSpendingTasks() {
+        llSpent.removeAllViews()
+        val isMale = BuildConfig.FLAVOR.lowercase().contains("male")
+        
+        val tasks = if (isMale) {
+            listOf(Pair("🪓 Chop Wood / Yard Work", 30), Pair("🏋️ Workout / Lift", 45), Pair("📚 Read a Book", 20), Pair("🔧 Fix Something", 30))
+        } else {
+            listOf(Pair("🧘‍♀️ Yoga / Stretch", 20), Pair("🧴 Skincare Routine", 15), Pair("📚 Read a Book", 20), Pair("📝 Journal / Plan", 15))
+        }
+
+        tasks.forEach { task ->
+            val btn = Button(this).apply {
+                text = "${task.first}\nSpend ${task.second} mins"
+                setBackgroundResource(R.drawable.bg_card)
+                setTextColor(Color.WHITE)
+                
+                // --- FIX: Force minimum height and larger padding ---
+                minHeight = 200 
+                setPadding(40, 50, 40, 50) 
+                
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { setMargins(0, 24, 0, 0) }
+                
+setOnClickListener {
+                    if (MomentumEngine.spendMomentum(prefs, task.first, task.second)) {
+                        Toast.makeText(this@MomentumActivity, "Momentum Spent! Go do it!", Toast.LENGTH_LONG).show()
+                        
+                        // --- NEW: Sync to Supabase ---
+                        LeaderboardEngine.submitScoreAsync(prefs, task.second)
+                        
+                        updateUI()
+                    } else {
+                        Toast.makeText(this@MomentumActivity, "Not enough Momentum. Block urges first!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            llSpent.addView(btn)
+        }
+    }
+
+    private fun createRow(title: String, subtitle: String, colorHex: String): View {
+        val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16, 16, 16, 16) }
+        ll.addView(TextView(this).apply { text = title; setTextColor(Color.WHITE); textSize = 16f })
+        ll.addView(TextView(this).apply { text = subtitle; setTextColor(Color.parseColor(colorHex)); textSize = 14f })
+        return ll
+    }
+}
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/MomentumEngine.kt =====
+package com.rockhard.blocker
+
+import android.content.SharedPreferences
+
+object MomentumEngine {
+    private val timeEstimates = mapOf(
+        "tiktok" to 45, "youtube" to 40, "instagram" to 30, "facebook" to 20,
+        "reddit" to 25, "twitter" to 20, "x" to 20, "snapchat" to 15, "tinder" to 15, 
+        "twitch" to 30, "discord" to 20
+    )
+
+    fun calculateCurrentMomentum(prefs: SharedPreferences): Int {
+        val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        val spentStr = prefs.getString("MOMENTUM_SPENT_TODAY", "") ?: ""
+        val now = System.currentTimeMillis()
+
+        var totalEarned = 0
+        var totalEvaporated = 0
+
+        if (earnedStr.isNotEmpty()) {
+            earnedStr.split(",").forEach { entry ->
+                val parts = entry.split("|")
+                if (parts.size == 3) {
+                    val mins = parts[1].toInt()
+                    val time = parts[2].toLong()
+                    totalEarned += mins
+
+                    val hoursPassed = (now - time) / (1000 * 60 * 60.0)
+                    if (hoursPassed > 2) {
+                        val decayMins = ((hoursPassed - 2) * 60 / 5).toInt()
+                        totalEvaporated += Math.min(decayMins, mins)
+                    }
+                }
+            }
+        }
+
+        var totalSpent = 0
+        if (spentStr.isNotEmpty()) {
+            spentStr.split(",").forEach { entry ->
+                val parts = entry.split("|")
+                if (parts.size >= 2) totalSpent += parts[1].toInt()
+            }
+        }
+
+        val sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+        return Math.max(0, (totalEarned + sleepBonus) - totalSpent - totalEvaporated)
+    }
+
+    fun addEarnedMomentum(prefs: SharedPreferences, source: String, isAdultContent: Boolean) {
+        val now = System.currentTimeMillis()
+        val mins = if (isAdultContent) kotlin.random.Random.nextInt(15, 28) else kotlin.random.Random.nextInt(10, 20)
+        val current = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        val newEntry = "$source|$mins|$now"
+        prefs.edit().putString("MOMENTUM_EARNED_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
+    }
+
+    fun spendMomentum(prefs: SharedPreferences, taskName: String, cost: Int): Boolean {
+        if (calculateCurrentMomentum(prefs) < cost) return false
+        val now = System.currentTimeMillis()
+        val current = prefs.getString("MOMENTUM_SPENT_TODAY", "") ?: ""
+        val newEntry = "$taskName|$cost|$now"
+        prefs.edit().putString("MOMENTUM_SPENT_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
+        return true
+    }
+
+    fun resetDailyIfNeeded(prefs: SharedPreferences) {
+        val today = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
+        val lastDay = prefs.getString("MOMENTUM_LAST_DAY", "")
+        if (today != lastDay) {
+            var dailyYieldMins = 0
+            
+            val apps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter{it.isNotEmpty()} ?: emptyList()
+            val webs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter{it.isNotEmpty()} ?: emptyList()
+            
+            (apps + webs).forEach { item ->
+                val name = item.split("|")[0].lowercase()
+                var found = false
+                for ((key, value) in timeEstimates) {
+                    if (name.contains(key)) { dailyYieldMins += value; found = true; break }
+                }
+                if (!found) dailyYieldMins += 15 // Fallback generic time
+            }
+
+            val newEarned = if (dailyYieldMins > 0) "Daily Overcome Yield|$dailyYieldMins|${System.currentTimeMillis()}" else ""
+            prefs.edit().putString("MOMENTUM_EARNED_TODAY", newEarned).putString("MOMENTUM_SPENT_TODAY", "").putString("MOMENTUM_LAST_DAY", today).apply()
+        }
+    }
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/guardian/GuardianService.kt =====
+package com.rockhard.blocker
+
+import android.accessibilityservice.AccessibilityService
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.graphics.Color
+import android.graphics.PixelFormat
+import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+
+class GuardianService : AccessibilityService() {
+    companion object {
+        var pauseUntil: Long = 0L
+        var urgesDefeatedCount = 0
+        val appTimeTrackers = mutableMapOf<String, Long>()
+        val actionLogs = mutableListOf<String>()
+
+        fun addLog(msg: String) {
+            val time = SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(Date())
+            actionLogs.add(0, "[$time] $msg")
+            if (actionLogs.size > 50) actionLogs.removeLast()
+        }
+    }
+
+    private var windowManager: WindowManager? = null
+    private var overlayView: View? = null
+    private var nightfallDimView: View? = null
+    private var isOverlayShowing = false
+    private var isNightfallDimShowing = false
+    private var nightfallDimParams: WindowManager.LayoutParams? = null
+    private var bossTimer: CountDownTimer? = null
+    private lateinit var ruleEngine: ShieldRuleEngine
+    private lateinit var dpm: DevicePolicyManager
+    private lateinit var compName: ComponentName
+    
+    private var lastScanTime = 0L
+    private val CONTENT_SCAN_COOLDOWN_MS = 1500L
+    
+    private var currentActivityClass: String = ""
+
+    // Whitelisted wake lock to bypass aggressive Honor/Huawei/Meizu standby kills
+    private var wakeLock: android.os.PowerManager.WakeLock? = null
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val nightfallRunnable = object : Runnable {
+        override fun run() {
+            checkNightfallTick()
+            handler.postDelayed(this, 1000)
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Fail-safe: Always start foreground on start command to satisfy startForegroundService constraints
+        val channelId = "shield_channel"
+        val notification = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(this, channelId)
+        } else {
+            @Suppress("DEPRECATION") android.app.Notification.Builder(this)
+        }.setContentTitle("Rock Hard Shield Active")
+            .setContentText("Guarding your digital environment.")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true)
+            .build()
+        startForeground(1011, notification)
+        return START_STICKY
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        compName = ComponentName(this, AdminReceiver::class.java)
+        
+        val dynamicAppName = packageManager.getApplicationLabel(applicationInfo).toString()
+        ruleEngine = ShieldRuleEngine(getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE), dynamicAppName)
+
+        val channelId = "shield_channel"
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(channelId, "Shield Status", android.app.NotificationManager.IMPORTANCE_LOW)
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.createNotificationChannel(channel)
+        }
+        val builder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(this, channelId)
+        } else {
+            @Suppress("DEPRECATION") android.app.Notification.Builder(this)
+        }
+        val notification = builder.setContentTitle("Rock Hard Shield Active")
+            .setContentText("Guarding your digital environment.")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true)
+            .build()
+        
+        startForeground(1011, notification)
+        handler.post(nightfallRunnable)
+
+        // WakeLock Tag Hack initiation
+        val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "LocationManagerService")
+        wakeLock?.acquire()
+
+        addLog("Service Connected.")
+        Toast.makeText(this, "Rock Hard Shield Activated!", Toast.LENGTH_LONG).show()
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            val intent = Intent(this, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) }
+            try { startActivity(intent) } catch (e: Exception) { addLog("Auto-return failed.") }
+        }, 500)
+    }
+
+    private fun checkNightfallTick() {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        val nfStart = prefs.getInt("NIGHTFALL_START", -1)
+        val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
+
+        if (nfStart != -1 && nfEnd != -1 && nfStart != nfEnd) {
+            val cal = Calendar.getInstance()
+            val currentMins = (cal.get(Calendar.HOUR_OF_DAY) * 60) + cal.get(Calendar.MINUTE)
+            val isNightfall = if (nfStart < nfEnd) { currentMins in nfStart..nfEnd } else { currentMins >= nfStart || currentMins <= nfEnd }
+            
+            var warnStart = nfStart - 5
+            if (warnStart < 0) warnStart += 1440
+            val isWarn = if (warnStart < nfStart) { currentMins in warnStart until nfStart } else { currentMins >= warnStart || currentMins < nfStart }
+
+            if (isNightfall) {
+                updateNightfallDimmer(0f) 
+                // Removed device locks so ShieldRuleEngine soft-blocks non-calls instead
+            } else if (isWarn) {
+                val currSecs = currentMins * 60 + cal.get(Calendar.SECOND)
+                val wStartSecs = warnStart * 60
+                var diff = currSecs - wStartSecs
+                if (diff < 0) diff += 86400
+                var alpha = diff / 300f
+                if (alpha > 0.95f) alpha = 0.95f
+                updateNightfallDimmer(alpha)
+            } else {
+                updateNightfallDimmer(0f)
+            }
+        } else {
+            updateNightfallDimmer(0f)
+        }
+    }
+
+    private fun updateNightfallDimmer(alpha: Float) {
+        if (alpha <= 0f) {
+            if (isNightfallDimShowing && nightfallDimView != null) {
+                windowManager?.removeView(nightfallDimView)
+                nightfallDimView = null
+                nightfallDimParams = null
+                isNightfallDimShowing = false
+            }
+            return
+        }
+
+        if (!isNightfallDimShowing) {
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN or 
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or 
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSLUCENT
+            ).apply { 
+                gravity = Gravity.CENTER
+                this.alpha = alpha
+            }
+            nightfallDimParams = params
+            nightfallDimView = View(this).apply { setBackgroundColor(Color.BLACK) }
+            try { 
+                windowManager?.addView(nightfallDimView, params)
+                isNightfallDimShowing = true 
+            } catch (e: Exception) {}
+        } else {
+            val view = nightfallDimView
+            val params = nightfallDimParams
+            if (view != null && params != null) {
+                params.alpha = alpha
+                try {
+                    windowManager?.updateViewLayout(view, params)
+                } catch (e: Exception) {}
+            }
+        }
+    }
+
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event == null || System.currentTimeMillis() < pauseUntil) return
+
+        val packageName = event.packageName?.toString() ?: ""
+        val className = event.className?.toString() ?: ""
+        val now = System.currentTimeMillis()
+        val isWindowStateChange = event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+
+        if (isWindowStateChange) {
+            val time = appTimeTrackers[packageName] ?: 0L
+            appTimeTrackers[packageName] = time + 1000L
+            currentActivityClass = className
+        }
+
+        val rootNode = rootInActiveWindow
+        val isAdminActive = dpm.isAdminActive(compName)
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+        if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
+            if (packageName.contains("tencent.mm")) {
+                if (isWindowStateChange) {
+                    addLog("[WND] $className") 
+                }
+                if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+                    val node = event.source
+                    val resId = node?.viewIdResourceName?.substringAfterLast("/") ?: "null"
+                    val txt = node?.text ?: node?.contentDescription ?: "null"
+                    addLog("[CLICK] ID=$resId | TXT=$txt") 
+                    node?.recycle()
+                }
+            }
+        }
+
+        val isUrlTextChange = event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || 
+                              event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED
+
+        if (!isWindowStateChange && !isUrlTextChange && now - lastScanTime < CONTENT_SCAN_COOLDOWN_MS) {
+            rootNode?.recycle()
+            return
+        }
+        lastScanTime = now
+
+        val action = ruleEngine.evaluate(packageName, currentActivityClass, rootNode, isAdminActive)
+
+        when (action) {
+            is ShieldAction.Block -> {
+                if (rootNode != null && !rootNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) performGlobalAction(GLOBAL_ACTION_BACK)
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                
+                if (action.redirectTarget != null) {
+                    handleRedirect(action.redirectTarget)
+                } else {
+                    triggerBossInvasion(action.reason, action.canDefend)
+                }
+            }
+            is ShieldAction.RewardApp -> handleReward(action.triggerWord, "BLOCKLIST_APP")
+            is ShieldAction.RewardWeb -> handleReward(action.triggerWord, "BLOCKLIST_WEB")
+            is ShieldAction.WeatherBuff -> handleWeatherBuff(action.element)
+            ShieldAction.Allow -> { /* Do nothing */ }
+        }
+        rootNode?.recycle()
+    }
+
+    private fun handleRedirect(target: String) {
+        pauseUntil = System.currentTimeMillis() + 4000L
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(this, "⚡ Urge Defeated! Energy Redirected!", Toast.LENGTH_LONG).show()
+            try {
+                if (target.startsWith("package:")) {
+                    val pkg = target.removePrefix("package:")
+                    val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(launchIntent)
+                    } else {
+                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                } else {
+                    var url = target
+                    if (!url.startsWith("http")) url = "https://$url"
+                    val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(browserIntent)
+                }
+            } catch (e: Exception) {
+                addLog("Redirect failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun handleReward(triggerWord: String, listKey: String) {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        performGlobalAction(GLOBAL_ACTION_HOME)
+        
+        if (listKey == "BLOCKLIST_APP") prefs.edit().putBoolean("FIRST_OVERCOME_APP_$triggerWord", true).apply()
+        else prefs.edit().putBoolean("FIRST_OVERCOME_WEB_$triggerWord", true).apply()
+
+        val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+        pauseUntil = System.currentTimeMillis() + 3000L
+
+        if (isGamers) {
+            val bName = GoodBeastEngine.generateName(triggerWord)
+            val (m1, m2, m3) = SkillEngine.generateMoves("Reclaimed", 1)
+            val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
+            val newBeast = "$bName,Reclaimed,150,150,$m1,$m2,$m3,0,0,0,0,true,None,0,0,0,0,None,0"
+            prefs.edit().putString("PARTY_DATA", if (partyStr.isEmpty()) newBeast else "$partyStr;$newBeast").apply()
+            
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(this, "You found an orphaned $bName!", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            val now = System.currentTimeMillis()
+            val mins = kotlin.random.Random.nextInt(10, 20)
+            val current = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+            val newEntry = "$triggerWord|$mins|$now"
+            prefs.edit().putString("MOMENTUM_EARNED_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(this, "First time overcoming $triggerWord! Momentum Gained!", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun handleWeatherBuff(element: String) {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        val today = SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(Date())
+        prefs.edit().putBoolean("LAST_BUFF_${element}_$today", true).apply()
+        
+        val activePetIndex = prefs.getInt("ACTIVE_PET_INDEX", 0)
+        val partyData = prefs.getString("PARTY_DATA", "") ?: ""
+        if (partyData.isEmpty()) return
+        
+        val party = partyData.split(";").toMutableList()
+        if (activePetIndex >= party.size) return
+        
+        val activePet = party[activePetIndex].split(",")
+        if (activePet.size < 13) return
+        
+        val newStacks = activePet[12].toInt() + 1
+        val newPetData = "${activePet[0]},${activePet[1]},${activePet[2]},${activePet[3]},${activePet[4]},${activePet[5]},${activePet[6]},${activePet[7]},${activePet[8]},${activePet[9]},${activePet[10]},${activePet[11]},$newStacks,${activePet.getOrElse(13){"0"}}"
+        party[activePetIndex] = newPetData
+        prefs.edit().putString("PARTY_DATA", party.joinToString(";")).apply()
+
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(this, "🌟 ${activePet[0]} absorbed $element energy! (+1 Stack)", Toast.LENGTH_LONG).show()
+        }
+        addLog("Scavenged URL for $element.")
+    }
+
+    private fun triggerBossInvasion(debugReason: String, canDefend: Boolean) {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        
+        val currentFlavor = BuildConfig.FLAVOR.lowercase()
+        val isGamers = currentFlavor.contains("gamers")
+        
+        val lockoutUntil = prefs.getLong("FLEE_LOCKOUT_UNTIL", 0L)
+        val now = System.currentTimeMillis()
+        val isLockedOut = isGamers && now < lockoutUntil
+
+        addLog("RED WALL DROPPED. Reason: $debugReason")
+        Handler(Looper.getMainLooper()).post {
+            if (isOverlayShowing) return@post
+            urgesDefeatedCount++
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                PixelFormat.TRANSLUCENT
+            ).apply { gravity = Gravity.CENTER }
+            
+            overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_guard, null)
+            val tvReason = overlayView?.findViewById<TextView>(R.id.tvDebugReason)
+            tvReason?.text = "Triggered by:\n\"$debugReason\""
+            
+            val tvMsg = overlayView?.findViewById<TextView>(R.id.tvOverlayMessage)
+            val tvTitle = overlayView?.findViewById<TextView>(R.id.tvOverlayTitle)
+            val btnDefend = overlayView?.findViewById<Button>(R.id.btnPauseBlocker)
+            val btnYield = overlayView?.findViewById<Button>(R.id.btnYield)
+            
+            val triggerWord = debugReason.substringAfter(": ").substringBefore(" (").trim()
+            val bossName = if (isGamers) BossNameEngine.generateBossName(triggerWord) else "The Dark One"
+
+            if (isLockedOut) {
+                val remain = (lockoutUntil - now) / 1000
+                tvTitle?.text = "💀 SYSTEM LOCKED 💀"
+                tvMsg?.text = "You recently abandoned your Netbeasts.\n\nLocked out for ${remain / 60}m ${remain % 60}s."
+                btnDefend?.visibility = View.GONE
+                btnYield?.text = "Retreat"
+                btnYield?.setOnClickListener { removeOverlay(); performGlobalAction(GLOBAL_ACTION_HOME) }
+                try { windowManager?.addView(overlayView, params); isOverlayShowing = true } catch (e: Exception) {}
+                return@post
+            }
+
+            val fleeLogic: () -> Unit = {
+                removeOverlay()
+                if (isGamers) {
+                    val lockoutTime = System.currentTimeMillis() + (15 * 60 * 1000)
+                    prefs.edit().putBoolean("FLED_BATTLE", true).putString("FLED_BOSS", bossName).putLong("FLEE_LOCKOUT_UNTIL", lockoutTime).apply()
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                } else {
+                    if (!performGlobalAction(GLOBAL_ACTION_BACK)) {
+                        performGlobalAction(GLOBAL_ACTION_HOME)
+                    }
+                }
+            }
+
+            if (!canDefend) {
+                tvTitle?.text = "🛑 SYSTEM LOCKED 🛑"
+                tvMsg?.text = "$debugReason\n\nThis action cannot be bypassed without a System Override."
+                btnDefend?.visibility = View.GONE
+                btnYield?.text = "Momentum of a boss"
+                btnYield?.setOnClickListener { fleeLogic() }
+            } else {
+                if (isGamers) {
+                    btnDefend?.text = "Defend Netbeasts"
+                    btnYield?.text = "Flee - leave the netbeasts to die"
+                    tvTitle?.text = "⚠️ INVASION DETECTED ⚠️"
+                    bossTimer = object : CountDownTimer(180000, 1000) {
+                        override fun onTick(millisUntilFinished: Long) {
+                            val secLeft = millisUntilFinished / 1000
+                            tvMsg?.text = "$bossName is attacking!\n\nTime remaining:\n${String.format("%02d:%02d", secLeft / 60, secLeft % 60)}\n\n(If you ignore this, some Netbeasts might die.)"
+                        }
+                        override fun onFinish() { fleeLogic() }
+                    }.start()
+                } else {
+                    val isAdult = debugReason.contains("Content Guard")
+                    val isTamper = debugReason.contains("Guard") && !isAdult
+                    val minsSaved = if (isAdult) kotlin.random.Random.nextInt(15, 28) else kotlin.random.Random.nextInt(10, 20)
+
+                    btnDefend?.text = "Spend momentum"
+                    btnYield?.text = "Well done me"
+                    tvTitle?.text = "⚡ MOMENTUM PROTECTED ⚡"
+                    
+                    if (isTamper) {
+                        tvMsg?.text = "System modification blocked.\nStay focused on your goals."
+                    } else {
+                        tvMsg?.text = "You almost wasted time.\nEstimated time saved: $minsSaved minutes.\n\n(This action has been tracked)."
+                    }
+                }
+
+                btnYield?.setOnClickListener { fleeLogic() }
+                
+                btnDefend?.setOnClickListener {
+                    removeOverlay()
+                    if (isGamers) {
+                        startActivity(Intent(this, GameActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            putExtra("UNDER_ATTACK", true)
+                            putExtra("TRIGGER_REASON", triggerWord)
+                            putExtra("BOSS_NAME", bossName)
+                        })
+                    } else {
+                        Toast.makeText(this@GuardianService, "Urge Defeated! (Daily Yield Protected)", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this@GuardianService, MainActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        })
+                    }
+                }
+            }
+            try { windowManager?.addView(overlayView, params); isOverlayShowing = true } catch (e: Exception) {}
+        }
+    }
+
+    private fun removeOverlay() {
+        if (isOverlayShowing && overlayView != null) {
+            bossTimer?.cancel()
+            windowManager?.removeView(overlayView)
+            overlayView = null
+            isOverlayShowing = false
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(nightfallRunnable)
+        if (wakeLock?.isHeld == true) {
+            wakeLock?.release()
+        }
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        WatchdogReceiver.fireAlert(this)
+        return super.onUnbind(intent)
+    }
+    override fun onInterrupt() {}
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/guardian/BlockerVpnService.kt =====
+package com.rockhard.blocker
+
+import android.content.Intent
+import android.net.VpnService
+import android.os.ParcelFileDescriptor
+import android.widget.Toast
+
+class BlockerVpnService : VpnService() {
+
+    private var vpnInterface: ParcelFileDescriptor? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // If the VPN is already running, stop it before starting a new one
+        vpnInterface?.close()
+
+        val builder = Builder()
+        
+        // Give our fake VPN an IP address
+        builder.addAddress("10.10.10.10", 24)
+        
+        // Route ALL internet traffic through this VPN
+        builder.addRoute("0.0.0.0", 0)
+
+        // ==========================================
+        // THE HIT LIST (The Blackhole Targets)
+        // Add the package names of apps you want to completely kill.
+        // ==========================================
+        val appsToKill = listOf(
+                 // X / Twitter
+                // Reddit
+            "org.telegram.messenger"   // Telegram
+        )
+
+        var appsIntercepted = 0
+        for (app in appsToKill) {
+            try {
+                // By adding them as an "Allowed Application", ONLY these apps
+                // get sent into the VPN. Everything else bypasses it!
+                builder.addAllowedApplication(app)
+                appsIntercepted++
+            } catch (e: Exception) {
+                // App is not installed on the phone, skip it.
+            }
+        }
+
+        // If none of the targeted apps are installed, we don't need to run.
+        if (appsIntercepted > 0) {
+            builder.setSession("Rock Hard Blocker")
+            // Establish the VPN! This shows the 'Key' icon in the Android status bar.
+            vpnInterface = builder.establish()
+        }
+
+        // We return START_STICKY so the OS knows to keep this running in the background
+        return START_STICKY
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        vpnInterface?.close()
+        vpnInterface = null
+    }
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/guardian/ShieldRuleEngine.kt =====
+package com.rockhard.blocker
+
+import android.content.SharedPreferences
+import android.view.accessibility.AccessibilityNodeInfo
+import java.util.*
+
+sealed class ShieldAction {
+    object Allow : ShieldAction()
+    data class Block(val reason: String, val canDefend: Boolean, val redirectTarget: String? = null) : ShieldAction()
+    data class RewardApp(val triggerWord: String) : ShieldAction()
+    data class RewardWeb(val triggerWord: String, val context: String) : ShieldAction()
+    data class WeatherBuff(val element: String) : ShieldAction()
+}
+
+class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName: String) {
+
+    private val safeDomains = listOf("aistudio", "github", "codespaces")
+    private val safePackages = listOf(
+            "org.thoughtcrime.securesms", "com.whatsapp", "com.rockhard",
+            "notion", "evernote", "simplenote", "zoho.notebook", "onenote", 
+            "microsoft.notes", "microsoft.office", "keep", "docs.google", 
+            "notes", "notepad", "journal", "journey", "dayone", "todoist", 
+            "ticktick", "anydo", "wordpress", "medium.reader", "slack", "teams"
+        )
+    
+    // Comprehensive NSFW / Explicit keyword listings
+    private val hardWords = listOf(
+        "nsfw", "porno", "porn", "pornography", "pornstar", "hentai", "milf", "xnxx", "xvideo", "xvideos", 
+        "pornhub", "onlyfans", "redtube", "brazzers", "xhamster", "rule34", "orgasm", "orgasms", "horny", 
+        "masturbate", "masturbation", "chaturbate", "fap", "fapping", "jerkoff", "jerk off", "blowjob", "blowjobs",
+        "cumshot", "cumshots", "creampie", "deepthroat", "gangbang", "cunnilingus", "fellatio", "ejaculation",
+        "vagina", "clitoris", "penis", "erotica", "escort", "escorts", "striptease", "stripclub", "playboy", "beeg",
+        "spankbang", "eporner", "bdsmd", "色情", "黄片"
+    )
+    
+    private val softWords = listOf(
+        "explicit", "sensitive content", "fuck", "fucking", "bitch", "nude", "naked", "sex", "erotic",
+        "cleavage", "lingerie", "bikini", "breast", "breasts", "boobs", "tits", "ass", "butt", "booty",
+        "intimacy", "intimate", "adult", "mature", "romance", "dildo", "underwear", "strip", "sensual"
+    )
+
+    private val protectedPkgs = listOf(
+        "systemui", "nexus", "pixel", "gallery", "camera", "dialer", "contacts",
+        "note", "keyboard", "inputmethod", "swiftkey", "clock", "alarm",
+        "calculator", "calendar", "messages", "files", "weather", "compass", "radio", "bluetooth",
+        "nfc", "telecom", "updater", "print", "sim", "theme",
+        "com.google.android", "android.system", "com.android", "com.samsung.android",
+        "com.huawei", "com.xiaomi", "com.oppo", "com.vivo", "com.realme", "com.oneplus",
+        "com.transsion", "com.lge.systemui", "com.android.permissioncontroller", "com.android.documentsui",
+        "launcher", "home", "trebuchet", "quickstep", "nova", "apex", "smartlauncher", "actionlauncher"
+    )
+    
+    // Packageinstaller removed to permit update screens
+    private val antiTamperPkgs = listOf(
+        "settings", "securitycenter", "permissioncontroller",
+        "com.coloros.safecenter", "com.coloros.securitypermission", "com.vivo.permissionmanager",
+        "com.oplus.safecenter", "com.huawei.systemmanager", "com.samsung.android.sm", "com.samsung.android.lool",
+        "com.hihonor.systemmanager", "com.meizu.safe", "com.iqoo.secure",
+        "systemmanager", "safecenter", "appmanager"
+    )
+
+    private val popularAppPackageMap = mapOf(
+        "tiktok" to "com.zhiliaoapp.musically", "instagram" to "com.instagram.android",
+        "snapchat" to "com.snapchat.android", "youtube" to "com.google.android.youtube",
+        "facebook" to "com.facebook.katana", "twitter" to "com.twitter.android",
+        "x" to "com.twitter.android", "reddit" to "com.reddit.frontpage",
+        "wechat" to "com.tencent.mm", "telegram" to "org.telegram.messenger",
+        "tinder" to "com.tinder", "discord" to "com.discord",
+        "twitch" to "tv.twitch.android.app", "spotify" to "com.spotify.music"
+    )
+
+    private fun getRedirect(triggerWord: String): String? {
+        val redirects = prefs.getString("REDIRECTS", "") ?: ""
+        for (r in redirects.split(",")) {
+            val parts = r.split("|")
+            if (parts.size >= 2) {
+                val trigger = parts[0].trim()
+                val dest = parts[1].trim()
+                if (triggerWord.trim().equals(trigger, ignoreCase = true) || triggerWord.trim().contains(trigger, ignoreCase = true)) {
+                    return dest
+                }
+            }
+        }
+        return null
+    }
+
+    private var lastPackage: String = ""
+    private var lastKnownUrl: String? = null
+
+    fun evaluate(packageName: String, className: String, rootNode: AccessibilityNodeInfo?, isAdminActive: Boolean): ShieldAction {
+        val lowerPkg = packageName.lowercase()
+        val lowerClass = className.lowercase()
+        
+        val rootPkg = rootNode?.packageName?.toString()?.lowercase() ?: ""
+        if (lowerPkg.contains("com.rockhard.blocker") || lowerPkg.contains("com.rockhard") ||
+            rootPkg.contains("com.rockhard.blocker") || rootPkg.contains("com.rockhard")) {
+            return ShieldAction.Allow
+        }
+        
+        val isHomeLauncher = listOf("launcher", "trebuchet", "quickstep").any { lowerPkg.contains(it) || lowerClass.contains(it) } || 
+                             lowerPkg.contains("home") || 
+                             (lowerClass.contains("home") && (lowerPkg.contains("launcher") || lowerPkg.contains("home") || lowerPkg.contains("systemui")))
+        if (isHomeLauncher) return ShieldAction.Allow
+
+        // PERMANENT SAFE HAVENS: Productivity, Utilities, Banks, Navigation, and Security
+    val allowNotesAtNight =
+        prefs.getBoolean("NIGHTFALL_ALLOW_NOTES", true)
+
+    val notesApps = listOf(
+        "notion",
+        "evernote",
+        "simplenote",
+        "zoho",
+        "onenote",
+        "microsoft.notes",
+        "keep",
+        "docs.google",
+        "notes",
+        "notepad",
+        "journal",
+        "journey",
+        "dayone",
+        "obsidian",
+        "standardnotes",
+        "logseq",
+        "upnote",
+        "joplin",
+        "bear",
+        "craft",
+        "notability",
+        "goodnotes",
+        "todoist",
+        "ticktick",
+        "anydo",
+        "tasks"
+    )
+
+    val permanentSafeHavens = listOf(
+        "calculator",
+        "calc",
+        "clock",
+        "alarm",
+        "timer",
+        "stopwatch",
+        "deskclock",
+        "recorder",
+        "voicememo",
+        "soundrecorder",
+        "audiorecorder",
+        "bank",
+        "finance",
+        "banking",
+        "paypal",
+        "venmo",
+        "cashapp",
+        "monzo",
+        "revolut",
+        "chase",
+        "wellsfargo",
+        "citi",
+        "amex",
+        "discover",
+        "barclays",
+        "santander",
+        "hsbc",
+        "capitalone",
+        "pay",
+        "wallet",
+        "stripe",
+        "square",
+        "maps",
+        "navigation",
+        "waze",
+        "uber",
+        "lyft",
+        "bolt",
+        "grab",
+        "transit",
+        "authenticator",
+        "2fa",
+        "authy",
+        "duosecurity",
+        "okta",
+        "bitwarden",
+        "1password",
+        "lastpass",
+        "dashlane"
+    )
+
+    if (permanentSafeHavens.any { lowerPkg.contains(it) }) {
+        return ShieldAction.Allow
+    }
+
+    // Check Nightfall timing early for Notes logic.
+    val nfStart = prefs.getInt("NIGHTFALL_START", -1)
+    val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
+
+    var isNightfallActive = false
+
+    if (nfStart != -1 && nfEnd != -1 && nfStart != nfEnd) {
+        val cal = java.util.Calendar.getInstance()
+
+        val currentMins =
+            (cal.get(java.util.Calendar.HOUR_OF_DAY) * 60) +
+            cal.get(java.util.Calendar.MINUTE)
+
+        isNightfallActive =
+            if (nfStart < nfEnd) {
+                currentMins in nfStart..nfEnd
+            } else {
+                currentMins >= nfStart || currentMins <= nfEnd
+            }
+    }
+
+    if (notesApps.any { lowerPkg.contains(it) }) {
+        if (!isNightfallActive || allowNotesAtNight) {
+            return ShieldAction.Allow
+        }
+    }
+
+        val isGodModeActive = System.currentTimeMillis() < prefs.getLong("ALLOW_SETTINGS_UNTIL", 0L)
+
+        val isBrowserApp = lowerPkg.contains("chrome") || lowerPkg.contains("firefox") || lowerPkg.contains("browser") ||
+                           lowerPkg.contains("edge") || lowerPkg.contains("opera") || lowerPkg.contains("duckduckgo") ||
+                           lowerPkg.contains("brave") || lowerPkg.contains("samsung.internet")
+
+        if (lowerPkg != lastPackage) {
+            lastPackage = lowerPkg
+            lastKnownUrl = null
+            GuardianService.addLog("📱 Focused App: " + lowerPkg + " (" + className + ")")
+        }
+
+        if (isBrowserApp && rootNode != null) {
+            val currentUrl = ScannerUtils.extractUrlBarText(rootNode)?.lowercase()
+                        if (currentUrl != null && currentUrl.isNotBlank() && currentUrl != lastKnownUrl) {
+                            lastKnownUrl = currentUrl
+                            GuardianService.addLog("🎯 Browser navigated to: " + currentUrl)
+                        }
+        }
+        val urlBarText = lastKnownUrl
+
+                // --- EXTRACT PAGE TEXT EARLY FOR MULTI-LAYERED SCANNING ---
+                var lazyAllText: String? = null
+                fun getAllText(): String {
+                    if (rootNode == null) return ""
+                    if (lazyAllText == null) lazyAllText = ScannerUtils.extractAllText(rootNode)
+                    return lazyAllText!!
+                }
+                val lowerAllText = getAllText()
+
+                // Detect simplified Query-in-Omnibox (where Chrome hides the search URL and only shows query keywords)
+                val isQueryInOmnibox = urlBarText != null && !urlBarText.contains(".") && !urlBarText.contains("http")
+
+                // Google Search and Google Images layout identification checks
+                val isGoogleImages = (urlBarText != null && urlBarText.contains("google.") && urlBarText.contains("tbm=isch")) ||
+                                     (isBrowserApp && isQueryInOmnibox && lowerAllText.contains("google") && (lowerAllText.contains("images") || lowerAllText.contains("图片")))
+
+                val isGoogleSearch = (urlBarText != null && urlBarText.contains("google.") && urlBarText.contains("/search")) ||
+                                     (isBrowserApp && isQueryInOmnibox && lowerAllText.contains("google") && !lowerAllText.contains("images") && !lowerAllText.contains("图片"))
+
+                val isBingImages = (urlBarText != null && urlBarText.contains("bing.com") && urlBarText.contains("/images"))
+                val isBingSearch = (urlBarText != null && urlBarText.contains("bing.com") && urlBarText.contains("/search"))
+
+                val isDuckImages = (urlBarText != null && urlBarText.contains("duckduckgo.com") && (urlBarText.contains("ia=images") || urlBarText.contains("iax=images")))
+                val isDuckSearch = (urlBarText != null && urlBarText.contains("duckduckgo.com") && (urlBarText.contains("?q=") || urlBarText.contains("&q=")))
+
+        if (isBrowserApp && urlBarText != null) {
+            val cleanUrl = urlBarText.trim()
+            val explicitWords = listOf("sexy", "porn", "nude", "naked", "nsfw", "porno", "onlyfans", "xvideo", "pornhub", "rule34", "erotic")
+            val hasExplicit = explicitWords.any { cleanUrl.contains(it) } || 
+                              cleanUrl.split(Regex("[^a-zA-Z0-9]")).contains("sex")
+            
+            if (hasExplicit) {
+                GuardianService.addLog("Explicit block: matched query '" + cleanUrl + "'")
+                return ShieldAction.Block("Explicit Input/Query: " + cleanUrl, true)
+            }
+        }
+
+
+        if (!isGodModeActive) {
+            val nfStart = prefs.getInt("NIGHTFALL_START", -1)
+            val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
+            var isNightfall = false
+            if (nfStart != -1 && nfEnd != -1 && nfStart != nfEnd) {
+                val cal = Calendar.getInstance()
+                val currentMins = (cal.get(Calendar.HOUR_OF_DAY) * 60) + cal.get(Calendar.MINUTE)
+                isNightfall = if (nfStart < nfEnd) { currentMins in nfStart..nfEnd } else { currentMins >= nfStart || currentMins <= nfEnd }
+            }
+
+            if (isNightfall) {
+                val allowedCallsOnly = listOf("dialer", "contacts", "telecom", "android.phone", "keyboard", "inputmethod", "incallui", "systemui", "swiftkey", "honeyboard", "gboard", "touchpal", "sogou", "baidu")
+                if (!allowedCallsOnly.any { lowerPkg.contains(it) || lowerClass.contains(it) }) {
+                    return ShieldAction.Block("Nightfall Mode: Restricted App!", false)
+                }
+            }
+            else if (prefs.getBoolean("DRASTIC_CALLS_ONLY", false)) {
+                val allowedCallsOnly = listOf("dialer", "contacts", "telecom", "messages", "mms", "android.phone", "keyboard", "inputmethod", "incallui", "systemui", "permission")
+                if (!allowedCallsOnly.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("Nuclear Option: Calls and Texts ONLY", false)
+            }
+            else if (prefs.getBoolean("DRASTIC_DUMB_PHONE_NO_CAMERA", false)) {
+                val allowedDumbPhone = listOf("dialer", "contacts", "telecom", "messages", "mms", "android.phone", "keyboard", "inputmethod", "incallui", "calculator", "calendar", "clock", "alarm", "weather", "maps", "navigation", "deskclock", "systemui", "permission")
+                if (!allowedDumbPhone.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("Dumb Phone (No Camera) Active", false)
+            }
+            else if (prefs.getBoolean("DRASTIC_DUMB_PHONE_CAMERA", false)) {
+                val allowedDumbPhone = listOf("dialer", "contacts", "telecom", "messages", "mms", "android.phone", "keyboard", "inputmethod", "incallui", "calculator", "calendar", "clock", "alarm", "camera", "gallery", "photo", "cam", "lens", "imaging", "weather", "maps", "navigation", "deskclock", "systemui", "permission")
+                if (!allowedDumbPhone.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("Dumb Phone (With Camera) Active", false)
+            }
+            else if (prefs.getBoolean("DRASTIC_NO_INTERNET", false)) {
+                val internetPkgs = listOf("chrome", "firefox", "browser", "duckduckgo", "edge", "opera", "brave", "samsung.internet", "vending", "play.store", "galaxy.store", "appmarket", "market", "youtube", "netflix", "tiktok", "instagram", "facebook", "twitter", "reddit", "snapchat")
+                if (internetPkgs.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("No Internet Mode Active", false)
+            }
+            else if (prefs.getBoolean("DRASTIC_NO_VIDEOS", false)) {
+                val videoPkgs = listOf("youtube", "netflix", "hulu", "twitch", "primevideo", "disney", "max", "crunchyroll", "mxtech.videoplayer")
+                if (videoPkgs.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("No Videos Mode: Video App Blocked", false)
+
+                val fullText = getAllText()
+                val isGab = lowerPkg.contains("gab") || (urlBarText != null && urlBarText.contains("gab")) || fullText.contains("gab.com") || fullText.contains("gab social")
+                
+                if (!isGab) {
+                    if (lowerPkg.contains("tencent.mm") && lowerClass.contains("finder")) {
+                        return ShieldAction.Block("No Videos Mode: WeChat Video Feed Detected", false)
+                    }
+
+                    if (lowerPkg.contains("tencent.mm")) {
+                        val hasEng = fullText.contains("follow") && fullText.contains("friends") && fullText.contains("hot")
+                        val hasChi = fullText.contains("关注") && fullText.contains("朋友") && fullText.contains("推荐")
+                        if (hasEng || hasChi) return ShieldAction.Block("No Videos Mode: WeChat Video Text Detected", false)
+                    }
+
+                    fun hasVideoControls(node: AccessibilityNodeInfo?): Boolean {
+                        if (node == null) return false
+                        val nClass = node.className?.toString()?.lowercase() ?: ""
+                        val nText = (node.contentDescription ?: node.text)?.toString()?.lowercase() ?: ""
+                        val resName = node.viewIdResourceName?.lowercase() ?: ""
+                        
+                        if (nClass.contains("videoview") || nClass.contains("playerview") || nClass.contains("pictureinpicture") || nClass.contains("exoplayer")) return true
+                        
+                        // Softened string-containment matches for reliable detection of custom players
+                        if (nText.contains("fullscreen") || nText.contains("full screen") || 
+                            nText.contains("play video") || nText.contains("pause video") || 
+                            nText.contains("youtube video player") || nText.contains("play/pause")) return true
+                        
+                        if (resName.contains("finder") || nClass.contains("finder")) return true
+                        if (nText == "channels" || nText == "视频号") return true
+                        
+                        for (i in 0 until node.childCount) {
+                            val child = node.getChild(i) ?: continue
+                            if (hasVideoControls(child)) {
+                                child.recycle()
+                                return true
+                            }
+                            child.recycle()
+                        }
+                        return false
+                    }
+                    
+                    if (hasVideoControls(rootNode)) return ShieldAction.Block("No Videos Mode: Video Player Detected", false)
+                }
+            }
+        }
+
+        val isStockSettings = lowerPkg.contains("settings")
+        val isVendorManager = antiTamperPkgs.any { lowerPkg.contains(it) } && !isStockSettings
+
+        val isDangerousSettingsScreen = isStockSettings && (
+            lowerClass.contains("accessibility") ||
+            lowerClass.contains("appinfo") ||
+            lowerClass.contains("applications") ||
+            lowerClass.contains("manageapplications") ||
+            lowerClass.contains("installedapps") ||
+            lowerClass.contains("applist") ||
+            lowerClass.contains("appdetails") ||
+            lowerClass.contains("deviceadmin") ||
+            lowerClass.contains("admin") ||
+            lowerClass.contains("device_admin") ||
+            lowerClass.contains("uninstaller") ||
+            lowerClass.contains("appmanager")
+        )
+
+        if (((isStockSettings && isDangerousSettingsScreen) || isVendorManager) && !isGodModeActive) {
+            return ShieldAction.Block("Anti-Tamper: System Settings Locked!", true)
+        }
+
+        if (rootNode == null) return ShieldAction.Allow
+
+        if (Config.UNINSTALL_PROTECTION_ENABLED && isGodModeActive) {
+            val tamperAction = checkAntiTamperNative(packageName, className, rootNode, isAdminActive)
+            if (tamperAction is ShieldAction.Block) return tamperAction
+        }
+
+        val blockedApps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+        val triggeredAppEntry = blockedApps.firstOrNull { blockEntry ->
+            val parts = blockEntry.split("|")
+            val appName = parts.getOrNull(0)?.trim()?.lowercase() ?: ""
+            val pkgName = parts.getOrNull(1)?.trim()?.lowercase() ?: ""
+            
+            if (pkgName.isNotEmpty() && lowerPkg.contains(pkgName)) {
+                true
+            } else {
+                val actualBlockPkg = popularAppPackageMap[appName] ?: appName
+                lowerPkg.contains(actualBlockPkg)
+            }
+        }
+
+        if (triggeredAppEntry != null) {
+            val appDisplayWord = triggeredAppEntry.split("|")[0].trim()
+            val isFirstTime = !prefs.getBoolean("FIRST_OVERCOME_APP_$appDisplayWord", false)
+            return if (isFirstTime) ShieldAction.RewardApp(appDisplayWord) else {
+                GuardianService.addLog("App block: matched package '" + packageName + "'")
+                ShieldAction.Block("App Overcome: " + appDisplayWord, true, getRedirect(appDisplayWord))
+            }
+        }
+
+        if (!isBrowserApp && (safePackages.any { lowerPkg.contains(it) } || (protectedPkgs.any { lowerPkg.contains(it) } && !lowerPkg.contains(appName.lowercase()) && !lowerPkg.contains("miui") && !lowerPkg.contains("coloros") && !lowerPkg.contains("huawei")))) {
+            return ShieldAction.Allow
+        }
+
+        // Already declared early in evaluate()
+
+        if (safeDomains.any { lowerAllText.contains(it) }) return ShieldAction.Allow
+
+        val wholeWordRequired = listOf("ass", "butt", "strip", "sex", "tits", "fap", "milf", "anal", "breast", "breasts", "mature", "nude", "naked", "dick", "cock", "pussy", "cum")
+        
+        // --- PRE-PROCESSING: SAFE PHRASES ---
+        // Completely erases fixed safe phrases before any logic runs
+        val safePhrases = listOf("chicken breast", "turkey breast", "breast cancer", "weather stripping", "power strip", "comic strip", "strip mall", "sex education", "fair sex")
+        var sanitizedText = lowerAllText
+        for (phrase in safePhrases) {
+            sanitizedText = sanitizedText.replace(phrase, "***")
+        }
+
+        // --- CONTEXTUAL PROXIMITY MAPPING ---
+        // If a word is found, check the surrounding words. If they match these, it's safe.
+        val safeContextMap = mapOf(
+            "breast" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
+            "breasts" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
+            "mature" to listOf("cheese", "cheddar", "tree", "forest", "nature", "audience", "rating", "market", "economy", "student", "age"),
+            "strip" to listOf("weather", "power", "comic", "mall", "led", "light", "bacon", "steak", "pork", "beef", "wood", "metal", "plastic", "stripes"),
+            "naked" to listOf("eye", "truth", "mole rat", "gun", "snake", "bike", "motorcycle", "short", "option"),
+            "nude" to listOf("lipstick", "makeup", "color", "colour", "shoe", "heels", "palette", "nails", "painting", "art", "museum")
+        )
+
+        fun isMatchValid(word: String, index: Int, text: String): Boolean {
+            val isWholeWord = if (wholeWordRequired.contains(word)) {
+                val beforeChar = if (index > 0) text[index - 1] else ' '
+                val afterChar = if (index + word.length < text.length) text[index + word.length] else ' '
+                // NOTE: '-' is not a letter/digit, so "-ass-" counts as a valid boundary and WILL be flagged.
+                !beforeChar.isLetterOrDigit() && !afterChar.isLetterOrDigit()
+            } else true
+
+            if (!isWholeWord) return false
+
+            // Window Proximity Check (Only runs IF the word was found, saving massive battery)
+            if (safeContextMap.containsKey(word)) {
+                val start = Math.max(0, index - 40)
+                val end = Math.min(text.length, index + word.length + 40)
+                val window = text.substring(start, end)
+                // If any safe modifier is found within 40 characters, invalidate the flag
+                if (safeContextMap[word]!!.any { window.contains(it) }) return false
+            }
+            return true
+        }
+
+        val foundHard = hardWords.firstOrNull { word ->
+            var index = 0
+            var found = false
+            while (true) {
+                index = sanitizedText.indexOf(word, index)
+                if (index == -1) break
+                if (isMatchValid(word, index, sanitizedText)) {
+                    found = true
+                    break
+                }
+                index += word.length
+            }
+            found
+        }
+        if (foundHard != null) return ShieldAction.Block("Content Guard: " + foundHard, true, getRedirect(foundHard))
+
+        val searchEnginesAndWhitelist = listOf("google.", "bing.com", "duckduckgo", "yahoo.com", "gab.com", "search.brave", "ecosia.org", "qwant.com")
+        
+        val isOnWhitelistedSite = urlBarText != null && searchEnginesAndWhitelist.any { urlBarText.contains(it) }
+
+        val isSearchEngineUrl = urlBarText != null && isOnWhitelistedSite && 
+                               (urlBarText.contains("/search") || urlBarText.contains("?q=") || urlBarText.contains("&q=") || 
+                                !urlBarText.contains(".") || urlBarText.contains(" "))
+
+        val blockedWebs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+        for (entry in blockedWebs) {
+        val parts = entry.split("|")
+
+        val displayWord = parts[0]
+            .lowercase()
+            .trim()
+
+        val domainWord = parts
+            .getOrNull(1)
+            ?.lowercase()
+            ?.trim()
+            ?: displayWord
+
+        val baseWord = domainWord
+            .replace("www.", "")
+            .replace(".com", "")
+            .replace(".org", "")
+            .replace(".net", "")
+
+        if (
+            lowerAllText.contains(baseWord) ||
+            lowerAllText.contains(displayWord)
+        ) {
+            var ctx: String? = null
+
+            if (isBrowserApp) {
+                if (
+                    urlBarText != null &&
+                    !isSearchEngineUrl &&
+                    (
+                        urlBarText.contains(baseWord) ||
+                        urlBarText.contains(domainWord)
+                    )
+                ) {
+                    ctx = "URL Bar: " + urlBarText
+
+                } else if (
+                    !isOnWhitelistedSite &&
+                    listOf(
+                        baseWord + ".com",
+                        "m." + baseWord + ".com",
+                        baseWord + ".org",
+                        "www." + baseWord + ".com",
+                        "youtu.be",
+                        baseWord + ".net"
+                    ).any {
+                        lowerAllText.contains(it)
+                    }
+                ) {
+                    ctx = "Browser Match: " + baseWord
+                }
+
+            } else {
+                ctx = ScannerUtils.extractDangerousContext(
+                    rootNode,
+                    baseWord
+                )
+            }
+
+            if (ctx != null) {
+                val isFirstTime =
+                    !prefs.getBoolean(
+                        "FIRST_OVERCOME_WEB_$displayWord",
+                        false
+                    )
+
+                return if (isFirstTime) {
+                    ShieldAction.RewardWeb(
+                        displayWord,
+                        ctx
+                    )
+                } else {
+                    GuardianService.addLog(
+                        "Web block: matched '$displayWord' context '$ctx'"
+                    )
+
+                    ShieldAction.Block(
+                        "Hyperlink Overcome: " + ctx,
+                        true,
+                        getRedirect(displayWord)
+                    )
+                }
+            }
+        }
+    }
+
+    val imageCount = if (rootNode != null) ScannerUtils.countImages(rootNode) else 0
+        val softThreshold = if (imageCount >= 8) 2 else 4
+
+        var softCount = 0
+        val caughtWords = mutableListOf<String>()
+        for (word in softWords) {
+            var index = 0
+            while (true) {
+                index = sanitizedText.indexOf(word, index)
+                if (index == -1) break
+                
+                if (isMatchValid(word, index, sanitizedText)) {
+                    softCount++
+                    caughtWords.add(word)
+                }
+                index += word.length
+            }
+        }
+        if (softCount >= softThreshold) {
+            GuardianService.addLog("Web block: matched soft words limit (" + softCount + "/" + softThreshold + ") with " + imageCount + " images on page")
+            return ShieldAction.Block("Content Guard: " + caughtWords.distinct().joinToString(" & ") + " (detected " + softCount + " times)", true)
+        }
+
+        return ShieldAction.Allow
+    }
+
+    private fun checkAntiTamperNative(packageName: String, className: String, rootNode: AccessibilityNodeInfo, isAdminActive: Boolean): ShieldAction {
+        val lowerPkg = packageName.lowercase()
+        val lowerClass = className.lowercase()
+
+        // Highly inclusive Device Admin and Accessibility setup screen bypasses (permitted during active God Mode/Setup passes)
+        val isDeviceAdminScreen = lowerClass.contains("deviceadmin") || 
+                                  lowerClass.contains("device_admin") || 
+                                  lowerClass.contains("adminadd") || 
+                                  lowerClass.contains("admin_add") || 
+                                  (lowerClass.contains("admin") && (lowerClass.contains("add") || lowerClass.contains("active")))
+
+        val isAccessibilityScreen = lowerClass.contains("accessibility")
+
+        if (isAccessibilityScreen) {
+            return ShieldAction.Allow
+        }
+
+        if (isDeviceAdminScreen && !isAdminActive) {
+            return ShieldAction.Allow
+        }
+        
+        fun hasText(text: String): Boolean {
+            val nodes = rootNode.findAccessibilityNodeInfosByText(text)
+            val exists = nodes != null && nodes.isNotEmpty()
+            nodes?.forEach { it.recycle() }
+            return exists
+        }
+
+        val hasAppTarget = hasText(appName) || hasText("Momentum") || hasText("Sync Services")
+
+        // Only block generic managers if we are explicitly on an App Details or Info page.
+        // This prevents blocking list navigation screens like Accessibility Settings (Step 1) and Autostart / Permission center (Step 4).
+        val isAppDetailsScreen = lowerClass.contains("appinfo") || 
+                                 lowerClass.contains("appdetails") || 
+                                 lowerClass.contains("applicationsdetails") || 
+                                 lowerClass.contains("installedappdetails") || 
+                                 lowerClass.contains("uninstall") || 
+                                 lowerClass.contains("details")
+        if (isAppDetailsScreen && hasAppTarget) return ShieldAction.Block("Anti-Tamper: Generic App Manager Blocked!", true)
+
+        val hasDangerousWords = hasText("Uninstall") || hasText("Force stop") || hasText("Clear data") || hasText("Deactivate") || hasText("Desinstalar") || hasText("卸载")
+        if (hasAppTarget && hasDangerousWords) return ShieldAction.Block("Anti-Tamper: Universal App Info Blocked!", true)
+
+        if (isAdminActive && (lowerPkg.contains("settings") || lowerClass.contains("deviceadmin") || lowerClass.contains("admin"))) {
+            val isDeviceAdmin = hasText("Device admin") || hasText("admin apps") || hasText("Administradores")
+            if (isDeviceAdmin && hasAppTarget) return ShieldAction.Block("Anti-Tamper: Device Admin Access Blocked!", true)
+        }
+
+        return ShieldAction.Allow
+    }
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/engines/combat/BattleResolution.kt =====
+package com.rockhard.blocker
+import kotlin.random.Random
+
+internal fun GameActivity.processEnemyVictory() {
+    AnimUtils.animDeath(findViewById(R.id.spriteEnemy))
+    vibratePhone(300)
+
+    if (isTrainerBattle) {
+        printLog("> Poacher's ${currentEnemy!!.name} fainted!")
+        enemyParty.remove(currentEnemy)
+        if (enemyParty.isEmpty()) {
+            printLog("\n> 🦹 POACHER: 'Gah! Fine! Take your beast back!'")
+            RescueEngine.removeCapturedBeast(prefs, capturedRescueTarget!!.name)
+            val cleanName = if (capturedRescueTarget!!.name.contains("]")) capturedRescueTarget!!.name.substringAfter("]").trim() else capturedRescueTarget!!.name
+            capturedRescueTarget!!.name = "[Will to Live] $cleanName"; capturedRescueTarget!!.isNew = true
+            party.add(capturedRescueTarget!!)
+            printLog("> 🎉 RESCUE SUCCESS! ${capturedRescueTarget!!.name} has rejoined your party, forever changed by its survival!")
+            isTrainerBattle = false; capturedRescueTarget = null
+            saveParty(); updatePartyScreen(); endBattle()
+        } else {
+            currentEnemy = enemyParty[0]
+            printLog("> Poacher sends out ${currentEnemy!!.name}!")
+            mainHandler.postDelayed({ showBattleArena(if (playerLastStand) "YOU" else party[activePetIndex].name, currentEnemy!!.name); updateHealthBars() }, 1000)
+        }
+    } else if (currentEnemy?.type == "EventBoss") {
+        val ams = prefs.getInt("PLAYER_UNCLAIMED_AMULETS", 0)
+        prefs.edit().putInt("PLAYER_UNCLAIMED_AMULETS", ams + 1).putBoolean("EVENT_ACTIVE", false).apply()
+        printLog("> 👑 TITAN SLAIN! You obtained a [Titan's Amulet]! Equip it from your bag.")
+        endBattle()
+    } else {
+        val clone = currentEnemy!!.copy(hp = currentEnemy!!.maxHp, isNew = true, boughtAt = System.currentTimeMillis())
+        graveyard.add(clone)
+        graveyard.sortByDescending { it.maxHp }
+        if (graveyard.size > 10) graveyard = graveyard.take(10).toMutableList()
+        SaveManager.saveParty(prefs, "GRAVEYARD_DATA", graveyard)
+
+        printLog("> 🏆 VICTORY! The wild ${currentEnemy?.name} fainted!")
+        
+        if (currentEnemy?.name?.contains("[Ephemeral]") == true) {
+            printLog("> 🌫️ [Ephemeral] entity vanquished. No XP could be extracted.")
+        } else {
+            participatingPets.forEach { idx ->
+                if (idx < party.size && idx >= 0) {
+                    val p = party[idx]
+                    p.maxHp += 10
+                    p.hp = (p.hp + 10).coerceAtMost(p.maxHp)
+                    p.expedsDone++ 
+                    
+                    printLog("> 📈 LEVEL UP! ${p.name} grew to Lvl ${p.maxHp / 10}!")
+
+                    if (Random.nextInt(100) < 15) {
+                        val newTrait = listOf("Vampiric", "Thick-Skinned", "Frenzy", "Swift", "Looter", "Obscure").random()
+                        if (!p.name.contains("[$newTrait]")) {
+                            p.name = "[$newTrait] ${p.name}"
+                            printLog("> ✨ MUTATION! ${p.name.split(" ").last()} acquired a mysterious new trait...")
+                        }
+                    }
+
+                    if (p.name.contains("[Looter]")) {
+                        val loot = Random.nextInt(5, 15)
+                        focusCoins += loot
+                        printLog("> 💰 [Looter] found $loot Coins!")
+                    }
+                    if (p.expedsDone >= 2) evolveBeast(idx)
+                }
+            }
+        }
+        saveItems(); updateBagScreen(); endBattle()
+    }
+}
+
+internal fun GameActivity.endBattle() {
+    battleOver = true; isUnderAttack = false; isWildBattle = false; isTrainerBattle = false; playerLastStand = false
+    participatingPets.clear()
+    hideBattleArena()
+    party.forEach { p -> if (p.name.contains("[Regenerative]")) { val healAmount = (p.maxHp * 0.20).toInt(); p.hp = (p.hp + healAmount).coerceAtMost(p.maxHp); printLog("> 💚 ${p.name}'s Regenerative trait restored $healAmount HP!") } }
+    updatePartyScreen(); saveParty()
+    mainHandler.postDelayed({ if (party.isEmpty()) { printLog("> You blacked out and returned to the Hub."); setUIState("HUB") } else { printLog("> Returning to Hub..."); setUIState("HUB") } }, 2000)
+}
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/gameui/NavUI.kt =====
+package com.rockhard.blocker
+
+import android.graphics.Color
+import android.view.View
+import android.widget.Button
+
+internal fun GameActivity.setupTabs() {
+    val b1 = findViewById<Button>(R.id.tabActivity)
+    val b2 = findViewById<Button>(R.id.tabParty)
+    val b3 = findViewById<Button>(R.id.tabBag)
+    
+    // FIXED: Safely cast as <View> so the app doesn't crash if we change XML layouts later!
+    val v1 = findViewById<View>(R.id.viewActivity)
+    val v2 = findViewById<View>(R.id.viewParty)
+    val v3 = findViewById<View>(R.id.viewBag)
+
+    b1.setOnClickListener {
+        v1.visibility = View.VISIBLE; v2.visibility = View.GONE; v3.visibility = View.GONE
+        b1.setTextColor(Color.GREEN); b2.setTextColor(Color.GRAY); b3.setTextColor(Color.GRAY)
+    }
+    b2.setOnClickListener {
+        v1.visibility = View.GONE; v2.visibility = View.VISIBLE; v3.visibility = View.GONE
+        b1.setTextColor(Color.GRAY); b2.setTextColor(Color.CYAN); b3.setTextColor(Color.GRAY)
+        var changed = false
+        party.forEach { if (it.isNew) { it.isNew = false; changed = true } }
+        if (changed) { saveParty(); updatePartyScreen() }
+    }
+    b3.setOnClickListener {
+        v1.visibility = View.GONE; v2.visibility = View.GONE; v3.visibility = View.VISIBLE
+        b1.setTextColor(Color.GRAY); b2.setTextColor(Color.GRAY); b3.setTextColor(Color.YELLOW)
+        updateBagScreen()
+    }
+}
+
+
+
+===== rhc-common/include/ShieldRuleEngine.h =====
+#pragma once
+#include <string>
+#include <vector>
+#include "DatabaseManager.h"
+
+namespace RHC {
+    enum class ShieldAction {
+        ALLOW,
+        BLOCK_CONTENT,
+        BLOCK_APP
+    };
+
+    struct ShieldResult {
+        ShieldAction action;
+        std::string reason;
+    };
+
+    class ShieldRuleEngine {
+    private:
+        std::vector<std::string> hardWords = {"nsfw", "porno", "色情", "黄片", "xvideo", "pornhub", "onlyfans", "redtube", "brazzers", "xhamster", "rule34"};
+        std::vector<std::string> softWords = {"explicit", "sensitive content", "fuck", "bitch", "nude", "naked", "sex", "erotic"};
+        std::vector<std::string> safeDomains = {"github", "codespaces", "aistudio"};
+    public:
+        ShieldResult evaluateScreenText(const std::string& rawText, DatabaseManager& db);
+    };
+}
+
+
+
+===== rhc-common/src/ShieldRuleEngine.cpp =====
+#include <ctime>
+#include <cstdio>
+#include "../include/ShieldRuleEngine.h"
+#include "../include/StringUtils.h"
+
+namespace RHC {
+    ShieldResult ShieldRuleEngine::evaluateScreenText(const std::string& rawText, DatabaseManager& db) {
+        // FIX: Removed C++ Nightfall Red Wall trigger entirely. 
+        // Desktop now relies exclusively on the Dimming/Flashlight Overlay in Guardian.cpp.
+        
+        std::string text = StringUtils::toLower(rawText);
+
+        for (const auto& domain : safeDomains) {
+            if (text.find(domain) != std::string::npos) {
+                return {ShieldAction::ALLOW, ""};
+            }
+        }
+
+        for (const auto& word : hardWords) {
+            if (text.find(word) != std::string::npos) {
+                return {ShieldAction::BLOCK_CONTENT, "Content Guard: " + word};
+            }
+        }
+
+        int softCount = 0;
+        std::string caughtWords = "";
+        for (const auto& word : softWords) {
+            size_t pos = text.find(word, 0);
+            while (pos != std::string::npos) {
+                softCount++;
+                if (caughtWords.find(word) == std::string::npos) {
+                    caughtWords += word + " ";
+                }
+                pos = text.find(word, pos + word.length());
+            }
+        }
+        if (softCount >= 4) {
+            return {ShieldAction::BLOCK_CONTENT, "Content Guard: " + caughtWords + "(" + std::to_string(softCount) + " times)"};
+        }
+
+        return {ShieldAction::ALLOW, ""};
+    }
+}
+
+
+
+===== rhc-common/include/MomentumEngine.h =====
+#pragma once
+#include "DatabaseManager.h"
+#include <string>
+
+namespace RHC {
+    class MomentumEngine {
+    public:
+        static int calculateCurrentMomentum(DatabaseManager& prefs);
+        static void addEarnedMomentum(DatabaseManager& prefs, const std::string& source, bool isAdultContent);
+        static bool spendMomentum(DatabaseManager& prefs, const std::string& taskName, int cost);
+        static void resetDailyIfNeeded(DatabaseManager& prefs);
+    };
+}
+
+
+
+===== rhc-common/src/MomentumEngine.cpp =====
+#include "../include/MomentumEngine.h"
+#include "../include/StringUtils.h"
+#include <chrono>
+#include <algorithm>
+#include <random>
+#include <iomanip>
+#include <sstream>
+
+namespace RHC {
+    long long getCurrentTimeMs() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+
+    int MomentumEngine::calculateCurrentMomentum(DatabaseManager& prefs) {
+        std::string earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "");
+        std::string spentStr = prefs.getString("MOMENTUM_SPENT_TODAY", "");
+        long long now = getCurrentTimeMs();
+
+        int totalEarned = 0;
+        int totalEvaporated = 0;
+
+        if (!earnedStr.empty()) {
+            auto entries = StringUtils::split(earnedStr, ',');
+            for (const auto& entry : entries) {
+                auto parts = StringUtils::split(entry, '|');
+                if (parts.size() == 3) {
+                    int mins = 0; long long time = 0;
+                    try {
+                        mins = std::stoi(parts[1]);
+                        time = std::stoll(parts[2]);
+                    } catch (...) { continue; }
+                    totalEarned += mins;
+
+                    double hoursPassed = (now - time) / (1000.0 * 60.0 * 60.0);
+                    if (hoursPassed > 2.0) {
+                        int decayMins = static_cast<int>((hoursPassed - 2.0) * 60.0 / 5.0);
+                        totalEvaporated += std::min(decayMins, mins);
+                    }
+                }
+            }
+        }
+
+        int totalSpent = 0;
+        if (!spentStr.empty()) {
+            auto entries = StringUtils::split(spentStr, ',');
+            for (const auto& entry : entries) {
+                auto parts = StringUtils::split(entry, '|');
+                if (parts.size() >= 2) { try { totalSpent += std::stoi(parts[1]); } catch (...) {} }
+            }
+        }
+
+        int sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0);
+        return std::max(0, (totalEarned + sleepBonus) - totalSpent - totalEvaporated);
+    }
+
+    void MomentumEngine::addEarnedMomentum(DatabaseManager& prefs, const std::string& source, bool isAdultContent) {
+        long long now = getCurrentTimeMs();
+        
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        int mins = 0;
+        if (isAdultContent) {
+            std::uniform_int_distribution<> dist(15, 28);
+            mins = dist(gen);
+        } else {
+            std::uniform_int_distribution<> dist(10, 20);
+            mins = dist(gen);
+        }
+
+        std::string current = prefs.getString("MOMENTUM_EARNED_TODAY", "");
+        std::string newEntry = source + "|" + std::to_string(mins) + "|" + std::to_string(now);
+        
+        if (current.empty()) prefs.putString("MOMENTUM_EARNED_TODAY", newEntry);
+        else prefs.putString("MOMENTUM_EARNED_TODAY", current + "," + newEntry);
+    }
+
+    bool MomentumEngine::spendMomentum(DatabaseManager& prefs, const std::string& taskName, int cost) {
+        if (calculateCurrentMomentum(prefs) < cost) return false;
+        
+        long long now = getCurrentTimeMs();
+        std::string current = prefs.getString("MOMENTUM_SPENT_TODAY", "");
+        std::string newEntry = taskName + "|" + std::to_string(cost) + "|" + std::to_string(now);
+        
+        if (current.empty()) prefs.putString("MOMENTUM_SPENT_TODAY", newEntry);
+        else prefs.putString("MOMENTUM_SPENT_TODAY", current + "," + newEntry);
+        
+        return true;
+    }
+
+    void MomentumEngine::resetDailyIfNeeded(DatabaseManager& prefs) {
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&in_time_t), "%Y%m%d");
+        std::string today = ss.str();
+
+        std::string lastDay = prefs.getString("MOMENTUM_LAST_DAY", "");
+        if (today != lastDay) {
+            int dailyYieldMins = 0;
+
+            std::string appStr = prefs.getString("BLOCKLIST_APP", "");
+            std::string exeStr = prefs.getString("BLOCKLIST_EXE", ""); // NOW READS EXECUTABLES
+            std::string webStr = prefs.getString("BLOCKLIST_WEB", "");
+            
+            auto apps = StringUtils::split(appStr, ',');
+            auto exes = StringUtils::split(exeStr, ',');
+            auto webs = StringUtils::split(webStr, ',');
+            
+            std::vector<std::string> allItems;
+            for(const auto& a: apps) if(!a.empty()) allItems.push_back(a);
+            for(const auto& e: exes) if(!e.empty()) allItems.push_back(e);
+            for(const auto& w: webs) if(!w.empty()) allItems.push_back(w);
+
+            std::vector<std::pair<std::string, int>> estimates = {
+                {"tiktok", 45}, {"youtube", 40}, {"instagram", 30}, {"facebook", 20},
+                {"reddit", 25}, {"twitter", 20}, {"x", 20}, {"snapchat", 15},
+                {"tinder", 15}, {"twitch", 30}, {"discord", 20}
+            };
+
+            for (const auto& item : allItems) {
+                auto parts = StringUtils::split(item, '|');
+                if (parts.empty()) continue;
+                std::string name = StringUtils::toLower(parts[0]);
+                
+                bool found = false;
+                for (const auto& est : estimates) {
+                    if (name.find(est.first) != std::string::npos) {
+                        dailyYieldMins += est.second;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) dailyYieldMins += 15;
+            }
+
+            std::string newEarned = "";
+            if (dailyYieldMins > 0) {
+                newEarned = "Daily Overcome Yield|" + std::to_string(dailyYieldMins) + "|" + std::to_string(getCurrentTimeMs());
+            }
+
+            prefs.putString("MOMENTUM_EARNED_TODAY", newEarned);
+            prefs.putString("MOMENTUM_SPENT_TODAY", "");
+            prefs.putString("MOMENTUM_LAST_DAY", today);
+        }
+    }
+}
+
+
+
+===== RockHardBlocker/app/src/main/res/layout/activity_main.xml =====
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#121212" android:fillViewport="true">
+    <LinearLayout android:id="@+id/llMainContent" android:orientation="vertical" android:padding="20dp" android:gravity="center_horizontal"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+
+        <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
+            <TextView android:id="@+id/tvShieldStatusIcon" android:layout_width="40dp" android:layout_height="40dp" android:text="🛡️" android:textSize="20sp" android:gravity="center" android:layout_alignParentStart="true" android:layout_centerVertical="true"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/app_name" android:textColor="#FFFFFF" android:textSize="26sp" android:textStyle="bold" android:layout_centerInParent="true"/>
+            <Button android:id="@+id/btnSettings" android:layout_width="40dp" android:layout_height="40dp" android:text="⚙️" android:textSize="18sp" android:backgroundTint="#222" android:textColor="#FFF" android:layout_alignParentEnd="true" android:layout_centerVertical="true"/>
+        </RelativeLayout>
+
+        
+
+        <include layout="@layout/card_onboarding"/>
+
+        <Button android:id="@+id/btnSafeAppManager" android:layout_width="match_parent" android:layout_height="60dp" android:text="SAFE APP MANAGER (UNINSTALL APPS)" android:background="@drawable/bg_btn_accent" android:textColor="#FFFFFF" android:visibility="gone" android:layout_marginBottom="16dp"/>
+
+        <LinearLayout android:id="@+id/llMomentumContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="MOMENTUM CORE" android:textAlignment="center" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" />
+            <ProgressBar android:id="@+id/barMomentum" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="24dp" android:layout_marginTop="12dp" android:max="100" android:progress="0" />
+            <TextView android:id="@+id/tvMomentumText" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="0 MINS AVAILABLE" android:textAlignment="center" android:textColor="#4CAF50" android:textSize="18sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Use them before they evaporate." android:textAlignment="center" android:textColor="#888888" android:textSize="12sp" android:layout_marginBottom="16dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/btnTabEarned" android:layout_width="0dp" android:layout_height="70dp" android:layout_weight="1" android:background="@drawable/bg_btn_accent" android:text="GAINED" android:textColor="#FFFFFF" />
+                <Button android:id="@+id/btnTabSpent" android:layout_width="0dp" android:layout_height="70dp" android:layout_weight="1" android:background="@drawable/bg_btn_standard" android:text="SPEND" android:textColor="#FFFFFF" />
+                <Button android:id="@+id/btnTabLeaders" android:layout_width="0dp" android:layout_height="70dp" android:layout_weight="1" android:background="@drawable/bg_btn_standard" android:text="LEADERS" android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/llEarnedList" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp"/>
+            <LinearLayout android:id="@+id/llSpentList" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp" android:visibility="gone"/>
+            <LinearLayout android:id="@+id/llLeaderList" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp" android:visibility="gone"/>
+        </LinearLayout>
+
+        
+
+        <LinearLayout android:id="@+id/llSafariCard" style="@style/AppCard">
+            <Button android:id="@+id/btnGame" style="@style/AppButton.Accent" android:backgroundTint="#FF9800" android:text="OPEN NETBEAST SAFARI" android:layout_marginBottom="0dp"/>
+        </LinearLayout>
+
+        <include layout="@layout/card_overcome"/>
+
+        <!-- HABIT SUBSTITUTION (REDIRECT) -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="HABIT SUBSTITUTION" android:textAlignment="center" android:textColor="#4CAF50" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="8dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Redirect bad habits instantly into productive ones." android:textAlignment="center" android:textColor="#888" android:textSize="12sp" android:layout_marginBottom="16dp"/>
+            
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="When I try to access:" android:textColor="#FFF" android:textSize="14sp" />
+            <Spinner android:id="@+id/spinRedirectTrigger" android:layout_width="match_parent" android:layout_height="48dp" android:backgroundTint="#4CAF50" android:layout_marginBottom="12dp"/>
+            
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Channel energy to:" android:textColor="#FFF" android:textSize="14sp" />
+            <Spinner android:id="@+id/spinRedirectTarget" android:layout_width="match_parent" android:layout_height="48dp" android:backgroundTint="#4CAF50" android:layout_marginBottom="8dp"/>
+            
+            <EditText android:id="@+id/etCustomRedirect" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Enter custom URL (e.g. en.wikipedia.org)" android:textColorHint="#666" android:textColor="#FFF" android:backgroundTint="#FFF" android:singleLine="true" android:visibility="gone" android:layout_marginBottom="8dp"/>
+            <Spinner android:id="@+id/spinCustomApp" android:layout_width="match_parent" android:layout_height="48dp" android:backgroundTint="#4CAF50" android:visibility="gone" android:layout_marginBottom="8dp"/>
+            
+            <Button android:id="@+id/btnAddRedirect" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_success" android:text="ADD REDIRECT" android:textColor="#FFFFFF" />
+            
+            <LinearLayout android:id="@+id/llRedirects" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="16dp"/>
+        </LinearLayout>
+
+        <!-- NIGHTFALL SHIELD -->
+        <LinearLayout android:id="@+id/llNightfallCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
+            
+            
+            <CheckBox android:id="@+id/cbMainNightfall" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Enable Nightfall Mode (Calls Only)" android:textColor="#FFF" android:textSize="14sp" android:layout_marginBottom="12dp"/>
+            <CheckBox android:id="@+id/cbNightfallNotes" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Allow writing notes at night" android:textColor="#FFF" android:textSize="14sp" android:layout_marginBottom="12dp" android:checked="true"/>
+            <LinearLayout android:id="@+id/llMainNightfallTimes" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:visibility="gone" android:layout_marginBottom="8dp">
+                <Button android:id="@+id/btnMainNightfallStart" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_btn_standard" android:text="Start: Not Set" android:textColor="#FFFFFF" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btnMainNightfallEnd" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_btn_standard" android:text="End: Not Set" android:textColor="#FFFFFF" android:layout_marginStart="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- DRASTIC OVERCOMING -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="24dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="DRASTIC OVERCOMING" android:textAlignment="center" android:textColor="#F44336" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="These nuclear options can be engaged instantly, but can ONLY be disabled by scheduling a System Override Pause below." android:textAlignment="center" android:textColor="#888888" android:textSize="12sp" android:layout_marginBottom="16dp"/>
+            
+            <Button android:id="@+id/btnDrasticDumbPhoneCamera" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Dumb Phone (WITH Camera)" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDrasticDumbPhoneNoCamera" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Dumb Phone (NO Camera)" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            
+            <Button android:id="@+id/btnDrasticNoInternet" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Remove Internet From My Phone" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDrasticNoVideos" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_warning" android:text="Block All Videos System-Wide" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnDrasticCallsOnly" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_danger" android:text="Calls and Texts ONLY" android:textColor="#FFFFFF"/>
+        </LinearLayout>
+
+        <!-- LIVE DEBUG TERMINAL -->
+        <LinearLayout android:id="@+id/llDebugTerminal" android:layout_width="match_parent" android:layout_height="250dp" android:orientation="vertical" android:visibility="gone" android:background="#000000" android:padding="8dp" android:layout_marginTop="24dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="LIVE UI DEBUGGER ACTIVE" android:textColor="#00FF00" android:textSize="12sp" android:textStyle="bold" android:layout_marginBottom="4dp"/>
+            <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+                <TextView android:id="@+id/tvTerminalOutput" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="10sp" android:fontFamily="monospace"/>
+            </ScrollView>
+        </LinearLayout>
+        
+        <!-- SYSTEM OVERRIDE -->
+        <Button android:id="@+id/btnToggleOverride" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginTop="24dp" android:background="@drawable/bg_btn_standard" android:text="SYSTEM OVERRIDE (UNINSTALL/PAUSE)" android:textColor="#FFFFFF" />
+        <LinearLayout android:id="@+id/llOverrideDetails" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="8dp" android:layout_marginBottom="40dp">
+            <TextView android:id="@+id/tvOverrideStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Select delay before unlock:" android:textColor="#FFFFFF" android:textSize="14sp" android:layout_marginBottom="12dp"/>
+            <SeekBar android:id="@+id/seekOverride" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="4" android:progress="0" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="1D" android:textColor="#888" android:textSize="11sp" android:gravity="start"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="3D" android:textColor="#888" android:textSize="11sp" android:gravity="center"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="5D" android:textColor="#888" android:textSize="11sp" android:gravity="center"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="1W" android:textColor="#888" android:textSize="11sp" android:gravity="center"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="2W" android:textColor="#888" android:textSize="11sp" android:gravity="end"/>
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Note: You can only increase this delay, never decrease it." android:textColor="#F44336" android:textSize="12sp" android:layout_marginTop="8dp" android:layout_marginBottom="16dp" android:textStyle="italic"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/btnSchedPause" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_btn_warning" android:text="SCHED PAUSE" android:textColor="#FFFFFF" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btnSchedUninstall" android:layout_width="0dp" android:layout_height="50dp" android:layout_weight="1" android:background="@drawable/bg_btn_danger" android:text="SCHED UNINSTALL" android:textColor="#FFFFFF" android:layout_marginStart="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
+
+
+
+===== RockHardBlocker/app/src/main/res/layout/activity_game.xml =====
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#050505" android:padding="8dp">
+
+    <include layout="@layout/game_nav_tabs"/>
+
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp">
+        
+        <!-- NEW: EXPLORE TAB NOW HAS THE SLIDER -->
+        <LinearLayout android:id="@+id/viewActivity" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#111111" android:padding="12dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DANGER" android:textColor="#F44336" android:textSize="10sp" android:textStyle="bold"/>
+                <SeekBar android:id="@+id/seekDifficulty" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:max="100" android:progress="50" android:progressTint="#FF9800" android:thumbTint="#FF9800"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SAFE" android:textColor="#4CAF50" android:textSize="10sp" android:textStyle="bold"/>
+            </LinearLayout>
+            <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+                <TextView android:id="@+id/tvConsole" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="13sp" android:fontFamily="monospace" android:lineSpacingExtra="2dp"/>
+            </ScrollView>
+        </LinearLayout>
+        
+        <include layout="@layout/game_arena"/>
+        <include layout="@layout/game_party"/>
+        <include layout="@layout/game_bag"/>
+    </FrameLayout>
+
+    <LinearLayout android:id="@+id/qteContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp"/>
+    <include layout="@layout/game_controls_battle"/>
+
+    <LinearLayout android:id="@+id/peaceControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="visible">
+        <Button android:id="@+id/btnDispatch" style="@style/AppButton.Accent" android:text="DISPATCH NETBEAST" android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="50dp" android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/btnExit" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="EXIT" style="@style/AppButton.Standard" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="12sp" android:layout_marginBottom="0dp"/>
+        <TextView android:id="@+id/tvAether" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.2" android:text="Aether: 10:00" android:textColor="#00BCD4" android:textSize="13sp" android:textStyle="bold" android:gravity="center" android:layout_marginHorizontal="4dp"/>
+        <Button android:id="@+id/btnFightAether" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="FIGHT AETHER" style="@style/AppButton.Accent" android:backgroundTint="#7B1FA2" android:textSize="10sp" android:layout_marginBottom="0dp"/>
+    </LinearLayout>
+</LinearLayout>
+
+
+

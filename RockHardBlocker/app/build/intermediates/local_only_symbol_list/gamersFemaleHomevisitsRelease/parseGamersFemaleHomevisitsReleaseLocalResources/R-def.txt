@@ -36,6 +36,7 @@ id btnBuyNet
 id btnBuyPotion
 id btnBuySmallHp
 id btnBuySpray
+id btnCustomTint
 id btnDebugConsole
 id btnDebugReset
 id btnDebugUninstall
@@ -57,6 +58,7 @@ id btnFightAether
 id btnGame
 id btnGraveyard
 id btnInfuse
+id btnLockTint
 id btnMainNightfallEnd
 id btnMainNightfallStart
 id btnMove1
@@ -84,6 +86,7 @@ id btnTabLeaders
 id btnTabSpent
 id btnTeachMove
 id btnTestFilter
+id btnToggleGrayscale
 id btnToggleOverride
 id btnUnequip
 id btnYield
@@ -114,6 +117,7 @@ id llRedirects
 id llSafariCard
 id llShopContainer
 id llSpentList
+id llTintCard
 id marketContainer
 id navTabs
 id partyContainer

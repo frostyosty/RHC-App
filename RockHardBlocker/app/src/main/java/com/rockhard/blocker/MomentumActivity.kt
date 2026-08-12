@@ -9,6 +9,9 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.*
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
 
 class MomentumActivity : Activity() {
     private lateinit var prefs: SharedPreferences
@@ -57,6 +60,18 @@ class MomentumActivity : Activity() {
         populateSpendingTasks()
         updateUI()
         mainHandler.postDelayed(tickRunnable, 10000)
+    }
+
+    
+    override fun onResume() {
+        super.onResume()
+        if (prefs.getBoolean("IN_APP_GRAYSCALE", false)) {
+            val matrix = ColorMatrix().apply { setSaturation(0f) }
+            val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) }
+            window.decorView.setLayerType(View.LAYER_TYPE_HARDWARE, paint)
+        } else {
+            window.decorView.setLayerType(View.LAYER_TYPE_NONE, null)
+        }
     }
 
     override fun onDestroy() {
