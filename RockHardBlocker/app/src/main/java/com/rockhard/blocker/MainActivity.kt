@@ -14,6 +14,9 @@ import android.os.Looper
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.View
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
 import android.widget.*
 
 class MainActivity : Activity() {
@@ -251,7 +254,7 @@ class MainActivity : Activity() {
         btnNoVideos.setOnClickListener { confirmDrastic("DRASTIC_NO_VIDEOS", "Block All Videos?", "This will forcefully close video players and explicitly block major video apps system-wide.\n\nCannot be undone without scheduling a System Override.") }
         btnCallsOnly.setOnClickListener { confirmDrastic("DRASTIC_CALLS_ONLY", "Engage Calls/Texts ONLY?", "NUCLEAR OPTION.\n\nYour smartphone will become a brick that can only make phone calls and send SMS text messages.\n\nCannot be undone without scheduling a System Override.") }
 
-        setupSystemOverrideUI(); setupMainNightfallUI()
+        setupSystemOverrideUI(); setupMainNightfallUI(); setupTintUI()
     }
 
     private fun setupSyncAdapter() {
@@ -624,10 +627,99 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
         }
 
         refreshUI()
+        applyInAppGrayscale()
         if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
             findViewById<View>(R.id.llDebugTerminal)?.visibility = View.VISIBLE
         }
     }
+
+    
+    private fun applyInAppGrayscale() {
+        if (prefs.getBoolean("IN_APP_GRAYSCALE", false)) {
+            val matrix = ColorMatrix().apply { setSaturation(0f) }
+            val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) }
+            window.decorView.setLayerType(View.LAYER_TYPE_HARDWARE, paint)
+        } else {
+            window.decorView.setLayerType(View.LAYER_TYPE_NONE, null)
+        }
+    }
+
+    private fun setupTintUI() {
+        val btnTint = findViewById<Button>(R.id.btnCustomTint) ?: return
+        val btnGray = findViewById<Button>(R.id.btnToggleGrayscale) ?: return
+        val btnLock = findViewById<Button>(R.id.btnLockTint) ?: return
+
+        fun updateUI() {
+            val isGray = prefs.getBoolean("IN_APP_GRAYSCALE", false)
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            btnGray.text = if (isGray) "In-App Grayscale: ACTIVE" else "In-App Grayscale: OFF"
+            btnGray.setBackgroundResource(if (isGray) R.drawable.bg_btn_success else R.drawable.bg_btn_standard)
+            btnLock.text = if (isLocked) "Tint Settings: LOCKED" else "Lock Tint Settings"
+            btnLock.setBackgroundResource(if (isLocked) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+        }
+        updateUI()
+
+        val checkLock = {
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isLocked && !isPauseActive) {
+                Toast.makeText(this, "Must schedule System Override (Pause) to modify Tint Settings.", Toast.LENGTH_LONG).show()
+                true
+            } else false
+        }
+
+        btnGray.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            prefs.edit().putBoolean("IN_APP_GRAYSCALE", !prefs.getBoolean("IN_APP_GRAYSCALE", false)).apply()
+            updateUI()
+            applyInAppGrayscale()
+        }
+
+        btnLock.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            if (!isLocked) {
+                DialogUtils.showCustomDialog(this, "Lock Tint Settings?", "You will not be able to change or turn off the screen tint or grayscale without a System Override.", true, "LOCK IT", {
+                    prefs.edit().putBoolean("TINT_LOCKED", true).apply()
+                    updateUI()
+                })
+            } else {
+                prefs.edit().putBoolean("TINT_LOCKED", false).apply()
+                updateUI()
+                Toast.makeText(this, "Tint Settings Unlocked.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnTint.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            DialogUtils.showCustomDialog(this, "Custom Screen Tint", null, true, "SAVE", null) { content, dialog ->
+                val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16, 16, 16, 16) }
+                
+                val savedColor = prefs.getInt("CUSTOM_TINT_COLOR", 0)
+                var a = Color.alpha(savedColor); var r = Color.red(savedColor); var g = Color.green(savedColor); var b = Color.blue(savedColor)
+
+                fun addSlider(name: String, maxVal: Int, startVal: Int, onChange: (Int) -> Unit) {
+                    ll.addView(TextView(this).apply { text = name; setTextColor(Color.WHITE); setPadding(0, 16, 0, 4) })
+                    val seek = SeekBar(this).apply { max = maxVal; progress = startVal }
+                    seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) { onChange(p) }
+                        override fun onStartTrackingTouch(s: SeekBar?) {}
+                        override fun onStopTrackingTouch(s: SeekBar?) {}
+                    })
+                    ll.addView(seek)
+                }
+
+                addSlider("Intensity (Opacity)", 200, a) { a = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Red", 255, r) { r = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Green", 255, g) { g = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Blue", 255, b) { b = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+
+                content.addView(ll)
+                dialog.findViewById<Button>(R.id.btnDialogPositive)?.setOnClickListener { dialog.dismiss() }
+            }
+        }
+    }
+
 
     private var isNightfallNewlyEnabled = false
 

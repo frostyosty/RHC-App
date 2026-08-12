@@ -42,6 +42,9 @@ class GuardianService : AccessibilityService() {
     private var isOverlayShowing = false
     private var isNightfallDimShowing = false
     private var nightfallDimParams: WindowManager.LayoutParams? = null
+    private var tintView: View? = null
+    private var isTintShowing = false
+    private var tintParams: WindowManager.LayoutParams? = null
     private var bossTimer: CountDownTimer? = null
     private lateinit var ruleEngine: ShieldRuleEngine
     private lateinit var dpm: DevicePolicyManager
@@ -59,6 +62,7 @@ class GuardianService : AccessibilityService() {
     private val nightfallRunnable = object : Runnable {
         override fun run() {
             checkNightfallTick()
+            checkTintTick()
             handler.postDelayed(this, 1000)
         }
     }
@@ -152,6 +156,43 @@ class GuardianService : AccessibilityService() {
             }
         } else {
             updateNightfallDimmer(0f)
+        }
+    }
+
+    
+    private fun checkTintTick() {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        val tintColor = prefs.getInt("CUSTOM_TINT_COLOR", 0)
+        val alpha = Color.alpha(tintColor)
+
+        if (alpha > 0) {
+            if (!isTintShowing) {
+                val params = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or 
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or 
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    PixelFormat.TRANSLUCENT
+                ).apply { gravity = Gravity.CENTER }
+                tintParams = params
+                tintView = View(this).apply { setBackgroundColor(tintColor) }
+                try { windowManager?.addView(tintView, params); isTintShowing = true } catch (e: Exception) {}
+            } else {
+                val view = tintView
+                if (view != null) {
+                    view.setBackgroundColor(tintColor)
+                    try { windowManager?.updateViewLayout(view, tintParams) } catch (e: Exception) {}
+                }
+            }
+        } else {
+            if (isTintShowing && tintView != null) {
+                windowManager?.removeView(tintView)
+                tintView = null
+                tintParams = null
+                isTintShowing = false
+            }
         }
     }
 

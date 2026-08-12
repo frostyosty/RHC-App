@@ -86,6 +86,18 @@
             <Button android:id="@+id/btnDrasticCallsOnly" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_danger" android:text="Calls and Texts ONLY" android:textColor="#FFFFFF"/>
         </LinearLayout>
 
+        
+        <!-- SCREEN TINT & FOCUS -->
+        <LinearLayout android:id="@+id/llTintCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="SCREEN TINT &amp; FOCUS" android:textAlignment="center" android:textColor="#4CAF50" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Apply custom color filters to your entire phone, or make this app grayscale to reduce dopamine hits." android:textAlignment="center" android:textColor="#888" android:textSize="12sp" android:layout_marginBottom="16dp"/>
+            
+            <Button android:id="@+id/btnCustomTint" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:text="Set Custom Screen Tint (RGB)" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnToggleGrayscale" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:text="In-App Grayscale: OFF" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnLockTint" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:text="Lock Tint Settings" android:textColor="#FFFFFF"/>
+        </LinearLayout>
+        
+
         <!-- LIVE DEBUG TERMINAL -->
         <LinearLayout android:id="@+id/llDebugTerminal" android:layout_width="match_parent" android:layout_height="250dp" android:orientation="vertical" android:visibility="gone" android:background="#000000" android:padding="8dp" android:layout_marginTop="24dp" android:layout_marginBottom="16dp">
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="LIVE UI DEBUGGER ACTIVE" android:textColor="#00FF00" android:textSize="12sp" android:textStyle="bold" android:layout_marginBottom="4dp"/>
