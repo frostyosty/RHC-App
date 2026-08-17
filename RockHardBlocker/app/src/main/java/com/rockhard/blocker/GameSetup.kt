@@ -126,21 +126,10 @@ internal fun GameActivity.setupDispatchControl() {
     }
 
     val btnFightAether = findViewById<Button>(R.id.btnFightAether)
-    val aetherRunnable = object : Runnable {
-        override fun run() {
-            if (isFightAetherActive && activeExpeditions.isEmpty()) {
-                aetherSeconds++
-                tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
-                tvAether.setTextColor(android.graphics.Color.parseColor("#E040FB"))
-                mainHandler.postDelayed(this, 1250)
-            }
-        }
-    }
-    
     btnFightAether.setOnTouchListener { _, event ->
         when (event.action) {
-            MotionEvent.ACTION_DOWN -> { if (activeExpeditions.isEmpty()) { isFightAetherActive = true; mainHandler.postDelayed(aetherRunnable, 1250) } }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { isFightAetherActive = false; tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4")); mainHandler.removeCallbacks(aetherRunnable) }
+            android.view.MotionEvent.ACTION_DOWN -> { if (activeExpeditions.isEmpty()) { isFightAetherActive = true } }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { isFightAetherActive = false; tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4")) }
         }
         false
     }

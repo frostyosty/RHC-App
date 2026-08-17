@@ -65,13 +65,42 @@ class GameActivity : Activity() {
 
     internal var battleTimerRunnable: Runnable? = null
     internal val mainHandler = Handler(Looper.getMainLooper())
+    private var tickCounter = 0
     private val exploreRunnable =
         object : Runnable {
             override fun run() {
-                performGlobalTick()
-                mainHandler.postDelayed(this, 4000)
+                tickCounter++
+                
+                // 1-Second Smooth Aether Decay Engine
+                if (!isUnderAttack) {
+                    if (isFightAetherActive && activeExpeditions.isEmpty()) {
+                        // Slow down velocity to 1 drop every 5 seconds!
+                        if (tickCounter % 5 == 0) aetherSeconds--
+                        tvAether.setTextColor(android.graphics.Color.parseColor("#E040FB"))
+                    } else {
+                        // Normal 1-second velocity
+                        aetherSeconds--
+                        tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4"))
+                    }
+                    tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
+                    
+                    if (aetherSeconds <= 0) {
+                        aetherDepleted = true
+                        if (!battleOver && !isWildBattle && !isTrainerBattle) {
+                            android.widget.Toast.makeText(this@GameActivity, "Aether Depleted! Returning to reality.", android.widget.Toast.LENGTH_LONG).show()
+                            finish()
+                            return
+                        }
+                    }
+                }
+
+                // Fire the heavy global background events only every 4 seconds
+                if (tickCounter % 4 == 0) {
+                    performGlobalTick()
+                }
+                
+                mainHandler.postDelayed(this, 1000)
             }
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,7 +136,15 @@ class GameActivity : Activity() {
         updatePartyScreen()
         updateBagScreen()
 
-        findViewById<Button>(R.id.btnExit).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btnExit).setOnClickListener { 
+            if (prefs.getBoolean("LAUNCH_GAME_DEFAULT", false)) {
+                startActivity(Intent(this@GameActivity, MainActivity::class.java).apply {
+                    putExtra("FROM_GAME", true)
+                })
+            } else {
+                finish() 
+            }
+        }
 
         val seekDifficulty = findViewById<android.widget.SeekBar>(R.id.seekDifficulty)
         seekDifficulty?.setOnSeekBarChangeListener(

@@ -82,6 +82,100 @@ android {
 }
 
 
+===== RockHardBlocker/app/src/main/AndroidManifest.xml =====
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    
+    <!-- Permissions for Keep-Alive SyncAdapter & Whitelisted Wakelock Tags -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+
+    <application android:allowBackup="false" android:supportsRtl="true" android:theme="@android:style/Theme.NoTitleBar" android:label="@string/app_name">
+        
+        <activity android:name=".MainActivity" android:exported="true" android:label="@string/app_name" />
+        <activity android:name=".TrapActivity" android:exported="false" android:launchMode="singleTask" />
+        <activity android:name=".GameActivity" android:exported="false" android:launchMode="singleTask" android:label="Netbeasts Safari" />
+        <activity android:name=".MomentumActivity" android:exported="false" android:launchMode="singleTask" />
+        
+        <activity-alias android:name=".DefaultLauncher" android:enabled="true" android:exported="true" android:icon="@mipmap/ic_launcher" android:targetActivity=".MainActivity" android:label="@string/app_name">
+            <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
+        </activity-alias>
+
+        <activity-alias android:name=".GameLauncher" android:enabled="false" android:exported="true" android:icon="@mipmap/ic_game" android:targetActivity=".MainActivity" android:label="Netbeasts">
+            <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
+        </activity-alias>
+
+        <service android:name=".GuardianService" android:foregroundServiceType="specialUse" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/app_name">
+            <intent-filter> <action android:name="android.accessibilityservice.AccessibilityService" /> </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/guardian_config" />
+        </service>
+        <receiver android:name=".AdminReceiver" android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true" android:label="@string/app_name" android:description="@string/app_name">
+            <meta-data android:name="android.app.device_admin" android:resource="@xml/device_admin" />
+            <intent-filter> <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" /> </intent-filter>
+        </receiver>
+        <receiver android:name=".guardian.BootReceiver" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+    
+        <receiver android:name=".ShutdownReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_SHUTDOWN" />
+                <action android:name="android.intent.action.QUICKBOOT_POWEROFF" />
+            </intent-filter>
+        </receiver>
+        <activity-alias android:name=".CloakLauncher" android:enabled="false" android:exported="true" android:icon="@drawable/ic_sys_sync" android:targetActivity=".MainActivity" android:label="Sync Services">
+            <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
+        </activity-alias>
+
+        <activity android:name=".ProcessTextActivity" android:label="Overcome" android:theme="@android:style/Theme.NoDisplay" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <receiver android:name=".WatchdogReceiver" android:exported="false" />
+
+        <!-- SyncAdapter & Authenticator Services -->
+        <service android:name=".sync.StubAuthenticatorService" android:exported="true">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data android:name="android.accounts.AccountAuthenticator" android:resource="@xml/authenticator" />
+        </service>
+
+        <service android:name=".sync.DummySyncService" android:exported="true" android:process=":sync">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter" android:resource="@xml/syncadapter" />
+        </service>
+
+        <provider android:name=".sync.StubContentProvider"
+            android:authorities="com.rockhard.blocker.provider"
+            android:exported="false"
+            android:syncable="true" />
+</application>
+</manifest>
+
+
+
 ===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/Config.kt =====
 package com.rockhard.blocker
 
@@ -385,21 +479,10 @@ internal fun GameActivity.setupDispatchControl() {
     }
 
     val btnFightAether = findViewById<Button>(R.id.btnFightAether)
-    val aetherRunnable = object : Runnable {
-        override fun run() {
-            if (isFightAetherActive && activeExpeditions.isEmpty()) {
-                aetherSeconds++
-                tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
-                tvAether.setTextColor(android.graphics.Color.parseColor("#E040FB"))
-                mainHandler.postDelayed(this, 1250)
-            }
-        }
-    }
-    
     btnFightAether.setOnTouchListener { _, event ->
         when (event.action) {
-            MotionEvent.ACTION_DOWN -> { if (activeExpeditions.isEmpty()) { isFightAetherActive = true; mainHandler.postDelayed(aetherRunnable, 1250) } }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { isFightAetherActive = false; tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4")); mainHandler.removeCallbacks(aetherRunnable) }
+            android.view.MotionEvent.ACTION_DOWN -> { if (activeExpeditions.isEmpty()) { isFightAetherActive = true } }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { isFightAetherActive = false; tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4")) }
         }
         false
     }
@@ -424,6 +507,9 @@ import android.os.Looper
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.View
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
 import android.widget.*
 
 class MainActivity : Activity() {
@@ -661,7 +747,7 @@ class MainActivity : Activity() {
         btnNoVideos.setOnClickListener { confirmDrastic("DRASTIC_NO_VIDEOS", "Block All Videos?", "This will forcefully close video players and explicitly block major video apps system-wide.\n\nCannot be undone without scheduling a System Override.") }
         btnCallsOnly.setOnClickListener { confirmDrastic("DRASTIC_CALLS_ONLY", "Engage Calls/Texts ONLY?", "NUCLEAR OPTION.\n\nYour smartphone will become a brick that can only make phone calls and send SMS text messages.\n\nCannot be undone without scheduling a System Override.") }
 
-        setupSystemOverrideUI(); setupMainNightfallUI()
+        setupSystemOverrideUI(); setupMainNightfallUI(); setupTintUI()
     }
 
     private fun setupSyncAdapter() {
@@ -1034,10 +1120,99 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
         }
 
         refreshUI()
+        applyInAppGrayscale()
         if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
             findViewById<View>(R.id.llDebugTerminal)?.visibility = View.VISIBLE
         }
     }
+
+    
+    private fun applyInAppGrayscale() {
+        if (prefs.getBoolean("IN_APP_GRAYSCALE", false)) {
+            val matrix = ColorMatrix().apply { setSaturation(0f) }
+            val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) }
+            window.decorView.setLayerType(View.LAYER_TYPE_HARDWARE, paint)
+        } else {
+            window.decorView.setLayerType(View.LAYER_TYPE_NONE, null)
+        }
+    }
+
+    private fun setupTintUI() {
+        val btnTint = findViewById<Button>(R.id.btnCustomTint) ?: return
+        val btnGray = findViewById<Button>(R.id.btnToggleGrayscale) ?: return
+        val btnLock = findViewById<Button>(R.id.btnLockTint) ?: return
+
+        fun updateUI() {
+            val isGray = prefs.getBoolean("IN_APP_GRAYSCALE", false)
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            btnGray.text = if (isGray) "In-App Grayscale: ACTIVE" else "In-App Grayscale: OFF"
+            btnGray.setBackgroundResource(if (isGray) R.drawable.bg_btn_success else R.drawable.bg_btn_standard)
+            btnLock.text = if (isLocked) "Tint Settings: LOCKED" else "Lock Tint Settings"
+            btnLock.setBackgroundResource(if (isLocked) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+        }
+        updateUI()
+
+        val checkLock = {
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isLocked && !isPauseActive) {
+                Toast.makeText(this, "Must schedule System Override (Pause) to modify Tint Settings.", Toast.LENGTH_LONG).show()
+                true
+            } else false
+        }
+
+        btnGray.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            prefs.edit().putBoolean("IN_APP_GRAYSCALE", !prefs.getBoolean("IN_APP_GRAYSCALE", false)).apply()
+            updateUI()
+            applyInAppGrayscale()
+        }
+
+        btnLock.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            if (!isLocked) {
+                DialogUtils.showCustomDialog(this, "Lock Tint Settings?", "You will not be able to change or turn off the screen tint or grayscale without a System Override.", true, "LOCK IT", {
+                    prefs.edit().putBoolean("TINT_LOCKED", true).apply()
+                    updateUI()
+                })
+            } else {
+                prefs.edit().putBoolean("TINT_LOCKED", false).apply()
+                updateUI()
+                Toast.makeText(this, "Tint Settings Unlocked.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnTint.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            DialogUtils.showCustomDialog(this, "Custom Screen Tint", null, true, "SAVE", null) { content, dialog ->
+                val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16, 16, 16, 16) }
+                
+                val savedColor = prefs.getInt("CUSTOM_TINT_COLOR", 0)
+                var a = Color.alpha(savedColor); var r = Color.red(savedColor); var g = Color.green(savedColor); var b = Color.blue(savedColor)
+
+                fun addSlider(name: String, maxVal: Int, startVal: Int, onChange: (Int) -> Unit) {
+                    ll.addView(TextView(this).apply { text = name; setTextColor(Color.WHITE); setPadding(0, 16, 0, 4) })
+                    val seek = SeekBar(this).apply { max = maxVal; progress = startVal }
+                    seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) { onChange(p) }
+                        override fun onStartTrackingTouch(s: SeekBar?) {}
+                        override fun onStopTrackingTouch(s: SeekBar?) {}
+                    })
+                    ll.addView(seek)
+                }
+
+                addSlider("Intensity (Opacity)", 200, a) { a = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Red", 255, r) { r = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Green", 255, g) { g = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Blue", 255, b) { b = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+
+                content.addView(ll)
+                dialog.findViewById<Button>(R.id.btnDialogPositive)?.setOnClickListener { dialog.dismiss() }
+            }
+        }
+    }
+
 
     private var isNightfallNewlyEnabled = false
 
@@ -1238,12 +1413,43 @@ class GameActivity : Activity() {
 
     internal var battleTimerRunnable: Runnable? = null
     internal val mainHandler = Handler(Looper.getMainLooper())
+    private var tickCounter = 0
     private val exploreRunnable =
         object : Runnable {
             override fun run() {
-                performGlobalTick()
-                mainHandler.postDelayed(this, 4000)
+                tickCounter++
+                
+                // 1-Second Smooth Aether Decay Engine
+                if (!isUnderAttack) {
+                    if (isFightAetherActive && activeExpeditions.isEmpty()) {
+                        // Slow down velocity to 1 drop every 5 seconds!
+                        if (tickCounter % 5 == 0) aetherSeconds--
+                        tvAether.setTextColor(android.graphics.Color.parseColor("#E040FB"))
+                    } else {
+                        // Normal 1-second velocity
+                        aetherSeconds--
+                        tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4"))
+                    }
+                    tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
+                    
+                    if (aetherSeconds <= 0) {
+                        aetherDepleted = true
+                        if (!battleOver && !isWildBattle && !isTrainerBattle) {
+                            android.widget.Toast.makeText(this@GameActivity, "Aether Depleted! Returning to reality.", android.widget.Toast.LENGTH_LONG).show()
+                            finish()
+                            return
+                        }
+                    }
+                }
+
+                // Fire the heavy global background events only every 4 seconds
+                if (tickCounter % 4 == 0) {
+                    performGlobalTick()
+                }
+                
+                mainHandler.postDelayed(this, 1000)
             }
+        }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -1449,6 +1655,9 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.*
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
 
 class MomentumActivity : Activity() {
     private lateinit var prefs: SharedPreferences
@@ -1497,6 +1706,18 @@ class MomentumActivity : Activity() {
         populateSpendingTasks()
         updateUI()
         mainHandler.postDelayed(tickRunnable, 10000)
+    }
+
+    
+    override fun onResume() {
+        super.onResume()
+        if (prefs.getBoolean("IN_APP_GRAYSCALE", false)) {
+            val matrix = ColorMatrix().apply { setSaturation(0f) }
+            val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) }
+            window.decorView.setLayerType(View.LAYER_TYPE_HARDWARE, paint)
+        } else {
+            window.decorView.setLayerType(View.LAYER_TYPE_NONE, null)
+        }
     }
 
     override fun onDestroy() {
@@ -1591,98 +1812,6 @@ setOnClickListener {
 }
 
 
-===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/MomentumEngine.kt =====
-package com.rockhard.blocker
-
-import android.content.SharedPreferences
-
-object MomentumEngine {
-    private val timeEstimates = mapOf(
-        "tiktok" to 45, "youtube" to 40, "instagram" to 30, "facebook" to 20,
-        "reddit" to 25, "twitter" to 20, "x" to 20, "snapchat" to 15, "tinder" to 15, 
-        "twitch" to 30, "discord" to 20
-    )
-
-    fun calculateCurrentMomentum(prefs: SharedPreferences): Int {
-        val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
-        val spentStr = prefs.getString("MOMENTUM_SPENT_TODAY", "") ?: ""
-        val now = System.currentTimeMillis()
-
-        var totalEarned = 0
-        var totalEvaporated = 0
-
-        if (earnedStr.isNotEmpty()) {
-            earnedStr.split(",").forEach { entry ->
-                val parts = entry.split("|")
-                if (parts.size == 3) {
-                    val mins = parts[1].toInt()
-                    val time = parts[2].toLong()
-                    totalEarned += mins
-
-                    val hoursPassed = (now - time) / (1000 * 60 * 60.0)
-                    if (hoursPassed > 2) {
-                        val decayMins = ((hoursPassed - 2) * 60 / 5).toInt()
-                        totalEvaporated += Math.min(decayMins, mins)
-                    }
-                }
-            }
-        }
-
-        var totalSpent = 0
-        if (spentStr.isNotEmpty()) {
-            spentStr.split(",").forEach { entry ->
-                val parts = entry.split("|")
-                if (parts.size >= 2) totalSpent += parts[1].toInt()
-            }
-        }
-
-        val sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
-        return Math.max(0, (totalEarned + sleepBonus) - totalSpent - totalEvaporated)
-    }
-
-    fun addEarnedMomentum(prefs: SharedPreferences, source: String, isAdultContent: Boolean) {
-        val now = System.currentTimeMillis()
-        val mins = if (isAdultContent) kotlin.random.Random.nextInt(15, 28) else kotlin.random.Random.nextInt(10, 20)
-        val current = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
-        val newEntry = "$source|$mins|$now"
-        prefs.edit().putString("MOMENTUM_EARNED_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
-    }
-
-    fun spendMomentum(prefs: SharedPreferences, taskName: String, cost: Int): Boolean {
-        if (calculateCurrentMomentum(prefs) < cost) return false
-        val now = System.currentTimeMillis()
-        val current = prefs.getString("MOMENTUM_SPENT_TODAY", "") ?: ""
-        val newEntry = "$taskName|$cost|$now"
-        prefs.edit().putString("MOMENTUM_SPENT_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
-        return true
-    }
-
-    fun resetDailyIfNeeded(prefs: SharedPreferences) {
-        val today = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
-        val lastDay = prefs.getString("MOMENTUM_LAST_DAY", "")
-        if (today != lastDay) {
-            var dailyYieldMins = 0
-            
-            val apps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter{it.isNotEmpty()} ?: emptyList()
-            val webs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter{it.isNotEmpty()} ?: emptyList()
-            
-            (apps + webs).forEach { item ->
-                val name = item.split("|")[0].lowercase()
-                var found = false
-                for ((key, value) in timeEstimates) {
-                    if (name.contains(key)) { dailyYieldMins += value; found = true; break }
-                }
-                if (!found) dailyYieldMins += 15 // Fallback generic time
-            }
-
-            val newEarned = if (dailyYieldMins > 0) "Daily Overcome Yield|$dailyYieldMins|${System.currentTimeMillis()}" else ""
-            prefs.edit().putString("MOMENTUM_EARNED_TODAY", newEarned).putString("MOMENTUM_SPENT_TODAY", "").putString("MOMENTUM_LAST_DAY", today).apply()
-        }
-    }
-}
-
-
-
 ===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/guardian/GuardianService.kt =====
 package com.rockhard.blocker
 
@@ -1728,6 +1857,9 @@ class GuardianService : AccessibilityService() {
     private var isOverlayShowing = false
     private var isNightfallDimShowing = false
     private var nightfallDimParams: WindowManager.LayoutParams? = null
+    private var tintView: View? = null
+    private var isTintShowing = false
+    private var tintParams: WindowManager.LayoutParams? = null
     private var bossTimer: CountDownTimer? = null
     private lateinit var ruleEngine: ShieldRuleEngine
     private lateinit var dpm: DevicePolicyManager
@@ -1745,6 +1877,7 @@ class GuardianService : AccessibilityService() {
     private val nightfallRunnable = object : Runnable {
         override fun run() {
             checkNightfallTick()
+            checkTintTick()
             handler.postDelayed(this, 1000)
         }
     }
@@ -1841,6 +1974,44 @@ class GuardianService : AccessibilityService() {
         }
     }
 
+    
+    private fun checkTintTick() {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        val tintColor = prefs.getInt("CUSTOM_TINT_COLOR", 0)
+        val alpha = Color.alpha(tintColor)
+
+        if (alpha > 0) {
+            if (!isTintShowing) {
+                val params = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or 
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or 
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    PixelFormat.TRANSLUCENT
+                ).apply { gravity = Gravity.CENTER
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES } }
+                tintParams = params
+                tintView = View(this).apply { setBackgroundColor(tintColor) }
+                try { windowManager?.addView(tintView, params); isTintShowing = true } catch (e: Exception) {}
+            } else {
+                val view = tintView
+                if (view != null) {
+                    view.setBackgroundColor(tintColor)
+                    try { windowManager?.updateViewLayout(view, tintParams) } catch (e: Exception) {}
+                }
+            }
+        } else {
+            if (isTintShowing && tintView != null) {
+                windowManager?.removeView(tintView)
+                tintView = null
+                tintParams = null
+                isTintShowing = false
+            }
+        }
+    }
+
     private fun updateNightfallDimmer(alpha: Float) {
         if (alpha <= 0f) {
             if (isNightfallDimShowing && nightfallDimView != null) {
@@ -1856,13 +2027,14 @@ class GuardianService : AccessibilityService() {
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN or 
+                WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or 
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or 
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                 PixelFormat.TRANSLUCENT
             ).apply { 
                 gravity = Gravity.CENTER
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES }
                 this.alpha = alpha
             }
             nightfallDimParams = params
@@ -2048,9 +2220,10 @@ class GuardianService : AccessibilityService() {
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT
-            ).apply { gravity = Gravity.CENTER }
+            ).apply { gravity = Gravity.CENTER
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES } }
             
             overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_guard, null)
             val tvReason = overlayView?.findViewById<TextView>(R.id.tvDebugReason)
@@ -2892,6 +3065,132 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
 
 
 
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/CloakEngine.kt =====
+package com.rockhard.blocker
+
+import android.content.ComponentName
+import android.content.Context
+import android.content.pm.PackageManager
+
+object CloakEngine {
+    fun cloak(context: Context) {
+        val pm = context.packageManager
+        try {
+            pm.setComponentEnabledSetting(ComponentName(context, "com.rockhard.blocker.GameLauncher"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
+            pm.setComponentEnabledSetting(ComponentName(context, "com.rockhard.blocker.DefaultLauncher"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
+            pm.setComponentEnabledSetting(ComponentName(context, "com.rockhard.blocker.CloakLauncher"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
+        } catch (e: Exception) {}
+    }
+
+    fun uncloak(context: Context, useGameIcon: Boolean) {
+        val pm = context.packageManager
+        try {
+            pm.setComponentEnabledSetting(ComponentName(context, "com.rockhard.blocker.CloakLauncher"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
+            if (useGameIcon) {
+                pm.setComponentEnabledSetting(ComponentName(context, "com.rockhard.blocker.DefaultLauncher"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
+                pm.setComponentEnabledSetting(ComponentName(context, "com.rockhard.blocker.GameLauncher"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
+            } else {
+                pm.setComponentEnabledSetting(ComponentName(context, "com.rockhard.blocker.GameLauncher"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
+                pm.setComponentEnabledSetting(ComponentName(context, "com.rockhard.blocker.DefaultLauncher"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
+            }
+        } catch (e: Exception) {}
+    }
+}
+
+
+
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/MomentumEngine.kt =====
+package com.rockhard.blocker
+
+import android.content.SharedPreferences
+
+object MomentumEngine {
+    private val timeEstimates = mapOf(
+        "tiktok" to 45, "youtube" to 40, "instagram" to 30, "facebook" to 20,
+        "reddit" to 25, "twitter" to 20, "x" to 20, "snapchat" to 15, "tinder" to 15, 
+        "twitch" to 30, "discord" to 20
+    )
+
+    fun calculateCurrentMomentum(prefs: SharedPreferences): Int {
+        val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        val spentStr = prefs.getString("MOMENTUM_SPENT_TODAY", "") ?: ""
+        val now = System.currentTimeMillis()
+
+        var totalEarned = 0
+        var totalEvaporated = 0
+
+        if (earnedStr.isNotEmpty()) {
+            earnedStr.split(",").forEach { entry ->
+                val parts = entry.split("|")
+                if (parts.size == 3) {
+                    val mins = parts[1].toInt()
+                    val time = parts[2].toLong()
+                    totalEarned += mins
+
+                    val hoursPassed = (now - time) / (1000 * 60 * 60.0)
+                    if (hoursPassed > 2) {
+                        val decayMins = ((hoursPassed - 2) * 60 / 5).toInt()
+                        totalEvaporated += Math.min(decayMins, mins)
+                    }
+                }
+            }
+        }
+
+        var totalSpent = 0
+        if (spentStr.isNotEmpty()) {
+            spentStr.split(",").forEach { entry ->
+                val parts = entry.split("|")
+                if (parts.size >= 2) totalSpent += parts[1].toInt()
+            }
+        }
+
+        val sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+        return Math.max(0, (totalEarned + sleepBonus) - totalSpent - totalEvaporated)
+    }
+
+    fun addEarnedMomentum(prefs: SharedPreferences, source: String, isAdultContent: Boolean) {
+        val now = System.currentTimeMillis()
+        val mins = if (isAdultContent) kotlin.random.Random.nextInt(15, 28) else kotlin.random.Random.nextInt(10, 20)
+        val current = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        val newEntry = "$source|$mins|$now"
+        prefs.edit().putString("MOMENTUM_EARNED_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
+    }
+
+    fun spendMomentum(prefs: SharedPreferences, taskName: String, cost: Int): Boolean {
+        if (calculateCurrentMomentum(prefs) < cost) return false
+        val now = System.currentTimeMillis()
+        val current = prefs.getString("MOMENTUM_SPENT_TODAY", "") ?: ""
+        val newEntry = "$taskName|$cost|$now"
+        prefs.edit().putString("MOMENTUM_SPENT_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
+        return true
+    }
+
+    fun resetDailyIfNeeded(prefs: SharedPreferences) {
+        val today = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
+        val lastDay = prefs.getString("MOMENTUM_LAST_DAY", "")
+        if (today != lastDay) {
+            var dailyYieldMins = 0
+            
+            val apps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter{it.isNotEmpty()} ?: emptyList()
+            val webs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter{it.isNotEmpty()} ?: emptyList()
+            
+            (apps + webs).forEach { item ->
+                val name = item.split("|")[0].lowercase()
+                var found = false
+                for ((key, value) in timeEstimates) {
+                    if (name.contains(key)) { dailyYieldMins += value; found = true; break }
+                }
+                if (!found) dailyYieldMins += 15 // Fallback generic time
+            }
+
+            val newEarned = if (dailyYieldMins > 0) "Daily Overcome Yield|$dailyYieldMins|${System.currentTimeMillis()}" else ""
+            prefs.edit().putString("MOMENTUM_EARNED_TODAY", newEarned).putString("MOMENTUM_SPENT_TODAY", "").putString("MOMENTUM_LAST_DAY", today).apply()
+        }
+    }
+}
+
+
+
 ===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/engines/combat/BattleResolution.kt =====
 package com.rockhard.blocker
 import kotlin.random.Random
@@ -2974,285 +3273,61 @@ internal fun GameActivity.endBattle() {
 }
 
 
-===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/gameui/NavUI.kt =====
+===== RockHardBlocker/app/src/main/java/com/rockhard/blocker/utils/SaveManager.kt =====
 package com.rockhard.blocker
 
-import android.graphics.Color
-import android.view.View
-import android.widget.Button
+import android.content.SharedPreferences
 
-internal fun GameActivity.setupTabs() {
-    val b1 = findViewById<Button>(R.id.tabActivity)
-    val b2 = findViewById<Button>(R.id.tabParty)
-    val b3 = findViewById<Button>(R.id.tabBag)
-    
-    // FIXED: Safely cast as <View> so the app doesn't crash if we change XML layouts later!
-    val v1 = findViewById<View>(R.id.viewActivity)
-    val v2 = findViewById<View>(R.id.viewParty)
-    val v3 = findViewById<View>(R.id.viewBag)
-
-    b1.setOnClickListener {
-        v1.visibility = View.VISIBLE; v2.visibility = View.GONE; v3.visibility = View.GONE
-        b1.setTextColor(Color.GREEN); b2.setTextColor(Color.GRAY); b3.setTextColor(Color.GRAY)
-    }
-    b2.setOnClickListener {
-        v1.visibility = View.GONE; v2.visibility = View.VISIBLE; v3.visibility = View.GONE
-        b1.setTextColor(Color.GRAY); b2.setTextColor(Color.CYAN); b3.setTextColor(Color.GRAY)
-        var changed = false
-        party.forEach { if (it.isNew) { it.isNew = false; changed = true } }
-        if (changed) { saveParty(); updatePartyScreen() }
-    }
-    b3.setOnClickListener {
-        v1.visibility = View.GONE; v2.visibility = View.GONE; v3.visibility = View.VISIBLE
-        b1.setTextColor(Color.GRAY); b2.setTextColor(Color.GRAY); b3.setTextColor(Color.YELLOW)
-        updateBagScreen()
-    }
-}
-
-
-
-===== rhc-common/include/ShieldRuleEngine.h =====
-#pragma once
-#include <string>
-#include <vector>
-#include "DatabaseManager.h"
-
-namespace RHC {
-    enum class ShieldAction {
-        ALLOW,
-        BLOCK_CONTENT,
-        BLOCK_APP
-    };
-
-    struct ShieldResult {
-        ShieldAction action;
-        std::string reason;
-    };
-
-    class ShieldRuleEngine {
-    private:
-        std::vector<std::string> hardWords = {"nsfw", "porno", "色情", "黄片", "xvideo", "pornhub", "onlyfans", "redtube", "brazzers", "xhamster", "rule34"};
-        std::vector<std::string> softWords = {"explicit", "sensitive content", "fuck", "bitch", "nude", "naked", "sex", "erotic"};
-        std::vector<std::string> safeDomains = {"github", "codespaces", "aistudio"};
-    public:
-        ShieldResult evaluateScreenText(const std::string& rawText, DatabaseManager& db);
-    };
-}
-
-
-
-===== rhc-common/src/ShieldRuleEngine.cpp =====
-#include <ctime>
-#include <cstdio>
-#include "../include/ShieldRuleEngine.h"
-#include "../include/StringUtils.h"
-
-namespace RHC {
-    ShieldResult ShieldRuleEngine::evaluateScreenText(const std::string& rawText, DatabaseManager& db) {
-        // FIX: Removed C++ Nightfall Red Wall trigger entirely. 
-        // Desktop now relies exclusively on the Dimming/Flashlight Overlay in Guardian.cpp.
-        
-        std::string text = StringUtils::toLower(rawText);
-
-        for (const auto& domain : safeDomains) {
-            if (text.find(domain) != std::string::npos) {
-                return {ShieldAction::ALLOW, ""};
-            }
-        }
-
-        for (const auto& word : hardWords) {
-            if (text.find(word) != std::string::npos) {
-                return {ShieldAction::BLOCK_CONTENT, "Content Guard: " + word};
-            }
-        }
-
-        int softCount = 0;
-        std::string caughtWords = "";
-        for (const auto& word : softWords) {
-            size_t pos = text.find(word, 0);
-            while (pos != std::string::npos) {
-                softCount++;
-                if (caughtWords.find(word) == std::string::npos) {
-                    caughtWords += word + " ";
-                }
-                pos = text.find(word, pos + word.length());
-            }
-        }
-        if (softCount >= 4) {
-            return {ShieldAction::BLOCK_CONTENT, "Content Guard: " + caughtWords + "(" + std::to_string(softCount) + " times)"};
-        }
-
-        return {ShieldAction::ALLOW, ""};
-    }
-}
-
-
-
-===== rhc-common/include/MomentumEngine.h =====
-#pragma once
-#include "DatabaseManager.h"
-#include <string>
-
-namespace RHC {
-    class MomentumEngine {
-    public:
-        static int calculateCurrentMomentum(DatabaseManager& prefs);
-        static void addEarnedMomentum(DatabaseManager& prefs, const std::string& source, bool isAdultContent);
-        static bool spendMomentum(DatabaseManager& prefs, const std::string& taskName, int cost);
-        static void resetDailyIfNeeded(DatabaseManager& prefs);
-    };
-}
-
-
-
-===== rhc-common/src/MomentumEngine.cpp =====
-#include "../include/MomentumEngine.h"
-#include "../include/StringUtils.h"
-#include <chrono>
-#include <algorithm>
-#include <random>
-#include <iomanip>
-#include <sstream>
-
-namespace RHC {
-    long long getCurrentTimeMs() {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    }
-
-    int MomentumEngine::calculateCurrentMomentum(DatabaseManager& prefs) {
-        std::string earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "");
-        std::string spentStr = prefs.getString("MOMENTUM_SPENT_TODAY", "");
-        long long now = getCurrentTimeMs();
-
-        int totalEarned = 0;
-        int totalEvaporated = 0;
-
-        if (!earnedStr.empty()) {
-            auto entries = StringUtils::split(earnedStr, ',');
-            for (const auto& entry : entries) {
-                auto parts = StringUtils::split(entry, '|');
-                if (parts.size() == 3) {
-                    int mins = 0; long long time = 0;
-                    try {
-                        mins = std::stoi(parts[1]);
-                        time = std::stoll(parts[2]);
-                    } catch (...) { continue; }
-                    totalEarned += mins;
-
-                    double hoursPassed = (now - time) / (1000.0 * 60.0 * 60.0);
-                    if (hoursPassed > 2.0) {
-                        int decayMins = static_cast<int>((hoursPassed - 2.0) * 60.0 / 5.0);
-                        totalEvaporated += std::min(decayMins, mins);
+object SaveManager {
+fun loadParty(prefs: SharedPreferences, key: String): MutableList<Netbeast> {
+        val list = mutableListOf<Netbeast>()
+        val data = prefs.getString(key, "") ?: ""
+        if (data.isNotEmpty()) {
+            data.split(";").forEach {
+                val p = it.split(",")
+                if (p.size >= 14) {
+                    val m3 = if (p.size >= 16) p[6] else "Tackle"
+                    val exp = if (p.size >= 16) p[15].toInt() else 0
+                    val ams = if (p.size >= 17) p[16].toInt() else 0
+                    val lm = if (p.size >= 18) p[17] else "None"
+                    val ms = if (p.size >= 19) p[18].toInt() else 0
+                    
+                    if (p.size < 16) {
+                        list.add(Netbeast(p[0], p[1], p[2].toInt(), p[3].toInt(), p[4], p[5], "Tackle", p[6].toLong(), p[7].toInt(), p[8].toInt(), p[9].toInt(), p[10].toBoolean(), p[11], p[12].toInt(), p[13].toInt(), 0, 0, "None", 0))
+                    } else if (p.size < 17) {
+                        list.add(Netbeast(p[0], p[1], p[2].toInt(), p[3].toInt(), p[4], p[5], p[6], p[7].toLong(), p[8].toInt(), p[9].toInt(), p[10].toInt(), p[11].toBoolean(), p[12], p[13].toInt(), p[14].toInt(), p[15].toInt(), 0, "None", 0))
+                    } else {
+                        list.add(Netbeast(p[0], p[1], p[2].toInt(), p[3].toInt(), p[4], p[5], p[6], p[7].toLong(), p[8].toInt(), p[9].toInt(), p[10].toInt(), p[11].toBoolean(), p[12], p[13].toInt(), p[14].toInt(), p[15].toInt(), p[16].toInt(), lm, ms))
                     }
                 }
             }
         }
-
-        int totalSpent = 0;
-        if (!spentStr.empty()) {
-            auto entries = StringUtils::split(spentStr, ',');
-            for (const auto& entry : entries) {
-                auto parts = StringUtils::split(entry, '|');
-                if (parts.size() >= 2) { try { totalSpent += std::stoi(parts[1]); } catch (...) {} }
-            }
-        }
-
-        int sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0);
-        return std::max(0, (totalEarned + sleepBonus) - totalSpent - totalEvaporated);
+        return list
     }
 
-    void MomentumEngine::addEarnedMomentum(DatabaseManager& prefs, const std::string& source, bool isAdultContent) {
-        long long now = getCurrentTimeMs();
-        
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        int mins = 0;
-        if (isAdultContent) {
-            std::uniform_int_distribution<> dist(15, 28);
-            mins = dist(gen);
-        } else {
-            std::uniform_int_distribution<> dist(10, 20);
-            mins = dist(gen);
+    fun saveParty(prefs: SharedPreferences, key: String, party: List<Netbeast>) {
+        val str = party.joinToString(";") { 
+            "${it.name},${it.type},${it.hp},${it.maxHp},${it.move1},${it.move2},${it.move3},${it.boughtAt},${it.eqNets},${it.eqPots},${it.eqSprays},${it.isNew},${it.infusionEl},${it.infusionStacks},${it.listedPrice},${it.expedsDone},${it.amulets},${it.lastMove},${it.moveStreak}" 
         }
-
-        std::string current = prefs.getString("MOMENTUM_EARNED_TODAY", "");
-        std::string newEntry = source + "|" + std::to_string(mins) + "|" + std::to_string(now);
-        
-        if (current.empty()) prefs.putString("MOMENTUM_EARNED_TODAY", newEntry);
-        else prefs.putString("MOMENTUM_EARNED_TODAY", current + "," + newEntry);
+        prefs.edit().putString(key, str).apply()
     }
 
-    bool MomentumEngine::spendMomentum(DatabaseManager& prefs, const std::string& taskName, int cost) {
-        if (calculateCurrentMomentum(prefs) < cost) return false;
-        
-        long long now = getCurrentTimeMs();
-        std::string current = prefs.getString("MOMENTUM_SPENT_TODAY", "");
-        std::string newEntry = taskName + "|" + std::to_string(cost) + "|" + std::to_string(now);
-        
-        if (current.empty()) prefs.putString("MOMENTUM_SPENT_TODAY", newEntry);
-        else prefs.putString("MOMENTUM_SPENT_TODAY", current + "," + newEntry);
-        
-        return true;
+    fun loadExpeditions(prefs: SharedPreferences): MutableMap<Int, Long> {
+        val map = mutableMapOf<Int, Long>()
+        val data = prefs.getString("EXP_DATA", "") ?: ""
+        if (data.isNotEmpty()) {
+            data.split(";").forEach {
+                val p = it.split(":")
+                if (p.size == 2) map[p[0].toInt()] = p[1].toLong()
+            }
+        }
+        return map
     }
 
-    void MomentumEngine::resetDailyIfNeeded(DatabaseManager& prefs) {
-        auto now = std::chrono::system_clock::now();
-        auto in_time_t = std::chrono::system_clock::to_time_t(now);
-        std::stringstream ss;
-        ss << std::put_time(std::localtime(&in_time_t), "%Y%m%d");
-        std::string today = ss.str();
-
-        std::string lastDay = prefs.getString("MOMENTUM_LAST_DAY", "");
-        if (today != lastDay) {
-            int dailyYieldMins = 0;
-
-            std::string appStr = prefs.getString("BLOCKLIST_APP", "");
-            std::string exeStr = prefs.getString("BLOCKLIST_EXE", ""); // NOW READS EXECUTABLES
-            std::string webStr = prefs.getString("BLOCKLIST_WEB", "");
-            
-            auto apps = StringUtils::split(appStr, ',');
-            auto exes = StringUtils::split(exeStr, ',');
-            auto webs = StringUtils::split(webStr, ',');
-            
-            std::vector<std::string> allItems;
-            for(const auto& a: apps) if(!a.empty()) allItems.push_back(a);
-            for(const auto& e: exes) if(!e.empty()) allItems.push_back(e);
-            for(const auto& w: webs) if(!w.empty()) allItems.push_back(w);
-
-            std::vector<std::pair<std::string, int>> estimates = {
-                {"tiktok", 45}, {"youtube", 40}, {"instagram", 30}, {"facebook", 20},
-                {"reddit", 25}, {"twitter", 20}, {"x", 20}, {"snapchat", 15},
-                {"tinder", 15}, {"twitch", 30}, {"discord", 20}
-            };
-
-            for (const auto& item : allItems) {
-                auto parts = StringUtils::split(item, '|');
-                if (parts.empty()) continue;
-                std::string name = StringUtils::toLower(parts[0]);
-                
-                bool found = false;
-                for (const auto& est : estimates) {
-                    if (name.find(est.first) != std::string::npos) {
-                        dailyYieldMins += est.second;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) dailyYieldMins += 15;
-            }
-
-            std::string newEarned = "";
-            if (dailyYieldMins > 0) {
-                newEarned = "Daily Overcome Yield|" + std::to_string(dailyYieldMins) + "|" + std::to_string(getCurrentTimeMs());
-            }
-
-            prefs.putString("MOMENTUM_EARNED_TODAY", newEarned);
-            prefs.putString("MOMENTUM_SPENT_TODAY", "");
-            prefs.putString("MOMENTUM_LAST_DAY", today);
-        }
+    fun saveExpeditions(prefs: SharedPreferences, activeExpeditions: Map<Int, Long>) {
+        prefs.edit().putString("EXP_DATA", activeExpeditions.entries.joinToString(";") { "${it.key}:${it.value}" }).apply()
     }
 }
-
 
 
 ===== RockHardBlocker/app/src/main/res/layout/activity_main.xml =====
@@ -3344,6 +3419,18 @@ namespace RHC {
             <Button android:id="@+id/btnDrasticCallsOnly" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_danger" android:text="Calls and Texts ONLY" android:textColor="#FFFFFF"/>
         </LinearLayout>
 
+        
+        <!-- SCREEN TINT & FOCUS -->
+        <LinearLayout android:id="@+id/llTintCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_marginTop="16dp" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="SCREEN TINT &amp; FOCUS" android:textAlignment="center" android:textColor="#4CAF50" android:textSize="18sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Apply custom color filters to your entire phone, or make this app grayscale to reduce dopamine hits." android:textAlignment="center" android:textColor="#888" android:textSize="12sp" android:layout_marginBottom="16dp"/>
+            
+            <Button android:id="@+id/btnCustomTint" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:text="Set Custom Screen Tint (RGB)" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnToggleGrayscale" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:text="In-App Grayscale: OFF" android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+            <Button android:id="@+id/btnLockTint" android:layout_width="match_parent" android:layout_height="50dp" android:background="@drawable/bg_btn_standard" android:text="Lock Tint Settings" android:textColor="#FFFFFF"/>
+        </LinearLayout>
+        
+
         <!-- LIVE DEBUG TERMINAL -->
         <LinearLayout android:id="@+id/llDebugTerminal" android:layout_width="match_parent" android:layout_height="250dp" android:orientation="vertical" android:visibility="gone" android:background="#000000" android:padding="8dp" android:layout_marginTop="24dp" android:layout_marginBottom="16dp">
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="LIVE UI DEBUGGER ACTIVE" android:textColor="#00FF00" android:textSize="12sp" android:textStyle="bold" android:layout_marginBottom="4dp"/>
@@ -3417,5 +3504,156 @@ namespace RHC {
     </LinearLayout>
 </LinearLayout>
 
+
+
+===== RockHardBlocker/app/src/main/res/layout/activity_momentum.xml =====
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MOMENTUM CORE"
+        android:textAlignment="center"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <ProgressBar
+        android:id="@+id/barMomentum"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="24dp"
+        android:layout_marginTop="16dp"
+        android:max="100"
+        android:progress="0" />
+
+    <TextView
+        android:id="@+id/tvMomentumText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0 MINS AVAILABLE"
+        android:textAlignment="center"
+        android:textColor="#4CAF50"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Use them before they evaporate."
+        android:textAlignment="center"
+        android:textColor="#888888"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnTabEarned"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="60dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_btn_accent"
+            android:text="GAINED"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btnTabSpent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="60dp"
+            android:padding="12dp"
+            android:background="@drawable/bg_btn_standard"
+            android:text="SPEND / GOALS"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp">
+
+        <ScrollView
+            android:id="@+id/svEarned"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <LinearLayout
+                android:id="@+id/llEarnedList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+
+        <ScrollView
+            android:id="@+id/svSpent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+            <LinearLayout
+                android:id="@+id/llSpentList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+    </FrameLayout>
+
+    <Button
+        android:id="@+id/btnExitMomentum"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="60dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_btn_pill"
+        android:text="RETURN TO REALITY"
+        android:textColor="#FFFFFF" />
+</LinearLayout>
+
+
+
+===== RockHardBlocker/app/src/main/res/layout/overlay_guard.xml =====
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center" 
+    android:background="#121212" 
+    android:padding="32dp">
+
+    <TextView android:id="@+id/tvOverlayTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="@string/overlay_title" android:textColor="#FFFFFF" android:textSize="32sp" android:textStyle="bold" 
+        android:letterSpacing="0.05" android:layout_marginBottom="24dp" android:textAlignment="center"/>
+
+    <TextView android:id="@+id/tvOverlayMessage" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="System Shield Active." android:textColor="#B0B0B0" android:textSize="18sp" 
+        android:textAlignment="center" android:layout_marginBottom="48dp" android:lineSpacingExtra="4dp"/>
+
+    <!-- The Tactical Desktop-Style Buttons -->
+    <Button android:id="@+id/btnPauseBlocker" android:layout_width="match_parent" android:layout_height="65dp"
+        android:text="DEFEND / OVERCOME" android:backgroundTint="#242424" android:textColor="#FFFFFF" 
+        android:textSize="16sp" android:textStyle="bold" android:letterSpacing="0.05" android:layout_marginBottom="16dp" 
+        style="?android:attr/borderlessButtonStyle"/>
+
+    <Button android:id="@+id/btnYield" android:layout_width="match_parent" android:layout_height="65dp"
+        android:text="I YIELD (RETURN HOME)" android:backgroundTint="#D32F2F" android:textColor="#FFFFFF" 
+        android:textSize="16sp" android:textStyle="bold" android:letterSpacing="0.05" 
+        style="?android:attr/borderlessButtonStyle"/>
+        
+    <TextView android:id="@+id/tvDebugReason" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Debug Reason: Unknown" android:textColor="#555555" android:textSize="12sp" 
+        android:layout_marginTop="48dp" android:textAlignment="center" android:fontFamily="monospace"/>
+</LinearLayout>
 
 
