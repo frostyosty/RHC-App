@@ -4,22 +4,6 @@ import android.widget.Toast
 import kotlin.random.Random
 
 internal fun GameActivity.performGlobalTick() {
-    // 0. AETHER DECAY LOGIC
-    if (!isUnderAttack) {
-        aetherSeconds--
-        tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
-        tvAether.setTextColor(Color.parseColor("#00BCD4"))
-        
-        if (aetherSeconds <= 0) {
-            aetherDepleted = true
-            if (!battleOver && !isWildBattle && !isTrainerBattle) {
-                Toast.makeText(this, "Aether Depleted! Returning to reality.", Toast.LENGTH_LONG).show()
-                finish()
-                return
-            }
-        }
-    }
-
     val eventMsg = BossEventEngine.checkAndGenerateEvent(prefs, party, currentCity)
     if (eventMsg != null) { printLog(eventMsg); updateBagScreen() }
 

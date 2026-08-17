@@ -35,7 +35,12 @@ internal fun GameActivity.spawnEventBossQTE() {
             isWildBattle = true
             battleOver = false
             setUIState("BATTLE")
-            showBattleArena(party[activePetIndex].name, bossName)
+            if (party.isNotEmpty()) {
+                showBattleArena(party[activePetIndex].name, bossName)
+            } else {
+                playerLastStand = true
+                showBattleArena("YOU", bossName)
+            }
             updateBattleUI()
         }
     }
