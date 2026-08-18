@@ -101,7 +101,7 @@ class GameActivity : Activity() {
                 
                 mainHandler.postDelayed(this, 1000)
             }
-
+        }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
