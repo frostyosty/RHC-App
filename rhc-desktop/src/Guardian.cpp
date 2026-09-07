@@ -116,6 +116,33 @@ namespace RHC {
                 std::cout << "[SCAN] Extracted Text: " << scannedText.substr(0, 300) << "..." << std::endl;
             }
 
+            // ✅ NEW: Evaluate Web Blocklist directly against UIA Text to catch .io and subdomains!
+            std::string lowerScannedText = RHC::StringUtils::toLower(scannedText);
+            bool isWebBlocked = false;
+            std::string blockedWebDomain = "";
+            for (auto& blocked : RHC::StringUtils::split(db.getString("BLOCKLIST_WEB", ""), ',')) {
+                auto parts = RHC::StringUtils::split(blocked, '|');
+                if (!parts.empty()) {
+                    std::string domain = RHC::StringUtils::toLower(parts[0]);
+                    if (domain.find("www.") == 0) domain = domain.substr(4);
+                    if (lowerScannedText.find(domain) != std::string::npos) {
+                        isWebBlocked = true;
+                        if (parts.size() >= 4 && parts[3] != "None" && RHC::Utils::IsTimeAllowed(parts[3])) isWebBlocked = false;
+                        if (isWebBlocked) { blockedWebDomain = domain; break; }
+                    }
+                }
+            }
+
+            if (isWebBlocked) {
+                RHC::DashboardUI::TrackOvercome(blockedWebDomain, "BLOCKLIST_WEB", "FIRST_OVERCOME_WEB_" + blockedWebDomain);
+                RHC::Utils::InjectEvadeAction();
+                std::string redirectTarget = getRedirect(blockedWebDomain);
+                if (!redirectTarget.empty()) { ShellExecuteA(NULL, "open", redirectTarget.c_str(), NULL, NULL, SW_SHOW); continue; }
+                g_RedWallReason = L"Web Blocked: " + RHC::Utils::utf8_to_wstring(blockedWebDomain);
+                ShowWindow(g_hMainWindow, SW_RESTORE); SetForegroundWindow(g_hMainWindow); BringWindowToTop(g_hMainWindow); InvalidateRect(g_hMainWindow, NULL, TRUE);
+                SetTimer(g_hMainWindow, 1, 3000, NULL); continue; 
+            }
+
             RHC::ShieldResult result = ruleEngine.evaluateScreenText(scannedText, db);
             if (result.action == RHC::ShieldAction::BLOCK_CONTENT) {
                 RHC::Utils::InjectEvadeAction();
