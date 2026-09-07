@@ -1,0 +1,25 @@
+
+=== RHC FEATURE TIMELINE ===
+
+Feature/API: SetWindowsHookExW
+Introduced: 2026-05-15 | Commit: 7d4e2a7 | Message: standard update
+
+Feature/API: TerminateProcess
+Introduced: 2026-05-15 | Commit: 7d4e2a7 | Message: standard update
+
+Feature/API: SyncServices.exe
+Introduced: 2026-05-15 | Commit: 7d4e2a7 | Message: standard update
+
+Feature/API: FILE_ATTRIBUTE_HIDDEN
+Introduced: 2026-05-15 | Commit: 7d4e2a7 | Message: standard update
+
+Feature/API: IUIAutomation
+Introduced: 2026-05-15 | Commit: 7d4e2a7 | Message: standard update
+
+Feature/API: AttachThreadInput
+Introduced: 2026-07-14 | Commit: 2218c97 | Message: standard update
+
+Feature/API: drivers\etc\hosts
+Introduced: 2026-05-15 | Commit: 7d4e2a7 | Message: standard update
+
+Feature/API: cmd.exe /c ping

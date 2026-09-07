@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/llOnboarding" style="@style/AppCard">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/TextHeader" android:text="SYSTEM SETUP"/>
+    
+    <Button android:id="@+id/btnStep1" style="@style/AppButton.Standard" android:text="STEP 1: ENABLE SHIELD"/>
+    <Button android:id="@+id/btnStep2" style="@style/AppButton.Standard" android:text="STEP 2: LOCK APP (REQUIRES ADMIN)"/>
+    <Button android:id="@+id/btnStepBatteryOpt" style="@style/AppButton.Standard" android:text="STEP 3: DISABLE BATTERY SLEEP" android:layout_marginTop="12dp"/>
+    
+    <!-- These stay hidden unless a Chinese OEM phone is detected -->
+    <Button android:id="@+id/btnStep4" style="@style/AppButton.Standard" android:text="STEP 4: FIX OEM AUTOSTART" android:layout_marginTop="12dp" android:visibility="gone"/>
+    <Button android:id="@+id/btnStep5" style="@style/AppButton.Standard" android:text="STEP 5: FIX OEM BATTERY SAVER" android:layout_marginTop="12dp" android:visibility="gone"/>
+    
+    <Button android:id="@+id/btnTestFilter" style="@style/AppButton.Accent" android:text="VERIFY ALL (UNLOCKS REWARD)" android:layout_marginBottom="0dp"/>
+</LinearLayout>

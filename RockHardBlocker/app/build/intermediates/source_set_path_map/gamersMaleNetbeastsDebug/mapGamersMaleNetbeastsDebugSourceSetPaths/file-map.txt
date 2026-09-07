@@ -1,0 +1,9 @@
+com.rockhard.blocker.app-gamersMaleNetbeasts-0 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/pngs/gamersMaleNetbeasts/debug
+com.rockhard.blocker.app-gamersMaleNetbeasts-1 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/gamersMaleNetbeasts/debug
+com.rockhard.blocker.app-packageGamersMaleNetbeastsDebugResources-2 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/gamersMaleNetbeastsDebug/packageGamersMaleNetbeastsDebugResources/merged.dir
+com.rockhard.blocker.app-packageGamersMaleNetbeastsDebugResources-3 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/gamersMaleNetbeastsDebug/packageGamersMaleNetbeastsDebugResources/stripped.dir
+com.rockhard.blocker.app-gamersMaleNetbeastsDebug-4 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/merged_res/gamersMaleNetbeastsDebug/mergeGamersMaleNetbeastsDebugResources
+com.rockhard.blocker.app-debug-5 /workspaces/RHC-App/RockHardBlocker/app/src/debug/res
+com.rockhard.blocker.app-gamersMaleNetbeasts-6 /workspaces/RHC-App/RockHardBlocker/app/src/gamersMaleNetbeasts/res
+com.rockhard.blocker.app-gamersMaleNetbeastsDebug-7 /workspaces/RHC-App/RockHardBlocker/app/src/gamersMaleNetbeastsDebug/res
+com.rockhard.blocker.app-main-8 /workspaces/RHC-App/RockHardBlocker/app/src/main/res

@@ -4,6 +4,13 @@ import kotlin.random.Random
 internal fun GameActivity.executePlayerMove(moveName: String) {
     cancelBattleTimer()
     if (battleOver) return
+    
+    // SAFEGUARD: If party is dead or empty, redirect to human punch to prevent array index crash
+    if (playerLastStand || party.isEmpty() || activePetIndex >= party.size) {
+        executeHumanPunch()
+        return
+    }
+    
     val activePet = party[activePetIndex]
     
     participatingPets.add(activePetIndex)
@@ -111,6 +118,6 @@ cancelBattleTimer()
         if (currentEnemy!!.name.contains("[Spiked]") && dmg > 0) { printLog("> 🌵 [Spiked] recoil! You cut your hand! (Ouch)") }
         
         if (currentEnemy!!.hp <= 0) { printLog("> 👑 UNBELIEVABLE! YOU KILLED IT WITH YOUR BARE HANDS!"); processEnemyVictory() } 
-        else { mainHandler.postDelayed({ AnimUtils.animAttack(findViewById(R.id.spriteEnemy), false); mainHandler.postDelayed({ AnimUtils.animDeath(findViewById(R.id.spritePlayer)); vibratePhone(1000); printLog("\n--- ENEMY TURN ---\n> ${currentEnemy?.name} obliterates you for 9,999 damage.\n💀 YOU DIED."); endBattle() }, 300) }, 1500) }
+        else { mainHandler.postDelayed({ AnimUtils.animAttack(findViewById(R.id.spriteEnemy), false); mainHandler.postDelayed({ AnimUtils.animDeath(findViewById(R.id.spritePlayer)); vibratePhone(1000); printLog("\n--- ENEMY TURN ---\n> ${currentEnemy?.name} obliterates you for 9,999 damage."); endBattle() }, 300) }, 1500) }
     }, 300)
 }

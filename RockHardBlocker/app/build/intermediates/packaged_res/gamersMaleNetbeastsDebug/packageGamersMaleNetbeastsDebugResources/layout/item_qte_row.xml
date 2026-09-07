@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:background="#2A2A2A" android:padding="12dp" android:layout_marginBottom="8dp">
+
+    <TextView android:id="@+id/tvQteDesc" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="#FFEB3B" android:textSize="14sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <Button android:id="@+id/btnQteAmbush" android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp"
+            android:text="AMBUSH" android:backgroundTint="#D32F2F" android:textColor="#FFF" android:layout_marginEnd="4dp" android:textSize="12sp"/>
+        <Button android:id="@+id/btnQteNet" android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp"
+            android:text="NET" android:backgroundTint="#1976D2" android:textColor="#FFF" android:layout_marginEnd="4dp" android:layout_marginStart="4dp" android:textSize="12sp"/>
+        <Button android:id="@+id/btnQteAvoid" android:layout_width="0dp" android:layout_weight="1" android:layout_height="50dp"
+            android:text="AVOID" android:backgroundTint="#555555" android:textColor="#FFF" android:layout_marginStart="4dp" android:textSize="12sp"/>
+    </LinearLayout>
+</LinearLayout>

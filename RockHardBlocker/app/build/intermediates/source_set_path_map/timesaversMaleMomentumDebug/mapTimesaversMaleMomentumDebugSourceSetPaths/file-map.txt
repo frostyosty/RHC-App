@@ -1,0 +1,9 @@
+com.rockhard.blocker.app-timesaversMaleMomentum-0 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/pngs/timesaversMaleMomentum/debug
+com.rockhard.blocker.app-timesaversMaleMomentum-1 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/timesaversMaleMomentum/debug
+com.rockhard.blocker.app-packageTimesaversMaleMomentumDebugResources-2 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/timesaversMaleMomentumDebug/packageTimesaversMaleMomentumDebugResources/merged.dir
+com.rockhard.blocker.app-packageTimesaversMaleMomentumDebugResources-3 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/timesaversMaleMomentumDebug/packageTimesaversMaleMomentumDebugResources/stripped.dir
+com.rockhard.blocker.app-timesaversMaleMomentumDebug-4 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/merged_res/timesaversMaleMomentumDebug/mergeTimesaversMaleMomentumDebugResources
+com.rockhard.blocker.app-debug-5 /workspaces/RHC-App/RockHardBlocker/app/src/debug/res
+com.rockhard.blocker.app-main-6 /workspaces/RHC-App/RockHardBlocker/app/src/main/res
+com.rockhard.blocker.app-timesaversMaleMomentum-7 /workspaces/RHC-App/RockHardBlocker/app/src/timesaversMaleMomentum/res
+com.rockhard.blocker.app-timesaversMaleMomentumDebug-8 /workspaces/RHC-App/RockHardBlocker/app/src/timesaversMaleMomentumDebug/res

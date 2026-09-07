@@ -75,5 +75,5 @@ internal fun GameActivity.endBattle() {
     hideBattleArena()
     party.forEach { p -> if (p.name.contains("[Regenerative]")) { val healAmount = (p.maxHp * 0.20).toInt(); p.hp = (p.hp + healAmount).coerceAtMost(p.maxHp); printLog("> 💚 ${p.name}'s Regenerative trait restored $healAmount HP!") } }
     updatePartyScreen(); saveParty()
-    mainHandler.postDelayed({ if (party.isEmpty()) { printLog("> You blacked out and returned to the Hub."); setUIState("HUB") } else { printLog("> Returning to Hub..."); setUIState("HUB") } }, 2000)
+    mainHandler.postDelayed({ if (party.isEmpty()) { printLog("> You got clobbered and returned to the Hub."); setUIState("HUB") } else { printLog("> Returning to Hub..."); setUIState("HUB") } }, 2000)
 }

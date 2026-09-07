@@ -1,0 +1,13 @@
+#Mon Sep 07 20:01:06 UTC 2026
+path.3=10/classes.dex
+path.2=1/classes.dex
+path.1=0/classes.dex
+path.0=classes.dex
+base.3=/workspaces/RHC-App/RockHardBlocker/app/build/intermediates/dex/gamersFemaleHomevisitsDebug/mergeProjectDexGamersFemaleHomevisitsDebug/10/classes.dex
+base.2=/workspaces/RHC-App/RockHardBlocker/app/build/intermediates/dex/gamersFemaleHomevisitsDebug/mergeProjectDexGamersFemaleHomevisitsDebug/1/classes.dex
+base.1=/workspaces/RHC-App/RockHardBlocker/app/build/intermediates/dex/gamersFemaleHomevisitsDebug/mergeProjectDexGamersFemaleHomevisitsDebug/0/classes.dex
+base.0=/workspaces/RHC-App/RockHardBlocker/app/build/intermediates/dex/gamersFemaleHomevisitsDebug/mergeExtDexGamersFemaleHomevisitsDebug/classes.dex
+renamed.3=classes4.dex
+renamed.2=classes3.dex
+renamed.1=classes2.dex
+renamed.0=classes.dex

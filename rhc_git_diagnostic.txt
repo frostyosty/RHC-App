@@ -1,0 +1,968 @@
+
+
+===== DATE =====
+2026-09-07T18:55:47+00:00
+
+
+===== CURRENT DIRECTORY =====
+/workspaces/RHC-App
+
+
+===== ROOT GIT STATUS =====
+## main...origin/main
+ M RockHardBlocker/.gradle/8.7/executionHistory/executionHistory.bin
+ M RockHardBlocker/.gradle/8.7/executionHistory/executionHistory.lock
+ M RockHardBlocker/.gradle/8.7/fileHashes/fileHashes.bin
+ M RockHardBlocker/.gradle/8.7/fileHashes/fileHashes.lock
+ M RockHardBlocker/.gradle/8.7/fileHashes/resourceHashesCache.bin
+ M RockHardBlocker/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+ M RockHardBlocker/app/build/intermediates/dex/gamersFemaleHomevisitsRelease/mergeDexGamersFemaleHomevisitsRelease/classes.dex
+ M RockHardBlocker/app/build/intermediates/dex/gamersMaleNetbeastsRelease/mergeDexGamersMaleNetbeastsRelease/classes.dex
+ M RockHardBlocker/app/build/intermediates/dex/timesaversFemaleMomentumRelease/mergeDexTimesaversFemaleMomentumRelease/classes.dex
+ M RockHardBlocker/app/build/intermediates/dex/timesaversMaleMomentumRelease/mergeDexTimesaversMaleMomentumRelease/classes.dex
+ M RockHardBlocker/app/build/intermediates/incremental/packageGamersFemaleHomevisitsRelease/tmp/gamersFemaleHomevisitsRelease/dex-renamer-state.txt
+ M RockHardBlocker/app/build/intermediates/incremental/packageGamersMaleNetbeastsRelease/tmp/gamersMaleNetbeastsRelease/dex-renamer-state.txt
+ M RockHardBlocker/app/build/intermediates/incremental/packageTimesaversFemaleMomentumRelease/tmp/timesaversFemaleMomentumRelease/dex-renamer-state.txt
+ M RockHardBlocker/app/build/intermediates/incremental/packageTimesaversMaleMomentumRelease/tmp/timesaversMaleMomentumRelease/dex-renamer-state.txt
+ M RockHardBlocker/app/build/intermediates/project_dex_archive/gamersFemaleHomevisitsRelease/dexBuilderGamersFemaleHomevisitsRelease/out/com/rockhard/blocker/BattleUIKt.dex
+ M RockHardBlocker/app/build/intermediates/project_dex_archive/gamersFemaleHomevisitsRelease/dexBuilderGamersFemaleHomevisitsRelease/out/com/rockhard/blocker/PlayerTurnKt.dex
+ M RockHardBlocker/app/build/intermediates/project_dex_archive/gamersMaleNetbeastsRelease/dexBuilderGamersMaleNetbeastsRelease/out/com/rockhard/blocker/BattleUIKt.dex
+ M RockHardBlocker/app/build/intermediates/project_dex_archive/gamersMaleNetbeastsRelease/dexBuilderGamersMaleNetbeastsRelease/out/com/rockhard/blocker/PlayerTurnKt.dex
+ M RockHardBlocker/app/build/intermediates/project_dex_archive/timesaversFemaleMomentumRelease/dexBuilderTimesaversFemaleMomentumRelease/out/com/rockhard/blocker/BattleUIKt.dex
+ M RockHardBlocker/app/build/intermediates/project_dex_archive/timesaversFemaleMomentumRelease/dexBuilderTimesaversFemaleMomentumRelease/out/com/rockhard/blocker/PlayerTurnKt.dex
+ M RockHardBlocker/app/build/intermediates/project_dex_archive/timesaversMaleMomentumRelease/dexBuilderTimesaversMaleMomentumRelease/out/com/rockhard/blocker/BattleUIKt.dex
+ M RockHardBlocker/app/build/intermediates/project_dex_archive/timesaversMaleMomentumRelease/dexBuilderTimesaversMaleMomentumRelease/out/com/rockhard/blocker/PlayerTurnKt.dex
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/counters.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.s
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/cacheable/last-build.bin
+ M RockHardBlocker/app/build/kotlin/compileGamersFemaleHomevisitsReleaseKotlin/local-state/build-history.bin
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/counters.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.s
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/cacheable/last-build.bin
+ M RockHardBlocker/app/build/kotlin/compileGamersMaleNetbeastsReleaseKotlin/local-state/build-history.bin
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/counters.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.s
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/cacheable/last-build.bin
+ M RockHardBlocker/app/build/kotlin/compileTimesaversFemaleMomentumReleaseKotlin/local-state/build-history.bin
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/package-parts.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/counters.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.s
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/cacheable/last-build.bin
+ M RockHardBlocker/app/build/kotlin/compileTimesaversMaleMomentumReleaseKotlin/local-state/build-history.bin
+ M RockHardBlocker/app/build/outputs/apk/gamersFemaleHomevisits/release/app-gamersFemaleHomevisits-release.apk
+ M RockHardBlocker/app/build/outputs/apk/gamersMaleNetbeasts/release/app-gamersMaleNetbeasts-release.apk
+ M RockHardBlocker/app/build/outputs/apk/timesaversFemaleMomentum/release/app-timesaversFemaleMomentum-release.apk
+ M RockHardBlocker/app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk
+ M RockHardBlocker/app/build/tmp/kotlin-classes/gamersFemaleHomevisitsRelease/com/rockhard/blocker/BattleUIKt.class
+ M RockHardBlocker/app/build/tmp/kotlin-classes/gamersFemaleHomevisitsRelease/com/rockhard/blocker/PlayerTurnKt.class
+ M RockHardBlocker/app/build/tmp/kotlin-classes/gamersMaleNetbeastsRelease/com/rockhard/blocker/BattleUIKt.class
+ M RockHardBlocker/app/build/tmp/kotlin-classes/gamersMaleNetbeastsRelease/com/rockhard/blocker/PlayerTurnKt.class
+ M RockHardBlocker/app/build/tmp/kotlin-classes/timesaversFemaleMomentumRelease/com/rockhard/blocker/BattleUIKt.class
+ M RockHardBlocker/app/build/tmp/kotlin-classes/timesaversFemaleMomentumRelease/com/rockhard/blocker/PlayerTurnKt.class
+ M RockHardBlocker/app/build/tmp/kotlin-classes/timesaversMaleMomentumRelease/com/rockhard/blocker/BattleUIKt.class
+ M RockHardBlocker/app/build/tmp/kotlin-classes/timesaversMaleMomentumRelease/com/rockhard/blocker/PlayerTurnKt.class
+ M RockHardBlocker/app/src/main/java/com/rockhard/blocker/engines/combat/PlayerTurn.kt
+ M RockHardBlocker/app/src/main/java/com/rockhard/blocker/gameui/BattleUI.kt
+ M output.txt
+ M rhc_homevisits.apk
+ M rhc_momentum_f.apk
+ M rhc_momentum_m.apk
+ M rhc_netbeasts.apk
+?? rhc_git_diagnostic.txt
+
+
+===== CURRENT COMMIT =====
+908bdb7 (HEAD -> main, origin/main, origin/HEAD) standard update
+ .../8.7/executionHistory/executionHistory.bin      | Bin 14672169 -> 14672169 bytes
+ .../8.7/executionHistory/executionHistory.lock     | Bin 17 -> 17 bytes
+ .../.gradle/8.7/fileHashes/fileHashes.bin          | Bin 467991 -> 467991 bytes
+ .../.gradle/8.7/fileHashes/fileHashes.lock         | Bin 17 -> 17 bytes
+ .../.gradle/8.7/fileHashes/resourceHashesCache.bin | Bin 209789 -> 211625 bytes
+ .../buildOutputCleanup/buildOutputCleanup.lock     | Bin 17 -> 17 bytes
+ .../classes.dex                                    | Bin 2394132 -> 2395892 bytes
+ .../mergeDexGamersMaleNetbeastsRelease/classes.dex | Bin 2393820 -> 2395580 bytes
+ .../classes.dex                                    | Bin 2394340 -> 2396100 bytes
+ .../classes.dex                                    | Bin 2394132 -> 2395892 bytes
+ .../merge-state                                    | Bin 1914 -> 1614 bytes
+ .../compile-file-map.properties                    |  12 +-
+ .../merged.dir/values/values.xml                   |  48 ++++++
+ .../merger.xml                                     |   2 +-
+ .../compile-file-map.properties                    |  10 +-
+ .../merged.dir/values/values.xml                   |  48 ++++++
+ .../merger.xml                                     |   2 +-
+ .../merge-state                                    | Bin 1902 -> 1608 bytes
+ .../compile-file-map.properties                    |  12 +-
+ .../merged.dir/values/values.xml                   |  48 ++++++
+ .../merger.xml                                     |   2 +-
+ .../compile-file-map.properties                    |  10 +-
+ .../merged.dir/values/values.xml                   |  48 ++++++
+ .../merger.xml                                     |   2 +-
+ .../dex-renamer-state.txt                          |   2 +-
+ .../dex-renamer-state.txt                          |   2 +-
+ .../dex-renamer-state.txt                          |   2 +-
+ .../dex-renamer-state.txt                          |   2 +-
+ .../merge-state                                    | Bin 1922 -> 1618 bytes
+ .../compile-file-map.properties                    |  10 +-
+ .../merged.dir/values/values.xml                   |  48 ++++++
+ .../merger.xml                                     |   2 +-
+ .../compile-file-map.properties                    |  10 +-
+ .../merged.dir/values/values.xml                   |  48 ++++++
+ .../merger.xml                                     |   2 +-
+ .../merge-state                                    | Bin 1914 -> 1614 bytes
+ .../compile-file-map.properties                    |  10 +-
+ .../merged.dir/values/values.xml                   |  48 ++++++
+ .../merger.xml                                     |   2 +-
+ .../compile-file-map.properties                    |  10 +-
+ .../merged.dir/values/values.xml                   |  48 ++++++
+ .../merger.xml                                     |   2 +-
+ ...ergeGamersFemaleHomevisitsReleaseResources.json | 188 ++++++++++-----------
+ .../mergeGamersMaleNetbeastsReleaseResources.json  | 188 ++++++++++-----------
+ ...geTimesaversFemaleMomentumReleaseResources.json | 188 ++++++++++-----------
+ ...ergeTimesaversMaleMomentumReleaseResources.json | 188 ++++++++++-----------
+ .../out/com/rockhard/blocker/BossEventQteKt.dex    | Bin 5808 -> 6000 bytes
+ .../blocker/GameActivity$exploreRunnable$1.dex     | Bin 1464 -> 3948 bytes
+ .../GameActivity$handleIncomingIntent$1.dex        | Bin 4636 -> 4636 bytes
+ .../GameActivity$handleIncomingIntent$2.dex        | Bin 2884 -> 2884 bytes
+ .../rockhard/blocker/GameActivity$onCreate$3.dex   | Bin 1844 -> 1844 bytes
+ .../out/com/rockhard/blocker/GameActivity.dex      | Bin 26004 -> 26520 bytes
+ .../GameSetupKt$setupBattleControls$4$1.dex        | Bin 6028 -> 6028 bytes
+ ...tupKt$setupDispatchControl$aetherRunnable$1.dex | Bin 3052 -> 0 bytes
+ .../out/com/rockhard/blocker/GameSetupKt.dex       | Bin 16608 -> 16344 bytes
+ .../GlobalTickKt$showAetherDepletedDialog$1.dex    | Bin 8288 -> 8288 bytes
+ .../out/com/rockhard/blocker/GlobalTickKt.dex      | Bin 13948 -> 12864 bytes
+ .../GuardianService$nightfallRunnable$1.dex        | Bin 1460 -> 1460 bytes
+ .../GuardianService$triggerBossInvasion$1$3.dex    | Bin 2760 -> 2760 bytes
+ ...anService$triggerBossInvasion$1$fleeLogic$1.dex | Bin 2264 -> 2264 bytes
+ .../out/com/rockhard/blocker/GuardianService.dex   | Bin 27380 -> 29804 bytes
+ .../out/com/rockhard/blocker/BossEventQteKt.dex    | Bin 5784 -> 5968 bytes
+ .../blocker/GameActivity$exploreRunnable$1.dex     | Bin 1456 -> 3912 bytes
+ .../GameActivity$handleIncomingIntent$1.dex        | Bin 4624 -> 4624 bytes
+ .../GameActivity$handleIncomingIntent$2.dex        | Bin 2880 -> 2880 bytes
+ .../rockhard/blocker/GameActivity$onCreate$3.dex   | Bin 1836 -> 1836 bytes
+ .../out/com/rockhard/blocker/GameActivity.dex      | Bin 25736 -> 26248 bytes
+ .../GameSetupKt$setupBattleControls$4$1.dex        | Bin 6012 -> 6012 bytes
+ ...tupKt$setupDispatchControl$aetherRunnable$1.dex | Bin 3032 -> 0 bytes
+ .../out/com/rockhard/blocker/GameSetupKt.dex       | Bin 16548 -> 16280 bytes
+ .../GlobalTickKt$showAetherDepletedDialog$1.dex    | Bin 8268 -> 8268 bytes
+ .../out/com/rockhard/blocker/GlobalTickKt.dex      | Bin 13844 -> 12776 bytes
+ .../GuardianService$nightfallRunnable$1.dex        | Bin 1456 -> 1456 bytes
+ .../GuardianService$triggerBossInvasion$1$3.dex    | Bin 2756 -> 2756 bytes
+ ...anService$triggerBossInvasion$1$fleeLogic$1.dex | Bin 2264 -> 2264 bytes
+ .../out/com/rockhard/blocker/GuardianService.dex   | Bin 27372 -> 29800 bytes
+ .../out/com/rockhard/blocker/BossEventQteKt.dex    | Bin 5828 -> 6020 bytes
+ .../blocker/GameActivity$exploreRunnable$1.dex     | Bin 1468 -> 3972 bytes
+ .../GameActivity$handleIncomingIntent$1.dex        | Bin 4648 -> 4648 bytes
+ .../GameActivity$handleIncomingIntent$2.dex        | Bin 2884 -> 2884 bytes
+ .../rockhard/blocker/GameActivity$onCreate$3.dex   | Bin 1848 -> 1848 bytes
+ .../out/com/rockhard/blocker/GameActivity.dex      | Bin 26184 -> 26700 bytes
+ .../GameSetupKt$setupBattleControls$4$1.dex        | Bin 6040 -> 6040 bytes
+ ...tupKt$setupDispatchControl$aetherRunnable$1.dex | Bin 3068 -> 0 bytes
+ .../out/com/rockhard/blocker/GameSetupKt.dex       | Bin 16652 -> 16384 bytes
+ .../GlobalTickKt$showAetherDepletedDialog$1.dex    | Bin 8300 -> 8300 bytes
+ .../out/com/rockhard/blocker/GlobalTickKt.dex      | Bin 14016 -> 12924 bytes
+ .../GuardianService$nightfallRunnable$1.dex        | Bin 1460 -> 1460 bytes
+ .../GuardianService$triggerBossInvasion$1$3.dex    | Bin 2764 -> 2764 bytes
+ ...anService$triggerBossInvasion$1$fleeLogic$1.dex | Bin 2264 -> 2264 bytes
+ .../out/com/rockhard/blocker/GuardianService.dex   | Bin 27384 -> 29808 bytes
+ .../out/com/rockhard/blocker/BossEventQteKt.dex    | Bin 5808 -> 6000 bytes
+ .../blocker/GameActivity$exploreRunnable$1.dex     | Bin 1464 -> 3948 bytes
+ .../GameActivity$handleIncomingIntent$1.dex        | Bin 4636 -> 4636 bytes
+ .../GameActivity$handleIncomingIntent$2.dex        | Bin 2884 -> 2884 bytes
+ .../rockhard/blocker/GameActivity$onCreate$3.dex   | Bin 1844 -> 1844 bytes
+ .../out/com/rockhard/blocker/GameActivity.dex      | Bin 26004 -> 26520 bytes
+ .../GameSetupKt$setupBattleControls$4$1.dex        | Bin 6028 -> 6028 bytes
+ ...tupKt$setupDispatchControl$aetherRunnable$1.dex | Bin 3052 -> 0 bytes
+ .../out/com/rockhard/blocker/GameSetupKt.dex       | Bin 16608 -> 16344 bytes
+ .../GlobalTickKt$showAetherDepletedDialog$1.dex    | Bin 8288 -> 8288 bytes
+ .../out/com/rockhard/blocker/GlobalTickKt.dex      | Bin 13948 -> 12864 bytes
+ .../GuardianService$nightfallRunnable$1.dex        | Bin 1460 -> 1460 bytes
+ .../GuardianService$triggerBossInvasion$1$3.dex    | Bin 2760 -> 2760 bytes
+ ...anService$triggerBossInvasion$1$fleeLogic$1.dex | Bin 2264 -> 2264 bytes
+ .../out/com/rockhard/blocker/GuardianService.dex   | Bin 27380 -> 29804 bytes
+ .../sdkDependencyData.pb                           | Bin 344 -> 344 bytes
+ .../sdkDependencyData.pb                           | Bin 344 -> 344 bytes
+ .../sdkDependencyData.pb                           | Bin 344 -> 344 bytes
+ .../sdkDependencyData.pb                           | Bin 344 -> 344 bytes
+ .../caches-jvm/inputs/source-to-output.tab         | Bin 0 -> 4096 bytes
+ .../inputs/source-to-output.tab.keystream          | Bin 0 -> 4096 bytes
+ .../inputs/source-to-output.tab.keystream.len      | Bin 0 -> 8 bytes
+ .../caches-jvm/inputs/source-to-output.tab.len     | Bin 0 -> 8 bytes
+ .../inputs/source-to-output.tab.values.at          | Bin 0 -> 19821 bytes
+ .../caches-jvm/inputs/source-to-output.tab_i       | Bin 0 -> 32768 bytes
+ .../caches-jvm/inputs/source-to-output.tab_i.len   | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/class-attributes.tab     | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/class-attributes.tab.keystream      | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/class-attributes.tab.keystream.len  | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/class-attributes.tab.len | Bin 0 -> 8 bytes
+ .../jvm/kotlin/class-attributes.tab.values.at      | Bin 0 -> 202 bytes
+ .../caches-jvm/jvm/kotlin/class-attributes.tab_i   | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/class-attributes.tab_i.len          | Bin 0 -> 8 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab         | Bin 0 -> 4096 bytes
+ .../kotlin/class-fq-name-to-source.tab.keystream   | Bin 0 -> 4096 bytes
+ .../class-fq-name-to-source.tab.keystream.len      | Bin 0 -> 8 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab.len     | Bin 0 -> 8 bytes
+ .../kotlin/class-fq-name-to-source.tab.values.at   | Bin 0 -> 3371 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab_i       | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab_i.len   | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/constants.tab  | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab.keystream  | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/constants.tab.keystream.len         | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab.len        | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab.values.at  | Bin 0 -> 159 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab_i          | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab_i.len      | Bin 0 -> 8 bytes
+ .../jvm/kotlin/internal-name-to-source.tab         | Bin 0 -> 4096 bytes
+ .../kotlin/internal-name-to-source.tab.keystream   | Bin 0 -> 8192 bytes
+ .../internal-name-to-source.tab.keystream.len      | Bin 0 -> 8 bytes
+ .../jvm/kotlin/internal-name-to-source.tab.len     | Bin 0 -> 8 bytes
+ .../kotlin/internal-name-to-source.tab.values.at   | Bin 0 -> 8253 bytes
+ .../jvm/kotlin/internal-name-to-source.tab_i       | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/internal-name-to-source.tab_i.len   | Bin 0 -> 8 bytes
+ .../jvm/kotlin/java-sources-proto-map.tab          | Bin 0 -> 4096 bytes
+ .../kotlin/java-sources-proto-map.tab.keystream    | Bin 0 -> 4096 bytes
+ .../java-sources-proto-map.tab.keystream.len       | Bin 0 -> 8 bytes
+ .../jvm/kotlin/java-sources-proto-map.tab.len      | Bin 0 -> 8 bytes
+ .../kotlin/java-sources-proto-map.tab.values.at    | Bin 0 -> 472 bytes
+ .../jvm/kotlin/java-sources-proto-map.tab_i        | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/java-sources-proto-map.tab_i.len    | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab        | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.keystream         | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.keystream.len     | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab.len    | Bin 0 -> 8 bytes
+ .../jvm/kotlin/package-parts.tab.values.at         | Bin 0 -> 112 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab_i      | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab_i.len  | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab      | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.keystream      | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.keystream.len  | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab.len  | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values         | Bin 0 -> 13441 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.at      | Bin 0 -> 9009 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.s       |   1 +
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab_i    | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab_i.len          | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab    | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.keystream     | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.keystream.len | Bin 0 -> 8 bytes
+ .../jvm/kotlin/source-to-classes.tab.len           | Bin 0 -> 8 bytes
+ .../jvm/kotlin/source-to-classes.tab.values.at     | Bin 0 -> 7269 bytes
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab_i  | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/source-to-classes.tab_i.len         | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/subtypes.tab   | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab.keystream   | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/subtypes.tab.keystream.len          | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab.len         | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab.values.at   | Bin 0 -> 922 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab_i.len       | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/supertypes.tab | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab.keystream | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/supertypes.tab.keystream.len        | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab.len       | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab.values.at | Bin 0 -> 741 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab_i         | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab_i.len     | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/counters.tab      |   2 +
+ .../cacheable/caches-jvm/lookups/file-to-id.tab    | Bin 0 -> 4096 bytes
+ .../caches-jvm/lookups/file-to-id.tab.keystream    | Bin 0 -> 4096 bytes
+ .../lookups/file-to-id.tab.keystream.len           | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/file-to-id.tab.len          | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/file-to-id.tab.values.at    | Bin 0 -> 397 bytes
+ .../cacheable/caches-jvm/lookups/file-to-id.tab_i  | Bin 0 -> 32768 bytes
+ .../caches-jvm/lookups/file-to-id.tab_i.len        | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab    | Bin 0 -> 4096 bytes
+ .../caches-jvm/lookups/id-to-file.tab.keystream    | Bin 0 -> 4096 bytes
+ .../lookups/id-to-file.tab.keystream.len           | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.len          | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.values.at    | Bin 0 -> 3756 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab_i  | Bin 0 -> 32768 bytes
+ .../caches-jvm/lookups/id-to-file.tab_i.len        | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab       | Bin 0 -> 81920 bytes
+ .../caches-jvm/lookups/lookups.tab.keystream       | Bin 0 -> 446464 bytes
+ .../caches-jvm/lookups/lookups.tab.keystream.len   | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab.len   | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/lookups.tab.values          | Bin 0 -> 19538 bytes
+ .../caches-jvm/lookups/lookups.tab.values.at       | Bin 0 -> 32280 bytes
+ .../caches-jvm/lookups/lookups.tab.values.s        |   1 +
+ .../cacheable/caches-jvm/lookups/lookups.tab_i     | Bin 0 -> 163840 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab_i.len | Bin 0 -> 8 bytes
+ .../cacheable/last-build.bin                       | Bin 0 -> 18 bytes
+ .../shrunk-classpath-snapshot.bin                  | Bin 74756 -> 74756 bytes
+ .../local-state/build-history.bin                  | Bin 0 -> 31 bytes
+ .../caches-jvm/inputs/source-to-output.tab         | Bin 0 -> 4096 bytes
+ .../inputs/source-to-output.tab.keystream          | Bin 0 -> 4096 bytes
+ .../inputs/source-to-output.tab.keystream.len      | Bin 0 -> 8 bytes
+ .../caches-jvm/inputs/source-to-output.tab.len     | Bin 0 -> 8 bytes
+ .../inputs/source-to-output.tab.values.at          | Bin 0 -> 19052 bytes
+ .../caches-jvm/inputs/source-to-output.tab_i       | Bin 0 -> 32768 bytes
+ .../caches-jvm/inputs/source-to-output.tab_i.len   | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/class-attributes.tab     | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/class-attributes.tab.keystream      | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/class-attributes.tab.keystream.len  | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/class-attributes.tab.len | Bin 0 -> 8 bytes
+ .../jvm/kotlin/class-attributes.tab.values.at      | Bin 0 -> 202 bytes
+ .../caches-jvm/jvm/kotlin/class-attributes.tab_i   | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/class-attributes.tab_i.len          | Bin 0 -> 8 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab         | Bin 0 -> 4096 bytes
+ .../kotlin/class-fq-name-to-source.tab.keystream   | Bin 0 -> 4096 bytes
+ .../class-fq-name-to-source.tab.keystream.len      | Bin 0 -> 8 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab.len     | Bin 0 -> 8 bytes
+ .../kotlin/class-fq-name-to-source.tab.values.at   | Bin 0 -> 3368 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab_i       | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab_i.len   | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/constants.tab  | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab.keystream  | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/constants.tab.keystream.len         | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab.len        | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab.values.at  | Bin 0 -> 159 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab_i          | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/constants.tab_i.len      | Bin 0 -> 8 bytes
+ .../jvm/kotlin/internal-name-to-source.tab         | Bin 0 -> 4096 bytes
+ .../kotlin/internal-name-to-source.tab.keystream   | Bin 0 -> 8192 bytes
+ .../internal-name-to-source.tab.keystream.len      | Bin 0 -> 8 bytes
+ .../jvm/kotlin/internal-name-to-source.tab.len     | Bin 0 -> 8 bytes
+ .../kotlin/internal-name-to-source.tab.values.at   | Bin 0 -> 8253 bytes
+ .../jvm/kotlin/internal-name-to-source.tab_i       | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/internal-name-to-source.tab_i.len   | Bin 0 -> 8 bytes
+ .../jvm/kotlin/java-sources-proto-map.tab          | Bin 0 -> 4096 bytes
+ .../kotlin/java-sources-proto-map.tab.keystream    | Bin 0 -> 4096 bytes
+ .../java-sources-proto-map.tab.keystream.len       | Bin 0 -> 8 bytes
+ .../jvm/kotlin/java-sources-proto-map.tab.len      | Bin 0 -> 8 bytes
+ .../kotlin/java-sources-proto-map.tab.values.at    | Bin 0 -> 468 bytes
+ .../jvm/kotlin/java-sources-proto-map.tab_i        | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/java-sources-proto-map.tab_i.len    | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab        | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.keystream         | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.keystream.len     | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab.len    | Bin 0 -> 8 bytes
+ .../jvm/kotlin/package-parts.tab.values.at         | Bin 0 -> 112 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab_i      | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab_i.len  | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab      | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.keystream      | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.keystream.len  | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab.len  | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values         | Bin 0 -> 13574 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.at      | Bin 0 -> 8480 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.s       |   1 +
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab_i    | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab_i.len          | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab    | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.keystream     | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.keystream.len | Bin 0 -> 8 bytes
+ .../jvm/kotlin/source-to-classes.tab.len           | Bin 0 -> 8 bytes
+ .../jvm/kotlin/source-to-classes.tab.values.at     | Bin 0 -> 7269 bytes
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab_i  | Bin 0 -> 32768 bytes
+ .../jvm/kotlin/source-to-classes.tab_i.len         | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/subtypes.tab   | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab.keystream   | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/subtypes.tab.keystream.len          | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab.len         | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab.values.at   | Bin 0 -> 922 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab_i.len       | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/supertypes.tab | Bin 0 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab.keystream | Bin 0 -> 4096 bytes
+ .../jvm/kotlin/supertypes.tab.keystream.len        | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab.len       | Bin 0 -> 8 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab.values.at | Bin 0 -> 741 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab_i         | Bin 0 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab_i.len     | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/counters.tab      |   2 +
+ .../cacheable/caches-jvm/lookups/file-to-id.tab    | Bin 0 -> 4096 bytes
+ .../caches-jvm/lookups/file-to-id.tab.keystream    | Bin 0 -> 4096 bytes
+ .../lookups/file-to-id.tab.keystream.len           | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/file-to-id.tab.len          | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/file-to-id.tab.values.at    | Bin 0 -> 397 bytes
+ .../cacheable/caches-jvm/lookups/file-to-id.tab_i  | Bin 0 -> 32768 bytes
+ .../caches-jvm/lookups/file-to-id.tab_i.len        | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab    | Bin 0 -> 4096 bytes
+ .../caches-jvm/lookups/id-to-file.tab.keystream    | Bin 0 -> 4096 bytes
+ .../lookups/id-to-file.tab.keystream.len           | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.len          | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.values.at    | Bin 0 -> 3756 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab_i  | Bin 0 -> 32768 bytes
+ .../caches-jvm/lookups/id-to-file.tab_i.len        | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab       | Bin 0 -> 81920 bytes
+ .../caches-jvm/lookups/lookups.tab.keystream       | Bin 0 -> 446464 bytes
+ .../caches-jvm/lookups/lookups.tab.keystream.len   | Bin 0 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab.len   | Bin 0 -> 8 bytes
+ .../caches-jvm/lookups/lookups.tab.values          | Bin 0 -> 19538 bytes
+ .../caches-jvm/lookups/lookups.tab.values.at       | Bin 0 -> 32280 bytes
+ .../caches-jvm/lookups/lookups.tab.values.s        |   1 +
+ .../cacheable/caches-jvm/lookups/lookups.tab_i     | Bin 0 -> 163840 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab_i.len | Bin 0 -> 8 bytes
+ .../cacheable/dirty-sources.txt                    |  58 -------
+ .../cacheable/last-build.bin                       | Bin 0 -> 18 bytes
+ .../shrunk-classpath-snapshot.bin                  | Bin 0 -> 74756 bytes
+ .../local-state/build-history.bin                  | Bin 0 -> 31 bytes
+ .../caches-jvm/inputs/source-to-output.tab         | Bin 4096 -> 4096 bytes
+ .../caches-jvm/inputs/source-to-output.tab.values  | Bin 8358 -> 0 bytes
+ .../inputs/source-to-output.tab.values.at          | Bin 27335 -> 20319 bytes
+ .../inputs/source-to-output.tab.values.s           |   1 -
+ .../caches-jvm/jvm/kotlin/class-attributes.tab     | Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/class-attributes.tab.values.at      | Bin 376 -> 202 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab         | Bin 4096 -> 4096 bytes
+ .../kotlin/class-fq-name-to-source.tab.values.at   | Bin 7260 -> 3373 bytes
+ .../jvm/kotlin/internal-name-to-source.tab         | Bin 4096 -> 4096 bytes
+ .../kotlin/internal-name-to-source.tab.keystream   | Bin 8192 -> 8192 bytes
+ .../internal-name-to-source.tab.keystream.len      | Bin 8 -> 8 bytes
+ .../jvm/kotlin/internal-name-to-source.tab.len     | Bin 8 -> 8 bytes
+ .../kotlin/internal-name-to-source.tab.values.at   | Bin 24958 -> 8253 bytes
+ .../jvm/kotlin/internal-name-to-source.tab_i       | Bin 32768 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab        | Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.values.at         | Bin 229 -> 112 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab      | Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values         | Bin 39600 -> 13326 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.at      | Bin 27111 -> 9361 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.s       |   2 +-
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab    | Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.values.at     | Bin 22175 -> 7269 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/subtypes.tab   | Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab.values.at   | Bin 5642 -> 922 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/supertypes.tab | Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab.values.at | Bin 2119 -> 741 bytes
+ .../cacheable/caches-jvm/lookups/counters.tab      |   2 +-
+ .../cacheable/caches-jvm/lookups/file-to-id.tab    | Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/file-to-id.tab.values.at    | Bin 781 -> 397 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab    | Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/id-to-file.tab.keystream    | Bin 4096 -> 4096 bytes
+ .../lookups/id-to-file.tab.keystream.len           | Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.len          | Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.values.at    | Bin 7817 -> 3756 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab_i  | Bin 32768 -> 32768 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab       | Bin 81920 -> 81920 bytes
+ .../caches-jvm/lookups/lookups.tab.keystream       | Bin 446464 -> 446464 bytes
+ .../caches-jvm/lookups/lookups.tab.keystream.len   | Bin 8 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab.len   | Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/lookups.tab.values          | Bin 363428 -> 19538 bytes
+ .../caches-jvm/lookups/lookups.tab.values.at       | Bin 31271 -> 32280 bytes
+ .../caches-jvm/lookups/lookups.tab.values.s        |   2 +-
+ .../cacheable/caches-jvm/lookups/lookups.tab_i     | Bin 163840 -> 163840 bytes
+ .../cacheable/last-build.bin                       | Bin 18 -> 18 bytes
+ .../shrunk-classpath-snapshot.bin                  | Bin 74756 -> 74756 bytes
+ .../local-state/build-history.bin                  | Bin 961 -> 31 bytes
+ .../caches-jvm/inputs/source-to-output.tab         | Bin 4096 -> 4096 bytes
+ .../inputs/source-to-output.tab.values.at          | Bin 29057 -> 19821 bytes
+ .../caches-jvm/jvm/kotlin/class-attributes.tab     | Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/class-attributes.tab.values.at      | Bin 223 -> 202 bytes
+ .../jvm/kotlin/class-fq-name-to-source.tab         | Bin 4096 -> 4096 bytes
+ .../kotlin/class-fq-name-to-source.tab.values.at   | Bin 3812 -> 3371 bytes
+ .../jvm/kotlin/internal-name-to-source.tab         | Bin 4096 -> 4096 bytes
+ .../kotlin/internal-name-to-source.tab.keystream   | Bin 8192 -> 8192 bytes
+ .../internal-name-to-source.tab.keystream.len      | Bin 8 -> 8 bytes
+ .../jvm/kotlin/internal-name-to-source.tab.len     | Bin 8 -> 8 bytes
+ .../kotlin/internal-name-to-source.tab.values.at   | Bin 12335 -> 8253 bytes
+ .../jvm/kotlin/internal-name-to-source.tab_i       | Bin 32768 -> 32768 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab        | Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.values.at         | Bin 151 -> 112 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab      | Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values         | Bin 13319 -> 13436 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.at      | Bin 27065 -> 9009 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.s       |   2 +-
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab    | Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.values.at     | Bin 11081 -> 7269 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/subtypes.tab   | Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/subtypes.tab.values.at   | Bin 1105 -> 922 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/supertypes.tab | Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/supertypes.tab.values.at | Bin 885 -> 741 bytes
+ .../cacheable/caches-jvm/lookups/counters.tab      |   2 +-
+ .../cacheable/caches-jvm/lookups/file-to-id.tab    | Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/file-to-id.tab.values.at    | Bin 511 -> 397 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab    | Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/id-to-file.tab.keystream    | Bin 4096 -> 4096 bytes
+ .../lookups/id-to-file.tab.keystream.len           | Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.len          | Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.values.at    | Bin 4957 -> 3756 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab_i  | Bin 32768 -> 32768 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab       | Bin 81920 -> 81920 bytes
+ .../caches-jvm/lookups/lookups.tab.keystream       | Bin 446464 -> 446464 bytes
+ .../caches-jvm/lookups/lookups.tab.keystream.len   | Bin 8 -> 8 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab.len   | Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/lookups.tab.values          | Bin 60169 -> 19538 bytes
+ .../caches-jvm/lookups/lookups.tab.values.at       | Bin 29520 -> 32280 bytes
+ .../caches-jvm/lookups/lookups.tab.values.s        |   2 +-
+ .../cacheable/caches-jvm/lookups/lookups.tab_i     | Bin 163840 -> 163840 bytes
+ .../cacheable/last-build.bin                       | Bin 18 -> 18 bytes
+ .../shrunk-classpath-snapshot.bin                  | Bin 74756 -> 74756 bytes
+ .../local-state/build-history.bin                  | Bin 211 -> 31 bytes
+ .../release/app-gamersFemaleHomevisits-release.apk | Bin 950097 -> 951285 bytes
+ .../release/app-gamersMaleNetbeasts-release.apk    | Bin 950033 -> 951293 bytes
+ .../app-timesaversFemaleMomentum-release.apk       | Bin 950149 -> 951329 bytes
+ .../release/app-timesaversMaleMomentum-release.apk | Bin 950113 -> 951277 bytes
+ .../compileGamersMaleNetbeastsReleaseKotlin/0.zip  | Bin 1620198 -> 0 bytes
+ .../compileGamersMaleNetbeastsReleaseKotlin/1.zip  | Bin 435 -> 0 bytes
+ .../compileGamersMaleNetbeastsReleaseKotlin/2.zip  | Bin 883842 -> 0 bytes
+ ...app_gamersFemaleHomevisitsRelease.kotlin_module | Bin 0 -> 363 bytes
+ .../com/rockhard/blocker/AdminReceiver.class       | Bin 0 -> 2300 bytes
+ .../com/rockhard/blocker/AetherEngine.class        | Bin 0 -> 2133 bytes
+ .../com/rockhard/blocker/AnimUtils.class           | Bin 0 -> 5020 bytes
+ .../com/rockhard/blocker/AudioEngine.class         | Bin 0 -> 4799 bytes
+ ...sEnemyVictory$$inlined$sortByDescending$1.class | Bin 0 -> 2421 bytes
+ .../com/rockhard/blocker/BattleResolutionKt.class  | Bin 0 -> 12627 bytes
+ .../BattleUIKt$showBattleArena$eTraits$1.class     | Bin 0 -> 1760 bytes
+ .../blocker/BattleUIKt$startBattleTimer$1.class    | Bin 0 -> 2310 bytes
+ .../BattleUIKt$updateBattleUI$toggleInfo$1.class   | Bin 0 -> 2492 bytes
+ .../com/rockhard/blocker/BattleUIKt.class          | Bin 0 -> 18531 bytes
+ .../com/rockhard/blocker/BlockerVpnService.class   | Bin 0 -> 2534 bytes
+ .../com/rockhard/blocker/BossEventEngine.class     | Bin 0 -> 7085 bytes
+ .../com/rockhard/blocker/BossEventQteKt.class      | Bin 0 -> 6278 bytes
+ .../com/rockhard/blocker/BossNameEngine.class      | Bin 0 -> 6631 bytes
+ .../com/rockhard/blocker/BuildInfo.class           | Bin 0 -> 828 bytes
+ .../com/rockhard/blocker/CloakEngine.class         | Bin 0 -> 2068 bytes
+ .../com/rockhard/blocker/CombatState.class         | Bin 0 -> 1858 bytes
+ .../com/rockhard/blocker/CombatUtilsKt.class       | Bin 0 -> 1710 bytes
+ .../com/rockhard/blocker/Config.class              | Bin 0 -> 780 bytes
+ .../com/rockhard/blocker/DialogUtils.class         | Bin 0 -> 5702 bytes
+ .../com/rockhard/blocker/EnemyTurnKt.class         | Bin 0 -> 14554 bytes
+ .../EquipItemsKt$setupDistributeButton$1$1.class   | Bin 0 -> 6888 bytes
+ ...quipping$setupAutoRepeat$repeatRunnable$1.class | Bin 0 -> 3266 bytes
+ .../com/rockhard/blocker/EquipItemsKt.class        | Bin 0 -> 9452 bytes
+ .../com/rockhard/blocker/EquipPanelKt.class        | Bin 0 -> 1085 bytes
+ .../blocker/EquipUpgradesKt$chooseSlot$1.class     | Bin 0 -> 5778 bytes
+ ...adesKt$setupCleanseButton$btnRemove$1$2$1.class | Bin 0 -> 2574 bytes
+ .../EquipUpgradesKt$setupInfusionButton$1$1.class  | Bin 0 -> 2717 bytes
+ ...esKt$setupTeachMoveButton$1$1$1$btn$1$2$1.class | Bin 0 -> 5725 bytes
+ .../EquipUpgradesKt$setupTeachMoveButton$1$1.class | Bin 0 -> 6931 bytes
+ .../com/rockhard/blocker/EquipUpgradesKt.class     | Bin 0 -> 11807 bytes
+ .../com/rockhard/blocker/EvolutionEngineKt.class   | Bin 0 -> 5193 bytes
+ .../blocker/GameActivity$exploreRunnable$1.class   | Bin 0 -> 3808 bytes
+ .../GameActivity$handleIncomingIntent$1.class      | Bin 0 -> 4916 bytes
+ .../GameActivity$handleIncomingIntent$2.class      | Bin 0 -> 2732 bytes
+ .../rockhard/blocker/GameActivity$onCreate$3.class | Bin 0 -> 1749 bytes
+ .../com/rockhard/blocker/GameActivity.class        | Bin 0 -> 29840 bytes
+ .../com/rockhard/blocker/GameData$BeastDef.class   | Bin 0 -> 4966 bytes
+ .../com/rockhard/blocker/GameData$TraitDef.class   | Bin 0 -> 4196 bytes
+ .../com/rockhard/blocker/GameData.class            | Bin 0 -> 6400 bytes
+ .../GameSetupKt$setupBattleControls$4$1.class      | Bin 0 -> 7483 bytes
+ .../GameSetupKt$setupBattleControls$8$1.class      | Bin 0 -> 2674 bytes
+ .../com/rockhard/blocker/GameSetupKt.class         | Bin 0 -> 15982 bytes
+ ...teKt$processFleePenalty$$inlined$sortBy$1.class | Bin 0 -> 2291 bytes
+ .../com/rockhard/blocker/GameStateKt.class         | Bin 0 -> 10280 bytes
+ .../GlobalTickKt$showAetherDepletedDialog$1.class  | Bin 0 -> 11369 bytes
+ .../com/rockhard/blocker/GlobalTickKt.class        | Bin 0 -> 15104 bytes
+ .../com/rockhard/blocker/GoodBeastEngine.class     | Bin 0 -> 7778 bytes
+ .../blocker/GuardianService$Companion.class        | Bin 0 -> 3421 bytes
+ .../GuardianService$nightfallRunnable$1.class      | Bin 0 -> 1241 bytes
+ .../GuardianService$triggerBossInvasion$1$3.class  | Bin 0 -> 2837 bytes
+ ...Service$triggerBossInvasion$1$fleeLogic$1.class | Bin 0 -> 2360 bytes
+ .../com/rockhard/blocker/GuardianService.class     | Bin 0 -> 38410 bytes
+ ...LeaderboardEngine$fetchLeaderboardAsync$1.class | Bin 0 -> 4793 bytes
+ .../LeaderboardEngine$submitScoreAsync$1.class     | Bin 0 -> 4446 bytes
+ .../com/rockhard/blocker/LeaderboardEngine.class   | Bin 0 -> 5489 bytes
+ .../com/rockhard/blocker/LocationEngine.class      | Bin 0 -> 4365 bytes
+ .../rockhard/blocker/MainActivity$onCreate$1.class | Bin 0 -> 2484 bytes
+ .../rockhard/blocker/MainActivity$onCreate$2.class | Bin 0 -> 1490 bytes
+ .../blocker/MainActivity$onCreate$4$1.class        | Bin 0 -> 1340 bytes
+ .../blocker/MainActivity$onCreate$5$1.class        | Bin 0 -> 2374 bytes
+ .../blocker/MainActivity$onCreate$7$1.class        | Bin 0 -> 4152 bytes
+ .../blocker/MainActivity$onCreate$8$1.class        | Bin 0 -> 1224 bytes
+ .../MainActivity$onCreate$confirmDrastic$1$1.class | Bin 0 -> 2393 bytes
+ .../MainActivity$onCreate$confirmDrastic$1.class   | Bin 0 -> 4042 bytes
+ ...inActivity$onCreate$grantSettingsAccess$1.class | Bin 0 -> 1686 bytes
+ .../rockhard/blocker/MainActivity$onPause$1.class  | Bin 0 -> 2924 bytes
+ .../blocker/MainActivity$openSettingsMenu$1.class  | Bin 0 -> 9147 bytes
+ .../blocker/MainActivity$setupBlockSpinner$2.class | Bin 0 -> 2889 bytes
+ ...upCategorizedSpinners$$inlined$sortedBy$1.class | Bin 0 -> 2528 bytes
+ ...upCategorizedSpinners$$inlined$sortedBy$2.class | Bin 0 -> 2528 bytes
+ ...upCategorizedSpinners$$inlined$sortedBy$3.class | Bin 0 -> 2528 bytes
+ ...upCategorizedSpinners$$inlined$sortedBy$4.class | Bin 0 -> 2528 bytes
+ .../blocker/MainActivity$setupRedirectUI$4.class   | Bin 0 -> 3316 bytes
+ .../blocker/MainActivity$setupTintUI$2$1.class     | Bin 0 -> 1778 bytes
+ .../blocker/MainActivity$setupTintUI$3$1$1.class   | Bin 0 -> 2351 bytes
+ .../blocker/MainActivity$setupTintUI$3$1$2.class   | Bin 0 -> 2351 bytes
+ .../blocker/MainActivity$setupTintUI$3$1$3.class   | Bin 0 -> 2351 bytes
+ .../blocker/MainActivity$setupTintUI$3$1$4.class   | Bin 0 -> 2351 bytes
+ .../MainActivity$setupTintUI$3$1$addSlider$2.class | Bin 0 -> 2138 bytes
+ .../blocker/MainActivity$setupTintUI$3$1.class     | Bin 0 -> 6556 bytes
+ .../MainActivity$setupTintUI$checkLock$1.class     | Bin 0 -> 2070 bytes
+ .../blocker/MainActivity$tickRunnable$1.class      | Bin 0 -> 2990 bytes
+ .../com/rockhard/blocker/MainActivity.class        | Bin 0 -> 68843 bytes
+ .../com/rockhard/blocker/MainBlocklistUIKt.class   | Bin 0 -> 9080 bytes
+ .../MainMomentumUIKt$loadLeaderboard$2.class       | Bin 0 -> 5961 bytes
+ .../com/rockhard/blocker/MainMomentumUIKt.class    | Bin 0 -> 15215 bytes
+ .../MainOverrideUIKt$setupSystemOverrideUI$2.class | Bin 0 -> 2439 bytes
+ .../com/rockhard/blocker/MainOverrideUIKt.class    | Bin 0 -> 11092 bytes
+ .../blocker/MomentumActivity$tickRunnable$1.class  | Bin 0 -> 1188 bytes
+ .../com/rockhard/blocker/MomentumActivity.class    | Bin 0 -> 15981 bytes
+ .../com/rockhard/blocker/MomentumEngine.class      | Bin 0 -> 10567 bytes
+ .../com/rockhard/blocker/NavUIKt.class             | Bin 0 -> 5100 bytes
+ .../com/rockhard/blocker/Netbeast.class            | Bin 0 -> 11576 bytes
+ ...rtyUIKt$updatePartyScreen$2$btnSell$1$2$1.class | Bin 0 -> 3229 bytes
+ .../com/rockhard/blocker/PartyUIKt.class           | Bin 0 -> 22310 bytes
+ .../com/rockhard/blocker/PlayerTurnKt.class        | Bin 0 -> 14787 bytes
+ .../com/rockhard/blocker/ProcessTextActivity.class | Bin 0 -> 7355 bytes
+ .../blocker/QteManagerKt$spawnWildQTE$3$1.class    | Bin 0 -> 6554 bytes
+ .../com/rockhard/blocker/QteManagerKt.class        | Bin 0 -> 18896 bytes
+ .../com/rockhard/blocker/RescueEngine.class        | Bin 0 -> 7867 bytes
+ ...t$showSafeUninstaller$$inlined$sortedBy$1.class | Bin 0 -> 2914 bytes
+ .../com/rockhard/blocker/SafeUninstallerUIKt.class | Bin 0 -> 10746 bytes
+ .../blocker/SaveManager$saveExpeditions$1.class    | Bin 0 -> 2234 bytes
+ .../blocker/SaveManager$saveParty$str$1.class      | Bin 0 -> 2700 bytes
+ .../com/rockhard/blocker/SaveManager.class         | Bin 0 -> 7860 bytes
+ .../com/rockhard/blocker/ScannerUtils.class        | Bin 0 -> 7481 bytes
+ .../com/rockhard/blocker/ShieldAction$Allow.class  | Bin 0 -> 863 bytes
+ .../com/rockhard/blocker/ShieldAction$Block.class  | Bin 0 -> 3647 bytes
+ .../rockhard/blocker/ShieldAction$RewardApp.class  | Bin 0 -> 2633 bytes
+ .../rockhard/blocker/ShieldAction$RewardWeb.class  | Bin 0 -> 3101 bytes
+ .../blocker/ShieldAction$WeatherBuff.class         | Bin 0 -> 2635 bytes
+ .../com/rockhard/blocker/ShieldAction.class        | Bin 0 -> 1425 bytes
+ .../com/rockhard/blocker/ShieldRuleEngine.class    | Bin 0 -> 44747 bytes
+ .../blocker/ShopUIKt$openBidDialog$1.class         | Bin 0 -> 8291 bytes
+ .../blocker/ShopUIKt$openGraveyardDialog$1.class   | Bin 0 -> 7142 bytes
+ .../com/rockhard/blocker/ShopUIKt.class            | Bin 0 -> 19061 bytes
+ .../com/rockhard/blocker/ShutdownReceiver.class    | Bin 0 -> 1541 bytes
+ .../rockhard/blocker/SkillEngine$SkillDef.class    | Bin 0 -> 4807 bytes
+ .../com/rockhard/blocker/SkillEngine.class         | Bin 0 -> 15448 bytes
+ .../rockhard/blocker/TrapActivity$onCreate$1.class | Bin 0 -> 1999 bytes
+ .../com/rockhard/blocker/TrapActivity.class        | Bin 0 -> 1814 bytes
+ .../blocker/WatchdogReceiver$Companion.class       | Bin 0 -> 5992 bytes
+ .../com/rockhard/blocker/WatchdogReceiver.class    | Bin 0 -> 1753 bytes
+ .../com/rockhard/blocker/WeatherEngine.class       | Bin 0 -> 7689 bytes
+ .../rockhard/blocker/guardian/BootReceiver.class   | Bin 0 -> 2093 bytes
+ .../rockhard/blocker/sync/DummySyncAdapter.class   | Bin 0 -> 1965 bytes
+ .../blocker/sync/DummySyncService$Companion.class  | Bin 0 -> 981 bytes
+ .../rockhard/blocker/sync/DummySyncService.class   | Bin 0 -> 2300 bytes
+ .../rockhard/blocker/sync/StubAuthenticator.class  | Bin 0 -> 3285 bytes
+ .../blocker/sync/StubAuthenticatorService.class    | Bin 0 -> 1540 bytes
+ .../blocker/sync/StubContentProvider.class         | Bin 0 -> 2571 bytes
+ .../GameActivity$handleIncomingIntent$1.class      | Bin 4901 -> 4901 bytes
+ .../GameActivity$handleIncomingIntent$2.class      | Bin 2729 -> 2729 bytes
+ .../rockhard/blocker/GameActivity$onCreate$3.class | Bin 1743 -> 1743 bytes
+ .../com/rockhard/blocker/GameActivity.class        | Bin 29570 -> 29570 bytes
+ .../com/rockhard/blocker/BossEventQteKt.class      | Bin 6096 -> 6298 bytes
+ .../blocker/GameActivity$exploreRunnable$1.class   | Bin 1201 -> 3832 bytes
+ .../GameActivity$handleIncomingIntent$1.class      | Bin 4926 -> 4926 bytes
+ .../GameActivity$handleIncomingIntent$2.class      | Bin 2734 -> 2734 bytes
+ .../rockhard/blocker/GameActivity$onCreate$3.class | Bin 1753 -> 1753 bytes
+ .../com/rockhard/blocker/GameActivity.class        | Bin 29270 -> 30020 bytes
+ .../GameSetupKt$setupBattleControls$4$1.class      | Bin 7495 -> 7495 bytes
+ ...pKt$setupDispatchControl$aetherRunnable$1.class | Bin 2935 -> 0 bytes
+ .../com/rockhard/blocker/GameSetupKt.class         | Bin 16525 -> 16024 bytes
+ .../GlobalTickKt$showAetherDepletedDialog$1.class  | Bin 11381 -> 11381 bytes
+ .../com/rockhard/blocker/GlobalTickKt.class        | Bin 16302 -> 15162 bytes
+ .../GuardianService$nightfallRunnable$1.class      | Bin 1243 -> 1243 bytes
+ .../GuardianService$triggerBossInvasion$1$3.class  | Bin 2839 -> 2839 bytes
+ ...Service$triggerBossInvasion$1$fleeLogic$1.class | Bin 2360 -> 2360 bytes
+ .../com/rockhard/blocker/GuardianService.class     | Bin 34975 -> 38414 bytes
+ .../com/rockhard/blocker/BossEventQteKt.class      | Bin 6078 -> 6278 bytes
+ .../blocker/GameActivity$exploreRunnable$1.class   | Bin 1197 -> 3808 bytes
+ .../GameActivity$handleIncomingIntent$1.class      | Bin 4916 -> 4916 bytes
+ .../GameActivity$handleIncomingIntent$2.class      | Bin 2732 -> 2732 bytes
+ .../rockhard/blocker/GameActivity$onCreate$3.class | Bin 1749 -> 1749 bytes
+ .../com/rockhard/blocker/GameActivity.class        | Bin 29090 -> 29840 bytes
+ .../GameSetupKt$setupBattleControls$4$1.class      | Bin 7483 -> 7483 bytes
+ ...pKt$setupDispatchControl$aetherRunnable$1.class | Bin 2921 -> 0 bytes
+ .../com/rockhard/blocker/GameSetupKt.class         | Bin 16483 -> 15982 bytes
+ .../GlobalTickKt$showAetherDepletedDialog$1.class  | Bin 11369 -> 11369 bytes
+ .../com/rockhard/blocker/GlobalTickKt.class        | Bin 16232 -> 15104 bytes
+ .../GuardianService$nightfallRunnable$1.class      | Bin 1241 -> 1241 bytes
+ .../GuardianService$triggerBossInvasion$1$3.class  | Bin 2837 -> 2837 bytes
+ ...Service$triggerBossInvasion$1$fleeLogic$1.class | Bin 2360 -> 2360 bytes
+ .../com/rockhard/blocker/GuardianService.class     | Bin 34971 -> 38410 bytes
+ .../main/java/com/rockhard/blocker/GameActivity.kt |   2 +-
+ rhc_homevisits.apk                                 | Bin 950097 -> 951285 bytes
+ rhc_momentum_f.apk                                 | Bin 950149 -> 951329 bytes
+ rhc_momentum_m.apk                                 | Bin 950113 -> 951277 bytes
+ rhc_netbeasts.apk                                  | Bin 950033 -> 951293 bytes
+ 592 files changed, 821 insertions(+), 504 deletions(-)
+
+
+===== RECENT COMMITS =====
+908bdb7 (HEAD -> main, origin/main, origin/HEAD) standard update
+8bc2fa5 standard update
+4c3a332 standard update
+5eccc85 standard update
+0dec327 standard update
+5aad840 standard update
+d111c0a standard update
+07969bd standard update
+30a58a3 standard update
+0379300 standard update
+
+
+===== REMOTES =====
+origin	https://github.com/frostyosty/RHC-App (fetch)
+origin	https://github.com/frostyosty/RHC-App (push)
+
+
+===== UNCOMMITTED DIFF STAT =====
+ .../8.7/executionHistory/executionHistory.bin      |  Bin 14672169 -> 14672169 bytes
+ .../8.7/executionHistory/executionHistory.lock     |  Bin 17 -> 17 bytes
+ .../.gradle/8.7/fileHashes/fileHashes.bin          |  Bin 467991 -> 467991 bytes
+ .../.gradle/8.7/fileHashes/fileHashes.lock         |  Bin 17 -> 17 bytes
+ .../.gradle/8.7/fileHashes/resourceHashesCache.bin |  Bin 211625 -> 211965 bytes
+ .../buildOutputCleanup/buildOutputCleanup.lock     |  Bin 17 -> 17 bytes
+ .../classes.dex                                    |  Bin 2395892 -> 2395896 bytes
+ .../mergeDexGamersMaleNetbeastsRelease/classes.dex |  Bin 2395580 -> 2395584 bytes
+ .../classes.dex                                    |  Bin 2396100 -> 2396104 bytes
+ .../classes.dex                                    |  Bin 2395892 -> 2395896 bytes
+ .../dex-renamer-state.txt                          |    2 +-
+ .../dex-renamer-state.txt                          |    2 +-
+ .../dex-renamer-state.txt                          |    2 +-
+ .../dex-renamer-state.txt                          |    2 +-
+ .../out/com/rockhard/blocker/BattleUIKt.dex        |  Bin 15220 -> 15044 bytes
+ .../out/com/rockhard/blocker/PlayerTurnKt.dex      |  Bin 16156 -> 16340 bytes
+ .../out/com/rockhard/blocker/BattleUIKt.dex        |  Bin 15184 -> 15008 bytes
+ .../out/com/rockhard/blocker/PlayerTurnKt.dex      |  Bin 16120 -> 16296 bytes
+ .../out/com/rockhard/blocker/BattleUIKt.dex        |  Bin 15244 -> 15068 bytes
+ .../out/com/rockhard/blocker/PlayerTurnKt.dex      |  Bin 16184 -> 16368 bytes
+ .../out/com/rockhard/blocker/BattleUIKt.dex        |  Bin 15220 -> 15044 bytes
+ .../out/com/rockhard/blocker/PlayerTurnKt.dex      |  Bin 16156 -> 16340 bytes
+ .../caches-jvm/inputs/source-to-output.tab         |  Bin 4096 -> 4096 bytes
+ .../inputs/source-to-output.tab.values.at          |  Bin 19821 -> 20549 bytes
+ .../jvm/kotlin/internal-name-to-source.tab         |  Bin 4096 -> 4096 bytes
+ .../kotlin/internal-name-to-source.tab.values.at   |  Bin 8253 -> 8563 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab        |  Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.values.at         |  Bin 112 -> 118 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab      |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.at      |  Bin 9009 -> 9999 bytes
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab    |  Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.values.at     |  Bin 7269 -> 7539 bytes
+ .../cacheable/caches-jvm/lookups/counters.tab      |    2 +-
+ .../cacheable/caches-jvm/lookups/file-to-id.tab    |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/file-to-id.tab.values.at    |  Bin 397 -> 409 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab    |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/id-to-file.tab.keystream    |  Bin 4096 -> 4096 bytes
+ .../lookups/id-to-file.tab.keystream.len           |  Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.len          |  Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.values.at    |  Bin 3756 -> 3886 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab_i  |  Bin 32768 -> 32768 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab       |  Bin 81920 -> 81920 bytes
+ .../caches-jvm/lookups/lookups.tab.values          |  Bin 19538 -> 23636 bytes
+ .../caches-jvm/lookups/lookups.tab.values.at       |  Bin 32280 -> 32280 bytes
+ .../caches-jvm/lookups/lookups.tab.values.s        |    2 +-
+ .../cacheable/last-build.bin                       |  Bin 18 -> 18 bytes
+ .../local-state/build-history.bin                  |  Bin 31 -> 48 bytes
+ .../caches-jvm/inputs/source-to-output.tab         |  Bin 4096 -> 4096 bytes
+ .../inputs/source-to-output.tab.values.at          |  Bin 19052 -> 19752 bytes
+ .../jvm/kotlin/internal-name-to-source.tab         |  Bin 4096 -> 4096 bytes
+ .../kotlin/internal-name-to-source.tab.values.at   |  Bin 8253 -> 8563 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab        |  Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.values.at         |  Bin 112 -> 118 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab      |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.at      |  Bin 8480 -> 9463 bytes
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab    |  Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.values.at     |  Bin 7269 -> 7539 bytes
+ .../cacheable/caches-jvm/lookups/counters.tab      |    2 +-
+ .../cacheable/caches-jvm/lookups/file-to-id.tab    |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/file-to-id.tab.values.at    |  Bin 397 -> 409 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab    |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/id-to-file.tab.keystream    |  Bin 4096 -> 4096 bytes
+ .../lookups/id-to-file.tab.keystream.len           |  Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.len          |  Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.values.at    |  Bin 3756 -> 3886 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab_i  |  Bin 32768 -> 32768 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab       |  Bin 81920 -> 81920 bytes
+ .../caches-jvm/lookups/lookups.tab.values          |  Bin 19538 -> 23636 bytes
+ .../caches-jvm/lookups/lookups.tab.values.at       |  Bin 32280 -> 32280 bytes
+ .../caches-jvm/lookups/lookups.tab.values.s        |    2 +-
+ .../cacheable/last-build.bin                       |  Bin 18 -> 18 bytes
+ .../local-state/build-history.bin                  |  Bin 31 -> 48 bytes
+ .../caches-jvm/inputs/source-to-output.tab         |  Bin 4096 -> 4096 bytes
+ .../inputs/source-to-output.tab.values.at          |  Bin 20319 -> 21065 bytes
+ .../jvm/kotlin/internal-name-to-source.tab         |  Bin 4096 -> 4096 bytes
+ .../kotlin/internal-name-to-source.tab.values.at   |  Bin 8253 -> 8563 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab        |  Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.values.at         |  Bin 112 -> 118 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab      |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.at      |  Bin 9361 -> 10355 bytes
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab    |  Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.values.at     |  Bin 7269 -> 7539 bytes
+ .../cacheable/caches-jvm/lookups/counters.tab      |    2 +-
+ .../cacheable/caches-jvm/lookups/file-to-id.tab    |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/file-to-id.tab.values.at    |  Bin 397 -> 409 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab    |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/id-to-file.tab.keystream    |  Bin 4096 -> 4096 bytes
+ .../lookups/id-to-file.tab.keystream.len           |  Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.len          |  Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.values.at    |  Bin 3756 -> 3886 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab_i  |  Bin 32768 -> 32768 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab       |  Bin 81920 -> 81920 bytes
+ .../caches-jvm/lookups/lookups.tab.values          |  Bin 19538 -> 23636 bytes
+ .../caches-jvm/lookups/lookups.tab.values.at       |  Bin 32280 -> 32280 bytes
+ .../caches-jvm/lookups/lookups.tab.values.s        |    2 +-
+ .../cacheable/last-build.bin                       |  Bin 18 -> 18 bytes
+ .../local-state/build-history.bin                  |  Bin 31 -> 48 bytes
+ .../caches-jvm/inputs/source-to-output.tab         |  Bin 4096 -> 4096 bytes
+ .../inputs/source-to-output.tab.values.at          |  Bin 19821 -> 20549 bytes
+ .../jvm/kotlin/internal-name-to-source.tab         |  Bin 4096 -> 4096 bytes
+ .../kotlin/internal-name-to-source.tab.values.at   |  Bin 8253 -> 8563 bytes
+ .../caches-jvm/jvm/kotlin/package-parts.tab        |  Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/package-parts.tab.values.at         |  Bin 112 -> 118 bytes
+ .../cacheable/caches-jvm/jvm/kotlin/proto.tab      |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/jvm/kotlin/proto.tab.values.at      |  Bin 9009 -> 9999 bytes
+ .../caches-jvm/jvm/kotlin/source-to-classes.tab    |  Bin 4096 -> 4096 bytes
+ .../jvm/kotlin/source-to-classes.tab.values.at     |  Bin 7269 -> 7539 bytes
+ .../cacheable/caches-jvm/lookups/counters.tab      |    2 +-
+ .../cacheable/caches-jvm/lookups/file-to-id.tab    |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/file-to-id.tab.values.at    |  Bin 397 -> 409 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab    |  Bin 4096 -> 4096 bytes
+ .../caches-jvm/lookups/id-to-file.tab.keystream    |  Bin 4096 -> 4096 bytes
+ .../lookups/id-to-file.tab.keystream.len           |  Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.len          |  Bin 8 -> 8 bytes
+ .../caches-jvm/lookups/id-to-file.tab.values.at    |  Bin 3756 -> 3886 bytes
+ .../cacheable/caches-jvm/lookups/id-to-file.tab_i  |  Bin 32768 -> 32768 bytes
+ .../cacheable/caches-jvm/lookups/lookups.tab       |  Bin 81920 -> 81920 bytes
+ .../caches-jvm/lookups/lookups.tab.values          |  Bin 19538 -> 23636 bytes
+ .../caches-jvm/lookups/lookups.tab.values.at       |  Bin 32280 -> 32280 bytes
+ .../caches-jvm/lookups/lookups.tab.values.s        |    2 +-
+ .../cacheable/last-build.bin                       |  Bin 18 -> 18 bytes
+ .../local-state/build-history.bin                  |  Bin 31 -> 48 bytes
+ .../release/app-gamersFemaleHomevisits-release.apk |  Bin 951285 -> 951337 bytes
+ .../release/app-gamersMaleNetbeasts-release.apk    |  Bin 951293 -> 951289 bytes
+ .../app-timesaversFemaleMomentum-release.apk       |  Bin 951329 -> 951345 bytes
+ .../release/app-timesaversMaleMomentum-release.apk |  Bin 951277 -> 951305 bytes
+ .../com/rockhard/blocker/BattleUIKt.class          |  Bin 18531 -> 18293 bytes
+ .../com/rockhard/blocker/PlayerTurnKt.class        |  Bin 14787 -> 14955 bytes
+ .../com/rockhard/blocker/BattleUIKt.class          |  Bin 18495 -> 18257 bytes
+ .../com/rockhard/blocker/PlayerTurnKt.class        |  Bin 14748 -> 14913 bytes
+ .../com/rockhard/blocker/BattleUIKt.class          |  Bin 18555 -> 18317 bytes
+ .../com/rockhard/blocker/PlayerTurnKt.class        |  Bin 14813 -> 14983 bytes
+ .../com/rockhard/blocker/BattleUIKt.class          |  Bin 18531 -> 18293 bytes
+ .../com/rockhard/blocker/PlayerTurnKt.class        |  Bin 14787 -> 14955 bytes
+ .../rockhard/blocker/engines/combat/PlayerTurn.kt  |    7 +
+ .../java/com/rockhard/blocker/gameui/BattleUI.kt   |    2 +-
+ output.txt                                         | 4271 ++++----------------
+ rhc_homevisits.apk                                 |  Bin 951285 -> 951337 bytes
+ rhc_momentum_f.apk                                 |  Bin 951329 -> 951345 bytes
+ rhc_momentum_m.apk                                 |  Bin 951277 -> 951305 bytes
+ rhc_netbeasts.apk                                  |  Bin 951293 -> 951289 bytes
+ 141 files changed, 766 insertions(+), 3538 deletions(-)
+
+
+===== UNCOMMITTED DIFF =====
+diff --git a/RockHardBlocker/app/src/main/java/com/rockhard/blocker/engines/combat/PlayerTurn.kt b/RockHardBlocker/app/src/main/java/com/rockhard/blocker/engines/combat/PlayerTurn.kt
+index 5250cae..107cb61 100644
+--- a/RockHardBlocker/app/src/main/java/com/rockhard/blocker/engines/combat/PlayerTurn.kt
++++ b/RockHardBlocker/app/src/main/java/com/rockhard/blocker/engines/combat/PlayerTurn.kt
+@@ -4,6 +4,13 @@ import kotlin.random.Random
+ internal fun GameActivity.executePlayerMove(moveName: String) {
+     cancelBattleTimer()
+     if (battleOver) return
++    
++    // SAFEGUARD: If party is dead or empty, redirect to human punch to prevent array index crash
++    if (playerLastStand || party.isEmpty() || activePetIndex >= party.size) {
++        executeHumanPunch()
++        return
++    }
++    
+     val activePet = party[activePetIndex]
+     
+     participatingPets.add(activePetIndex)
+diff --git a/RockHardBlocker/app/src/main/java/com/rockhard/blocker/gameui/BattleUI.kt b/RockHardBlocker/app/src/main/java/com/rockhard/blocker/gameui/BattleUI.kt
+index e297f2a..4b3d92d 100644
+--- a/RockHardBlocker/app/src/main/java/com/rockhard/blocker/gameui/BattleUI.kt
++++ b/RockHardBlocker/app/src/main/java/com/rockhard/blocker/gameui/BattleUI.kt
+@@ -111,7 +111,7 @@ if (state == "BATTLE") {
+ 
+ internal fun GameActivity.updateBattleUI() {
+     val btn1 = findViewById<Button>(R.id.btnMove1); val btn2 = findViewById<Button>(R.id.btnMove2)
+-    val btn3 = (btn2.parent as? ViewGroup)?.findViewWithTag<Button>("BTN_MOVE_3")
++    val btn3 = findViewById<Button>(R.id.btnMove3)
+     val infoRow = findViewById<View>(R.id.infoRow); val tvInfoPanel = findViewById<TextView>(R.id.tvBattleInfoPanel)
+     val info1 = findViewById<TextView>(R.id.infoMove1); val info2 = findViewById<TextView>(R.id.infoMove2); val info3 = findViewById<TextView>(R.id.infoMove3)
+     val actionRow = findViewById<View>(R.id.actionRow)
+
+
+===== STAGED DIFF STAT =====
+
+
+===== STAGED DIFF =====
+
+
+===== RECENT TAGS =====
+
+
+===== RELEASE-RELEVANT FILES =====
+./RockHardBlocker/build.gradle.kts
+./RockHardBlocker/settings.gradle.kts
+./RockHardBlocker/app/build.gradle.kts
+./RockHardBlocker/app/src/main/AndroidManifest.xml
+./scripts/push-apk.sh
+./build.sh
+./rhc-desktop/app.manifest
+./rhc-desktop/build.sh

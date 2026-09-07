@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/AppCard" android:layout_marginBottom="32dp">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" style="@style/TextHeader" android:text="--- DEVELOPER DEBUG TOOLS ---" android:textColor="#FF5252" android:textAlignment="center"/>
+    <Button android:id="@+id/btnDebugConsole" style="@style/AppButton" android:backgroundTint="#3F51B5" android:text="OPEN MASTER DEBUG CONSOLE"/>
+    <Button android:id="@+id/btnDebugReset" style="@style/AppButton" android:backgroundTint="#7B1FA2" android:text="WIPE SAVE FILES"/>
+    <Button android:id="@+id/btnDebugUninstall" style="@style/AppButton.Red" android:text="KILL &amp; UNINSTALL APP" android:layout_marginBottom="0dp"/>
+</LinearLayout>

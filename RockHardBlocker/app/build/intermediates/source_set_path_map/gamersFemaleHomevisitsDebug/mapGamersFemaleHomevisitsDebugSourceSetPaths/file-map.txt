@@ -1,0 +1,9 @@
+com.rockhard.blocker.app-gamersFemaleHomevisits-0 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/pngs/gamersFemaleHomevisits/debug
+com.rockhard.blocker.app-gamersFemaleHomevisits-1 /workspaces/RHC-App/RockHardBlocker/app/build/generated/res/resValues/gamersFemaleHomevisits/debug
+com.rockhard.blocker.app-packageGamersFemaleHomevisitsDebugResources-2 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/gamersFemaleHomevisitsDebug/packageGamersFemaleHomevisitsDebugResources/merged.dir
+com.rockhard.blocker.app-packageGamersFemaleHomevisitsDebugResources-3 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/incremental/gamersFemaleHomevisitsDebug/packageGamersFemaleHomevisitsDebugResources/stripped.dir
+com.rockhard.blocker.app-gamersFemaleHomevisitsDebug-4 /workspaces/RHC-App/RockHardBlocker/app/build/intermediates/merged_res/gamersFemaleHomevisitsDebug/mergeGamersFemaleHomevisitsDebugResources
+com.rockhard.blocker.app-debug-5 /workspaces/RHC-App/RockHardBlocker/app/src/debug/res
+com.rockhard.blocker.app-gamersFemaleHomevisits-6 /workspaces/RHC-App/RockHardBlocker/app/src/gamersFemaleHomevisits/res
+com.rockhard.blocker.app-gamersFemaleHomevisitsDebug-7 /workspaces/RHC-App/RockHardBlocker/app/src/gamersFemaleHomevisitsDebug/res
+com.rockhard.blocker.app-main-8 /workspaces/RHC-App/RockHardBlocker/app/src/main/res
