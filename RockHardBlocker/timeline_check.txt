@@ -1,0 +1,10 @@
+
+=== POST-MAY COMPLIANCE TIMELINE ===
+
+Feature/API: LoadLibraryA
+Introduced: 2026-05-15 | Commit: 7d4e2a7 | Message: standard update
+
+Feature/API: SendInput
+Introduced: 2026-05-15 | Commit: 7d4e2a7 | Message: standard update
+
+Feature/API: cmd.exe /c ping

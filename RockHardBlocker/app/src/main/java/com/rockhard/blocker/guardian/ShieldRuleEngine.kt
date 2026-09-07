@@ -391,14 +391,14 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         val blockedApps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
         val triggeredAppEntry = blockedApps.firstOrNull { blockEntry ->
             val parts = blockEntry.split("|")
-            val appName = parts.getOrNull(0)?.trim()?.lowercase() ?: ""
-            val pkgName = parts.getOrNull(1)?.trim()?.lowercase() ?: ""
+            val targetPkg = parts.getOrNull(0)?.trim()?.lowercase() ?: ""
+            val displayName = parts.getOrNull(3)?.trim()?.lowercase() ?: targetPkg
             
-            if (pkgName.isNotEmpty() && lowerPkg.contains(pkgName)) {
+            if (targetPkg.isNotEmpty() && lowerPkg.contains(targetPkg)) {
                 true
             } else {
-                val actualBlockPkg = popularAppPackageMap[appName] ?: appName
-                lowerPkg.contains(actualBlockPkg)
+                val actualBlockPkg = popularAppPackageMap[displayName] ?: displayName
+                lowerPkg.contains(actualBlockPkg) || lowerPkg.contains(targetPkg)
             }
         }
 
@@ -487,63 +487,36 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
 
         val blockedWebs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
         for (entry in blockedWebs) {
-        val parts = entry.split("|")
+            val parts = entry.split("|")
+            val targetDomain = parts.getOrNull(0)?.lowercase()?.trim() ?: continue
+            val displayWord = parts.getOrNull(3)?.lowercase()?.trim() ?: targetDomain
 
-        val displayWord = parts[0]
-            .lowercase()
-            .trim()
+            val baseWord = targetDomain
+                .replace("www.", "")
+                .replace(".com", "")
+                .replace(".org", "")
+                .replace(".net", "")
+                .replace(".tv", "")
 
-        val domainWord = parts
-            .getOrNull(1)
-            ?.lowercase()
-            ?.trim()
-            ?: displayWord
+            if (lowerAllText.contains(baseWord) || lowerAllText.contains(displayWord) || lowerAllText.contains(targetDomain)) {
+                var ctx: String? = null
 
-        val baseWord = domainWord
-            .replace("www.", "")
-            .replace(".com", "")
-            .replace(".org", "")
-            .replace(".net", "")
-
-        if (
-            lowerAllText.contains(baseWord) ||
-            lowerAllText.contains(displayWord)
-        ) {
-            var ctx: String? = null
-
-            if (isBrowserApp) {
-                if (
-                    urlBarText != null &&
-                    !isSearchEngineUrl &&
-                    (
-                        urlBarText.contains(baseWord) ||
-                        urlBarText.contains(domainWord)
-                    )
-                ) {
-                    ctx = "URL Bar: " + urlBarText
-
-                } else if (
-                    !isOnWhitelistedSite &&
-                    listOf(
-                        baseWord + ".com",
-                        "m." + baseWord + ".com",
-                        baseWord + ".org",
-                        "www." + baseWord + ".com",
-                        "youtu.be",
-                        baseWord + ".net"
-                    ).any {
-                        lowerAllText.contains(it)
+                if (isBrowserApp) {
+                    if (urlBarText != null && !isSearchEngineUrl) {
+                        if (urlBarText.contains(targetDomain) || urlBarText.contains(baseWord + ".com") || urlBarText.contains("m." + baseWord)) {
+                            ctx = "URL Bar: " + urlBarText
+                        }
+                    } 
+                    
+                    if (ctx == null && !isOnWhitelistedSite) {
+                        val variants = listOf(baseWord + ".com", "m." + baseWord + ".com", baseWord + ".org", "www." + baseWord + ".com", "youtu.be", baseWord + ".net", baseWord + ".tv")
+                        if (variants.any { lowerAllText.contains(it) }) {
+                            ctx = "Browser Match: " + baseWord
+                        }
                     }
-                ) {
-                    ctx = "Browser Match: " + baseWord
+                } else {
+                    ctx = ScannerUtils.extractDangerousContext(rootNode, baseWord)
                 }
-
-            } else {
-                ctx = ScannerUtils.extractDangerousContext(
-                    rootNode,
-                    baseWord
-                )
-            }
 
             if (ctx != null) {
                 val isFirstTime =

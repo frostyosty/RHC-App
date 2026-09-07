@@ -111,7 +111,7 @@ if (state == "BATTLE") {
 
 internal fun GameActivity.updateBattleUI() {
     val btn1 = findViewById<Button>(R.id.btnMove1); val btn2 = findViewById<Button>(R.id.btnMove2)
-    val btn3 = (btn2.parent as? ViewGroup)?.findViewWithTag<Button>("BTN_MOVE_3")
+    val btn3 = findViewById<Button>(R.id.btnMove3)
     val infoRow = findViewById<View>(R.id.infoRow); val tvInfoPanel = findViewById<TextView>(R.id.tvBattleInfoPanel)
     val info1 = findViewById<TextView>(R.id.infoMove1); val info2 = findViewById<TextView>(R.id.infoMove2); val info3 = findViewById<TextView>(R.id.infoMove3)
     val actionRow = findViewById<View>(R.id.actionRow)

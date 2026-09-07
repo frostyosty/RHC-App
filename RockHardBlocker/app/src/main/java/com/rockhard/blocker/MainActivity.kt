@@ -415,10 +415,7 @@ class MainActivity : Activity() {
     val blockedPkgNames = blockedAppsStr
         .split(",")
         .filter { it.isNotEmpty() }
-        .map {
-            it.split("|").getOrNull(1)?.trim()?.lowercase()
-                ?: it.split("|")[0].trim().lowercase()
-        }
+        .map { it.split("|")[0].trim().lowercase() }
 for (info in resolveInfos) {
             val appName = info.loadLabel(pm).toString()
             val pkgName = info.activityInfo.packageName
@@ -449,10 +446,7 @@ for (info in resolveInfos) {
     val blockedWebDomains = blockedWebsStr
         .split(",")
         .filter { it.isNotEmpty() }
-        .map {
-            it.split("|").getOrNull(1)?.trim()?.lowercase()
-                ?: it.split("|")[0].trim().lowercase()
-        }
+        .map { it.split("|")[0].trim().lowercase() }
 
 
 

@@ -119,16 +119,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             ShowWindow(g_hDashboardWindow, SW_RESTORE); 
             SetWindowPos(g_hDashboardWindow, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
             SetWindowPos(g_hDashboardWindow, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-            HWND hFore = GetForegroundWindow();
-            DWORD foreThread = GetWindowThreadProcessId(hFore, NULL);
-            DWORD appThread = GetCurrentThreadId();
-            if (foreThread != appThread) {
-                AttachThreadInput(appThread, foreThread, TRUE);
-                SetForegroundWindow(g_hDashboardWindow);
-                AttachThreadInput(appThread, foreThread, FALSE);
-            } else {
-                SetForegroundWindow(g_hDashboardWindow);
-            } 
+            SetForegroundWindow(g_hDashboardWindow);
+            
+            // ✅ COMPLIANCE FIX: Use standard FlashWindowEx instead of Thread Hijacking
+            FLASHWINFO fwi = {0};
+            fwi.cbSize = sizeof(FLASHWINFO);
+            fwi.hwnd = g_hDashboardWindow;
+            fwi.dwFlags = FLASHW_ALL | FLASHW_TIMERNOFG;
+            fwi.uCount = 5;
+            fwi.dwTimeout = 0;
+            FlashWindowEx(&fwi); 
             RHC::CustomTaskManager::Show(); 
             RHC::UI::CustomModal::Show(g_hDashboardWindow, L"Secure Task Manager Initialized", L"Welcome to the Momentum Core.\n\nThis is your new impenetrable Task Manager.");
         } 
