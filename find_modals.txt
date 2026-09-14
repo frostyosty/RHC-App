@@ -1,0 +1,4 @@
+/workspaces/RHC-App/find_modals.txt
+/workspaces/RHC-App/rg_modals.txt
+/workspaces/RHC-App/rhc-desktop/src/ui/CustomModal.h
+/workspaces/RHC-App/rhc-desktop/src/ui/CustomModal.cpp

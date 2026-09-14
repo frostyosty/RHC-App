@@ -3,3 +3,32 @@
 
 IDI_APPICON ICON "rhc_icon.ico"
 1 24 "app.manifest"
+
+1 VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Rock Hard Blocker"
+            VALUE "FileDescription", "RHC Momentum Shield"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "rhc_desktop.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Rock Hard Blocker"
+            VALUE "OriginalFilename", "rhc_desktop.exe"
+            VALUE "ProductName", "Rock Hard Blocker"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
