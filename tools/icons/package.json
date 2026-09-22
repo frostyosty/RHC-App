@@ -1,0 +1,9 @@
+{
+  "name": "rhc-icon-tools",
+  "private": true,
+  "description": "Generates rhc-desktop and rhc-android app icons from a master image.",
+  "dependencies": {
+    "sharp": "^0.35.3",
+    "png-to-ico": "^3.0.2"
+  }
+}

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$ROOT_DIR"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || dirname "$(dirname "$SCRIPT_DIR")")"
+CANDIDATES_DIR="$SCRIPT_DIR/candidates"
 
 shopt -s nullglob
-files=( *.png )
+files=( "$CANDIDATES_DIR"/*.png )
 shopt -u nullglob
 
 if [ ${#files[@]} -eq 0 ]; then
-  echo "❌ No .png files found in the root directory."
+  echo "❌ No .png files found in $CANDIDATES_DIR."
   exit 1
 fi
 
@@ -17,7 +18,7 @@ echo "=== DESKTOP ICON SELECTION ==="
 echo "Please select an image to use as the DESKTOP master icon:"
 i=1
 for f in "${files[@]}"; do
-  echo "  [$i] $f"
+  echo "  [$i] $(basename "$f")"
   ((i++))
 done
 read -rp "Enter number for Desktop: " choice1
@@ -27,7 +28,7 @@ echo "=== MOBILE ICON SELECTION ==="
 echo "Please select an image to use as the MOBILE master (Android):"
 i=1
 for f in "${files[@]}"; do
-  echo "  [$i] $f"
+  echo "  [$i] $(basename "$f")"
   ((i++))
 done
 read -rp "Enter number for Mobile: " choice2
@@ -45,11 +46,12 @@ echo
 echo "🖥️  Desktop Master: $MASTER_DESKTOP"
 echo "📱 Mobile Master: $MASTER_MOBILE"
 
-echo "⬇️  Installing temporary image processing tools..."
-npm install --no-save sharp png-to-ico >/dev/null 2>&1
+echo "⬇️  Installing image processing tools..."
+( cd "$SCRIPT_DIR" && npm install >/dev/null 2>&1 )
 
 echo "🔨 Generating Native Icons (Trimming to Square)..."
 
+cd "$SCRIPT_DIR"
 node -e '
 const sharp = require("sharp");
 const pngModule = require("png-to-ico");
@@ -60,7 +62,7 @@ async function generate() {
     try {
         const deskMaster = process.argv[1];
         const mobMaster = process.argv[2];
-        const rhcDir = "/workspaces/RHC-App";
+        const rhcDir = process.argv[3];
 
         console.log("  -> Creating square cropped masters...");
 
@@ -84,7 +86,7 @@ async function generate() {
             rhcDir + "/rhc-desktop/rhc_icon.png"
         );
 
-        const androidRes = rhcDir + "/RockHardBlocker/app/src/main/res";
+        const androidRes = rhcDir + "/rhc-android/app/src/main/res";
 
         const mipmaps = [
             { name: "mdpi", size: 48 },
@@ -116,4 +118,4 @@ async function generate() {
 }
 
 generate();
-' "$MASTER_DESKTOP" "$MASTER_MOBILE"
+' "$MASTER_DESKTOP" "$MASTER_MOBILE" "$ROOT_DIR"

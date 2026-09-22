@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")/.."
 BEASTS=("cacheon" "cardiol" "skirmalot" "cartini" "noobit" "atomit" "roamlet" "pronosaur" "gorella" "fleshwire" "lustrot" "darkone")
 ACTIONS=("idle" "walk" "defend" "attack")
 echo "======================================"

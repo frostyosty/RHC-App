@@ -1,6 +1,7 @@
 const fs = require('fs');
+const nodePath = require('path');
 try {
-    const path = 'app/src/main/java/com/rockhard/blocker/guardian/ShieldRuleEngine.kt';
+    const path = nodePath.join(__dirname, '..', 'app/src/main/java/com/rockhard/blocker/guardian/ShieldRuleEngine.kt');
     let code = fs.readFileSync(path, 'utf8');
 
     // 1. Upgrade the Hard Words block (Injecting Safe Phrases + Proximity Maps + isMatchValid)

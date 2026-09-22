@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # Navigate to the Android project folder
-PROJECT_DIR="/workspaces/RHC-App/RockHardBlocker"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 CONFIG_FILE="app/src/main/java/com/rockhard/blocker/Config.kt"
