@@ -3,7 +3,14 @@ import kotlin.random.Random
 
 internal fun GameActivity.processEnemyVictory() {
     AnimUtils.animDeath(findViewById(R.id.spriteEnemy))
+    currentEnemy?.let { playSpriteAnim(false, it.name, "faint", revertToIdle = false) }
     vibratePhone(300)
+
+    val playVictoryPose = {
+        if (!playerLastStand && party.isNotEmpty() && activePetIndex < party.size) {
+            playSpriteAnim(true, party[activePetIndex].name, "victory", revertToIdle = false)
+        }
+    }
 
     if (isTrainerBattle) {
         printLog("> Poacher's ${currentEnemy!!.name} fainted!")
@@ -16,6 +23,7 @@ internal fun GameActivity.processEnemyVictory() {
             party.add(capturedRescueTarget!!)
             printLog("> 🎉 RESCUE SUCCESS! ${capturedRescueTarget!!.name} has rejoined your party, forever changed by its survival!")
             isTrainerBattle = false; capturedRescueTarget = null
+            playVictoryPose()
             saveParty(); updatePartyScreen(); endBattle()
         } else {
             currentEnemy = enemyParty[0]
@@ -26,6 +34,7 @@ internal fun GameActivity.processEnemyVictory() {
         val ams = prefs.getInt("PLAYER_UNCLAIMED_AMULETS", 0)
         prefs.edit().putInt("PLAYER_UNCLAIMED_AMULETS", ams + 1).putBoolean("EVENT_ACTIVE", false).apply()
         printLog("> 👑 TITAN SLAIN! You obtained a [Titan's Amulet]! Equip it from your bag.")
+        playVictoryPose()
         endBattle()
     } else {
         val clone = currentEnemy!!.copy(hp = currentEnemy!!.maxHp, isNew = true, boughtAt = System.currentTimeMillis())
@@ -65,6 +74,7 @@ internal fun GameActivity.processEnemyVictory() {
                 }
             }
         }
+        playVictoryPose()
         saveItems(); updateBagScreen(); endBattle()
     }
 }

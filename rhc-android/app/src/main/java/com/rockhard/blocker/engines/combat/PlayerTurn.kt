@@ -21,6 +21,7 @@ internal fun GameActivity.executePlayerMove(moveName: String) {
 
     printLog("> ${activePet.name} attempts [$moveName]")
     AnimUtils.animAttack(findViewById(R.id.spritePlayer), true)
+    playSpriteAnim(true, activePet.name, "attack")
     AudioEngine.playSfx(this, "spr_${activePet.name.substringAfter("]").trim().lowercase()}_attack")
     AudioEngine.playSfx(this, "fx_${moveName.lowercase()}")
     AnimUtils.fireProjectile(findViewById(R.id.spriteVfx), true, activePet.type, currentEnemy?.type ?: "Normal", moveName)
@@ -81,7 +82,7 @@ internal fun GameActivity.executePlayerMove(moveName: String) {
             
             if (activePet.name.contains("[Vampiric]")) { val heal = (finalDmg * 0.15).toInt().coerceAtLeast(1); activePet.hp = (activePet.hp + heal).coerceAtMost(activePet.maxHp); printLog("> 🧛[Vampiric] stole $heal HP!") }
 
-            currentEnemy!!.hp -= finalDmg; updateHealthBars(); AnimUtils.animShake(findViewById(R.id.spriteEnemy)); vibratePhone(50)
+            currentEnemy!!.hp -= finalDmg; updateHealthBars(); AnimUtils.animShake(findViewById(R.id.spriteEnemy)); playSpriteAnim(false, currentEnemy!!.name, "hit"); vibratePhone(50)
             if (skillLog.isNotEmpty()) printLog(skillLog)
             
             if (currentEnemy!!.name.contains("[Spiked]") && finalDmg > 0) { val recoil = (finalDmg * 0.1).toInt().coerceAtLeast(1); activePet.hp -= recoil; printLog("> 🌵[Spiked] recoil! ${activePet.name} takes $recoil damage!"); updateHealthBars() }
@@ -107,8 +108,8 @@ cancelBattleTimer()
     
     val hasPlayerAmulet = prefs.getBoolean("PLAYER_HAS_AMULET", false); var dmg = Random.nextInt(1, 5)
     
-    mainHandler.postDelayed({ 
-        AnimUtils.animShake(findViewById(R.id.spriteEnemy)); vibratePhone(50)
+    mainHandler.postDelayed({
+        AnimUtils.animShake(findViewById(R.id.spriteEnemy)); playSpriteAnim(false, currentEnemy!!.name, "hit"); vibratePhone(50)
         if (hasPlayerAmulet) { dmg = (currentEnemy!!.maxHp * 0.25).toInt().coerceAtLeast(100); printLog("> 🔮 YOUR AMULET GLOWS! You strike with the force of a TITAN! $dmg damage!") } 
         else printLog("> It barely connects... $dmg damage.\n> ${currentEnemy?.name} looks at you with pity.")
         

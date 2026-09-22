@@ -36,6 +36,7 @@ internal fun GameActivity.triggerEnemyCounterAttack() {
 
     printLog("> ${currentEnemy?.name} attempts [$enemyMove] on ${target.name}...")
     AnimUtils.animAttack(findViewById(R.id.spriteEnemy), false)
+    currentEnemy?.let { playSpriteAnim(false, it.name, "attack") }
     AudioEngine.playSfx(this, "spr_${currentEnemy?.name?.replace(Regex("\\[.*?\\]"), "")?.trim()?.lowercase()}_attack")
     AudioEngine.playSfx(this, "fx_${enemyMove.lowercase()}")
     AnimUtils.fireProjectile(findViewById(R.id.spriteVfx), false, currentEnemy?.type ?: "Normal", target.type, enemyMove)
@@ -62,10 +63,10 @@ internal fun GameActivity.triggerEnemyCounterAttack() {
                 else { damage -= CombatState.playerShield; printLog("> 🛡️ SHIELD BROKEN! Absorbed ${CombatState.playerShield} dmg."); CombatState.playerShield = 0 }
             }
 
-            if (damage > 0) { target.hp -= damage; updateHealthBars(); AnimUtils.animShake(findViewById(R.id.spritePlayer)); vibratePhone(150); printLog("> 🩸 Hit! ${target.name} takes $damage damage.") }
-            
+            if (damage > 0) { target.hp -= damage; updateHealthBars(); AnimUtils.animShake(findViewById(R.id.spritePlayer)); playSpriteAnim(true, target.name, "hit"); vibratePhone(150); printLog("> 🩸 Hit! ${target.name} takes $damage damage.") }
+
             if (target.hp <= 0) {
-                AnimUtils.animDeath(findViewById(R.id.spritePlayer)); vibratePhone(500)
+                AnimUtils.animDeath(findViewById(R.id.spritePlayer)); playSpriteAnim(true, target.name, "faint", revertToIdle = false); vibratePhone(500)
                 val maxPartyHp = party.maxOfOrNull { it.maxHp } ?: 0
                 if (target.maxHp >= maxPartyHp) {
                     val targetLoc = if (LocationEngine.hasGPSPermission(this)) { val loc = LocationEngine.getCurrentLocation(this); val lat = loc?.first ?: -36.8485; val lon = loc?.second ?: 174.7633; LocationEngine.generateNearbySuburb(this, lat, lon) } else { val city = prefs.getString("CURRENT_CITY", "The Outskirts") ?: "The Outskirts"; "the outskirts of $city" }
