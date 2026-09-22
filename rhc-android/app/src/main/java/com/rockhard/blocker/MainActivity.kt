@@ -153,7 +153,6 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btnSafeAppManager)?.setOnClickListener { showSafeUninstaller() }
         
         findViewById<Button>(R.id.btnTestFilter)?.setOnClickListener {
-            refreshUI()
             val step1 = isAccessibilityServiceEnabled(this, GuardianService::class.java)
             val step2 = dpm.isAdminActive(compName)
             val pow = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
@@ -162,8 +161,17 @@ class MainActivity : Activity() {
             val step4 = prefs.getBoolean("STEP4_CLICKED", false)
             val step5 = prefs.getBoolean("STEP5_CLICKED", false)
             val done = (step1 && step2 && step3 && (!isChinese || (step4 && step5)))
-            if (done) {
-                Toast.makeText(this, "🛡️ ALL SYSTEMS VERIFIED! Reward Unlocked!", Toast.LENGTH_LONG).show()
+            val isPremium = prefs.getBoolean("REWARD_PREMIUM", false)
+            if (done && !isPremium) {
+                prefs.edit().putBoolean("REWARD_PREMIUM", true).apply()
+                if (BuildConfig.FLAVOR.lowercase().contains("gamers")) {
+                    val legendary = if (kotlin.random.Random.nextBoolean()) "Aegis,Legendary,250,250,Light Pulse,Nova Shield,Orbital Cannon,0,0,0,0,true,None,0,0,0,0,None,0" else "Titan,Legendary,280,280,Feral Strike,Parry,Apex Predator,0,0,0,0,true,None,0,0,0,0,None,0"
+                    val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
+                    prefs.edit().putString("PARTY_DATA", if(partyStr.isEmpty()) legendary else "$partyStr;$legendary").apply()
+                    Toast.makeText(this, "🛡️ ALL SYSTEMS VERIFIED! Legendary Netbeast Unlocked!", Toast.LENGTH_LONG).show()
+                } else { MomentumEngine.addEarnedMomentum(prefs, "System Secured Bonus", false); Toast.makeText(this, "🛡️ ALL SYSTEMS VERIFIED! Gained 20 minutes of Momentum!", Toast.LENGTH_LONG).show() }
+            } else if (isPremium) {
+                Toast.makeText(this, "🛡️ Reward already claimed!", Toast.LENGTH_SHORT).show()
             } else {
                 val missing = mutableListOf<String>()
                 if (!step1) missing.add("Step 1 (Accessibility)")
@@ -173,6 +181,7 @@ class MainActivity : Activity() {
                 if (isChinese && !step5) missing.add("Step 5 (Secure Manager)")
                 Toast.makeText(this, "⚠️ Setup incomplete! Missing: " + missing.joinToString(", "), Toast.LENGTH_LONG).show()
             }
+            refreshUI()
         }
 
 
@@ -519,18 +528,20 @@ btn2.isEnabled = step1Done; btnBatteryOpt.isEnabled = step1Done && step2Done
         if (btn4?.visibility == View.VISIBLE && step4Done) { btn4.text = "STEP 4: VERIFIED ✔️"; btn4.setBackgroundResource(R.drawable.bg_btn_success) }
         if (btn5?.visibility == View.VISIBLE && step5Done) { btn5.text = "STEP 5: VERIFIED ✔️"; btn5.setBackgroundResource(R.drawable.bg_btn_success) }
 
-        val isSetupDone = (step1Done && step2Done && stepBatteryDone && (!isChinesePhone || (step4Done && step5Done))) || isPremium
+        val stepsComplete = (step1Done && step2Done && stepBatteryDone && (!isChinesePhone || (step4Done && step5Done)))
+        val isSetupDone = stepsComplete || isPremium
 
-        if (isSetupDone && !isPremium) {
-            prefs.edit().putBoolean("REWARD_PREMIUM", true).apply()
-            if (BuildConfig.FLAVOR.lowercase().contains("gamers")) {
-                val legendary = if (kotlin.random.Random.nextBoolean()) "Aegis,Legendary,250,250,Light Pulse,Nova Shield,Orbital Cannon,0,0,0,0,true,None,0,0,0,0,None,0" else "Titan,Legendary,280,280,Feral Strike,Parry,Apex Predator,0,0,0,0,true,None,0,0,0,0,None,0"
-                val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
-                prefs.edit().putString("PARTY_DATA", if(partyStr.isEmpty()) legendary else "$partyStr;$legendary").apply()
-                Toast.makeText(this, "SYSTEM SECURED! Legendary Netbeast Unlocked!", Toast.LENGTH_LONG).show()
-            } else { MomentumEngine.addEarnedMomentum(prefs, "System Secured Bonus", false); Toast.makeText(this, "SYSTEM SECURED! Gained 20 minutes of Momentum!", Toast.LENGTH_LONG).show() }
+        // NOTE: the reward itself (REWARD_PREMIUM + bonus) is only granted from the
+        // "VERIFY ALL (UNLOCKS REWARD)" button's click handler, not here. refreshUI() runs
+        // on every onResume(), so granting it here handed out the reward silently the moment
+        // the steps were done, defeating the point of making the user claim it.
+        val btnClaim = findViewById<Button>(R.id.btnTestFilter)
+        if (stepsComplete && !isPremium) {
+            btnClaim?.text = "CLAIM REWARD"
+        } else if (isPremium) {
+            btnClaim?.text = "REWARD CLAIMED ✔️"
         }
-        
+
         findViewById<View>(R.id.cardOvercomeApp)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
         findViewById<View>(R.id.cardOvercomeWeb)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
         

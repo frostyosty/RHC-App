@@ -613,7 +613,15 @@ namespace RHC {
                     SendMessage(g_hEditRedirectCustom, WM_SETFONT, (WPARAM)g_hFontNormal, TRUE);
                     SendMessage(g_hListBlocks, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE); SendMessage(g_hListRedirects, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
                     SendMessage(g_hListEarned, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE); SendMessage(g_hListSpent, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
-                    
+
+                    // The dashboard window has no WS_THICKFRAME, so it can't be resized by the
+                    // user and WM_SIZE never fires after creation - the tree above would
+                    // otherwise sit unused and every control would stay at the raw legacy
+                    // coordinates passed to CreateWindowExW. Arrange it once immediately so the
+                    // flex layout is what actually renders.
+                    RECT rcInitial; GetClientRect(hwnd, &rcInitial);
+                    FlexEngine::Arrange(g_dashboardLayout, rcInitial);
+
                     RefreshBlockListUI();
                     return 0;
                 }
