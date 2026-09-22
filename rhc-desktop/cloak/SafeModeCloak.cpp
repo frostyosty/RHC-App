@@ -18,19 +18,11 @@ namespace RHC {
     }
 
     void CloakEngine::UncloakIfNeeded() {
-    // REMOVED: Cloaking behaviors neutralized.
-}
-
-            // Relaunch the real app and kill the disguise
-            ShellExecuteA(NULL, "open", newPath.c_str(), NULL, NULL, SW_SHOW);
-            ExitProcess(0);
-        }
+        // REMOVED: Cloaking behaviors neutralized.
     }
 
     void CloakEngine::EngageDeadMansSwitch() {
-    // REMOVED: Self-copying and hiding files violates Microsoft AV policies.
-    // Roadmap: Transition to a standard Windows SYSTEM Service (SCM).
-}
-        }
+        // REMOVED: Self-copying and hiding files violates Microsoft AV policies.
+        // Roadmap: Transition to a standard Windows SYSTEM Service (SCM).
     }
 }

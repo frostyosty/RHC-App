@@ -3,6 +3,7 @@
 *.exe
 *.zip
 *.o
+*.res
 
 # Android build output & local Gradle state
 **/app/build/
