@@ -78,9 +78,10 @@ but `ShieldRuleEngine.kt` incorrectly read index `1` as the domain, resulting in
 
 # BUILD / RELEASE
 
-Run `./release.sh` from the repo root. It shows a numbered menu (Desktop,
-each of the four Android flavors, and "all four flavors"), takes your
-choices as a single string of digits (e.g. `13` for Desktop + Gamers
+Run `./release.sh` from the repo root. It shows a numbered menu (`1` = Desktop +
+all four Android flavors, the default if you just press Enter; then Desktop,
+each of the four Android flavors, and "all four flavors" as `2`–`7`), takes
+your choices as a single string of digits (e.g. `24` for Desktop + Gamers
 Female Homevisits), builds each selected target, copies the resulting
 apk(s)/exe to the repo root under their established filenames, and then
-optionally offers to `gh release create` them to `frostyosty/htc-downloads-rhc`.
+publishes them with `gh release create` to `frostyosty/htc-downloads-rhc`.
