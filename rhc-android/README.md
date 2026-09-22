@@ -80,7 +80,7 @@ but `ShieldRuleEngine.kt` incorrectly read index `1` as the domain, resulting in
 
 ## Male Momentum Only
 
-cd /workspaces/RHC-App/RockHardBlocker
+cd /workspaces/RHC-App/rhc-android
 ./gradlew assembleTimesaversMaleMomentumRelease
 cp app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk ../rhc_momentum_m.apk
 
@@ -115,7 +115,7 @@ gh release create "$TAG" ./rhc-desktop/rhc_desktop.exe \
 
 ## All Four Android Flavors
 
-cd /workspaces/RHC-App/RockHardBlocker
+cd /workspaces/RHC-App/rhc-android
 
 ./gradlew assembleGamersMaleNetbeastsRelease
 ./gradlew assembleGamersFemaleHomevisitsRelease
