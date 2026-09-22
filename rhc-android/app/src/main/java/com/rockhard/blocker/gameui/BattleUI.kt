@@ -18,8 +18,12 @@ internal fun GameActivity.showBattleArena(playerName: String, enemyName: String)
     val arena = findViewById<View>(R.id.battleArena)
     val pContainer = findViewById<View>(R.id.spritePlayerContainer)
     val eContainer = findViewById<View>(R.id.spriteEnemyContainer)
-    val pSprite = findViewById<TextView>(R.id.spritePlayer)
-    val eSprite = findViewById<TextView>(R.id.spriteEnemy)
+    val pSprite = findViewById<View>(R.id.spritePlayer)
+    val eSprite = findViewById<View>(R.id.spriteEnemy)
+    val pGif = findViewById<GifView>(R.id.spritePlayerGif)
+    val eGif = findViewById<GifView>(R.id.spriteEnemyGif)
+    val pLabel = findViewById<TextView>(R.id.spritePlayerLabel)
+    val eLabel = findViewById<TextView>(R.id.spriteEnemyLabel)
     val tvEnemyTraits = findViewById<TextView>(R.id.tvEnemyTraits)
 
     CombatState.reset(); arena.visibility = View.VISIBLE
@@ -36,8 +40,17 @@ internal fun GameActivity.showBattleArena(playerName: String, enemyName: String)
 
     val displayPName = if (playerName.contains("[Obscure]")) "[Obscure] $cleanPName" else playerName
     val displayEName = if (enemyName.contains("[Obscure]")) "[Obscure] $cleanEName" else enemyName
-    pSprite.text = "$displayPName Lvl $pLvl\n(Player)"; eSprite.text = "$displayEName Lvl $eLvl\n(Enemy)"
+    pLabel.text = "$displayPName Lvl $pLvl\n(Player)"; eLabel.text = "$displayEName Lvl $eLvl\n(Enemy)"
     pSprite.alpha = 1f; eSprite.alpha = 1f
+
+    val pSpriteRes = SpriteUtils.resolveSpriteRes(this, cleanPName)
+    val eSpriteRes = SpriteUtils.resolveSpriteRes(this, cleanEName)
+    pGif.setGifResource(if (pSpriteRes != 0) pSpriteRes else null)
+    eGif.setGifResource(if (eSpriteRes != 0) eSpriteRes else null)
+    pLabel.visibility = if (pSpriteRes != 0) View.GONE else View.VISIBLE
+    eLabel.visibility = if (eSpriteRes != 0) View.GONE else View.VISIBLE
+    pSprite.setBackgroundColor(android.graphics.Color.parseColor(if (pSpriteRes != 0) "#00000000" else "#1976D2"))
+    eSprite.setBackgroundColor(android.graphics.Color.parseColor(if (eSpriteRes != 0) "#00000000" else "#D32F2F"))
 
 // PARSE ENEMY TRAITS
     var eTraits = Regex("\\[(.*?)\\]").findAll(enemyName).map { it.groupValues[1] }.toList()

@@ -32,7 +32,14 @@ internal fun GameActivity.updatePartyScreen() {
             text = "➤  "
             setTextColor(Color.WHITE)
             textSize = 18f
-            visibility = if (index == activePetIndex) android.view.View.VISIBLE else android.view.View.INVISIBLE 
+            visibility = if (index == activePetIndex) android.view.View.VISIBLE else android.view.View.INVISIBLE
+        }
+
+        val spriteRes = SpriteUtils.resolveSpriteRes(this, p.name)
+        val ivSprite = GifView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(120, 120).apply { setMargins(0, 0, 24, 0) }
+            visibility = if (spriteRes != 0) android.view.View.VISIBLE else android.view.View.GONE
+            setGifResource(if (spriteRes != 0) spriteRes else null)
         }
 
         val textDataLayout = LinearLayout(this).apply {
@@ -60,7 +67,7 @@ internal fun GameActivity.updatePartyScreen() {
         }
         textDataLayout.addView(tvName); textDataLayout.addView(tvStats)
 
-        mainBar.addView(tvArrow); mainBar.addView(textDataLayout)
+        mainBar.addView(tvArrow); mainBar.addView(ivSprite); mainBar.addView(textDataLayout)
 
         if (index == activePetIndex) {
             val btnSell = Button(this).apply {
