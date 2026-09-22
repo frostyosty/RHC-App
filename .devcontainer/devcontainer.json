@@ -1,0 +1,33 @@
+{
+  // Rebuilds the RHC toolchain in a fresh Codespace: JDK 17 + Android SDK 34
+  // for rhc-android, mingw-w64 + NSIS for rhc-desktop, plus the dev tools
+  // described in CLAUDE.md. The heavy lifting is in post-create.sh.
+  "name": "RHC",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb"
+  },
+  "containerEnv": {
+    "ANDROID_HOME": "/home/codespace/android",
+    "ANDROID_SDK_ROOT": "/home/codespace/android",
+    "CCACHE_DIR": "/home/codespace/.ccache"
+  },
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/codespace/android/cmdline-tools/latest/bin:/home/codespace/android/platform-tools"
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "Sprite Studio", "onAutoForward": "notify" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "fwcd.kotlin",
+        "ms-vscode.cpptools",
+        "timonwong.shellcheck"
+      ]
+    }
+  }
+}
