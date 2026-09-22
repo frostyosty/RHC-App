@@ -3,9 +3,9 @@ from urllib.parse import urlparse, parse_qs
 from PIL import Image, ImageSequence
 
 PORT = 8080
-SAVE_DIR = "../../RockHardBlocker/app/src/main/res/drawable-nodpi/"
-AUDIO_DIR = "../../RockHardBlocker/app/src/main/res/raw/"
-MODELS_FILE = "../../RockHardBlocker/app/src/main/java/com/rockhard/blocker/GameModels.kt"
+SAVE_DIR = "../../rhc-android/app/src/main/res/drawable-nodpi/"
+AUDIO_DIR = "../../rhc-android/app/src/main/res/raw/"
+MODELS_FILE = "../../rhc-android/app/src/main/java/com/rockhard/blocker/GameModels.kt"
 
 # ADDED FRONT FACING ANIMATIONS
 ANIMATIONS =['idle', 'attack', 'hit', 'evade', 'faint', 'victory', 'explore', 'fx', 'walk_front', 'attack_front']
