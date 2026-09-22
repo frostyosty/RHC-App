@@ -3,7 +3,6 @@
 #include "DesktopUtils.h"
 #include "DashboardUI.h"
 #include "UIAScanner.h"
-#include "CustomTaskManager.h"
 #include "SystemOverride.h"
 #include "NightfallUI.h"
 #include "include/ShieldRuleEngine.h"
@@ -71,9 +70,8 @@ namespace RHC {
             } else { RHC::NightfallUI::UpdateOverlay(0, 0); }
 
             HWND hwnd = GetForegroundWindow();
-            if (!hwnd || hwnd == g_hMainWindow || hwnd == g_hDashboardWindow || 
-                hwnd == RHC::CustomTaskManager::GetWindowHandle() || 
-                hwnd == RHC::SystemOverride::GetWindowHandle() || 
+            if (!hwnd || hwnd == g_hMainWindow || hwnd == g_hDashboardWindow ||
+                hwnd == RHC::SystemOverride::GetWindowHandle() ||
                 hwnd == RHC::NightfallUI::GetWindowHandle()) continue;
 
             wchar_t title[512]; GetWindowTextW(hwnd, title, sizeof(title)/sizeof(wchar_t));

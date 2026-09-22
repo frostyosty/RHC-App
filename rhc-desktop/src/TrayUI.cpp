@@ -9,7 +9,6 @@
 #include <chrono>
 
 namespace RHC {
-    namespace CustomTaskManager { void Show(); }
     namespace CloakEngine { void EngageDeadMansSwitch(); }
 }
 
@@ -17,19 +16,6 @@ namespace RHC {
     namespace TrayUI {
         HWND hBtnSleep = NULL;
         HWND hBtnShutDown = NULL;
-
-        LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
-            if (nCode == HC_ACTION) {
-                KBDLLHOOKSTRUCT* pKeyBoard = (KBDLLHOOKSTRUCT*)lParam;
-                if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-                    if (pKeyBoard->vkCode == VK_ESCAPE && (GetAsyncKeyState(VK_CONTROL) & 0x8000) && (GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
-                        PostMessage(g_hMainWindow, WM_COMMAND, ID_TRAY_TASKMGR, 0); 
-                        return 1; 
-                    }
-                }
-            }
-            return CallNextHookEx(g_hKeyboardHook, nCode, wParam, lParam);
-        }
 
         LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch (uMsg) {
@@ -65,9 +51,8 @@ namespace RHC {
                     else if (lParam == WM_RBUTTONUP) { 
                         POINT pt; GetCursorPos(&pt); 
                         HMENU hMenu = CreatePopupMenu(); 
-                        AppendMenuW(hMenu, MF_STRING, ID_TRAY_OPEN, L"Open Dashboard"); 
-                        AppendMenuW(hMenu, MF_STRING, ID_TRAY_TASKMGR, L"Open Task Manager"); 
-                        if (GetAsyncKeyState(VK_SHIFT) & 0x8000) { 
+                        AppendMenuW(hMenu, MF_STRING, ID_TRAY_OPEN, L"Open Dashboard");
+                        if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
                             AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL); 
                             
                             RHC::DatabaseManager db("rhc_state.db");
@@ -97,8 +82,7 @@ namespace RHC {
                 case WM_COMMAND: {
                     int id = LOWORD(wParam);
                     if (id == ID_TRAY_OPEN) { RHC::DashboardUI::UpdateDashboardText(); ShowWindow(g_hDashboardWindow, SW_RESTORE); SetForegroundWindow(g_hDashboardWindow); }
-                    if (id == ID_TRAY_TASKMGR) RHC::CustomTaskManager::Show();
-                    
+
                     if (id == ID_TRAY_EXIT) { 
                         RHC::DatabaseManager db("rhc_state.db");
                         std::string unlockStr = db.getString("EXIT_UNLOCK_TIME", "0");

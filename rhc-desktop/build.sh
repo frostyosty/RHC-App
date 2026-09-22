@@ -20,7 +20,6 @@ x86_64-w64-mingw32-g++ -O2 -std=c++17 -s \
     rhc-desktop/src/Guardian.cpp \
     rhc-desktop/src/DashboardUI.cpp \
     rhc-desktop/src/TrayUI.cpp \
-    rhc-desktop/src/CustomTaskManager.cpp \
     rhc-desktop/src/SystemOverride.cpp \
     rhc-desktop/src/NightfallUI.cpp \
     rhc-desktop/src/CrashReporter.cpp \
@@ -45,7 +44,7 @@ x86_64-w64-mingw32-g++ -O2 -std=c++17 -s \
     StringUtils.o DatabaseManager.o sqlite3.o \
     -o rhc-desktop/rhc_guardian_svc.exe \
     -static -static-libgcc -static-libstdc++ \
-    -ladvapi32
+    -ladvapi32 -lwtsapi32
 
 rm *.o rhc-desktop/app.res
 echo "✅ SUCCESS! rhc_desktop.exe and rhc_guardian_svc.exe generated."

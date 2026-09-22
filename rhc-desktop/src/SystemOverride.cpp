@@ -93,7 +93,6 @@ namespace RHC {
         }
 
         void ExitCleanly() {
-            if (g_hKeyboardHook) UnhookWindowsHookEx(g_hKeyboardHook);
             Shell_NotifyIconW(NIM_DELETE, &nid);
             ExitProcess(0);
         }

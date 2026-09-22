@@ -17,14 +17,24 @@
 // the kind of behavior that gets flagged.
 //
 // Deliberately NOT moved here: foreground-window scanning, UI Automation
-// text scanning, and the red-wall/nightfall overlays. Windows services run
-// in Session 0 with no access to the interactive user's desktop, so none
-// of that can run from a service at all - it stays in the GUI process
+// text scanning, and the red-wall/nightfall fade overlay. Windows services
+// run in Session 0 with no access to the interactive user's desktop, so
+// none of that can run from a service at all - it stays in the GUI process
 // (Guardian.cpp) and remains something a user can pause simply by closing
-// the GUI. Only the hosts-file block and the exe blocklist survive that.
+// the GUI.
+//
+// Nightfall's actual enforcement (as opposed to the fade visual) DOES live
+// here: WTSDisconnectSession is a session-management call, not a
+// desktop-drawing one, so it works fine from Session 0 and doesn't depend
+// on the GUI being open. It drops the console session back to the Windows
+// login screen - same as a manual "lock this PC" - rather than trying to
+// identify and kill arbitrary processes, which would risk taking down
+// explorer.exe/other critical processes and would look far more malicious
+// than what it replaces.
 
 #include <windows.h>
 #include <tlhelp32.h>
+#include <wtsapi32.h>
 #include <ctime>
 #include <string>
 #include <vector>
@@ -105,6 +115,33 @@ namespace {
         CloseHandle(snap);
     }
 
+    void EnforceNightfallLock(RHC::DatabaseManager& db) {
+        int nfStart = db.getInt("NIGHTFALL_START", -1);
+        int nfEnd = db.getInt("NIGHTFALL_END", -1);
+        if (nfStart == -1 || nfEnd == -1 || nfStart == nfEnd) return;
+
+        time_t t = time(nullptr); tm* now = localtime(&t);
+        int currentMins = now->tm_hour * 60 + now->tm_min;
+        bool isNightfall = (nfStart < nfEnd) ? (currentMins >= nfStart && currentMins <= nfEnd)
+                                              : (currentMins >= nfStart || currentMins <= nfEnd);
+        if (!isNightfall) return;
+
+        DWORD sessionId = WTSGetActiveConsoleSessionId();
+        if (sessionId == 0xFFFFFFFF) return; // no one logged in at the console
+
+        LPWSTR buf = nullptr; DWORD bytes = 0;
+        bool isActive = false;
+        if (WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSConnectState, &buf, &bytes) && buf) {
+            isActive = (*reinterpret_cast<WTS_CONNECTSTATE_CLASS*>(buf) == WTSActive);
+            WTSFreeMemory(buf);
+        }
+        // Only fires while the session is actively in use - an already-locked
+        // or already-disconnected session is left alone rather than re-poked
+        // every tick, and re-checks each loop so logging back in during the
+        // window locks it right back out again.
+        if (isActive) WTSDisconnectSession(WTS_CURRENT_SERVER_HANDLE, sessionId, FALSE);
+    }
+
     void ReportStatus(DWORD state, DWORD exitCode = NO_ERROR, DWORD waitHint = 0) {
         g_Status.dwCurrentState = state;
         g_Status.dwWin32ExitCode = exitCode;
@@ -139,6 +176,7 @@ namespace {
         while (WaitForSingleObject(g_StopEvent, 2000) == WAIT_TIMEOUT) {
             RHC::DatabaseManager db(dbPathUtf8);
             EnforceExeBlocklist(db);
+            EnforceNightfallLock(db);
             if (syncCounter++ >= 30) { SyncHostsFromDb(db); syncCounter = 0; }
         }
 

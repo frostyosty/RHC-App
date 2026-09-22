@@ -30,7 +30,6 @@ extern HWND g_hComboChores;
 extern HWND g_hComboWork;
 
 // --- SHARED SYSTEM HANDLES ---
-extern HHOOK g_hKeyboardHook;
 extern NOTIFYICONDATAW nid;
 
 // --- SHARED STATE ---
@@ -52,7 +51,6 @@ extern std::map<std::string, std::vector<TaskItem>> g_CategorizedTasks;
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
 #define ID_TRAY_OPEN 1002
-#define ID_TRAY_TASKMGR 1003
 #define ID_TRAY_OVERRIDE 1004
 #define ID_TRAY_NIGHTFALL 1005
 
@@ -72,7 +70,6 @@ extern std::map<std::string, std::vector<TaskItem>> g_CategorizedTasks;
 
 #define ID_LIST_EARNED 2020
 #define ID_LIST_SPENT 2021
-#define ID_BTN_OPEN_TASKMGR 2022
 #define ID_BTN_DEV_CONSOLE 4003
 
 // --- NIGHTFALL BUTTONS ---

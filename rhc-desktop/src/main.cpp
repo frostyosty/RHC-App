@@ -21,7 +21,6 @@
 
 #include "UIAScanner.h"
 #include "HostsBlocker.h"
-#include "CustomTaskManager.h"
 #include "SystemOverride.h"
 #include "CrashReporter.h"
 #include "NightfallUI.h"
@@ -49,7 +48,6 @@ HWND g_hComboWork = NULL;
 
 HWND g_hHoveredBtn = NULL; 
 HWND g_hPressedBtn = NULL; 
-HHOOK g_hKeyboardHook = NULL;
 
 std::wstring g_RedWallReason = L"";
 NOTIFYICONDATAW nid = {};
@@ -93,9 +91,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         else g_CategorizedTasks["Work"].push_back(t); 
     }
     
-    g_hKeyboardHook = SetWindowsHookExW(WH_KEYBOARD_LL, RHC::TrayUI::LowLevelKeyboardProc, hInstance, 0);
-
-    WNDCLASSW wc = {0}; 
+    WNDCLASSW wc = {0};
     wc.lpfnWndProc = RHC::TrayUI::WindowProc; wc.hInstance = hInstance; wc.lpszClassName = L"RHC_Native_UI"; 
     wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPICON)); RegisterClassW(&wc);
     
@@ -106,7 +102,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_hMainWindow = CreateWindowExW(WS_EX_TOPMOST, L"RHC_Native_UI", L"RHC Red Wall", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, NULL, NULL, hInstance, NULL);
     g_hDashboardWindow = CreateWindowExW(0, L"RHC_Dashboard", L"Momentum Core", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 800, 900, NULL, NULL, hInstance, NULL);
     
-    RHC::CustomTaskManager::Initialize(hInstance); RHC::SystemOverride::Initialize(hInstance); RHC::NightfallUI::Initialize(hInstance);
+    RHC::SystemOverride::Initialize(hInstance); RHC::NightfallUI::Initialize(hInstance);
 
     nid.cbSize = sizeof(NOTIFYICONDATAW); nid.hWnd = g_hMainWindow; nid.uID = 1001; 
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP; nid.uCallbackMessage = WM_TRAYICON; 
@@ -135,9 +131,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             fwi.dwFlags = FLASHW_ALL | FLASHW_TIMERNOFG;
             fwi.uCount = 5;
             fwi.dwTimeout = 0;
-            FlashWindowEx(&fwi); 
-            RHC::CustomTaskManager::Show(); 
-            RHC::UI::CustomModal::Show(g_hDashboardWindow, L"Secure Task Manager Initialized", L"Welcome to the Momentum Core.\n\nThis is your new impenetrable Task Manager.");
+            FlashWindowEx(&fwi);
+            RHC::UI::CustomModal::Show(g_hDashboardWindow, L"Momentum Core Initialized", L"Welcome to the Momentum Core.");
         } 
     }
 
@@ -151,7 +146,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    if (g_hKeyboardHook) UnhookWindowsHookEx(g_hKeyboardHook);
     RHC::UI::Renderer::Shutdown();
     return 0;
 }

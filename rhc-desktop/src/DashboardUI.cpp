@@ -26,7 +26,6 @@
 #define ID_BTN_REMOVE_BLOCK 3006
 
 namespace RHC {
-    namespace CustomTaskManager { void Show(); }
     namespace SystemOverride { void Show(); }
     namespace NightfallUI { void Show(); }
     namespace HostsBlocker { void SyncHostsFile(const std::vector<std::string>& blockedDomains); }
@@ -438,12 +437,11 @@ namespace RHC {
                     g_hBtnFav3 = CreateWindowExW(0, L"BUTTON", L"Fav 3", WS_CHILD, 530, 730, 230, 40, hwnd, (HMENU)ID_BTN_FAV3, NULL, NULL);
                     RHC::UI::SmoothButton::Attach(g_hBtnFav1); RHC::UI::SmoothButton::Attach(g_hBtnFav2); RHC::UI::SmoothButton::Attach(g_hBtnFav3);
 
-                    HWND bTaskMgr = CreateWindowExW(0, L"BUTTON", L"🛡️ Secure Task Mgr", WS_CHILD | WS_VISIBLE, 20, 800, 230, 40, hwnd, (HMENU)ID_BTN_OPEN_TASKMGR, NULL, NULL);
-                    HWND bOverride = CreateWindowExW(0, L"BUTTON", L"⚙️ System Override", WS_CHILD | WS_VISIBLE, 275, 800, 230, 40, hwnd, (HMENU)ID_TRAY_OVERRIDE, NULL, NULL);
-                    HWND bNightfall = CreateWindowExW(0, L"BUTTON", L"🌙 Nightfall Schedule", WS_CHILD | WS_VISIBLE, 530, 800, 230, 40, hwnd, (HMENU)ID_TRAY_NIGHTFALL, NULL, NULL);
+                    HWND bOverride = CreateWindowExW(0, L"BUTTON", L"⚙️ System Override", WS_CHILD | WS_VISIBLE, 20, 800, 230, 40, hwnd, (HMENU)ID_TRAY_OVERRIDE, NULL, NULL);
+                    HWND bNightfall = CreateWindowExW(0, L"BUTTON", L"🌙 Nightfall Schedule", WS_CHILD | WS_VISIBLE, 275, 800, 230, 40, hwnd, (HMENU)ID_TRAY_NIGHTFALL, NULL, NULL);
                     HWND bDevConsole = CreateWindowExW(0, L"BUTTON", L"💻 Dev Console (CLI)", WS_CHILD | WS_VISIBLE, 275, 850, 230, 40, hwnd, (HMENU)ID_BTN_DEV_CONSOLE, NULL, NULL);
                     
-                    RHC::UI::SmoothButton::Attach(bTaskMgr); RHC::UI::SmoothButton::Attach(bOverride); 
+                    RHC::UI::SmoothButton::Attach(bOverride); 
                     RHC::UI::SmoothButton::Attach(bNightfall); RHC::UI::SmoothButton::Attach(bDevConsole);
 
                     // =======================================================
@@ -596,8 +594,6 @@ namespace RHC {
                     CSSEngine::ParseInline("height: 45px; flex-direction: row; justify-content: space-between; align-items: stretch; margin-bottom: 10px;", rowCmds->style, rowCmds->layout);
                     g_dashboardLayout->AddChild(rowCmds);
 
-                    rowCmds->AddChild(new UINode(bTaskMgr));
-                    CSSEngine::ParseInline("flex-grow: 1; height: 40px; margin-right: 10px;", rowCmds->children.back()->style, rowCmds->children.back()->layout);
                     rowCmds->AddChild(new UINode(bOverride));
                     CSSEngine::ParseInline("flex-grow: 1; height: 40px; margin-right: 10px;", rowCmds->children.back()->style, rowCmds->children.back()->layout);
                     rowCmds->AddChild(new UINode(bNightfall));
@@ -760,7 +756,6 @@ namespace RHC {
                         }
                     }
 
-                    if (id == ID_BTN_OPEN_TASKMGR) RHC::CustomTaskManager::Show();
                     if (id == ID_TRAY_OVERRIDE) RHC::SystemOverride::Show();
                     if (id == ID_TRAY_NIGHTFALL) RHC::NightfallUI::Show();
                     
