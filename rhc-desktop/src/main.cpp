@@ -10,6 +10,7 @@
 #include "Guardian.h"
 #include "DashboardUI.h"
 #include "TrayUI.h"
+#include "InstallerUI.h"
 #include "ui/SmoothButton.h"
 #include "ui/CustomModal.h"
 #include "ui/Renderer.h"
@@ -72,7 +73,13 @@ std::map<std::string, std::vector<TaskItem>> g_CategorizedTasks;
 // APPLICATION ENTRY POINT
 // ==========================================
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    RHC::CrashReporter::Initialize(); 
+    // Self-install/uninstall check must run before anything else - in
+    // particular before CloakEngine::RegisterStartup() below, which would
+    // otherwise register whatever temporary path this exe was launched
+    // from (e.g. a Downloads folder) instead of the installed copy.
+    if (RHC::InstallerUI::CheckAndInstall(hInstance)) return 0;
+
+    RHC::CrashReporter::Initialize();
     RHC::CloakEngine::UncloakIfNeeded(); 
     RHC::CloakEngine::RegisterStartup(); 
     InitCommonControls();

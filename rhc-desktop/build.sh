@@ -15,6 +15,7 @@ x86_64-w64-mingw32-g++ -O2 -std=c++17 -Irhc-common -c rhc-common/src/Leaderboard
 x86_64-w64-mingw32-g++ -O2 -std=c++17 -s \
     -Irhc-common \
     rhc-desktop/src/main.cpp \
+    rhc-desktop/src/InstallerUI.cpp \
     rhc-desktop/src/DesktopUtils.cpp \
     rhc-desktop/src/Guardian.cpp \
     rhc-desktop/src/DashboardUI.cpp \
