@@ -104,17 +104,29 @@ namespace RHC {
             if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
                 RegDeleteValueA(hKey, "RHC_Core"); RegDeleteValueA(hKey, "Sync_Service_Host"); RegCloseKey(hKey);
             }
-            
+
             char path[MAX_PATH]; GetModuleFileNameA(NULL, path, MAX_PATH);
             std::string exePath(path);
-            
-            // Get directory containing the executable to resolve the absolute db path
+
+            // Get directory containing the executable to resolve the absolute install dir
             size_t pos = exePath.find_last_of("\\/");
             std::string dir = (pos != std::string::npos) ? exePath.substr(0, pos + 1) : "";
-            std::string dbPath = dir + "rhc_state.db";
-            
-            // Shell command to delete both database and exe after process termination
-            std::string cmd = "/c ping 127.0.0.1 -n 3 > nul & del \"" + dbPath + "\" & del \"" + exePath + "\"";
+            if (!dir.empty() && (dir.back() == '\\' || dir.back() == '/')) dir.pop_back();
+
+            // Stop and remove the guardian service, its Add/Remove Programs
+            // entry, and the whole install directory (exe, service exe, db,
+            // icon, generated uninstall.exe) - not just the two files the
+            // old flow deleted. This process already runs elevated
+            // (app.manifest requests requireAdministrator), so no extra
+            // "runas" prompt is needed here; the delay before this point is
+            // what makes the exit legitimate, not a UAC gate.
+            std::string cmd =
+                "/c sc stop RHCGuardian & sc delete RHCGuardian"
+                " & reg delete \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\RHC Momentum Shield\" /f"
+                " & del \"%USERPROFILE%\\Desktop\\RHC Momentum Shield.lnk\""
+                " & del \"%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\RHC Momentum Shield.lnk\""
+                " & ping 127.0.0.1 -n 3 > nul"
+                " & rmdir /s /q \"" + dir + "\"";
             ShellExecuteA(NULL, "open", "cmd.exe", cmd.c_str(), NULL, SW_HIDE); ExitCleanly();
         }
 
