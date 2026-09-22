@@ -66,7 +66,7 @@ ARTIFACTS=()
 build_desktop() {
   echo "🚀 Building Desktop..."
   bash rhc-desktop/build.sh
-  ARTIFACTS+=("rhc-desktop/rhc_desktop.exe")
+  ARTIFACTS+=("rhc-desktop/RHC_Installer.exe")
 }
 
 build_android_flavor() {

@@ -17,11 +17,11 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "Rock Hard Blocker"
+            VALUE "CompanyName", "Momentum"
             VALUE "FileDescription", "RHC Momentum Shield"
             VALUE "FileVersion", "1.0.0.0"
             VALUE "InternalName", "rhc_desktop.exe"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Rock Hard Blocker"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Momentum"
             VALUE "OriginalFilename", "rhc_desktop.exe"
             VALUE "ProductName", "Rock Hard Blocker"
             VALUE "ProductVersion", "1.0.0.0"

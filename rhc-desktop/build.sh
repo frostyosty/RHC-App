@@ -38,5 +38,18 @@ x86_64-w64-mingw32-g++ -O2 -std=c++17 -s \
     -static -static-libgcc -static-libstdc++ \
     -mwindows -lgdi32 -luser32 -lole32 -loleaut32 -lwinhttp -lrpcrt4 -lcomctl32 -luuid -lpowrprof -lgdiplus -ldwmapi
 
+x86_64-w64-mingw32-g++ -O2 -std=c++17 -s \
+    -Irhc-common \
+    rhc-desktop/service/GuardianService.cpp \
+    rhc-desktop/src/HostsBlocker.cpp \
+    StringUtils.o DatabaseManager.o sqlite3.o \
+    -o rhc-desktop/rhc_guardian_svc.exe \
+    -static -static-libgcc -static-libstdc++ \
+    -ladvapi32
+
 rm *.o rhc-desktop/app.res
-echo "✅ SUCCESS! rhc_desktop.exe generated."
+echo "✅ SUCCESS! rhc_desktop.exe and rhc_guardian_svc.exe generated."
+
+echo "📦 Packaging installer..."
+( cd rhc-desktop && makensis installer.nsi )
+echo "✅ SUCCESS! RHC_Installer.exe generated."

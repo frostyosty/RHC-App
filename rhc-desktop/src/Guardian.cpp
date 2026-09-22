@@ -78,7 +78,6 @@ namespace RHC {
 
             wchar_t title[512]; GetWindowTextW(hwnd, title, sizeof(title)/sizeof(wchar_t));
             std::wstring wtitle(title);
-            if (wtitle.find(L"Task Manager") != std::wstring::npos && wtitle.find(L"RHC_TaskMgr") == std::wstring::npos) { PostMessage(hwnd, WM_CLOSE, 0, 0); continue; }
 
             DWORD pid; GetWindowThreadProcessId(hwnd, &pid); HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_TERMINATE, FALSE, pid);
             bool isAppBlocked = false; std::wstring blockedExeName = L""; std::string u8Exe = "";
