@@ -76,66 +76,11 @@ but `ShieldRuleEngine.kt` incorrectly read index `1` as the domain, resulting in
 
 ---
 
-# BUILD / RELEASE COMMANDS
+# BUILD / RELEASE
 
-## Male Momentum Only
-
-cd /workspaces/RHC-App/rhc-android
-./gradlew assembleTimesaversMaleMomentumRelease
-cp app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk ../rhc_momentum_m.apk
-
-cd /workspaces/RHC-App
-unset GITHUB_TOKEN GH_TOKEN
-TAG="v$(date +%Y%m%d%H%M%S)"
-
-gh release create "$TAG" ./rhc_momentum_m.apk \
-  --repo frostyosty/htc-downloads-rhc \
-  --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
-  --notes "Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
-
-
-
-
-
-
-## Desktop
-
-cd /workspaces/RHC-App/rhc-desktop
-./build.sh
-
-cd /workspaces/RHC-App
-unset GITHUB_TOKEN GH_TOKEN
-TAG="v$(date +%Y%m%d%H%M%S)-desktop"
-
-gh release create "$TAG" ./rhc-desktop/rhc_desktop.exe \
-  --repo frostyosty/htc-downloads-rhc \
-  --title "Desktop Build $TAG" \
-  --notes "Latest build of the Win32 C++ Momentum Core."
-
-
-## All Four Android Flavors
-
-cd /workspaces/RHC-App/rhc-android
-
-./gradlew assembleGamersMaleNetbeastsRelease
-./gradlew assembleGamersFemaleHomevisitsRelease
-./gradlew assembleTimesaversMaleMomentumRelease
-./gradlew assembleTimesaversFemaleMomentumRelease
-
-cp app/build/outputs/apk/gamersMaleNetbeasts/release/app-gamersMaleNetbeasts-release.apk ../rhc_netbeasts.apk
-cp app/build/outputs/apk/gamersFemaleHomevisits/release/app-gamersFemaleHomevisits-release.apk ../rhc_homevisits.apk
-cp app/build/outputs/apk/timesaversMaleMomentum/release/app-timesaversMaleMomentum-release.apk ../rhc_momentum_m.apk
-cp app/build/outputs/apk/timesaversFemaleMomentum/release/app-timesaversFemaleMomentum-release.apk ../rhc_momentum_f.apk
-
-cd /workspaces/RHC-App
-unset GITHUB_TOKEN GH_TOKEN
-TAG="v$(date +%Y%m%d%H%M%S)"
-
-gh release create "$TAG" \
-  ./rhc_netbeasts.apk \
-  ./rhc_homevisits.apk \
-  ./rhc_momentum_m.apk \
-  ./rhc_momentum_f.apk \
-  --repo frostyosty/htc-downloads-rhc \
-  --title "Dev Build $TAG - Flawless UI & Anti-Farming Logic" \
-  --notes "Fixed the Setup Paradox, removed VPN penalties, added 60-second setup pass, and fixed Momentum UI padding."
+Run `./release.sh` from the repo root. It shows a numbered menu (Desktop,
+each of the four Android flavors, and "all four flavors"), takes your
+choices as a single string of digits (e.g. `13` for Desktop + Gamers
+Female Homevisits), builds each selected target, copies the resulting
+apk(s)/exe to the repo root under their established filenames, and then
+optionally offers to `gh release create` them to `frostyosty/htc-downloads-rhc`.
