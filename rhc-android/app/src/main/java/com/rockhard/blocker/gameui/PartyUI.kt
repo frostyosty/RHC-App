@@ -8,6 +8,7 @@ import android.widget.Toast
 import kotlin.random.Random
 
 internal fun GameActivity.updatePartyScreen() {
+    updateDispatchButton()
     partyContainer.removeAllViews()
     if (party.isEmpty()) {
         partyContainer.addView(TextView(this).apply { text = "Party empty. You are defenseless."; setTextColor(Color.WHITE) })
@@ -80,7 +81,7 @@ internal fun GameActivity.updatePartyScreen() {
                     if (activeExpeditions.containsKey(activePetIndex)) { Toast.makeText(this@updatePartyScreen, "Cannot sell while exploring!", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
                     val suggestedPrice = (p.maxHp / 10) * Random.nextInt(4, 8)
                     DialogUtils.showCustomDialog(this@updatePartyScreen, "List on Market?", "List ${p.name} for ${suggestedPrice}c?", true, "LIST", {
-                        p.listedPrice = suggestedPrice; forSaleParty.add(p); party.removeAt(activePetIndex); activePetIndex = 0; prefs.edit().putInt("ACTIVE_PET_INDEX", 0).apply()
+                        p.listedPrice = suggestedPrice; forSaleParty.add(p); val before = party.toList(); party.removeAt(activePetIndex); remapExpeditions(before); activePetIndex = 0; prefs.edit().putInt("ACTIVE_PET_INDEX", 0).apply()
                         saveParty(); SaveManager.saveParty(prefs, "FORSALE_DATA", forSaleParty); updatePartyScreen(); updateBagScreen()
                         printLog("\n> 📦 You listed ${p.name} on the market for ${suggestedPrice}c.")
                     }, null)

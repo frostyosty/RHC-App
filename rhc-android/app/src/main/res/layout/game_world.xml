@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The 3D Wilds (world/WorldView). Shown over the tab content while exploring. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/worldOverlay" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:visibility="gone" android:background="#000000" android:elevation="18dp">
+
+    <!-- No leave button: once you set off you walk until the timer runs out. -->
+    <com.rockhard.blocker.world.WorldView android:id="@+id/worldView" android:layout_width="match_parent" android:layout_height="match_parent"/>
+</FrameLayout>

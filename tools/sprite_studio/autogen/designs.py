@@ -947,3 +947,66 @@ def net(p, s):
         p.mirror = m
         if s.eyes in ('hurt', 'happy', 'angry'):
             p.eye(13, 13, s.eyes, side=False)
+
+
+# ================================================================ WORLD PROPS
+# Scenery billboards for the 3D world (prop_<name>.gif). Not in the Studio
+# matrix; drawn to fill the full 32px height so trees stand taller than beasts.
+PROPS = {}
+
+
+def prop(name):
+    def wrap(fn):
+        PROPS[name] = fn
+        return fn
+    return wrap
+
+
+@prop('tree')
+def tree(p, s):
+    sway = s.t % 2
+    p.rect('#6A4A2E', (14, 18, 17, 31))
+    p.px('#8A6A44', [(15, 20), (15, 24), (15, 28)])
+    p.ell('#3F8A3A', (5 + sway, 8, 26 + sway, 24))
+    p.ell('#4E9A42', (8 + sway, 1, 23 + sway, 17))
+    p.ell('#5DAE4A', (11 + sway, 3, 20 + sway, 10), shade=False, sep=False)
+
+
+@prop('pine')
+def pine(p, s):
+    p.rect('#5A3A22', (15, 25, 16, 31))
+    for top, half, col in ((0, 5, '#2E6B3A'), (6, 8, '#2A6236'), (13, 11, '#265A32')):
+        p.poly(col, [(15.5, top), (15.5 + half, top + 13), (15.5 - half, top + 13)])
+    p.px('#DDF3FF', [(15, 1), (16, 1)])
+
+
+@prop('bush')
+def bush(p, s):
+    p.ell('#3F8A3A', (4, 16, 17, 31))
+    p.ell('#4E9A42', (13, 14, 28, 31))
+    p.px('#E05A7A', [(10, 20), (20, 19), (23, 24)])
+
+
+@prop('stone')
+def stone(p, s):
+    p.ell('#8A8F99', (5, 14, 27, 31))
+    p.ell('#9AA0AA', (9, 14, 20, 22), shade=False, sep=False)
+    p.px('#5E8A4A', [(8, 28), (9, 28), (23, 29)])
+
+
+@prop('tuft')
+def tuft(p, s):
+    for x, h in ((9, 10), (13, 16), (16, 12), (19, 17), (23, 9)):
+        p.line('#5DAE4A', [(x, 31), (x + (1 if x > 15 else -1), 31 - h)])
+    p.px('#8FCB5A', [(13, 16), (19, 15)])
+
+
+@prop('cage')
+def cage(p, s):
+    """The netbeast cage the player throws in the 3D Wilds."""
+    p.rect('#5E6F82', (6, 8, 25, 10))
+    p.rect('#5E6F82', (6, 28, 25, 30))
+    for x in (7, 11, 15, 19, 23):
+        p.rect('#9AA4B2', (x, 10, x + 1, 27), shade=False)
+    p.line('#5E6F82', [(12, 8), (15, 3), (19, 8)])
+    p.px('#F2C84B', [(15, 17), (16, 17), (15, 18), (16, 18)])

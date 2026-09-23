@@ -50,6 +50,40 @@ Momentum converts blocked distractions into reclaimed time rather than rewarding
 * Weather/GPS systems influence combat and recovery mechanics.
 * Fleeing the Red Wall can permanently kill three weakest Netbeasts and trigger a 15-minute Demon Domain lockout.
 
+### 5.1 The Wilds (3D exploring)
+
+Exploring is a first-person walk through an open 3D field. It's on by default. Settings (⚙️ on the main screen, so never mid-walk) has **"Explore Netbeasts in 3D"** to switch back to the text-log expeditions.
+
+**How it plays (built):**
+
+* Tapping **EXPLORE THE WILDS** starts a 3-minute walk. You **auto-walk the whole time and can't stop or leave** until the timer runs out. Aether keeps draining as usual.
+* You only steer. Drag sideways to turn, and drag up or down to look. Looking gets stiffer near its limits and drifts back to level when you let go, so you can't end up staring at the sky or your feet and steering stays easy on a phone.
+* The world is open fields, tall grass (slower), trees, sand, lakes and hills. **Nothing blocks you**: trees are walk-through, water is wadeable (slower, camera drops, no drowning) and the map wraps at the edges. You can never get stuck, so you *will* run into a creature unless you deliberately walk in circles.
+* Creatures patrol territories (zones). Stage 1 beasts live near the start, stage 3 on the far side of the map. If one sees you, it chases faster than you walk.
+* **Cages:** your netbeasts travel in cages. When a creature reaches you, you throw your lead netbeast's cage between you. It lands, and after 1 second your netbeast emerges facing the wild one. With no netbeasts you face it yourself.
+* After a short face-off, the fight currently hands off to the existing turn-based battle screen. When it ends, the walk resumes where you were. A beaten creature respawns in its territory 45s later; one you fled from goes back to patrolling.
+* Everyone gets the same map on the same day (the seed is the date).
+
+**Code:** `app/src/main/java/com/rockhard/blocker/world/`
+
+| Part | What it does |
+|---|---|
+| `sim/` (`WorldMap`, `World`, `WorldSession`) | The rules. **Pure Kotlin with no Android imports.** It runs in fixed 30Hz ticks, takes player inputs only, uses its own seeded RNG and has `snapshot()`/`applySnapshot()`. |
+| `render/TerrainRenderer` | A "voxel space" heightmap renderer, also pure Kotlin. It draws the terrain, fog, weather palette and billboard sprites into an `IntArray`, with a depth buffer so hills hide things behind them. |
+| `WorldView`, `SpriteBank` | The Android side: the frame loop, touch steering and look, the HUD (timer, cage, minimap), and decoding the autogen GIFs into textures. |
+| `WorldBridge.kt` | Glue into `GameActivity`: starting a walk, turning an encounter into `startWildBattle`, resuming, and the end-of-walk reward. |
+
+Creatures use their `walk_front`, `explore` (side walk, mirrored for leftward) and `idle` GIFs. Scenery and the cage are `prop_*.gif` from `tools/sprite_studio/autogen`.
+
+To test without a phone, run `bash tools/world_preview/run.sh`. It compiles the sim and renderer on the plain JVM, soak-tests a full walk (map determinism, encounters, snapshot round-trip, frame time) and writes preview PNGs to `tools/world_preview/out/`.
+
+**Roadmap (not built yet):**
+
+1. **Battles in the world.** Instead of switching to the battle screen, the two beasts fight right there in the field. You help by throwing potions (and later other items) at your netbeast. The turn logic in `engines/combat/` stays the rules; the world only presents them. `WorldEvent.BattleReady` is where this plugs in.
+2. **Multiplayer.** The groundwork is in place. Everything runs through `WorldSession`, so the next step is a `NetWorldSession` that sends `PlayerInput` (steering only) up and applies `WorldSnapshot`s down, with a host or server running the same `sim/` code. Other players already render as `spr_player_*` and show as cyan on the minimap. Since everyone shares the day's seed, only entities need syncing, not the map. Decisions still to make: host-authoritative vs. server, how encounters work when two players are near one creature, and syncing through Supabase Realtime vs. a small relay.
+3. **Art:** back-view walk cycles (creatures walking away currently use the side view), rain and snow particles from the real weather, reeds and flowers, and a cage-opening animation.
+4. **Tuning:** walk length, how often you meet creatures, and territory difficulty, possibly tied to Momentum or the danger slider.
+
 ## 6. UI & Rendering
 
 * **Android:** Native dark-mode Command Center with Momentum, tasks, recovery lists, and leaderboard.

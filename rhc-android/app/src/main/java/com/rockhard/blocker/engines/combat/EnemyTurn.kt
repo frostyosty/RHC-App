@@ -73,7 +73,7 @@ internal fun GameActivity.triggerEnemyCounterAttack() {
                     RescueEngine.captureBeast(prefs, target, targetLoc); printLog("\n> 🚁 A Poacher chopper swooped in!\n> ⚠️ ${target.name} WAS CAPTURED AND TAKEN TO: ${targetLoc.uppercase()}!")
                 } else printLog("> 💀 ${target.name} HAS BEEN KILLED!")
 
-                party.removeAt(activePetIndex); activePetIndex = 0; prefs.edit().putInt("ACTIVE_PET_INDEX", 0).apply()
+                val before = party.toList(); party.removeAt(activePetIndex); remapExpeditions(before); activePetIndex = 0; prefs.edit().putInt("ACTIVE_PET_INDEX", 0).apply()
                 if (party.isEmpty()) { playerLastStand = true; updateBattleUI(); printLog("\n> ⚠️ ALL NETBEASTS HAVE FALLEN!\n> ${currentEnemy?.name} turns its gaze slowly toward YOU.") } 
                 else { updateBattleUI(); printLog("> You send out ${party[activePetIndex].name} in desperation!"); showBattleArena(party[activePetIndex].name, currentEnemy!!.name) }
             }

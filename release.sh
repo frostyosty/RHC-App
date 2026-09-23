@@ -59,6 +59,17 @@ echo "Building:"
 for t in "${SELECTED[@]}"; do echo "  - ${TARGET_NAMES[$t]}"; done
 echo
 
+# Quicksave first (same steps as zz_quicksave.txt): commit everything, rebase
+# onto origin/main and push, so the release is built from pushed code and the
+# commit named in the release notes exists on GitHub. A rebase conflict stops
+# the script here, before anything is built or published.
+echo "💾 Quicksaving to origin/main..."
+git add -A
+git diff --cached --quiet || git commit -m "[quicksave note here] $(date '+%Y-%m-%d %H:%M:%S')"
+git pull --rebase origin main
+git push origin main
+echo
+
 ARTIFACTS=()
 
 build_desktop() {

@@ -564,9 +564,12 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
             val cbDefault = CheckBox(this).apply { text = if(isGamers) "Set Netbeasts as Default Home App" else "Set Momentum as Default Home App"; isChecked = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
             val cbDebug = CheckBox(this).apply { text = "Enable UI Debugger"; isChecked = prefs.getBoolean("DEBUG_UI_TOASTS", false); setTextColor(android.graphics.Color.YELLOW); textSize = 16f; setPadding(16, 16, 16, 16) }
             
+            val cbWorld3d = CheckBox(this).apply { text = "Explore Netbeasts in 3D (off = text log)"; isChecked = prefs.getBoolean("WORLD_3D", true); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
+
             content.addView(cbDebug)
             content.addView(cbGame)
             content.addView(cbDefault)
+            if (isGamers) content.addView(cbWorld3d)
             
             // --- FIX: The Safe App Manager button was removed from here ---
             
@@ -580,7 +583,7 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
                 setOnClickListener { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }); dialog.dismiss() }
             })
             dialog.findViewById<Button>(R.id.btnDialogPositive)?.setOnClickListener { 
-                prefs.edit().putBoolean("GAMIFICATION", cbGame.isChecked).putBoolean("LAUNCH_GAME_DEFAULT", cbDefault.isChecked).putBoolean("DEBUG_UI_TOASTS", cbDebug.isChecked).apply()
+                prefs.edit().putBoolean("GAMIFICATION", cbGame.isChecked).putBoolean("LAUNCH_GAME_DEFAULT", cbDefault.isChecked).putBoolean("DEBUG_UI_TOASTS", cbDebug.isChecked).putBoolean("WORLD_3D", cbWorld3d.isChecked).apply()
                 CloakEngine.uncloak(this@MainActivity, cbDefault.isChecked)
                 dialog.dismiss() 
             }

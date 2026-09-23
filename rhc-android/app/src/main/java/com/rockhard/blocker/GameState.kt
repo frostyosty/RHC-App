@@ -53,6 +53,7 @@ internal fun GameActivity.processFleePenalty() {
         nets /= 2; potions /= 2; sprays /= 2; focusCoins /= 2; smallHpPots /= 2; largeHpPots /= 2
         
         var killedCount = 0
+        val before = party.toList()
         party.sortBy { it.maxHp }
         val removedBeasts = mutableListOf<String>()
         while (party.isNotEmpty() && killedCount < 3) {
@@ -60,6 +61,7 @@ internal fun GameActivity.processFleePenalty() {
             party.removeAt(0)
             killedCount++
         }
+        remapExpeditions(before)
         activePetIndex = 0
         prefs.edit().putInt("ACTIVE_PET_INDEX", 0).apply()
         saveParty(); saveItems(); updateBagScreen(); updatePartyScreen(); updateBattleUI()
@@ -84,4 +86,16 @@ internal fun GameActivity.generateMarket() {
         }
         SaveManager.saveParty(prefs, "MARKET_DATA", marketBeasts)
     }
+}
+
+// Expeditions are keyed by party index, so after any removal or reorder
+// they must be remapped by identity or they point at the wrong beast.
+internal fun GameActivity.remapExpeditions(before: List<Netbeast>) {
+    val remapped = mutableMapOf<Int, Long>()
+    activeExpeditions.forEach { (idx, end) ->
+        if (idx == -1) remapped[-1] = end
+        else before.getOrNull(idx)?.let { b -> party.indexOfFirst { it === b }.takeIf { it >= 0 }?.let { remapped[it] = end } }
+    }
+    activeExpeditions.clear(); activeExpeditions.putAll(remapped)
+    SaveManager.saveExpeditions(prefs, activeExpeditions)
 }

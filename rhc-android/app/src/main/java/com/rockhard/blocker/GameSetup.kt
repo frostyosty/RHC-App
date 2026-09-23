@@ -106,13 +106,14 @@ internal fun GameActivity.setupBattleControls() {
     findViewById<Button>(R.id.btnAbandon).setOnClickListener {
     cancelBattleTimer()
         if (battleOver || playerLastStand) return@setOnClickListener
-        DialogUtils.showCustomDialog(this, "Abandon Netbeast?", "If you flee now, ${party[activePetIndex].name} will be lost forever. Are you sure?", true, "ABANDON", { printLog("\n> You ABANDONED ${party[activePetIndex].name} to save yourself!"); AnimUtils.animDeath(findViewById(R.id.spritePlayer)); party.removeAt(activePetIndex); activePetIndex = 0; saveParty(); endBattle() }, null)
+        DialogUtils.showCustomDialog(this, "Abandon Netbeast?", "If you flee now, ${party[activePetIndex].name} will be lost forever. Are you sure?", true, "ABANDON", { printLog("\n> You ABANDONED ${party[activePetIndex].name} to save yourself!"); AnimUtils.animDeath(findViewById(R.id.spritePlayer)); val before = party.toList(); party.removeAt(activePetIndex); remapExpeditions(before); activePetIndex = 0; saveParty(); endBattle() }, null)
     }
 }
 
 internal fun GameActivity.setupDispatchControl() {
     findViewById<Button>(R.id.btnDispatch).setOnClickListener {
         if (aetherDepleted) { Toast.makeText(this, "Aether depleted! Return tomorrow.", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+        if (world3dEnabled) { enterWorld(); return@setOnClickListener }
         if (party.isEmpty()) {
             if (activeExpeditions.containsKey(-1)) printLog("> You are already exploring!") else { activeExpeditions[-1] = System.currentTimeMillis() + (180 * 1000); printLog("\n> You bravely step out into the wild to explore..."); SaveManager.saveExpeditions(prefs, activeExpeditions); updateDispatchButton() }
             return@setOnClickListener

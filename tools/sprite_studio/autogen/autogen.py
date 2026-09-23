@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pixelkit as pk  # noqa: E402
-from designs import DESIGNS, Pose  # noqa: E402
+from designs import DESIGNS, PROPS, Pose  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 SAVE_DIR = os.path.join(ROOT, 'rhc-android/app/src/main/res/drawable-nodpi')
@@ -340,6 +340,19 @@ def preview(rows, path):
     print(f'🖼️  Preview written to {path}')
 
 
+def write_props(out):
+    """3D-world scenery: prop_<name>.gif, a 2-frame gentle sway."""
+    for name, fn in PROPS.items():
+        frames = []
+        for t in range(2):
+            p = pk.Painter()
+            fn(p, Pose(t=t))
+            frames.append(p.done())
+        pk.save_gif(frames, [700, 700], os.path.join(out, f'prop_{name}.gif'))
+    print(f'🌲 {len(PROPS)} world props')
+    return len(PROPS)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--only', help='comma-separated rows, e.g. cacheon,titan')
@@ -365,6 +378,8 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     written = skipped = 0
+    if not args.only and not args.anims:
+        written += write_props(args.out)
     for n in rows:
         for anim in anims:
             path = os.path.join(args.out, filename(n, anim))

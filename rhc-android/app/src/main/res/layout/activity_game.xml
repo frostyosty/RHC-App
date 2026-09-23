@@ -22,6 +22,7 @@
         <include layout="@layout/game_arena"/>
         <include layout="@layout/game_party"/>
         <include layout="@layout/game_bag"/>
+        <include layout="@layout/game_world"/>
     </FrameLayout>
 
     <LinearLayout android:id="@+id/qteContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp"/>

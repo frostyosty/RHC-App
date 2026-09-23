@@ -96,12 +96,19 @@ internal fun GameActivity.hideBattleArena() {
 
 internal fun GameActivity.updateDispatchButton() {
     val btn = findViewById<Button>(R.id.btnDispatch) ?: return
+    if (world3dEnabled) {
+        btn.text = if (inWorld) "EXPLORING THE WILDS…" else "🌲 EXPLORE THE WILDS"
+        btn.isEnabled = !inWorld
+        return
+    }
+    // Key -1 is the player's own expedition, not a beast.
+    val idle = party.indices.count { !activeExpeditions.containsKey(it) }
     if (party.isEmpty()) {
         if (activeExpeditions.containsKey(-1)) { btn.text = "YOU ARE EXPLORING"; btn.isEnabled = false } 
         else { btn.text = "GO EXPLORE (No Beasts)"; btn.isEnabled = true }
     } else {
-        if (activeExpeditions.size >= party.size) { btn.text = "ALL NETBEASTS DEPLOYED"; btn.isEnabled = false } 
-        else { btn.text = "DISPATCH ALL (${party.size - activeExpeditions.size} idle)"; btn.isEnabled = true }
+        if (idle == 0) { btn.text = "ALL NETBEASTS DEPLOYED"; btn.isEnabled = false } 
+        else { btn.text = "DISPATCH ALL ($idle idle)"; btn.isEnabled = true }
     }
     val isExploring = activeExpeditions.isNotEmpty()
     findViewById<Button>(R.id.btnFightAether)?.apply { isEnabled = !isExploring; alpha = if (isExploring) 0.5f else 1.0f }
@@ -125,6 +132,7 @@ if (state == "BATTLE") {
         findViewById<View>(R.id.viewParty)?.visibility = View.GONE
         findViewById<View>(R.id.viewBag)?.visibility = View.GONE
     } else hideBattleArena()
+    syncWorldWithUIState(state)
 }
 
 internal fun GameActivity.updateBattleUI() {

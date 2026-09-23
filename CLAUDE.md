@@ -8,7 +8,7 @@ share logic:
 | `rhc-android/` | Kotlin app, package `com.rockhard.blocker`, 4 product flavors (Gamers/Timesavers × Male/Female) | Gradle 8.7, AGP + Kotlin 1.9.22, JDK 17, compileSdk 34 |
 | `rhc-desktop/` | Win32/GDI C++17 app + Windows service + NSIS installer | mingw-w64 cross-compile, `makensis` |
 | `rhc-common/` | Shared C++ engines (SQLite `DatabaseManager`, Momentum, ShieldRuleEngine, Leaderboard) used by desktop; mirrors the Android Kotlin logic | — |
-| `tools/` | Sprite Studio (Python, port 8080), icon generator (Node/sharp), helper scripts | Python 3 + Pillow, Node |
+| `tools/` | Sprite Studio (Python, port 8080) + sprite autogen, icon generator (Node/sharp), 3D world preview, helper scripts | Python 3 + Pillow, Node, JVM |
 
 Feature-level detail (blocking, cooldown, Momentum, Netbeasts) lives in
 `rhc-android/README.md`. Read it before changing behaviour.
@@ -18,7 +18,10 @@ Feature-level detail (blocking, cooldown, Momentum, Netbeasts) lives in
 - `./release.sh`: interactive menu, then always publishes a GitHub release to
   `frostyosty/htc-downloads-rhc` with a bumped `vX.Y.Z` tag. Option `1`
   (Desktop + all four Android flavors) is the default and the usual choice.
-  **Running it publishes a release, so don't run it unless asked.**
+  Before building it quicksaves (the `zz_quicksave.txt` steps: `git add -A`,
+  commit, `pull --rebase`, `push` to `origin/main`).
+  **Running it commits and pushes everything and publishes a release, so don't
+  run it unless asked.**
 - Desktop only: `bash rhc-desktop/build.sh` (run from the repo root; it `cd`s to `/workspaces/RHC-App`).
 - One Android flavor: `cd rhc-android && ./gradlew assemble<Flavor>Release`,
   e.g. `assembleGamersMaleNetbeastsRelease`. Faster check without signing:
@@ -61,6 +64,24 @@ secret if that secret is set.
   linking, so keep that structure: new `.cpp` files go in the
   `DESKTOP_OBJS`/`COMMON_OBJS` loops, not onto the link line. Check the hit
   rate with `ccache -s`.
+
+## Netbeasts: the 3D Wilds
+
+`rhc-android/.../world/` is the first-person exploring mode, the default way to
+explore in the Gamers flavors. The plan and roadmap are in section 5.1 of
+`rhc-android/README.md`, which is the source of truth: read it before changing
+exploring. Rules that keep the design working:
+
+- `world/sim/` and `world/render/` must stay **pure Kotlin with no `android.*`
+  imports**. The sim is the future multiplayer authority: keep it deterministic
+  (fixed ticks, inputs only, its own seeded RNG, no wall-clock time), and put
+  anything a remote player must see into `EntitySnapshot`.
+- **No walls or colliders.** The player auto-walks and must never get stuck;
+  obstacles are walk-through billboards and water is wadeable.
+- Test sim/render changes with `bash tools/world_preview/run.sh` (JVM soak test
+  + preview PNGs) before building an APK.
+- New creature or scenery art comes from `tools/sprite_studio/autogen`
+  (`designs.py`; props are `prop_*.gif`), not hand-made files.
 
 ## Conventions
 

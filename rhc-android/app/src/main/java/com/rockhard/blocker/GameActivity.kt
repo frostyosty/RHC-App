@@ -56,6 +56,11 @@ class GameActivity : Activity() {
     internal val activeOffers = mutableMapOf<String, Int>()
 
     internal var currentWeather = "Clear"
+
+    // 3D Wilds (world/WorldBridge.kt)
+    internal var worldSession: com.rockhard.blocker.world.sim.WorldSession? = null
+    internal var worldEncounter: com.rockhard.blocker.world.sim.WorldEvent.BattleReady? = null
+    internal var inWorld = false
     internal var weatherIcon = "☀️"
     internal var currentCity = "Local Sanctuary"
 
@@ -75,18 +80,21 @@ class GameActivity : Activity() {
                 if (!isUnderAttack) {
                     if (isFightAetherActive && activeExpeditions.isEmpty()) {
                         // Slow down velocity to 1 drop every 5 seconds!
-                        if (tickCounter % 5 == 0) aetherSeconds--
+                        if (tickCounter % 5 == 0 && aetherSeconds > 0) aetherSeconds--
                         tvAether.setTextColor(android.graphics.Color.parseColor("#E040FB"))
                     } else {
                         // Normal 1-second velocity
-                        aetherSeconds--
+                        if (aetherSeconds > 0) aetherSeconds--
                         tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4"))
                     }
                     tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
                     
                     if (aetherSeconds <= 0) {
                         aetherDepleted = true
-                        if (!battleOver && !isWildBattle && !isTrainerBattle) {
+                        // battleOver stays true after endBattle(), so "in a battle"
+                        // needs an active battle flag, not just !battleOver.
+                        val inBattle = !battleOver && (isWildBattle || isTrainerBattle)
+                        if (!inBattle) {
                             android.widget.Toast.makeText(this@GameActivity, "Aether Depleted! Returning to reality.", android.widget.Toast.LENGTH_LONG).show()
                             finish()
                             return
@@ -271,6 +279,19 @@ class GameActivity : Activity() {
             .putInt("SMALL_HP_POTS", smallHpPots)
             .putInt("LARGE_HP_POTS", largeHpPots)
             .apply()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        findViewById<com.rockhard.blocker.world.WorldView>(R.id.worldView)?.stop()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // only if the Wilds are actually on screen (not hidden behind a battle)
+        if (inWorld && findViewById<android.view.View>(R.id.worldOverlay)?.visibility == android.view.View.VISIBLE) {
+            findViewById<com.rockhard.blocker.world.WorldView>(R.id.worldView)?.start()
+        }
     }
 
     override fun onDestroy() {

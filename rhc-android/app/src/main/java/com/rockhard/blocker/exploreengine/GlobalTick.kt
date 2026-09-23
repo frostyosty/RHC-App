@@ -148,6 +148,7 @@ internal fun GameActivity.showAetherDepletedDialog() {
                 if (toSacrifice.isEmpty()) return@setOnClickListener
                 
                 var gainedSecs = 0
+                val before = party.toList()
                 toSacrifice.forEach { sBeast ->
                     val lvl = sBeast.maxHp / 10
                     gainedSecs += Math.ceil(lvl / 60.0).toInt() * 60
@@ -164,6 +165,7 @@ internal fun GameActivity.showAetherDepletedDialog() {
                     }
                 }
                 
+                remapExpeditions(before)
                 aetherSeconds += gainedSecs
                 aetherDepleted = false
                 saveParty(); updatePartyScreen(); updateBagScreen()

@@ -23,3 +23,6 @@ compile_commands.json
 
 # Python bytecode (tools/sprite_studio/autogen)
 __pycache__/
+
+# 3D world preview renders (tools/world_preview/run.sh)
+tools/world_preview/out/
