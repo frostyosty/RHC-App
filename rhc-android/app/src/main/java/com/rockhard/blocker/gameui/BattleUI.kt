@@ -74,6 +74,11 @@ internal fun GameActivity.showBattleArena(playerName: String, enemyName: String)
         if (pLvl > eLvl) eScale = (1.0f - (((pLvl - eLvl) * 0.03f) / eEvo)).coerceAtLeast(0.3f)
         else if (eLvl > pLvl) pScale = (1.0f - (((eLvl - pLvl) * 0.03f) / pEvo)).coerceAtLeast(0.3f)
     }
+    // Last stand: the human is small next to the beasts, and shrinks toward
+    // the ground line (bottom pivot) instead of floating mid-box.
+    if (playerLastStand) pScale = 0.55f
+    val pBoxH = pSprite.layoutParams.height.toFloat()
+    pSprite.pivotY = if (playerLastStand) pBoxH else pBoxH / 2f
     pSprite.scaleX = pScale; pSprite.scaleY = pScale; eSprite.scaleX = eScale; eSprite.scaleY = eScale
     updateHealthBars()
 

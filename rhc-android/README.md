@@ -59,6 +59,8 @@ Momentum converts blocked distractions into reclaimed time rather than rewarding
 
 A local zero-dependency Python/HTML5 tool for the Gamers flavor, providing AI sprite generation, background stripping, 8-bit resizing, GIF tweening, onion skinning, and audio synthesis.
 
+**Autogen:** `python3 tools/sprite_studio/autogen/autogen.py` draws every sprite in the Studio matrix (all 23 rows × 10 animations, 230 GIFs) from the designs in `tools/sprite_studio/autogen/designs.py`. Each creature is drawn once per pose (walk step, wing flap, eyes, mouth), and the animations are built from those poses, so a beast looks the same in every GIF. Use `--only cacheon,titan`, `--anims idle,attack`, `--preview sheet.png` (contact sheet), or `--skip-existing` to keep GIFs you've touched up by hand in the Studio.
+
 ## 8. Critical Blocklist Parsing Bug — FIXED 08/09/2026
 
 A parsing mismatch caused website blocks to fail.

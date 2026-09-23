@@ -7,8 +7,10 @@ import android.content.Context
 // the "spr_<name>_<anim>" naming AudioEngine already uses for SFX lookups.
 object SpriteUtils {
     fun resolveSpriteRes(context: Context, displayName: String, anim: String = "idle"): Int {
-        val clean = displayName.replace(Regex("\\[.*?\\]"), "").trim().lowercase().replace(" ", "_")
+        var clean = displayName.replace(Regex("\\[.*?\\]"), "").trim().lowercase().replace(" ", "_")
         if (clean.isEmpty()) return 0
+        // Last stand shows the human as "YOU"; the Studio row is "player".
+        if (clean == "you") clean = "player"
 
         val res = context.resources
         val pkg = context.packageName
