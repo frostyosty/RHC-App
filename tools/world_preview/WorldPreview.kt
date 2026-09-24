@@ -33,6 +33,16 @@ fun main(args: Array<String>) {
     val counts = map.terrain.groupBy { it }.mapValues { it.value.size * 100 / map.terrain.size }
     println("terrain % (0 grass,1 tall,2 sand,3 water): $counts zones=${map.zones.size} props=${map.props.size}")
     check(WorldMap.generate(map.seed, species).terrain.contentEquals(map.terrain))
+    check(WorldMap.generate(map.seed, species).props == map.props)
+
+    // trees: kinds, spacing (there must always be a way through), levels
+    val trees = map.props.filter { it.kind.isTree }
+    println("trees ${trees.size}: " + trees.groupingBy { it.kind.name.lowercase() }.eachCount())
+    var closest = Double.MAX_VALUE
+    for (i in trees.indices) for (j in i + 1 until trees.size) closest = minOf(closest, map.distance(trees[i].x, trees[i].y, trees[j].x, trees[j].y))
+    check(closest >= WorldMap.MIN_TRUNK_GAP) { "trunks $closest apart" }
+    println("closest trunks ${"%.2f".format(closest)} tiles (min ${WorldMap.MIN_TRUNK_GAP})")
+    check(TerrainRenderer.treeLevel(500.0) == 0 && TerrainRenderer.treeLevel(1.0) == 9 && TerrainRenderer.treeLevel(60.0) == 3)
 
     val world = World(map)
     val s = LocalWorldSession(world, "me", "Cacheon", 180)
@@ -40,6 +50,14 @@ fun main(args: Array<String>) {
     val rc = TerrainRenderer(200, 300, map)
     for (i in 0 until 3) { me.angle = i * 2.1; rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/v$i.png") }
     rc.render(world, me, -90, Palette.DAY, src, 0); save(rc, "$out/down.png")
+    // the densest grove, from 6 tiles out and from 2 tiles out
+    val grove = trees.maxBy { t -> trees.count { map.distance(it.x, it.y, t.x, t.y) < 2.5 } }
+    val gs = trees.filter { map.distance(it.x, it.y, grove.x, grove.y) < 2.5 }.groupingBy { it.kind.name.lowercase() }.eachCount()
+    for ((name, dist) in listOf("grove" to 6.0, "grove_near" to 2.0)) {
+        me.x = map.wrap(grove.x - dist); me.y = grove.y; me.angle = 0.0
+        repeat(20) { rc.render(world, me, 0, Palette.DAY, src, 0) }; save(rc, "$out/$name.png")
+    }
+    println("grove previews: $gs")
     // stand in water if there is some
     val wi = map.terrain.indexOfFirst { it == Terrain.WATER }
     if (wi >= 0) { me.x = wi % map.size + 0.5; me.y = wi / map.size + 0.5; me.angle = 0.3

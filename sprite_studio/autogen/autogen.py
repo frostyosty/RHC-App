@@ -9,6 +9,15 @@ so every animation of a beast is guaranteed to be the same creature.
   python3 sprite_studio/autogen/autogen.py --only cacheon,titan
   python3 sprite_studio/autogen/autogen.py --anims idle,attack
   python3 sprite_studio/autogen/autogen.py --skip-existing
+  python3 sprite_studio/autogen/autogen.py --force        # also redraw hand edits
+  python3 sprite_studio/autogen/autogen.py --scenery      # the trees only (all 10 kinds x 10 levels)
+  python3 sprite_studio/autogen/autogen.py --scenery --only oak,pine
+  python3 sprite_studio/autogen/autogen.py --trees sheet.png   # tree review sheet
+  python3 sprite_studio/autogen/autogen.py --only laser,bite,net   # battle effects (effects.py)
+
+GIFs saved from Sprite Studio are listed in hand_edits.txt and skipped, so a
+rerun never overwrites painted frames. Delete a line (or use --force) to let
+autogen redraw that file.
   python3 sprite_studio/autogen/autogen.py --preview out.png
   python3 sprite_studio/autogen/autogen.py --turnaround views.png --only cacheon
 
@@ -28,12 +37,15 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pixelkit as pk  # noqa: E402
 from designs import DESIGNS, PROPS, Pose  # noqa: E402
+import scenery  # noqa: E402
+import effects  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SAVE_DIR = os.path.join(ROOT, 'rhc-android/app/src/main/res/drawable-nodpi')
 MODELS_FILE = os.path.join(ROOT, 'rhc-android/app/src/main/java/com/rockhard/blocker/GameModels.kt')
 ANIMATIONS = ['idle', 'attack', 'hit', 'evade', 'faint', 'victory', 'explore', 'fx', 'walk_front', 'attack_front']
 CANVAS = 42 / 32  # creature frame size / design grid; TerrainRenderer.CREATURE_CANVAS must match
+HAND_EDITS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hand_edits.txt')
 HOLD_FOREVER = 60000  # GifView loops by time, so a terminal pose just holds a long frame
 
 
@@ -373,7 +385,7 @@ def filename(beast, anim):
 
 def matrix_rows():
     """Same row list as the Studio dashboard (server.py)."""
-    rows = {'player', 'poacher', 'aegis', 'titan', 'laser', 'bite', 'net'}
+    rows = {'player', 'poacher', 'aegis', 'titan'}  # laser/bite/net are effects (effects.py), not rows
     if os.path.exists(MODELS_FILE):
         with open(MODELS_FILE) as f:
             rows.update(b.lower().replace(' ', '_') for b in re.findall(r'BeastDef\("([^"]+)"', f.read()))
@@ -426,17 +438,61 @@ def turnaround(rows, path):
     print(f'🔄 Turnaround written to {path}')
 
 
-def write_props(out):
+def hand_edits():
+    """GIF names saved from Sprite Studio (it appends to hand_edits.txt)."""
+    if not os.path.exists(HAND_EDITS):
+        return set()
+    with open(HAND_EDITS) as f:
+        return {line.strip() for line in f if line.strip() and not line.startswith('#')}
+
+
+def write_props(out, keep=frozenset()):
     """3D-world scenery: prop_<name>.gif, a 2-frame gentle sway."""
+    n = 0
     for name, fn in PROPS.items():
+        if f'prop_{name}.gif' in keep:
+            print(f'✋ prop_{name}.gif is hand-edited, skipped (--force to redraw)')
+            continue
         frames = []
         for t in range(2):
             p = pk.Painter()
             fn(p, Pose(t=t))
             frames.append(p.done())
         pk.save_gif(frames, [700, 700], os.path.join(out, f'prop_{name}.gif'))
-    print(f'🌲 {len(PROPS)} world props')
-    return len(PROPS)
+        n += 1
+    print(f'🌲 {n} world props')
+    return n
+
+
+def write_effects(names, out, keep=frozenset()):
+    """fx_<name>.gif attack effects from effects.py, 64 grid at 2x."""
+    n = 0
+    for name in names:
+        fname = f'fx_{name}.gif'
+        if fname in keep:
+            print(f'✋ {fname} is hand-edited, skipped (--force to redraw)')
+            continue
+        frames, durations = effects.EFFECTS[name]()
+        pk.save_gif(frames, durations, os.path.join(out, fname))
+        n += 1
+    print(f"💥 {n} effects ({', '.join(names)})")
+    return n
+
+
+def write_trees(names, out, keep=frozenset()):
+    """prop_tree_<kind>_d<0-9>.gif at 1x, from scenery.py."""
+    n = 0
+    for name in names:
+        for lod in range(len(scenery.D)):
+            fname = f'prop_tree_{name}_d{lod}.gif'
+            if fname in keep:
+                print(f'✋ {fname} is hand-edited, skipped (--force to redraw)')
+                continue
+            frames, durations = scenery.frames(name, lod)
+            pk.save_gif(frames, durations, os.path.join(out, fname), scale=1)
+            n += 1
+    print(f"🌳 {n} tree GIFs ({', '.join(names)})")
+    return n
 
 
 def main():
@@ -444,8 +500,11 @@ def main():
     ap.add_argument('--only', help='comma-separated rows, e.g. cacheon,titan')
     ap.add_argument('--anims', help='comma-separated animations (default: all)')
     ap.add_argument('--skip-existing', action='store_true', help="don't overwrite GIFs already on disk (keeps hand edits)")
+    ap.add_argument('--force', action='store_true', help='also overwrite GIFs listed in hand_edits.txt')
     ap.add_argument('--preview', metavar='PNG', help='write a contact sheet instead of GIFs')
     ap.add_argument('--turnaround', metavar='PNG', help='write a sheet of the 5 drawn views instead of GIFs')
+    ap.add_argument('--scenery', action='store_true', help='write only the tree GIFs (--only picks kinds)')
+    ap.add_argument('--trees', metavar='PNG', help='write a tree review sheet (kinds x distance levels) instead of GIFs')
     ap.add_argument('--out', default=SAVE_DIR, help='output directory')
     args = ap.parse_args()
 
@@ -454,11 +513,22 @@ def main():
     if missing:
         print(f"⚠️  No design yet for: {', '.join(missing)} (add one to designs.py)")
     rows = [r for r in rows if r in DESIGNS]
+    trees = list(scenery.TREES)
+    fx = list(effects.EFFECTS)
     if args.only:
         want = [x.strip().lower() for x in args.only.split(',')]
         rows = [r for r in want if r in DESIGNS]
+        trees = [r for r in want if r in scenery.TREES]
+        fx = [r for r in want if r in effects.EFFECTS]
+        unknown = [r for r in want if r not in DESIGNS and r not in scenery.TREES and r not in effects.EFFECTS]
+        if unknown:
+            print(f"⚠️  Unknown rows/trees: {', '.join(unknown)}")
     anims = [a.strip() for a in args.anims.split(',')] if args.anims else ANIMATIONS + list(VIEW_ANIMS)
 
+    if args.trees:
+        scenery.sheet(trees, args.trees)
+        print(f'🌳 Tree sheet written to {args.trees}')
+        return
     if args.turnaround:
         turnaround(rows, args.turnaround)
         return
@@ -468,12 +538,28 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     written = skipped = warnings = 0
+    keep = frozenset() if args.force else hand_edits()
+    if args.scenery:
+        written = write_trees(trees, args.out, keep)
+        print(f'🎨 Wrote {written} GIFs to {os.path.relpath(args.out, ROOT)}')
+        return
     if not args.only and not args.anims:
-        written += write_props(args.out)
+        written += write_props(args.out, keep)
+        written += write_trees(trees, args.out, keep)
+        written += write_effects(fx, args.out, keep)
+    elif not args.anims:
+        if trees:
+            written += write_trees(trees, args.out, keep)
+        if fx:
+            written += write_effects(fx, args.out, keep)
     for n in rows:
         for anim in anims_for(DESIGNS[n], anims):
             path = os.path.join(args.out, filename(n, anim))
             if args.skip_existing and os.path.exists(path):
+                skipped += 1
+                continue
+            if filename(n, anim) in keep:
+                print(f'✋ {filename(n, anim)} is hand-edited, skipped (--force to redraw)')
                 skipped += 1
                 continue
             frames, durations = ANIM_FNS[anim](DESIGNS[n], n)
@@ -485,7 +571,7 @@ def main():
             pk.save_gif(frames, durations, path)
             written += 1
         print(f'✅ {n}')
-    print(f'🎨 Wrote {written} GIFs to {os.path.relpath(args.out, ROOT)}' + (f' (skipped {skipped} existing)' if skipped else ''))
+    print(f'🎨 Wrote {written} GIFs to {os.path.relpath(args.out, ROOT)}' + (f' (skipped {skipped})' if skipped else ''))
 
 
 if __name__ == '__main__':

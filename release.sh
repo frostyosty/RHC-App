@@ -91,15 +91,18 @@ export RHC_VERSION="${TAG#v}"
 echo "🏷️  This release will be $TAG."
 echo
 
-# Quicksave first (same steps as zz_quicksave.txt): commit everything, rebase
-# onto origin/main and push, so the release is built from pushed code and the
-# commit named in the release notes exists on GitHub. A rebase conflict stops
-# the script here, before anything is built or published.
-echo "💾 Quicksaving to origin/main..."
-git add -A
-git diff --cached --quiet || git commit -m "[quicksave note here] $(date '+%Y-%m-%d %H:%M:%S')"
-git pull --rebase origin main
-git push origin main
+# Quicksave first by running zz_quicksave.txt itself (commit everything,
+# rebase onto origin/main, push), so the release is built from pushed code and
+# the commit named in the release notes exists on GitHub. Running the file
+# rather than copying its steps keeps the two in sync. -e makes a failed step
+# (e.g. a rebase conflict) stop the release here, before anything is built.
+echo "💾 Quicksaving to origin/main (zz_quicksave.txt)..."
+if [ ! -f "$ROOT_DIR/zz_quicksave.txt" ]; then
+  echo "❌ zz_quicksave.txt not found in the repo root; release.sh runs it to quicksave."
+  echo "   Restore it (git checkout -- zz_quicksave.txt) and run ./release.sh again. Nothing was built or published."
+  exit 1
+fi
+bash -e "$ROOT_DIR/zz_quicksave.txt"
 echo
 
 ARTIFACTS=()

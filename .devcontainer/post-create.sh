@@ -11,7 +11,7 @@ echo "📦 Installing apt packages (desktop toolchain + dev tools)..."
 sudo apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
   mingw-w64 nsis unzip \
-  shellcheck ccache fd-find clang-tidy bear
+  shellcheck ccache fd-find ripgrep clang-tidy bear
 sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
 
 echo "☕ Making sure JDK 17 is the default..."

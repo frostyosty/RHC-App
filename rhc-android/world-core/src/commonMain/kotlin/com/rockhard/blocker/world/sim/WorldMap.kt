@@ -13,12 +13,28 @@ object Terrain {
     const val WATER = 3
 }
 
-enum class PropKind(val sprite: String, val size: Double) {
-    TREE("prop_tree", 1.7),
-    PINE("prop_pine", 1.9),
+/**
+ * [size] is the billboard's world width and height. Trees ([radius] > 0, the
+ * trunk radius in tiles) come in 10 distance levels, prop_tree_<kind>_d<0-9>,
+ * drawn by sprite_studio/autogen/scenery.py, whose heights and radii match
+ * these: change both or neither.
+ */
+enum class PropKind(val sprite: String, val size: Double, val radius: Double = 0.0) {
+    OAK("prop_tree_oak", 2.8, 0.16),
+    PINE("prop_tree_pine", 3.2, 0.12),
+    BIRCH("prop_tree_birch", 2.6, 0.08),
+    WILLOW("prop_tree_willow", 3.0, 0.18),
+    PALM("prop_tree_palm", 3.0, 0.10),
+    CYPRESS("prop_tree_cypress", 3.2, 0.09),
+    MAPLE("prop_tree_maple", 2.8, 0.15),
+    SNAG("prop_tree_snag", 2.6, 0.10),
+    MUSHROOM("prop_tree_mushroom", 2.4, 0.12),
+    WIRETREE("prop_tree_wiretree", 2.8, 0.12),
     BUSH("prop_bush", 0.6),
     STONE("prop_stone", 0.45),
-    TUFT("prop_tuft", 0.35),
+    TUFT("prop_tuft", 0.35);
+
+    val isTree get() = radius > 0
 }
 
 /** Scenery billboard. Nothing collides: the player can never get stuck. */
@@ -79,11 +95,11 @@ class WorldMap(
             val cx = size / 2.0; val cy = size / 2.0
             fun t(x: Int, y: Int) = terrain[y * size + x]
             val props = mutableListOf<Prop>()
-            repeat(size * size / 22) {
+            props += placeTrees(rng, size, heights, terrain)
+            repeat(size * size / 50) {
                 val x = rng.nextInt(size); val y = rng.nextInt(size)
                 if (hypot(x - cx, y - cy) < 4 || t(x, y) == Terrain.WATER || t(x, y) == Terrain.SAND) return@repeat
-                val roll = rng.nextInt(100)
-                val kind = when { roll < 35 -> PropKind.TREE; roll < 55 -> PropKind.PINE; roll < 80 -> PropKind.BUSH; else -> PropKind.STONE }
+                val kind = if (rng.nextInt(100) < 55) PropKind.BUSH else PropKind.STONE
                 props += Prop(x + rng.nextDouble(0.2, 0.8), y + rng.nextDouble(0.2, 0.8), kind)
             }
             repeat(size * size / 5) {
@@ -106,6 +122,78 @@ class WorldMap(
                 zones += Zone(zones.size, x + 0.5, y + 0.5, 4.0 + stage, s.name, s.stage)
             }
             return WorldMap(size, seed, heights, terrain, props, zones)
+        }
+
+        /** Trunks never closer than this, so there's always a way through a grove. */
+        const val MIN_TRUNK_GAP = 0.9
+
+        /**
+         * Trees grow in groves of one kind, picked by the terrain at the
+         * grove's centre, plus a few loners. Each tree must also suit its own
+         * spot, and grid rejection keeps trunks [MIN_TRUNK_GAP] apart.
+         */
+        private fun placeTrees(rng: Random, size: Int, heights: FloatArray, terrain: IntArray): List<Prop> {
+            val cx = size / 2.0; val cy = size / 2.0
+            fun t(x: Int, y: Int) = terrain[y.mod(size) * size + x.mod(size)]
+            fun nearWater(x: Int, y: Int) = (-2..2).any { dy -> (-2..2).any { dx -> t(x + dx, y + dy) == Terrain.WATER } }
+            fun kindFor(x: Int, y: Int, roll: Int): PropKind? {
+                val outer = hypot(x - cx, y - cy) > size * 0.42 // the stage-3 ring
+                return when {
+                    t(x, y) == Terrain.WATER -> null
+                    t(x, y) == Terrain.SAND -> if (nearWater(x, y) && roll < 40) PropKind.WILLOW else PropKind.PALM
+                    outer && roll < 30 -> PropKind.SNAG
+                    outer && roll < 40 -> PropKind.WIRETREE
+                    nearWater(x, y) && roll < 50 -> PropKind.WILLOW
+                    t(x, y) == Terrain.TALL_GRASS -> if (roll < 70) PropKind.MAPLE else PropKind.MUSHROOM
+                    heights[y.mod(size) * size + x.mod(size)] > 1.9 -> PropKind.PINE // hills
+                    roll < 35 -> PropKind.OAK
+                    roll < 60 -> PropKind.BIRCH
+                    roll < 80 -> PropKind.PINE
+                    else -> PropKind.CYPRESS
+                }
+            }
+            fun suits(kind: PropKind, x: Int, y: Int) = when (kind) {
+                PropKind.PALM -> t(x, y) == Terrain.SAND
+                PropKind.WILLOW -> t(x, y) != Terrain.WATER && nearWater(x, y)
+                PropKind.MAPLE, PropKind.MUSHROOM -> t(x, y) == Terrain.TALL_GRASS
+                else -> t(x, y) == Terrain.GRASS || t(x, y) == Terrain.TALL_GRASS
+            }
+
+            val trees = mutableListOf<Prop>()
+            val cells = HashMap<Int, MutableList<Prop>>() // tile -> trees, for the spacing check
+            fun d(a: Double, b: Double): Double { var v = (b - a) % size; if (v > size / 2.0) v -= size; if (v < -size / 2.0) v += size; return v }
+            fun tryPlace(x: Double, y: Double, kind: PropKind): Boolean {
+                val ix = floor(x).toInt(); val iy = floor(y).toInt()
+                if (hypot(x - cx, y - cy) < 4 || !suits(kind, ix, iy)) return false
+                for (dy in -1..1) for (dx in -1..1) {
+                    val near = cells[(iy + dy).mod(size) * size + (ix + dx).mod(size)] ?: continue
+                    if (near.any { hypot(d(it.x, x), d(it.y, y)) < MIN_TRUNK_GAP }) return false
+                }
+                val p = Prop(x, y, kind)
+                trees += p; cells.getOrPut(iy * size + ix) { mutableListOf() } += p
+                return true
+            }
+            repeat(size * size / 160) {
+                val gx = rng.nextDouble(size.toDouble()); val gy = rng.nextDouble(size.toDouble())
+                val kind = kindFor(floor(gx).toInt(), floor(gy).toInt(), rng.nextInt(100)) ?: return@repeat
+                val want = 3 + rng.nextInt(6); val r = 1.2 + rng.nextDouble() * 2.0
+                var placed = 0
+                repeat(want * 3) {
+                    if (placed >= want) return@repeat
+                    // a point in the grove's disc by rejection: plain arithmetic only, no
+                    // trig, so every platform (JVM, wasm) places bit-identical trees
+                    val ox = (rng.nextDouble() * 2 - 1) * r; val oy = (rng.nextDouble() * 2 - 1) * r
+                    if (ox * ox + oy * oy > r * r) return@repeat
+                    val x = (gx + ox).mod(size.toDouble()); val y = (gy + oy).mod(size.toDouble())
+                    if (tryPlace(x, y, kind)) placed++
+                }
+            }
+            repeat(size * size / 120) { // loners
+                val x = rng.nextDouble(size.toDouble()); val y = rng.nextDouble(size.toDouble())
+                val kind = kindFor(floor(x).toInt(), floor(y).toInt(), rng.nextInt(100)) ?: return@repeat
+                tryPlace(x, y, kind)
+            }
+            return trees
         }
 
         private fun smoothLattice(lat: DoubleArray, cells: Int, fx: Double, fy: Double): Double {

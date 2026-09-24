@@ -24,3 +24,22 @@ internal fun GameActivity.playSpriteAnim(isPlayer: Boolean, name: String, anim: 
         }, holdMs)
     }
 }
+
+// Plays a move's attack effect (SkillEngine fx, e.g. fx_laser / fx_bite) over
+// the defender. Moves without an fx do nothing.
+internal fun GameActivity.playAttackFx(onPlayer: Boolean, moveName: String) {
+    SkillEngine.fxFor(moveName)?.let { playFx(onPlayer, it) }
+}
+
+// Plays fx_<fx>.gif once over one combatant, then hides it. The GIFs end on
+// an empty frame, so hiding a frame late never shows a stuck effect.
+internal fun GameActivity.playFx(onPlayer: Boolean, fx: String) {
+    val view = findViewById<GifView>(if (onPlayer) R.id.spritePlayerFx else R.id.spriteEnemyFx) ?: return
+    val res = resources.getIdentifier("fx_$fx", "drawable", packageName)
+    if (res == 0) return
+    val gen = ((view.tag as? Int) ?: 0) + 1
+    view.tag = gen
+    view.setGifResource(res)
+    val ms = view.durationMs().takeIf { it > 0 } ?: 500
+    mainHandler.postDelayed({ if (view.tag == gen) view.setGifResource(null) }, ms.toLong())
+}

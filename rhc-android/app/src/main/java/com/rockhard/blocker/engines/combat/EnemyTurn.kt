@@ -55,6 +55,7 @@ internal fun GameActivity.triggerEnemyCounterAttack() {
             if (evasionChance >= 100) printLog("> 💨 ${target.name} used POTION EVASION and dodged completely!") else printLog("> ☁️ EVASION! ${target.name} dodged the attack!")
             AnimUtils.animEvade(findViewById(R.id.spritePlayer), true)
         } else {
+            playAttackFx(true, enemyMove) // it landed (a shield may still soak it)
             if (target.name.contains("[Thick-Skinned]")) { damage = (damage * 0.85).toInt(); printLog("> 🛡️ [Thick-Skinned] reduced damage!") }
             if (target.infusionStacks > 0 && target.infusionEl == "Snow") { damage = (damage * (1.0 / (target.infusionStacks + 1))).toInt(); printLog("> ❄️ SNOW INFUSION! Damage heavily reduced!") }
             

@@ -11,15 +11,18 @@ object SkillEngine {
         val isAntiAir: Boolean = false,
         val isDoubleAir: Boolean = false,
         val type: String = "Standard",
+        // Attack effect played over the defender when the move lands:
+        // fx_<fx>.gif, drawn by sprite_studio/autogen/effects.py. null = none.
+        val fx: String? = null,
     )
 
     val SKILL_DATABASE =
         mapOf(
-            "Ping" to SkillDef("Ping", "DoubleStrike", 15, isAntiAir = true),
+            "Ping" to SkillDef("Ping", "DoubleStrike", 15, isAntiAir = true, fx = "laser"),
             "Glitch" to SkillDef("Glitch", "Stun", 15),
-            "Data Drain" to SkillDef("Data Drain", "Lifesteal", 20),
+            "Data Drain" to SkillDef("Data Drain", "Lifesteal", 20, fx = "bite"),
             "Overclock" to SkillDef("Overclock", "Shield", 20),
-            "Static" to SkillDef("Static", "Poison", 25, isDoubleAir = true),
+            "Static" to SkillDef("Static", "Poison", 25, isDoubleAir = true, fx = "laser"),
             "Timeshift" to SkillDef("Timeshift", "None", 0, type = "Timeshift"),
             "Tweet" to SkillDef("Tweet", "DoubleStrike", 15, isAntiAir = true),
             "Cancel" to SkillDef("Cancel", "Stun", 15),
@@ -36,16 +39,16 @@ object SkillEngine {
             "Loot Box" to SkillDef("Loot Box", "StealNet", 10),
             "Lag" to SkillDef("Lag", "DoubleStrike", 15, isAntiAir = true),
             "Skip" to SkillDef("Skip", "Terrify", 10),
-            "Binge" to SkillDef("Binge", "Lifesteal", 20),
+            "Binge" to SkillDef("Binge", "Lifesteal", 20, fx = "bite"),
             "Autoplay" to SkillDef("Autoplay", "Shield", 20),
             "Ad Break" to SkillDef("Ad Break", "StealCoins", 25),
             "Cyber Strike" to SkillDef("Cyber Strike", "DoubleStrike", 15, isAntiAir = true),
-            "Aero Beam" to SkillDef("Aero Beam", "Terrify", 10),
+            "Aero Beam" to SkillDef("Aero Beam", "Terrify", 10, fx = "laser"),
             "Mecha Dash" to SkillDef("Mecha Dash", "Lifesteal", 20),
             "Pixel Slash" to SkillDef("Pixel Slash", "Terrify", 10),
-            "Light Pulse" to SkillDef("Light Pulse", "StealPotion", 10, isAntiAir = true),
+            "Light Pulse" to SkillDef("Light Pulse", "StealPotion", 10, isAntiAir = true, fx = "laser"),
             "Tackle" to SkillDef("Tackle", "DoubleStrike", 15, isAntiAir = true),
-            "Bite" to SkillDef("Bite", "Lifesteal", 20, isAntiAir = true),
+            "Bite" to SkillDef("Bite", "Lifesteal", 20, isAntiAir = true, fx = "bite"),
             "Scratch" to SkillDef("Scratch", "StealCoins", 25, isAntiAir = true),
             "Growl" to SkillDef("Growl", "Terrify", 10),
             "Swipe" to SkillDef("Swipe", "Lifesteal", 20, isAntiAir = true),
@@ -57,20 +60,22 @@ object SkillEngine {
             "Parry" to SkillDef("Parry", "Shield", 20),
             "Marathon" to SkillDef("Marathon", "Terrify", 10),
             "Hypnotize" to SkillDef("Hypnotize", "Terrify", 10),
-            "Chrono Blast" to SkillDef("Chrono Blast", "Terrify", 10),
+            "Chrono Blast" to SkillDef("Chrono Blast", "Terrify", 10, fx = "laser"),
             "Nova Shield" to SkillDef("Nova Shield", "Shield", 20),
             "Ambush" to SkillDef("Ambush", "Terrify", 10),
-            "Feral Strike" to SkillDef("Feral Strike", "Terrify", 10),
-            "Fatal Exception" to SkillDef("Fatal Exception", type = "Ultimate"),
+            "Feral Strike" to SkillDef("Feral Strike", "Terrify", 10, fx = "bite"),
+            "Fatal Exception" to SkillDef("Fatal Exception", type = "Ultimate", fx = "laser"),
             "The Algorithm" to SkillDef("The Algorithm", type = "Ultimate"),
             "Tryhard Mode" to SkillDef("Tryhard Mode", type = "Ultimate"),
             "DMCA Takedown" to SkillDef("DMCA Takedown", type = "Ultimate"),
-            "Orbital Cannon" to SkillDef("Orbital Cannon", type = "Ultimate"),
+            "Orbital Cannon" to SkillDef("Orbital Cannon", type = "Ultimate", fx = "laser"),
             "Sky-Breaker" to SkillDef("Sky-Breaker", isDoubleAir = true, type = "Ultimate"),
-            "Apex Predator" to SkillDef("Apex Predator", type = "Ultimate"),
+            "Apex Predator" to SkillDef("Apex Predator", type = "Ultimate", fx = "bite"),
             "Cataclysm" to SkillDef("Cataclysm", "Terrify", 20),
             "Obliterate" to SkillDef("Obliterate", "Shield", 30),
         )
+
+    fun fxFor(move: String) = SKILL_DATABASE[move]?.fx
 
     fun isAntiAir(move: String) = SKILL_DATABASE[move]?.isAntiAir == true
 

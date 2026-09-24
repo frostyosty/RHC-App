@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.rockhard.blocker.world.sim.DeterminismTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-09-24T12:10:02" hostname="codespaces-283ca1" time="0.32">
-  <properties/>
-  <testcase name="mapIsIdenticalOnEveryPlatform[jvm]" classname="com.rockhard.blocker.world.sim.DeterminismTest" time="0.174"/>
-  <testcase name="scriptedWalkIsIdenticalOnEveryPlatform[jvm]" classname="com.rockhard.blocker.world.sim.DeterminismTest" time="0.144"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

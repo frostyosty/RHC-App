@@ -82,7 +82,7 @@ internal fun GameActivity.executePlayerMove(moveName: String) {
             
             if (activePet.name.contains("[Vampiric]")) { val heal = (finalDmg * 0.15).toInt().coerceAtLeast(1); activePet.hp = (activePet.hp + heal).coerceAtMost(activePet.maxHp); printLog("> 🧛[Vampiric] stole $heal HP!") }
 
-            currentEnemy!!.hp -= finalDmg; updateHealthBars(); AnimUtils.animShake(findViewById(R.id.spriteEnemy)); playSpriteAnim(false, currentEnemy!!.name, "hit"); vibratePhone(50)
+            currentEnemy!!.hp -= finalDmg; updateHealthBars(); AnimUtils.animShake(findViewById(R.id.spriteEnemy)); playSpriteAnim(false, currentEnemy!!.name, "hit"); playAttackFx(false, moveName); vibratePhone(50)
             if (skillLog.isNotEmpty()) printLog(skillLog)
             
             if (currentEnemy!!.name.contains("[Spiked]") && finalDmg > 0) { val recoil = (finalDmg * 0.1).toInt().coerceAtLeast(1); activePet.hp -= recoil; printLog("> 🌵[Spiked] recoil! ${activePet.name} takes $recoil damage!"); updateHealthBars() }

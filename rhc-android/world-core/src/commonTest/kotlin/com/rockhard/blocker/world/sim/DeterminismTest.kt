@@ -40,7 +40,7 @@ class DeterminismTest {
     }
 
     companion object {
-        const val MAP_PRINT = -6197049242300137295L
-        const val WALK_PRINT = -3117004349513727958L
+        const val MAP_PRINT = 2596199744769405883L
+        const val WALK_PRINT = 8105609390663669207L
     }
 }

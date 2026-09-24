@@ -155,7 +155,7 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
     }
 
     private fun drawSprites(world: World, cam: Entity, dirX: Double, dirY: Double, rightX: Double, rightY: Double, eye: Double, horizon: Int, pal: Palette, sprites: SpriteSource, timeMs: Long) {
-        fun draw(x: Double, y: Double, lift: Double, size: Double, key: String, mirror: Boolean, phase: Long, fallback: String? = null) {
+        fun draw(x: Double, y: Double, lift: Double, size: Double, key: String, mirror: Boolean, phase: Long, fallback: String? = null, tree: Boolean = false) {
             val rx = map.delta(cam.x, x); val ry = map.delta(cam.y, y)
             val depthZ = rx * dirX + ry * dirY
             if (depthZ < 0.2 || depthZ > maxZ) return
@@ -163,7 +163,9 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
             val sh = focal * size / depthZ
             val sx = w / 2 + focal * lateral / depthZ
             if (sx + sh / 2 < 0 || sx - sh / 2 >= w) return
-            val tex = sprites.frame(key, timeMs + phase)
+            // trees: the hand-drawn level nearest the on-screen height, not a rescale
+            val k = if (tree) "${key}_d${treeLevel(sh)}" else key
+            val tex = sprites.frame(k, timeMs + phase)
                 ?: fallback?.let { sprites.frame(it, timeMs + phase) } ?: return
             val bottom = horizon + (eye - map.surfaceAt(x, y) - lift) * focal / depthZ
             val top = bottom - sh
@@ -186,7 +188,10 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
             }
         }
 
-        for (p in map.props) draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, 0)
+        for (p in map.props) {
+            if (p.kind.isTree) draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, (p.x * 7919 + p.y * 104729).toLong(), "prop_tree", tree = true)
+            else draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, 0)
+        }
         for (e in world.entities.values) {
             if (e.id == cam.id) continue
             val v = spriteFor(e, cam, rightX, rightY)
@@ -230,6 +235,19 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
          * that much larger to keep the creature itself at e.size.
          */
         const val CREATURE_CANVAS = 42.0 / 32.0
+
+        /**
+         * Native heights of the tree distance levels, d0 nearest (D in
+         * sprite_studio/autogen/scenery.py): change both or neither.
+         */
+        val TREE_LOD = intArrayOf(128, 96, 72, 56, 44, 32, 24, 16, 12, 8)
+
+        /** The smallest level at or above 0.9x the on-screen height [sh], clamped to d0/d9. */
+        fun treeLevel(sh: Double): Int {
+            val want = sh * 0.9
+            for (i in TREE_LOD.indices.reversed()) if (TREE_LOD[i] >= want) return i
+            return 0
+        }
 
         fun lerp(a: Int, b: Int, t: Double): Int {
             if (t <= 0) return a or (0xFF shl 24)

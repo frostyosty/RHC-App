@@ -315,15 +315,29 @@
 
         const canvas = document.getElementById('canvas'); const ctx = canvas.getContext('2d'); const onionCtx = document.getElementById('onionCanvas').getContext('2d');
         let frames = []; let currentFrame = 0; let drawing = false; let tool = 'draw'; let playing = false; let playInterval; let panStartX, panStartY, panCanvasSnapshot;
+        // Per-frame ms (null = use the FPS select) and the upscale /save writes with.
+        // Both come from /load, so an edited autogen GIF keeps its timing and 2x size.
+        let durations = []; let scale = 1;
 
         // INIT WITH 4 BLANK FRAMES DEFAULT
         function initBlankFrames() {
             const temp = document.createElement('canvas'); temp.width = canvas.width; temp.height = canvas.height;
             const blank = temp.toDataURL();
-            frames = [blank, blank, blank, blank];
+            frames = [blank, blank, blank, blank]; durations = [null, null, null, null];
         }
 
-        function updateCanvasSize() { const sz = parseInt(document.getElementById('canvasSize').value); canvas.width = sz; canvas.height = sz; onionCanvas.width = sz; onionCanvas.height = sz; initBlankFrames(); currentFrame = 0; renderFrameList(); }
+        // Resize the canvas to n px. Adds an <option> for sizes the select doesn't list
+        // (autogen frames are 84 or 32), so the select never goes blank.
+        function setCanvasSize(n, keepFrames) {
+            const sel = document.getElementById('canvasSize');
+            if (![...sel.options].some(o => parseInt(o.value) === n)) { const o = document.createElement('option'); o.value = n; o.text = `Loaded (${n}x${n})`; sel.add(o); }
+            sel.value = String(n);
+            canvas.width = n; canvas.height = n; onionCanvas.width = n; onionCanvas.height = n;
+            if (!keepFrames) { initBlankFrames(); scale = 1; }
+            currentFrame = 0; renderFrameList();
+        }
+        function updateCanvasSize() { setCanvasSize(parseInt(document.getElementById('canvasSize').value), false); }
+        function setStatus(msg, color) { const st = document.getElementById('status'); st.style.color = color; st.innerText = msg; }
         function setTool(t) { tool = t; document.getElementById('btnDraw').className = 'tool-btn ' + (t === 'draw' ? 'active' : ''); document.getElementById('btnErase').className = 'tool-btn ' + (t === 'erase' ? 'active' : ''); document.getElementById('btnMove').className = 'tool-btn ' + (t === 'move' ? 'active' : ''); }
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentFrame(); }
         function flipHorizontal() { const img = new Image(); img.src = canvas.toDataURL(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save(); ctx.translate(canvas.width, 0); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0); ctx.restore(); saveCurrentFrame(); } }
@@ -352,9 +366,9 @@
             renderFrameList();
         }
 
-        function addFrame() { const temp = document.createElement('canvas'); temp.width = canvas.width; temp.height = canvas.height; frames.push(temp.toDataURL()); loadFrame(frames.length - 1); }
-        function copyFrame() { frames.push(frames[currentFrame]); loadFrame(frames.length - 1); }
-        function insertTween() { if (currentFrame >= frames.length - 1) return; const img1 = new Image(); img1.src = frames[currentFrame]; const img2 = new Image(); img2.src = frames[currentFrame + 1]; img1.onload = () => { img2.onload = () => { const tempC = document.createElement('canvas'); tempC.width = canvas.width; tempC.height = canvas.height; const tCtx = tempC.getContext('2d'); tCtx.globalAlpha = 0.5; tCtx.drawImage(img1, 0, 0); tCtx.drawImage(img2, 0, 0); frames.splice(currentFrame + 1, 0, tempC.toDataURL()); loadFrame(currentFrame + 1); } } }
+        function addFrame() { const temp = document.createElement('canvas'); temp.width = canvas.width; temp.height = canvas.height; frames.push(temp.toDataURL()); durations.push(null); loadFrame(frames.length - 1); }
+        function copyFrame() { frames.push(frames[currentFrame]); durations.push(durations[currentFrame]); loadFrame(frames.length - 1); }
+        function insertTween() { if (currentFrame >= frames.length - 1) return; const img1 = new Image(); img1.src = frames[currentFrame]; const img2 = new Image(); img2.src = frames[currentFrame + 1]; img1.onload = () => { img2.onload = () => { const tempC = document.createElement('canvas'); tempC.width = canvas.width; tempC.height = canvas.height; const tCtx = tempC.getContext('2d'); tCtx.globalAlpha = 0.5; tCtx.drawImage(img1, 0, 0); tCtx.drawImage(img2, 0, 0); frames.splice(currentFrame + 1, 0, tempC.toDataURL()); durations.splice(currentFrame + 1, 0, null); loadFrame(currentFrame + 1); } } }
 
         function generateAI() {
             let prompt = document.getElementById('aiPrompt').value;
@@ -382,23 +396,39 @@
             playing = !playing; document.getElementById('btnPlay').innerText = playing ? '⏸️ PAUSE' : '▶️ PLAY';
             if (playing) {
                 let playFrame = 0;
-                let fps = parseInt(document.getElementById('fpsSelect').value);
-                let interval = 1000 / fps;
-                playInterval = setInterval(() => { const img = new Image(); img.src = frames[playFrame]; img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; playFrame = (playFrame + 1) % frames.length; }, interval);
-            } else { clearInterval(playInterval); loadFrame(currentFrame); }
+                const fpsMs = 1000 / parseInt(document.getElementById('fpsSelect').value);
+                // Loaded frames keep their own durations; long holds are capped so the preview keeps moving.
+                const step = () => { const img = new Image(); img.src = frames[playFrame]; img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; const ms = Math.min(durations[playFrame] || fpsMs, 2000); playFrame = (playFrame + 1) % frames.length; playInterval = setTimeout(step, ms); };
+                step();
+            } else { clearTimeout(playInterval); loadFrame(currentFrame); }
         }
 
         function saveSprite() {
             let name = document.getElementById('filename').value || 'spr_unknown'; name = name.replace('.gif', '');
             let fps = parseInt(document.getElementById('fpsSelect').value);
-            let duration = Math.floor(1000 / fps); // Calculate milliseconds per frame
+            let duration = Math.floor(1000 / fps); // default ms for frames without their own duration
 
-            fetch('/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: name, frames: frames, duration: duration }) }).then(res => res.json()).then(data => { document.getElementById('status').style.color = '#4CAF50'; document.getElementById('status').innerText = "✅ Saved: " + data.file; setTimeout(() => document.getElementById('status').innerText = "", 3000); loadDashboard(); });
+            fetch('/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: name, frames: frames, durations: durations, duration: duration, scale: scale }) })
+                .then(res => res.json()).then(data => {
+                    if (data.status !== 'success') { setStatus("❌ Save failed: " + (data.error || 'unknown error'), '#D32F2F'); return; }
+                    setStatus("✅ Saved: " + data.file + (data.scale > 1 ? ` (${data.scale}x)` : ''), '#4CAF50'); setTimeout(() => setStatus('', '#4CAF50'), 3000); loadDashboard();
+                }).catch(err => setStatus("❌ Save failed: " + err, '#D32F2F'));
         }
 
-        function loadDashboard() { fetch('/dashboard_data').then(res => res.json()).then(data => { const header = document.getElementById('matrixHeader'); header.innerHTML = '<th>Beast</th>'; data.animations.forEach(anim => { header.innerHTML += `<th>${anim}</th>`; }); const body = document.getElementById('matrixBody'); body.innerHTML = ''; data.matrix.forEach(row => { let tr = `<tr><td class="beast-name">${row.beast}</td>`; data.animations.forEach(anim => { const cell = row.anims[anim]; const bareName = (anim === 'fx' ? 'fx_' : 'spr_') + (anim === 'fx' ? row.beast : row.beast + '_' + anim); if (cell.exists) { tr += `<td><img class="preview-img" src="/drawable/${cell.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${cell.file}', '${bareName}')">✏️ EDIT</button></td>`; } else { tr += `<td><div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('${bareName}')">➕ CREATE</button></td>`; } }); tr += '</tr>'; body.innerHTML += tr; }); }); }
-        function prepareCreate(filename) { document.getElementById('filename').value = filename; initBlankFrames(); loadFrame(0); window.scrollTo(0, 0); }
-        function loadFromMatrix(filename, bareName) { fetch('/load?file=' + filename).then(res => res.json()).then(data => { if (data.frames && data.frames.length > 0) { document.getElementById('canvasSize').value = data.width; updateCanvasSize(); setTimeout(() => { frames = data.frames; document.getElementById('filename').value = bareName; loadFrame(0); window.scrollTo(0, 0); }, 100); } }); }
+        function loadDashboard() { fetch('/dashboard_data').then(res => res.json()).then(data => { const header = document.getElementById('matrixHeader'); header.innerHTML = '<th>Beast</th>'; data.animations.forEach(anim => { header.innerHTML += `<th>${anim}</th>`; }); const body = document.getElementById('matrixBody'); body.innerHTML = ''; data.matrix.forEach(row => { let tr = `<tr><td class="beast-name">${row.beast}${row.effect ? ' <span style="color:#888">(effect)</span>' : ''}</td>`; data.animations.forEach(anim => { const cell = row.anims[anim]; if (!cell) { tr += '<td></td>'; return; } const bareName = (anim === 'fx' ? 'fx_' : 'spr_') + (anim === 'fx' ? row.beast : row.beast + '_' + anim); if (cell.exists) { tr += `<td><img class="preview-img" src="/drawable/${cell.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${cell.file}', '${bareName}')">✏️ EDIT</button></td>`; } else { tr += `<td><div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('${bareName}')">➕ CREATE</button></td>`; } }); tr += '</tr>'; body.innerHTML += tr; }); }); }
+        function prepareCreate(filename) { document.getElementById('filename').value = filename; initBlankFrames(); scale = 1; loadFrame(0); window.scrollTo(0, 0); }
+        // /load returns frames at their real size (autogen's 2x write is undone) plus durations and scale.
+        function loadFromMatrix(filename, bareName) {
+            if (playing) togglePlay();
+            setStatus("⏳ Loading " + filename + "...", '#FF9800');
+            fetch('/load?file=' + encodeURIComponent(filename)).then(res => res.json()).then(data => {
+                if (data.error || !data.frames || data.frames.length === 0) { setStatus("❌ Load failed: " + (data.error || 'no frames in ' + filename), '#D32F2F'); return; }
+                setCanvasSize(data.width, true);
+                frames = data.frames; durations = data.durations || frames.map(() => null); scale = data.scale || 1;
+                document.getElementById('filename').value = bareName; loadFrame(0); window.scrollTo(0, 0);
+                setStatus(`✏️ ${filename}: ${frames.length} frames, ${data.width}x${data.width}` + (scale > 1 ? `, saves at ${scale}x` : ''), '#4CAF50');
+            }).catch(err => setStatus("❌ Load failed: " + err, '#D32F2F'));
+        }
 
         initBlankFrames(); renderFrameList(); loadDashboard();
     </script>

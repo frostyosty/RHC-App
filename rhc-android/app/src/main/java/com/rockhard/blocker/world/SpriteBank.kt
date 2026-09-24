@@ -38,13 +38,16 @@ class SpriteBank(private val context: Context) : SpriteSource {
         val count = (duration / step).toInt().coerceAtLeast(1)
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
+        // Samples that repeat the previous one share its Texture: a slow
+        // 2-frame tree sway would otherwise keep ~36 copies of each frame.
+        var last: Texture? = null
         val frames = List(count) { i ->
             bmp.eraseColor(0)
             movie.setTime((i * step).toInt())
             movie.draw(canvas, 0f, 0f)
             val px = IntArray(w * h)
             bmp.getPixels(px, 0, w, 0, 0, w, h)
-            Texture(w, h, px)
+            last?.takeIf { it.px.contentEquals(px) } ?: Texture(w, h, px).also { last = it }
         }
         bmp.recycle()
         return Anim(frames, step)

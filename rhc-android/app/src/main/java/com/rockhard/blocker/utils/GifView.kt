@@ -33,6 +33,9 @@ class GifView @JvmOverloads constructor(
         invalidate()
     }
 
+    /** One loop of the current GIF in ms (0 if none), e.g. to hide a one-shot effect after it. */
+    fun durationMs(): Int = movie?.duration() ?: 0
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val m = movie ?: return

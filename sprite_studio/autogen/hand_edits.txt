@@ -1,0 +1,2 @@
+# GIFs saved from Sprite Studio. autogen.py skips these unless --force.
+# Delete a line to let autogen redraw that file.

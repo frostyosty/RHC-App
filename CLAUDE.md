@@ -19,8 +19,9 @@ Feature-level detail (blocking, cooldown, Momentum, Netbeasts) lives in
 - `./release.sh`: interactive menu, then always publishes a GitHub release to
   `frostyosty/htc-downloads-rhc` with a bumped `vX.Y.Z` tag. Option `1`
   (Desktop + all four Android flavors) is the default and the usual choice.
-  Before building it quicksaves (the `zz_quicksave.txt` steps: `git add -A`,
-  commit, `pull --rebase`, `push` to `origin/main`).
+  Before building it quicksaves by running `zz_quicksave.txt` (`git add -A`,
+  commit, `pull --rebase`, `push` to `origin/main`), so edit that file to
+  change what the quicksave does.
   **Running it commits and pushes everything and publishes a release, so don't
   run it unless asked.**
 - Desktop only: `bash rhc-desktop/build.sh` (run from the repo root; it `cd`s to `/workspaces/RHC-App`).
@@ -135,49 +136,51 @@ Shopping green and `LegendKit` gold. Views are wired with
 `by_view({...})`. Shared parts are in `designs.py`: `dleg`, `bird_leg`,
 `raptor_leg`, `roo_leg`, `stomp_leg`, `hum_leg`, `gauntlet`, `claw_arm`,
 `bat_wing`, `blade_wing`, `feather_wing`, `fangs` and `sq`. The battle-only
-rows (aegis, titan, laser, bite, net) draw only the front and side views.
+rows (aegis, titan, net) draw only the front and side views.
 Redraw a new row the same way.
 
-## Planned work (not started, agreed plan)
+**Battle effects are not creatures.** `laser`, `bite` and `net` are one-shot
+effects in `sprite_studio/autogen/effects.py` (`fx_<name>.gif`, 64 grid at
+2x, facing right, ending on an empty frame), written by
+`autogen.py --only laser,bite,net`. They have no idle/walk/faint and aren't
+matrix rows. Only real creatures (and player/poacher/aegis/titan) are rows.
+- Moves link to an effect through the `fx` field in
+  `SkillEngine.SKILL_DATABASE`. `playAttackFx(onPlayer, move)` in
+  `BattleSpriteAnim.kt` plays it over the defender when the hit lands.
+- Items call `playFx(onPlayer, name)` directly. The mid-battle Net button in
+  `GameSetup.kt` plays `fx_net` over the enemy.
+- The overlays are `spritePlayerFx`/`spriteEnemyFx` in `game_arena.xml`. The
+  player's is mirrored, because the enemy attacks from the right.
+- A new effect is a new `@effect` in `effects.py`, `fx = "<name>"` on its
+  moves (or a `playFx` call), and its name in `EFFECTS` in
+  `sprite_studio/server.py` so the Studio dashboard shows it.
 
-Nothing below is implemented yet. Do it in this order, since each part is
-independent and the first is the smallest.
+## Planned work (agreed plan)
 
-### A. Sprite Studio: "✏️ EDIT" does nothing
+A and B are done; C and D are not started. C is next; D is a long-running
+goal worked through a few effects at a time.
 
-**Cause (confirmed):** in `sprite_studio/index.html`, `loadFromMatrix` sets
-the `<select id="canvasSize">` to the GIF's width. That select only offers 32,
-64 and 128, but autogen GIFs are now 168 px (84 px frames written at 2x;
-props and fx are 64). A value with no matching option leaves the select
-empty, `parseInt('')` gives NaN, and the canvas becomes 0x0, so nothing
-appears and there's no error. The `setTimeout(..., 100)` that swaps in the
-frames after `updateCanvasSize()` has already blanked them is also fragile.
+### A. Sprite Studio: "✏️ EDIT" does nothing (done 2026-09-24)
 
-**Fix plan:**
-1. `/load` in `server.py` detects the 2x write (every 2x2 block is one
-   colour) and returns frames at their real size (84 or 32). It also
-   returns the per-frame `durations` and a `scale` of 2. The user then paints
-   real pixels, not half-pixels.
-2. In the page, split canvas sizing from "new blank sprite". Add a
-   `setCanvasSize(n, keepFrames)` that inserts an `<option>` for `n` if it's
-   missing. `loadFromMatrix` sets the size, the frames and the durations in
-   one step, with no timeout. Show an error in the page if `/load` fails or
-   returns no frames.
-3. `/save` writes through `pixelkit.save_gif`, which uses a shared palette
-   with index 0 transparent. It upscales back by the loaded `scale` and keeps
-   each frame's duration. Autogen durations vary (for example, faint holds
-   for 60 s), and the current save flattens them all to 125 ms and can lose
-   transparency.
-4. Protect hand edits: each Studio save appends the file name to
-   `sprite_studio/autogen/hand_edits.txt`, which is committed. `autogen.py`
-   skips listed files and says so, unless `--force` is given. Without this,
-   the next autogen run silently overwrites painted frames.
-5. Test: launch the Studio, click EDIT on `spr_cacheon_idle`. It should show
-   8 frames of 84x84 in the left panel. Paint a pixel, save, and check that
-   the GIF is 168x168, has the same durations and a transparent background,
-   and that `autogen.py --only cacheon` skips it.
+Fixed. `/load` in `server.py` detects autogen's 2x write and returns frames
+at their real size (84, or 32 for props/fx) with per-frame `durations` and
+`scale`. The page's `setCanvasSize(n, keepFrames)` adds a missing `<option>`,
+and there's no more timeout. `/save` writes through `pixelkit.save_gif` at
+the loaded scale, keeps the durations, and appends the file to
+`sprite_studio/autogen/hand_edits.txt`. `autogen.py` skips listed files
+unless `--force`. Set `STUDIO_PORT` to run a second Studio on another port.
 
-### B. Trees: 10 kinds x 10 distance levels
+### B. Trees: 10 kinds x 10 distance levels (done 2026-09-24)
+
+Built as planned below. `scenery.py` draws the 100 `prop_tree_<kind>_d<i>.gif`
+(`autogen.py --scenery`, review sheet `--trees sheet.png`), `PropKind` has one
+entry per kind (height and trunk radius match `@tree(...)` in `scenery.py`),
+`TerrainRenderer.TREE_LOD`/`treeLevel` picks the level and `WorldMap.placeTrees`
+makes the groves. Grove points are picked by rejection sampling, not `cos`/`sin`,
+because trig isn't bit-identical on JVM and wasm and `DeterminismTest` pins the
+map. `SpriteBank` shares repeated frames, so slow 2-frame sways stay cheap.
+The world code lives in `rhc-android/world-core/src/commonMain/.../world/`.
+The original plan, kept for reference:
 
 **Pipeline: same autogen, new module.** Reuse `pixelkit` (Painter, shading,
 outline, `save_gif`) and the "render, look, fix" loop. Put the trees in a new
@@ -274,6 +277,32 @@ sim so it stays deterministic:
    - Add a preview PNG walking straight at a grove.
    - Update `rhc-android/README.md` §5.1 with the new behaviour when it's
      built.
+
+### D. Every attack gets an effect (eventually)
+
+Goal: every move in `SkillEngine.SKILL_DATABASE` has an `fx`, so no attack
+lands with just the flying move-name text. Items and other actions (potion,
+repel spray, the human punch in `executeHumanPunch`) should get one too, via
+`playFx`. Build them the way laser, bite and net were built (see "Battle
+effects are not creatures" above): a function in `effects.py`, rendered and
+looked at frame by frame, in the dark creature style.
+
+Done so far: laser (Ping, Static, Aero Beam, Light Pulse, Chrono Blast,
+Orbital Cannon, Fatal Exception), bite (Bite, Binge, Data Drain, Feral
+Strike, Apex Predator) and net (the thrown Net item).
+
+Still without an effect (43 moves): Glitch, Overclock, Timeshift, Tweet,
+Cancel, Doxx, Doomscroll, Ratio, Annihilate, Cleanse, Basic Attack, Spam
+Click, Rage Quit, G-Fuel, XP Boost, Loot Box, Lag, Skip, Autoplay, Ad Break,
+Cyber Strike, Mecha Dash, Pixel Slash, Tackle, Scratch, Growl, Swipe, System
+Wipe, Firewall, Viral Surge, Deplatform, Critical Strike, Parry, Marathon,
+Hypnotize, Nova Shield, Ambush, The Algorithm, Tryhard Mode, DMCA Takedown,
+Sky-Breaker, Cataclysm, Obliterate.
+
+Several moves can share one effect when they really are the same kind of
+hit (e.g. slash/claw moves, shield/buff moves, poison/drain moves), which
+keeps the GIF count down. Ultimates should each get their own. Ask the user
+before settling a grouping. When adding effects, update the two lists above.
 
 ## Conventions
 

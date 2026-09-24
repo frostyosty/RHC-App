@@ -75,6 +75,8 @@ Exploring is a first-person walk through an open 3D field. It's on by default. S
 
 Creatures are seen from 8 directions (45° steps) using 5 drawn views: front, fq (¾ front), side, bq (¾ back) and back; the right-facing views are mirrored for the other side. Walking uses `walk_front`, `walk_fq`, `explore` (side), `walk_bq` and `walk_back`; standing uses `idle_front`, `idle_fq`, `idle` (side), `idle_bq` and `idle_back`. A row that has no ¾/back art yet falls back to the old front/side GIFs. Scenery and the cage are `prop_*.gif` from `sprite_studio/autogen`.
 
+Trees come in 10 kinds (oak, pine, birch, willow, palm, cypress, maple, dead snag, giant mushroom and the glitched wire-tree), each hand-drawn by `sprite_studio/autogen/scenery.py` at 10 distance levels, `prop_tree_<kind>_d0`–`d9` (128 px down to 8 px). The renderer draws the level closest to the tree's on-screen height instead of rescaling one sprite, so near trees keep their detail and far ones don't shimmer. `TerrainRenderer.TREE_LOD` must match `D` in `scenery.py`. `WorldMap` places trees in single-kind groves by terrain (palms on sand, willows by water, maples and mushrooms in tall grass, pines on hills, snags and wire-trees only in the outer stage-3 ring). Trunks are always at least 0.9 tiles apart, so there's always a way through a grove.
+
 To test without a phone, run `bash tools/world_preview/run.sh`. It compiles the sim and renderer on the plain JVM, soak-tests a full walk (map determinism, encounters, snapshot round-trip, frame time) and writes preview PNGs to `tools/world_preview/out/`.
 
 **Roadmap (not built yet):**

@@ -79,6 +79,7 @@ internal fun GameActivity.setupBattleControls() {
 
         printLog("\n--- PLAYER TURN ---")
         printLog("> You threw a Net at ${currentEnemy?.name}!")
+        playFx(false, "net")
 
         if (currentEnemy?.type == "EventBoss" || isTrainerBattle) {
             printLog("> ❌ You cannot catch this beast! The net bounced off!")
