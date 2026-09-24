@@ -9,6 +9,9 @@ MODELS_FILE = "../rhc-android/app/src/main/java/com/rockhard/blocker/GameModels.
 
 # ADDED FRONT FACING ANIMATIONS
 ANIMATIONS =['idle', 'attack', 'hit', 'evade', 'faint', 'victory', 'explore', 'fx', 'walk_front', 'attack_front']
+# 3D Wilds views from autogen (3/4 front, 3/4 back, back) and the full spin.
+# Rows that don't draw those views yet just show CREATE in these columns.
+ANIMATIONS += ['idle_front', 'walk_fq', 'idle_fq', 'walk_bq', 'idle_bq', 'walk_back', 'idle_back', 'turn']
 
 class SpriteHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):

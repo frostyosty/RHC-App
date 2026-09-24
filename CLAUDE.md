@@ -84,6 +84,58 @@ exploring. Rules that keep the design working:
 - New creature or scenery art comes from `sprite_studio/autogen`
   (`designs.py`; props are `prop_*.gif`), not hand-made files.
 
+## Netbeast sprite art: the cacheon style
+
+`cacheon` in `sprite_studio/autogen/designs.py` is the reference for how every
+creature should look and be built. The user signed off on it. How it was made:
+
+- **Look.** Dark and hard, not cute. Small head relative to the body, long
+  limbs, angular armour plates (`p.poly`, not round `p.ell` blobs), a
+  wedge-shaped snout with teeth, narrow slit eyes that meet in a V from the
+  front and turn red (`#FF4D5E`) when angry or hurt, and spikes or blades on
+  ears, spine and tail. Deep palette (steel `#4A5263`, plate `#646E82`, joints
+  `#2A303C`, near-black `#15181F`/`#0B0D12`) with one glowing accent colour for
+  the creature's theme (cacheon's is cyan) on vents, ear tips and eyes. Keep the
+  colours in a small per-creature kit class (`CacheonKit`).
+- **64 grid.** `@design(..., size=64, views=ALL_VIEWS)`. The feet rest on
+  `p.ground` (size - 3). Use helpers that take `p.size`/`p.ground`, not
+  hardcoded 32-grid numbers. `dleg` draws a jointed leg (a back-bent hind leg with
+  a thigh, or a near-straight front leg) with a 3px walk stride.
+- **5 views.** Write one function per view (`_cacheon_side`, `_front`, `_fq`,
+  `_bq`, `_back`) and dispatch on `s.view`. Side and the ¾ views face right.
+  Front and back are drawn as the left half only, and the Painter mirrors them.
+  To draw something off-centre in a mirrored view, turn `p.mirror` off around
+  it, the way cacheon's back-view tail does. Draw from back to front: tail, far
+  legs, body, near legs, then the head (`fq`), or the far legs and head first
+  in `bq` and `back`, where the rump is nearest. Share parts between views
+  where you can (`cacheon_head_side`).
+- **Poses.** Every view has to handle `s.step` (walk), `s.eyes`
+  (open/closed/hurt/happy/angry), `s.mouth` (open jaw showing teeth) and `s.t`
+  (glow flicker). Autogen builds every animation from those, including `turn`,
+  the 8-direction spin.
+- **Loop.** Iterate visually, not blind:
+  1. Render the views with `python3 sprite_studio/autogen/autogen.py --turnaround views.png --only <row>`,
+     and a big side-by-side of normal and `Pose(mouth=True, eyes='angry')`,
+     then look at the images.
+  2. Fix whatever reads badly: a floating head, pillar legs, a featureless
+     back of the head.
+  3. Repeat until every view reads as the same creature.
+  4. Write the GIFs with `autogen.py --only <row>` (it must print no ⚠️
+     edge warnings).
+  5. Check `turn.png` from `bash tools/world_preview/run.sh`.
+- **Canvas.** Frames are padded to 42/32 of the grid, so lunges never clip.
+  The 3D renderer's `CREATURE_CANVAS` matches that, so don't change one without
+  the other.
+
+**TODO:** redraw every other row in this style (64 grid, all 5 views, darker,
+less cute), one row at a time, checking each with the loop above:
+1. The 16 Wilds beasts: bytelet, technophasia, chirplet, viralia, trendrake,
+   noobit, skirmalot, grindlord, bufferoo, streamlet, bingewyrm, zephyrlet,
+   airstream, stratolord, cartini (plus cacheon, done).
+2. player and poacher.
+3. The battle-only rows: aegis, titan, laser, bite, net. These may not need
+   the ¾ and back views.
+
 ## Conventions
 
 - Match the surrounding style: emoji-prefixed `echo` status lines in shell

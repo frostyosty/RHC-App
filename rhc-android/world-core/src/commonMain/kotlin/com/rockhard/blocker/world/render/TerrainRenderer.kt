@@ -190,7 +190,8 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
         for (e in world.entities.values) {
             if (e.id == cam.id) continue
             val v = spriteFor(e, cam, rightX, rightY)
-            draw(e.x, e.y, e.z, e.size, v.key, v.mirror, e.id * 137L, v.fallback)
+            val size = if (e.kind == EntityKind.CAGE) e.size else e.size * CREATURE_CANVAS
+            draw(e.x, e.y, e.z, size, v.key, v.mirror, e.id * 137L, v.fallback)
         }
     }
 
@@ -222,6 +223,14 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
     }
 
     companion object {
+        /**
+         * Creature GIFs have empty room around the art for battle lunges
+         * (CANVAS in sprite_studio/autogen/autogen.py): the frame is 42/32
+         * of the creature, which stands on its bottom edge, so it's drawn
+         * that much larger to keep the creature itself at e.size.
+         */
+        const val CREATURE_CANVAS = 42.0 / 32.0
+
         fun lerp(a: Int, b: Int, t: Double): Int {
             if (t <= 0) return a or (0xFF shl 24)
             val ar = a shr 16 and 0xFF; val ag = a shr 8 and 0xFF; val ab = a and 0xFF

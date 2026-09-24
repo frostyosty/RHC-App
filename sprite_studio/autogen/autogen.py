@@ -13,7 +13,9 @@ so every animation of a beast is guaranteed to be the same creature.
   python3 sprite_studio/autogen/autogen.py --turnaround views.png --only cacheon
 
 Output: rhc-android/app/src/main/res/drawable-nodpi/spr_<beast>_<anim>.gif
-and fx_<beast>.gif, 64x64 (32x32 art at 2x), the same names the Studio uses.
+and fx_<beast>.gif, the same names the Studio uses. Creature frames are
+42/32 of the design grid (room for lunges, see draw) and written at 2x:
+84x84 for 32x32 designs, 168x168 for 64x64 ones (`size=` in designs.py).
 """
 import argparse
 import math
@@ -31,14 +33,24 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SAVE_DIR = os.path.join(ROOT, 'rhc-android/app/src/main/res/drawable-nodpi')
 MODELS_FILE = os.path.join(ROOT, 'rhc-android/app/src/main/java/com/rockhard/blocker/GameModels.kt')
 ANIMATIONS = ['idle', 'attack', 'hit', 'evade', 'faint', 'victory', 'explore', 'fx', 'walk_front', 'attack_front']
+CANVAS = 42 / 32  # creature frame size / design grid; TerrainRenderer.CREATURE_CANVAS must match
 HOLD_FOREVER = 60000  # GifView loops by time, so a terminal pose just holds a long frame
 
 
 def draw(name, pose):
+    """One pose on a padded square canvas: 5/32 of the design grid spare on
+    each side and 10/32 above, none below so feet stay on the bottom edge
+    (frames are CANVAS x the grid). Lunges, dodges, hops and the front bite
+    move into that room, so no frame of any animation is clipped; autogen
+    warns if one still touches the edge."""
     d = DESIGNS[name]
-    p = pk.Painter(mirror=pose.symmetric)
+    p = pk.Painter(mirror=pose.symmetric, size=d.size)
     d.fn(p, pose)
-    return p.done() if d.outline else p.img
+    art = p.done() if d.outline else p.img
+    side = d.size * 5 // 32
+    canvas = Image.new('RGBA', (d.size + 2 * side, d.size + 2 * side), pk.CLEAR)
+    canvas.paste(art, (side, 2 * side), art)
+    return canvas
 
 
 def bend(img, amount=1):
@@ -64,6 +76,17 @@ def bob(d, img, i):
 
 
 # ---------------------------------------------------------------- overlays
+def k32(img, v):
+    """Scale a distance authored on the 32 grid to this frame's design size
+    (frames are CANVAS x the design grid, see draw)."""
+    return round(v * img.width / 42)
+
+
+def at(img, x, y):
+    """A point authored on the 32 grid, placed on this padded frame."""
+    return round((x + 5) * img.width / 42), round((y + 10) * img.width / 42)
+
+
 def star(img, cx, cy, r, color='#FFF3A0', core='#FFFFFF'):
     pts = [(cx + dx, cy) for dx in range(-r, r + 1)] + [(cx, cy + dy) for dy in range(-r, r + 1)]
     pts += [(cx + k, cy + k) for k in (-r + 1, r - 1)] + [(cx + k, cy - k) for k in (-r + 1, r - 1)]
@@ -72,7 +95,7 @@ def star(img, cx, cy, r, color='#FFF3A0', core='#FFFFFF'):
 
 
 def sparkles(img, i):
-    spots = [(4, 6), (26, 4), (28, 16), (3, 18), (15, 2)]
+    spots = [at(img, x, y) for x, y in [(4, 6), (26, 4), (28, 16), (3, 18), (15, 2)]]
     for k, (x, y) in enumerate(spots):
         if (i + k) % 3 == 0:
             img = pk.sprinkle(img, [(x, y - 1), (x - 1, y), (x, y), (x + 1, y), (x, y + 1)], '#FFE680')
@@ -81,7 +104,8 @@ def sparkles(img, i):
 
 
 def speed_lines(img, y0, x0=0):
-    for k, y in enumerate((y0, y0 + 5, y0 + 10)):
+    x0, y0 = at(img, x0, y0)
+    for k, y in enumerate((y0, y0 + k32(img, 5), y0 + k32(img, 10))):
         img = pk.sprinkle(img, [(x0 + k + j, y) for j in range(4)], '#FFFFFF')
     return img
 
@@ -115,11 +139,11 @@ def a_attack(d, n):
     seq = [(wind, -2, 70), (wind, -3, 70), (bite, 2, 50), (bite, 4, 100), (bite, 3, 60), (wind, 1, 50), (wind, 0, 60)]
     frames = []
     for k, (img, dx, _) in enumerate(seq):
-        f = pk.translate(img, dx, 0)
+        f = pk.translate(img, k32(img, dx), 0)
         if k in (2, 3):
             f = pk.over(speed_lines(Image.new('RGBA', f.size, pk.CLEAR), 12, 0), f)
         if k == 3:
-            f = star(f, 29, 14, 2)
+            f = star(f, *at(f, 29, 14), 2)
         frames.append(f)
     return frames, [t for _, _, t in seq]
 
@@ -128,10 +152,10 @@ def a_hit(d, n):
     hurt = draw(n, Pose(eyes='hurt', flap=1))
     ok = draw(n, Pose())
     frames = [
-        star(pk.translate(pk.flash(hurt), -2, 0), 26, 12, 3),
-        pk.translate(hurt, -3, 0),
-        pk.translate(pk.flash(hurt), -2, 0),
-        pk.translate(hurt, -1, 0),
+        star(pk.translate(pk.flash(hurt), k32(hurt, -2), 0), *at(hurt, 26, 12), 3),
+        pk.translate(hurt, k32(hurt, -3), 0),
+        pk.translate(pk.flash(hurt), k32(hurt, -2), 0),
+        pk.translate(hurt, k32(hurt, -1), 0),
         hurt,
         ok,
     ]
@@ -141,11 +165,11 @@ def a_hit(d, n):
 def a_evade(d, n):
     base = draw(n, Pose(flap=-1))
     frames = [
-        pk.over(ghost(base), pk.translate(base, -2, 0)),
-        pk.over(ghost(pk.translate(base, -1, 0)), pk.translate(base, -4, 0)),
-        pk.translate(base, -4, 0),
-        pk.translate(base, -3, 0),
-        pk.translate(base, -2, 0),
+        pk.over(ghost(base), pk.translate(base, k32(base, -2), 0)),
+        pk.over(ghost(pk.translate(base, k32(base, -1), 0)), pk.translate(base, k32(base, -4), 0)),
+        pk.translate(base, k32(base, -4), 0),
+        pk.translate(base, k32(base, -3), 0),
+        pk.translate(base, k32(base, -2), 0),
         base,
     ]
     return frames, [60, 80, 120, 70, 70, 80]
@@ -154,7 +178,8 @@ def a_evade(d, n):
 def a_faint(d, n):
     hurt = draw(n, Pose(eyes='hurt', flap=1))
     out = draw(n, Pose(eyes='closed', flap=1))
-    ground = lambda img: pk.translate(img, 0, 29 - (img.getbbox() or (0, 0, 0, 29))[3] + 1) if d.float else img  # noqa: E731
+    g = d.size - 3 + d.size * 10 // 32  # ground row on the padded frame
+    ground = lambda img: pk.translate(img, 0, g - (img.getbbox() or (0, 0, 0, g))[3] + 1) if d.float else img  # noqa: E731
     frames = [
         dizzy(pk.translate(hurt, 1, 0), 0),
         dizzy(pk.translate(hurt, -1, 0), 1),
@@ -206,7 +231,7 @@ def a_attack_front(d, n):
         wind,
         pk.translate(wind, 0, -2),
         pk.squash(bite, 1.1, 1.1),
-        star(star(pk.squash(bite, 1.2, 1.2), 4, 6, 2), 27, 6, 2),
+        star(star(pk.squash(bite, 1.2, 1.2), *at(bite, 4, 6), 2), *at(bite, 27, 6), 2),
         pk.squash(bite, 1.1, 1.1),
         wind,
     ]
@@ -319,6 +344,21 @@ for _v in ('front', 'fq', 'bq', 'back'):
     if _v != 'front':
         VIEW_ANIMS[f'walk_{_v}'] = (_v, lambda d, n, v=_v: a_walk(d, n, v))
     VIEW_ANIMS[f'idle_{_v}'] = (_v, lambda d, n, v=_v: a_idle(d, n, v))
+
+
+def a_turn(d, n):
+    """A full on-the-spot spin through all 8 directions, starting face-on:
+    the 5 drawn views plus the mirrored 3/4 and side views."""
+    order = [('front', False), ('fq', False), ('side', False), ('bq', False),
+             ('back', False), ('bq', True), ('side', True), ('fq', True)]
+    frames = []
+    for i, (v, flip) in enumerate(order):
+        img = draw(n, Pose(view=v, t=i))
+        frames.append(img.transpose(Image.Transpose.FLIP_LEFT_RIGHT) if flip else img)
+    return frames, [140] * 8
+
+
+VIEW_ANIMS['turn'] = ('bq', a_turn)
 ANIM_FNS.update({a: fn for a, (_, fn) in VIEW_ANIMS.items()})
 
 
@@ -340,18 +380,32 @@ def matrix_rows():
     return sorted(rows)
 
 
+def touches_edge(img):
+    """Any opaque pixel on the left, right or top edge (the bottom is the ground)."""
+    a = img.getchannel('A')
+    w, h = img.size
+    return any(a.getpixel((x, 0)) for x in range(w)) or \
+        any(a.getpixel((0, y)) or a.getpixel((w - 1, y)) for y in range(h))
+
+
+def fit(img, cell):
+    """Largest whole-number zoom of a frame that fits in a square cell."""
+    z = max(1, (cell - 4) // img.width)
+    return img.resize((img.width * z, img.height * z), Image.Resampling.NEAREST)
+
+
 def preview(rows, path):
     """Contact sheet: one row per beast, a few key frames, 3x zoom."""
     picks = [('idle', 0), ('idle', 6), ('explore', 1), ('attack', 3), ('hit', 1), ('faint', 5),
              ('victory', 3), ('evade', 1), ('walk_front', 0), ('attack_front', 3), ('fx', 2)]
-    z = 3
-    sheet = Image.new('RGBA', (len(picks) * 34 * z, len(rows) * 34 * z), (40, 44, 52, 255))
+    cell = 100
+    sheet = Image.new('RGBA', (len(picks) * cell, len(rows) * cell), (40, 44, 52, 255))
     for r, n in enumerate(rows):
         d = DESIGNS[n]
         for c, (anim, k) in enumerate(picks):
             frames, _ = ANIM_FNS[anim](d, n)
-            f = frames[min(k, len(frames) - 1)].resize((32 * z, 32 * z), Image.Resampling.NEAREST)
-            sheet.alpha_composite(f, (c * 34 * z + z, r * 34 * z + z))
+            f = fit(frames[min(k, len(frames) - 1)], cell)
+            sheet.alpha_composite(f, (c * cell + (cell - f.width) // 2, r * cell + (cell - f.height) // 2))
     sheet.save(path)
     print(f'🖼️  Preview written to {path}')
 
@@ -359,15 +413,15 @@ def preview(rows, path):
 def turnaround(rows, path):
     """One row per beast: the 5 drawn views (walk steps 0 and 1), 4x zoom."""
     views = ['front', 'fq', 'side', 'bq', 'back']
-    z = 4
-    sheet = Image.new('RGBA', (len(views) * 2 * 34 * z, len(rows) * 34 * z), (40, 44, 52, 255))
+    cell = 200
+    sheet = Image.new('RGBA', (len(views) * 2 * cell, len(rows) * cell), (40, 44, 52, 255))
     for r, n in enumerate(rows):
         for c, v in enumerate(views):
             if v not in DESIGNS[n].views:
                 continue
             for k in (0, 1):
-                f = draw(n, Pose(view=v, step=k)).resize((32 * z, 32 * z), Image.Resampling.NEAREST)
-                sheet.alpha_composite(f, ((c * 2 + k) * 34 * z + z, r * 34 * z + z))
+                f = fit(draw(n, Pose(view=v, step=k)), cell)
+                sheet.alpha_composite(f, ((c * 2 + k) * cell + (cell - f.width) // 2, r * cell + (cell - f.height) // 2))
     sheet.save(path)
     print(f'🔄 Turnaround written to {path}')
 
@@ -413,7 +467,7 @@ def main():
         return
 
     os.makedirs(args.out, exist_ok=True)
-    written = skipped = 0
+    written = skipped = warnings = 0
     if not args.only and not args.anims:
         written += write_props(args.out)
     for n in rows:
@@ -423,6 +477,11 @@ def main():
                 skipped += 1
                 continue
             frames, durations = ANIM_FNS[anim](DESIGNS[n], n)
+            if anim != 'fx':
+                clipped = [i for i, f in enumerate(frames) if touches_edge(f)]
+                if clipped:
+                    print(f'⚠️  {filename(n, anim)}: frames {clipped} touch the canvas edge (may be clipped)')
+                    warnings += 1
             pk.save_gif(frames, durations, path)
             written += 1
         print(f'✅ {n}')

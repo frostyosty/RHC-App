@@ -16,7 +16,6 @@ from dataclasses import dataclass, replace
 
 from pixelkit import lo
 
-G = 29
 
 
 VIEWS = ('front', 'fq', 'side', 'bq', 'back')
@@ -55,14 +54,15 @@ class Design:
     float: bool = False
     outline: bool = True
     views: tuple = ('front', 'side')
+    size: int = 32       # logical grid; GIFs are written at 2x
 
 
 DESIGNS = {}
 
 
-def design(name, category, fx, color, float=False, outline=True, views=('front', 'side')):
+def design(name, category, fx, color, float=False, outline=True, views=('front', 'side'), size=32):
     def wrap(fn):
-        DESIGNS[name] = Design(name, fn, category, fx, color, float, outline, views)
+        DESIGNS[name] = Design(name, fn, category, fx, color, float, outline, views, size)
         return fn
     return wrap
 
@@ -79,19 +79,21 @@ def _gait(s, grp):
 
 def leg(p, s, col, x, top, grp, w=2, foot=None):
     dx, lift = _gait(s, grp)
-    p.rect(col, (x + dx, top, x + dx + w - 1, G - lift), shade=False)
+    g = p.ground
+    p.rect(col, (x + dx, top, x + dx + w - 1, g - lift), shade=False)
     if foot:
-        p.rect(foot, (x + dx, G - lift, x + dx + w, G - lift), shade=False, sep=False)
+        p.rect(foot, (x + dx, g - lift, x + dx + w, g - lift), shade=False, sep=False)
 
 
 def legs_front(p, s, col, x, top, w=2, foot=None):
     m, p.mirror = p.mirror, False
-    for side, xx in ((0, x), (1, 31 - x - w + 1)):
+    g = p.ground
+    for side, xx in ((0, x), (1, p.size - 1 - x - w + 1)):
         lift = 1 if (s.step == 1 and side == 0) or (s.step == 3 and side == 1) else 0
-        p.rect(col, (xx, top - lift, xx + w - 1, G - lift), shade=False)
+        p.rect(col, (xx, top - lift, xx + w - 1, g - lift), shade=False)
         if foot:
             fx = xx - 1 if side == 0 else xx
-            p.rect(foot, (fx, G - lift, fx + w, G - lift), shade=False, sep=False)
+            p.rect(foot, (fx, g - lift, fx + w, g - lift), shade=False, sep=False)
     p.mirror = m
 
 
@@ -156,99 +158,185 @@ def screen_eyes(p, s, x, y, col, front=False):
         p.px(col, [(x + (0 if front else 0) + i, y + 4) for i in range(4 if front else 5)])
 
 
-@design('cacheon', 'Tech', 'bits', '#35E0F0', views=ALL_VIEWS)
+@design('cacheon', 'Tech', 'bits', '#35E0F0', views=ALL_VIEWS, size=64)
 def cacheon(p, s):
-    steel, dark, cyan = '#7C8DA6', '#4D5A70', '#35E0F0'
-    if s.view == 'fq':
-        # tail peeks out behind, far legs, body, then the head turned toward us
-        p.line(dark, [(9, 17), (5, 11)], width=2)
-        p.px(cyan, [(4, 10), (5, 10), (4, 9)])
-        leg(p, s, lo(dark), 9, 21, 1, 3)
-        leg(p, s, lo(dark), 19, 21, 0, 3)
-        p.ell(steel, (6, 13, 22, 24))
-        p.px(cyan, [(9, 18), (10, 18), (11, 19), (12, 19), (13, 19)])
-        p.px('#B8FBFF', [(11, 19)] if s.t % 4 < 2 else [(9, 18)])
-        leg(p, s, dark, 11, 22, 0, 3, foot=cyan)
-        leg(p, s, dark, 17, 22, 1, 3, foot=cyan)
-        p.poly(lo(steel), [(23, 8), (26, 1), (27, 8)])
-        p.poly(steel, [(15, 9), (13, 1), (19, 6)])
-        p.px(cyan, [(14, 4), (15, 6)])
-        p.ell(steel, (13, 5, 26, 17))
-        p.rect('#0F2632', (16, 9, 25, 12), shade=False)
-        visor(p, s, 17, 10, front=True)
-        visor(p, s, 22, 10, front=True)
-        p.ell('#A9B7CA', (19, 12, 27, 17))
-        p.px('#1A1F2A', [(25, 13), (26, 13)])
-        if s.mouth:
-            p.px('#1A1F2A', [(21, 15), (22, 16), (23, 16), (24, 16)])
-            p.px('#FFFFFF', [(22, 16)])
-        return
-    if s.view == 'bq':
-        # head is furthest away, the rump and tail are nearest
-        leg(p, s, lo(dark), 16, 21, 1, 3)
-        leg(p, s, lo(dark), 21, 21, 0, 3)
-        p.poly(lo(steel), [(23, 7), (25, 2), (27, 9)])
-        p.rect('#A9B7CA', (25, 11, 29, 14))
-        p.ell(steel, (15, 5, 27, 16))
-        p.poly(steel, [(16, 9), (16, 2), (21, 6)])
-        p.px(cyan, [(17, 5)])
-        p.px(lo(steel), [(19, 9), (20, 10), (21, 11)])
-        p.ell(steel, (4, 13, 20, 25))
-        p.px(cyan, [(7, 17), (8, 17), (9, 18), (10, 18)])
-        p.px('#B8FBFF', [(9, 18)] if s.t % 4 < 2 else [(7, 17)])
-        leg(p, s, dark, 6, 22, 0, 3, foot=cyan)
-        leg(p, s, dark, 13, 22, 1, 3, foot=cyan)
-        p.line(dark, [(7, 17), (3, 9)], width=2)
-        p.px(cyan, [(2, 8), (3, 8), (2, 7)])
-        return
-    if s.view == 'back':
-        # left half, mirrored: ears and the back of the head behind the rump
-        p.poly(steel, [(10, 9), (8, 1), (14, 6)])
-        p.px(lo(steel), [(10, 5), (11, 6)])
-        p.ell(steel, (9, 4, 22, 16))
-        p.px(dark, [(14, 7), (14, 8), (14, 9)])
-        p.ell(steel, (7, 13, 24, 25))
-        p.px(cyan, [(9, 18), (10, 18), (11, 19)])
-        p.px('#B8FBFF', [(10, 18)] if s.t % 4 < 2 else [(9, 18)])
-        legs_front(p, s, dark, 9, 22, 3, foot=cyan)
-        p.line(dark, [(15, 18), (15, 11)])
-        p.px(cyan, [(15, 10), (15, 9)])
-        return
-    if s.front:
-        leg(p, s, lo(dark), 8, 21, 0)
-        p.ell(steel, (8, 14, 23, 25))
-        p.px(cyan, [(10, 19), (11, 19), (12, 20), (13, 20)])
-        legs_front(p, s, dark, 11, 22, 3, foot=cyan)
-        p.poly(steel, [(10, 9), (8, 1), (14, 6)])
-        p.px(cyan, [(9, 4), (10, 6)])
-        p.ell(steel, (9, 5, 22, 17))
-        p.rect('#0F2632', (11, 9, 20, 12), shade=False)
-        visor(p, s, 12, 10, front=True)
-        p.ell('#A9B7CA', (12, 12, 19, 17))
-        p.px('#1A1F2A', [(15, 13)])
-        if s.mouth:
-            p.px('#1A1F2A', [(13, 15), (14, 16), (15, 16)])
-            p.px('#FFFFFF', [(13, 16)])
-        return
-    p.line(dark, [(7, 17), (3, 11)], width=2)
-    p.px(cyan, [(2, 10), (3, 10), (2, 9)])
-    leg(p, s, lo(dark), 8, 21, 1, 3)
-    leg(p, s, lo(dark), 17, 21, 0, 3)
-    p.ell(steel, (5, 13, 22, 24))
-    p.px(cyan, [(8, 18), (9, 18), (10, 18), (11, 19), (12, 19), (13, 19), (14, 18), (15, 18)])
-    p.px('#B8FBFF', [(11, 19)] if s.t % 4 < 2 else [(14, 18)])
-    leg(p, s, dark, 10, 22, 0, 3, foot=cyan)
-    leg(p, s, dark, 19, 22, 1, 3, foot=cyan)
-    p.poly(steel, [(17, 9), (17, 2), (22, 7)])
-    p.px(cyan, [(18, 5)])
-    p.ell(steel, (16, 6, 26, 16))
-    p.rect('#A9B7CA', (23, 11, 28, 15))
-    p.px('#1A1F2A', [(28, 11)])
-    p.rect('#0F2632', (20, 8, 25, 10), shade=False)
-    visor(p, s, 21, 9)
+    """Armoured robo-hound: wedge snout, slit visor, blade ears, cable tail."""
+    {'side': _cacheon_side, 'front': _cacheon_front, 'fq': _cacheon_fq,
+     'bq': _cacheon_bq, 'back': _cacheon_back}[s.view](p, s, CacheonKit(s))
+
+
+class CacheonKit:
+    steel, plate, joint, dark = '#4A5263', '#646E82', '#2A303C', '#15181F'
+    cyan, jaw, teeth = '#2ED3EA', '#0B0D12', '#D8DEE6'
+
+    def __init__(self, s):
+        self.hot = '#A8F6FF' if s.t % 4 < 2 else self.cyan
+        self.eye = None if s.eyes == 'closed' else ('#FF4D5E' if s.eyes in ('hurt', 'angry') else self.cyan)
+
+
+def dleg(p, s, col, x, y, grp, hind=False, paw=None):
+    """Jointed leg from hip/shoulder (x, y) to the ground. Hind legs have a
+    muscled thigh and bend backwards at the hock; front legs are near straight.
+    Sized for the 64 grid."""
+    dx, lift = _gait(s, grp)
+    dx, lift = dx * 3, lift * 3
+    g = p.ground - lift
+    fx = x + dx
+    if hind:
+        jx, jy = x - 5 + dx // 2, y + (g - y) * 3 // 5
+        p.poly(col, [(x - 4, y - 4), (x + 4, y - 3), (jx + 2, jy + 1), (jx - 1, jy)])
+    else:
+        jx, jy = x + dx // 2, y + (g - y) // 2
+        p.line(col, [(x, y - 3), (jx, jy)], width=4)
+        p.px(lo(col), [(jx - 1, jy), (jx, jy), (jx + 1, jy)])
+    p.line(col, [(jx, jy), (fx, g - 1)], width=3)
+    p.rect(paw or col, (fx - 2, g - 1, fx + 2, g), shade=False)
+    p.px('#AEB8C6', [(fx + 3, g), (fx + 4, g)])
+
+
+def cacheon_head_side(p, s, k, x=0, y=0):
+    """Skull, muzzle, slit visor and jaw; (x, y) shifts it for other views."""
+    def t(pts):
+        return [(a + x, b + y) for a, b in pts]
+    p.poly(lo(k.plate), t([(48, 16), (47, 5), (53, 15)]))
     if s.mouth:
-        p.px('#1A1F2A', [(24, 15), (25, 15), (26, 15), (27, 15), (28, 15), (24, 16), (25, 16), (26, 16)])
-        p.px('#FFFFFF', [(25, 15), (27, 15)])
+        p.poly(k.jaw, t([(51, 27), (61, 27), (59, 32), (51, 31)]), shade=False)
+        p.px(k.teeth, t([(53, 30), (53, 31), (54, 30), (54, 31), (56, 30), (56, 31), (57, 30), (57, 31), (58, 29), (58, 30), (59, 29), (59, 30)]))
+    p.poly(k.steel, t([(43, 20), (47, 13), (55, 15), (57, 20), (52, 27), (44, 27)]))
+    p.poly(k.plate, t([(52, 19), (61, 21), (61, 25), (53, 27)]))
+    p.poly(k.plate, t([(45, 16), (39, 4), (51, 15)]))
+    p.px(k.cyan, t([(42, 8), (42, 9), (43, 8), (43, 9)]))
+    p.rect(k.dark, (45 + x, 17 + y, 54 + x, 19 + y), shade=False)
+    if k.eye:
+        p.px(k.eye, t([(49, 17), (49, 18), (50, 17), (50, 18), (50, 19), (51, 18), (51, 19), (52, 18), (52, 19), (53, 18), (53, 19), (54, 18), (54, 19)]))
+    p.line(k.jaw, t([(53, 27), (60, 27)]))
+    p.px(k.teeth, t([(54, 28), (54, 29), (55, 28), (55, 29), (57, 28), (57, 29), (58, 28), (58, 29)]))
+    p.px(k.jaw, t([(61, 21), (61, 22), (62, 21), (62, 22)]))
+
+
+def _cacheon_side(p, s, k):
+    p.line(k.dark, [(16, 33), (11, 28), (8, 20)], width=3)
+    p.poly(k.plate, [(8, 21), (5, 11), (12, 17)])
+    p.px(k.cyan, [(6, 14), (6, 15), (7, 14), (7, 15), (8, 17), (8, 18), (9, 17), (9, 18)])
+    dleg(p, s, lo(k.joint), 20, 39, 1, hind=True)
+    dleg(p, s, lo(k.joint), 40, 39, 0)
+    p.poly(k.steel, [(13, 35), (19, 28), (40, 25), (47, 31), (45, 41), (37, 45), (21, 45), (15, 41)])
+    p.poly(k.plate, [(20, 28), (39, 25), (41, 31), (21, 33)])
+    for x0 in (23, 29, 36):
+        p.poly(k.dark, [(x0, 28), (x0 + 2, 22), (x0 + 4, 27)], shade=False)
+    p.px(k.cyan, [(28, 34), (28, 35), (29, 34), (29, 35), (30, 34), (30, 35), (32, 34), (32, 35), (33, 34), (33, 35), (34, 34), (34, 35), (36, 34), (36, 35), (37, 34), (37, 35), (38, 34), (38, 35)])
+    p.px(k.hot, [(32 + 4 * (s.t % 2), 35), (33 + 4 * (s.t % 2), 35)])
+    p.poly(k.joint, [(39, 29), (44, 20), (51, 23), (47, 35)])
+    dleg(p, s, k.joint, 24, 40, 0, hind=True, paw=k.dark)
+    dleg(p, s, k.joint, 43, 40, 1, paw=k.dark)
+    cacheon_head_side(p, s, k)
+
+
+def _cacheon_front(p, s, k):
+    # left half only (mirrored); the eye slits meet in a V
+    legs_front(p, s, lo(k.joint), 17, 48, 3)
+    p.poly(k.joint, [(24, 21), (32, 21), (32, 35), (23, 32)])
+    p.poly(k.steel, [(17, 35), (23, 27), (32, 27), (32, 51), (24, 49), (17, 44)])
+    p.poly(k.plate, [(17, 35), (23, 28), (25, 31), (20, 39)])
+    p.px(k.hot, [(30, 40), (30, 41), (31, 40), (31, 41), (30, 42), (31, 42)])
+    p.px(k.cyan, [(29, 41), (29, 42), (30, 41), (30, 42)])
+    legs_front(p, s, k.joint, 23, 44, 3, foot=k.dark)
+    p.poly(k.plate, [(23, 15), (16, 1), (27, 11)])
+    p.px(k.cyan, [(18, 5), (18, 6), (19, 5), (19, 6)])
+    p.poly(k.steel, [(20, 16), (25, 9), (32, 9), (32, 28), (27, 28), (21, 23)])
+    p.rect(k.dark, (22, 14, 33, 18), shade=False)
+    if k.eye:
+        p.px(k.eye, [(24, 14), (24, 15), (25, 14), (25, 15), (26, 14), (26, 15), (26, 16), (26, 17), (27, 16), (27, 17), (28, 16), (28, 17), (29, 16), (29, 17), (29, 18), (30, 17), (30, 18)])
+    p.poly(k.plate, [(27, 20), (32, 19), (32, 35), (28, 33)])
+    p.px(k.jaw, [(30, 20), (30, 21), (31, 20), (31, 21), (30, 22), (31, 22)])
+    if s.mouth:
+        p.poly(k.jaw, [(28, 29), (32, 29), (32, 39), (29, 37)], shade=False)
+        p.px(k.teeth, [(29, 29), (29, 30), (30, 29), (30, 30), (30, 31), (31, 30), (31, 31), (30, 37), (30, 38), (31, 37), (31, 38)])
+    else:
+        p.px(k.jaw, [(28, 32), (28, 33), (29, 32), (29, 33), (30, 32), (30, 33), (31, 32), (31, 33)])
+        p.px(k.teeth, [(29, 33), (29, 34), (30, 33), (30, 34)])
+
+
+def _cacheon_fq(p, s, k):
+    # 3/4 front: body angled away to the left, head turned toward us
+    p.line(k.dark, [(16, 33), (11, 27), (9, 19)], width=3)
+    p.poly(k.plate, [(9, 20), (7, 9), (13, 16)])
+    p.px(k.cyan, [(8, 13), (8, 14), (9, 13), (9, 14)])
+    dleg(p, s, lo(k.joint), 21, 39, 1, hind=True)
+    dleg(p, s, lo(k.joint), 43, 41, 0)
+    p.poly(k.steel, [(16, 35), (21, 28), (37, 27), (45, 32), (44, 44), (35, 48), (23, 47), (17, 41)])
+    p.poly(k.plate, [(21, 28), (36, 27), (39, 32), (23, 33)])
+    for x0 in (31, 39):
+        p.poly(k.dark, [(x0, 28), (x0 + 2, 22), (x0 + 4, 27)], shade=False)
+    p.px(k.cyan, [(26, 36), (26, 37), (27, 36), (27, 37), (28, 36), (28, 37), (29, 36), (29, 37), (30, 36), (30, 37), (31, 36), (31, 37), (32, 36), (32, 37), (33, 36), (33, 37)])
+    p.px(k.hot, [(30 + 3 * (s.t % 2), 36), (31 + 3 * (s.t % 2), 36)])
+    dleg(p, s, k.joint, 25, 41, 0, hind=True, paw=k.dark)
+    dleg(p, s, k.joint, 37, 44, 1, paw=k.dark)
+    p.poly(k.joint, [(35, 32), (39, 21), (48, 24), (45, 37)])
+    p.poly(lo(k.plate), [(48, 15), (51, 3), (55, 13)])
+    p.poly(k.steel, [(37, 19), (43, 12), (52, 12), (56, 19), (53, 28), (41, 28)])
+    p.poly(k.plate, [(40, 16), (33, 4), (45, 13)])
+    p.px(k.cyan, [(36, 8), (36, 9), (37, 8), (37, 9)])
+    p.rect(k.dark, (40, 16, 55, 19), shade=False)
+    if k.eye:
+        p.px(k.eye, [(41, 16), (41, 17), (42, 16), (42, 17), (42, 18), (43, 17), (43, 18), (44, 17), (44, 18), (45, 17), (45, 18), (45, 19), (46, 18), (46, 19)])
+        p.px(k.eye, [(49, 18), (49, 19), (50, 18), (50, 19), (50, 17), (51, 17), (51, 18), (52, 17), (52, 18), (53, 17), (53, 18), (53, 16), (54, 16), (54, 17)])
+    p.poly(k.plate, [(44, 21), (55, 21), (59, 25), (55, 31), (47, 31)])
+    p.px(k.jaw, [(57, 24), (57, 25), (58, 24), (58, 25), (59, 24), (59, 25)])
+    if s.mouth:
+        p.poly(k.jaw, [(47, 29), (56, 29), (55, 36), (48, 35)], shade=False)
+        p.px(k.teeth, [(48, 29), (48, 30), (49, 29), (49, 30), (50, 30), (50, 31), (51, 30), (51, 31), (53, 29), (53, 30), (54, 29), (54, 30), (50, 34), (50, 35), (51, 34), (51, 35)])
+    else:
+        p.line(k.jaw, [(47, 29), (55, 29)])
+        p.px(k.teeth, [(48, 30), (48, 31), (49, 30), (49, 31), (50, 30), (50, 31), (51, 30), (51, 31), (53, 30), (53, 31), (54, 30), (54, 31)])
+
+
+def _cacheon_bq(p, s, k):
+    # 3/4 back: head furthest away at the right, rump and tail nearest
+    dleg(p, s, lo(k.joint), 39, 40, 0)
+    dleg(p, s, lo(k.joint), 33, 41, 1)
+    p.poly(lo(k.plate), [(45, 15), (49, 3), (52, 13)])
+    p.poly(k.joint, [(33, 31), (39, 20), (47, 23), (43, 35)])
+    p.poly(k.plate, [(51, 19), (59, 20), (59, 24), (52, 25)])
+    p.poly(k.steel, [(37, 19), (41, 12), (51, 13), (53, 20), (48, 27), (39, 25)])
+    p.poly(k.plate, [(40, 16), (35, 3), (45, 13)])
+    p.px(k.cyan, [(37, 6), (37, 7), (38, 6), (38, 7)])
+    p.px(lo(k.steel), [(42, 14), (42, 15), (43, 14), (43, 15), (42, 16), (42, 17), (43, 16), (43, 17), (42, 18), (43, 18), (42, 19), (43, 19)])
+    p.rect(k.dark, (49, 16, 54, 19), shade=False)
+    if k.eye:
+        p.px(k.eye, [(52, 17), (52, 18), (53, 17), (53, 18), (54, 17), (54, 18)])
+    p.line(k.jaw, [(52, 24), (59, 24)])
+    p.poly(k.steel, [(11, 36), (16, 28), (36, 27), (43, 31), (41, 40), (32, 45), (16, 49), (11, 44)])
+    p.poly(k.plate, [(16, 28), (35, 27), (36, 32), (17, 35)])
+    for x0 in (19, 25, 32):
+        p.poly(k.dark, [(x0, 28), (x0 + 2, 22), (x0 + 4, 27)], shade=False)
+    p.px(k.cyan, [(16, 38), (16, 39), (17, 38), (17, 39), (18, 38), (18, 39), (20, 40), (20, 41), (21, 40), (21, 41), (22, 40), (22, 41)])
+    p.px(k.hot, [(16 + 4 * (s.t % 2), 38 + s.t % 2), (17 + 4 * (s.t % 2), 38 + s.t % 2)])
+    dleg(p, s, k.joint, 16, 44, 0, hind=True, paw=k.dark)
+    dleg(p, s, k.joint, 28, 45, 1, hind=True, paw=k.dark)
+    p.line(k.dark, [(13, 33), (8, 25), (7, 16)], width=3)
+    p.poly(k.plate, [(7, 17), (4, 5), (11, 13)])
+    p.px(k.cyan, [(5, 10), (5, 11), (6, 10), (6, 11)])
+
+
+def _cacheon_back(p, s, k):
+    # left half only (mirrored): rump, hind legs, tail up the middle
+    p.poly(k.plate, [(23, 16), (16, 3), (27, 12)])
+    p.px(k.cyan, [(18, 6), (18, 7), (19, 6), (19, 7)])
+    p.poly(k.steel, [(21, 17), (25, 11), (32, 11), (32, 27), (24, 25)])
+    p.px(lo(k.steel), [(26, 14), (26, 15), (27, 14), (27, 15), (26, 16), (26, 17), (27, 16), (27, 17), (26, 18), (27, 18)])
+    p.poly(k.joint, [(24, 28), (27, 21), (32, 21), (32, 31)])
+    p.poly(k.steel, [(16, 39), (21, 29), (32, 28), (32, 52), (20, 51), (16, 45)])
+    p.poly(k.plate, [(21, 31), (32, 29), (32, 37), (23, 37)])
+    p.px(k.cyan, [(20, 41), (20, 42), (21, 41), (21, 42), (22, 41), (22, 42)])
+    p.px(k.hot, [(20 + s.t % 2, 41)])
+    legs_front(p, s, k.joint, 19, 47, 4, foot=k.dark)
+    # tail curls up to one side, so draw it unmirrored
+    m, p.mirror = p.mirror, False
+    p.line(k.dark, [(32, 36), (28, 28), (23, 21)], width=3)
+    p.poly(k.plate, [(23, 23), (16, 12), (25, 17)])
+    p.px(k.cyan, [(20, 17), (20, 18), (21, 17), (21, 18)])
+    p.mirror = m
 
 
 def visor(p, s, x, y, front=False):
@@ -571,7 +659,7 @@ def bufferoo(p, s):
     p.ell(pouch, (14, 17, 20, 25))
     spinner(p, 17, 21, s.t, '#FFFFFF', '#E57373')
     dx, lift = _gait(s, 0)
-    p.ell(fur, (10 + dx, 24 - lift, 20 + dx, G - lift))
+    p.ell(fur, (10 + dx, 24 - lift, 20 + dx, p.ground - lift))
     p.line(fur, [(19, 15), (22, 17)], width=2)
     p.poly(fur, [(15, 6), (13, 0), (17, 4)])
     p.poly(fur, [(17, 5), (19, -1), (20, 5)])

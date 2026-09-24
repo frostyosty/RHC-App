@@ -1,6 +1,6 @@
 """Tiny pixel-art toolkit for the sprite autogen pipeline.
 
-Sprites are drawn on a 32x32 logical grid out of flat "parts" (ellipses,
+Sprites are drawn on a 32x32 (or per-design larger, e.g. 48x48) logical grid out of flat "parts" (ellipses,
 polygons, rects). Each part gets automatic 3-tone shading (light from the
 top-left, hue-shifted), a dark line where it overlaps parts behind it, and
 the finished silhouette gets a selective outline. Everything is Pillow only.
@@ -50,13 +50,15 @@ class Painter:
     column, which is how the front-facing views stay symmetric.
     """
 
-    def __init__(self, mirror=False):
-        self.img = Image.new('RGBA', (SIZE, SIZE), CLEAR)
+    def __init__(self, mirror=False, size=SIZE):
+        self.size = size
+        self.ground = size - 3   # feet rest on this row
+        self.img = Image.new('RGBA', (size, size), CLEAR)
         self.mirror = mirror
 
     # -- helpers
     def _mask(self, fn):
-        m = Image.new('1', (SIZE, SIZE), 0)
+        m = Image.new('1', (self.size, self.size), 0)
         fn(ImageDraw.Draw(m))
         if self.mirror:
             flipped = m.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
@@ -70,16 +72,16 @@ class Painter:
         base, light, dark, line = rgb(color), hi(color), lo(color), ink(color)
 
         def inside(x, y):
-            return 0 <= x < SIZE and 0 <= y < SIZE and mp[x, y]
+            return 0 <= x < self.size and 0 <= y < self.size and mp[x, y]
 
-        cells = [(x, y) for y in range(SIZE) for x in range(SIZE) if mp[x, y]]
+        cells = [(x, y) for y in range(self.size) for x in range(self.size) if mp[x, y]]
         ys = [y for _, y in cells]
         tall = cells and (max(ys) - min(ys)) >= 3
         # separation line: pixels behind this part that touch its edge
         if sep:
             for x, y in cells:
                 for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-                    if 0 <= nx < SIZE and 0 <= ny < SIZE and not mp[nx, ny] and px[nx, ny][3]:
+                    if 0 <= nx < self.size and 0 <= ny < self.size and not mp[nx, ny] and px[nx, ny][3]:
                         px[nx, ny] = line + (255,)
         for x, y in cells:
             col = base
@@ -109,8 +111,8 @@ class Painter:
         c = rgb(color) + (255,)
         p = self.img.load()
         for x, y in pts:
-            for xx in ((x, SIZE - 1 - x) if self.mirror else (x,)):
-                if 0 <= xx < SIZE and 0 <= y < SIZE:
+            for xx in ((x, self.size - 1 - x) if self.mirror else (x,)):
+                if 0 <= xx < self.size and 0 <= y < self.size:
                     p[xx, y] = c
 
     # -- faces
@@ -149,12 +151,12 @@ def outline(img, color=None):
     out = img.copy()
     src = img.load()
     dst = out.load()
-    for y in range(SIZE):
-        for x in range(SIZE):
+    for y in range(img.height):
+        for x in range(img.width):
             if src[x, y][3]:
                 continue
             for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
-                if 0 <= nx < SIZE and 0 <= ny < SIZE and src[nx, ny][3]:
+                if 0 <= nx < img.width and 0 <= ny < img.height and src[nx, ny][3]:
                     dst[x, y] = (rgb(color) if color else ink(src[nx, ny][:3])) + (255,)
                     break
     return out
