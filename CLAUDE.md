@@ -127,14 +127,153 @@ creature should look and be built. The user signed off on it. How it was made:
   The 3D renderer's `CREATURE_CANVAS` matches that, so don't change one without
   the other.
 
-**TODO:** redraw every other row in this style (64 grid, all 5 views, darker,
-less cute), one row at a time, checking each with the loop above:
-1. The 16 Wilds beasts: bytelet, technophasia, chirplet, viralia, trendrake,
-   noobit, skirmalot, grindlord, bufferoo, streamlet, bingewyrm, zephyrlet,
-   airstream, stratolord, cartini (plus cacheon, done).
-2. player and poacher.
-3. The battle-only rows: aegis, titan, laser, bite, net. These may not need
-   the ¾ and back views.
+**Done (2026-09-24):** every row now follows this style. Each creature line
+has its own dark `Kit` subclass with one accent colour: Tech is cyan,
+`SocialKit` magenta (viralia lime), `GamingKit` violet, `StreamingKit` ember
+orange (not red, so the red angry eyes still read), `FlyingKit` ice blue,
+Shopping green and `LegendKit` gold. Views are wired with
+`by_view({...})`. Shared parts are in `designs.py`: `dleg`, `bird_leg`,
+`raptor_leg`, `roo_leg`, `stomp_leg`, `hum_leg`, `gauntlet`, `claw_arm`,
+`bat_wing`, `blade_wing`, `feather_wing`, `fangs` and `sq`. The battle-only
+rows (aegis, titan, laser, bite, net) draw only the front and side views.
+Redraw a new row the same way.
+
+## Planned work (not started, agreed plan)
+
+Nothing below is implemented yet. Do it in this order, since each part is
+independent and the first is the smallest.
+
+### A. Sprite Studio: "✏️ EDIT" does nothing
+
+**Cause (confirmed):** in `sprite_studio/index.html`, `loadFromMatrix` sets
+the `<select id="canvasSize">` to the GIF's width. That select only offers 32,
+64 and 128, but autogen GIFs are now 168 px (84 px frames written at 2x;
+props and fx are 64). A value with no matching option leaves the select
+empty, `parseInt('')` gives NaN, and the canvas becomes 0x0, so nothing
+appears and there's no error. The `setTimeout(..., 100)` that swaps in the
+frames after `updateCanvasSize()` has already blanked them is also fragile.
+
+**Fix plan:**
+1. `/load` in `server.py` detects the 2x write (every 2x2 block is one
+   colour) and returns frames at their real size (84 or 32). It also
+   returns the per-frame `durations` and a `scale` of 2. The user then paints
+   real pixels, not half-pixels.
+2. In the page, split canvas sizing from "new blank sprite". Add a
+   `setCanvasSize(n, keepFrames)` that inserts an `<option>` for `n` if it's
+   missing. `loadFromMatrix` sets the size, the frames and the durations in
+   one step, with no timeout. Show an error in the page if `/load` fails or
+   returns no frames.
+3. `/save` writes through `pixelkit.save_gif`, which uses a shared palette
+   with index 0 transparent. It upscales back by the loaded `scale` and keeps
+   each frame's duration. Autogen durations vary (for example, faint holds
+   for 60 s), and the current save flattens them all to 125 ms and can lose
+   transparency.
+4. Protect hand edits: each Studio save appends the file name to
+   `sprite_studio/autogen/hand_edits.txt`, which is committed. `autogen.py`
+   skips listed files and says so, unless `--force` is given. Without this,
+   the next autogen run silently overwrites painted frames.
+5. Test: launch the Studio, click EDIT on `spr_cacheon_idle`. It should show
+   8 frames of 84x84 in the left panel. Paint a pixel, save, and check that
+   the GIF is 168x168, has the same durations and a transparent background,
+   and that `autogen.py --only cacheon` skips it.
+
+### B. Trees: 10 kinds x 10 distance levels
+
+**Pipeline: same autogen, new module.** Reuse `pixelkit` (Painter, shading,
+outline, `save_gif`) and the "render, look, fix" loop. Put the trees in a new
+`sprite_studio/autogen/scenery.py` with its own `@tree(name, ...)` registry,
+so `designs.py` stays creature-only. Wire it into `autogen.py` as
+`--scenery` (all trees) and `--only oak,...`, plus `--turnaround`-style
+review sheets: `--trees sheet.png` with one row per kind and one column per
+distance. A separate pipeline would duplicate the shading and GIF code and
+drift from the creature style, so don't make one.
+
+**What "10 distances" means: hand-made mip levels.** The renderer currently
+scales one 32 px `prop_tree` with nearest-neighbour. Near trees go blocky,
+and far ones shimmer as pixels pop in and out. Instead, draw each tree
+natively at 10 heights:
+`D = [128, 96, 72, 56, 44, 32, 24, 16, 12, 8]` px, where `d0` is nearest.
+Draw each level at its own size, not as a downscale of the big one, because
+downscaled pixel art turns to mush. Each tree is one function
+`fn(p, s, lod)` written in relative units (`p.size`). The `lod` drops detail
+level by level:
+- `d0`–`d2`: bark lines, leaf clusters with highlights, roots, 1 px twigs,
+  2-frame sway.
+- `d3`–`d5`: clusters merged, no twigs, 2-frame sway.
+- `d6`–`d9`: silhouette plus two tones, no outline below 16 px, 1 frame
+  (static far trees).
+
+The rule at every level: the silhouette and trunk position stay the same, so
+switching level never looks like a pop. Write the files at 1x (native pixels
+are the point) as `prop_tree_<kind>_d<0-9>.gif`, which is 100 GIFs.
+
+**The 10 kinds** (moody, a little darker than today's bright props, so they
+sit with the dark creatures; placement in brackets):
+oak (grass) · pine (grass, hills) · birch (grass) · willow (next to water) ·
+palm (sand) · cypress/poplar (grass) · autumn maple (tall grass) ·
+dead snag (outer stage-3 ring) · giant mushroom (tall grass) ·
+wire-tree (a glitched tech tree with cables and a faint cyan glow; outer ring
+only, as a hint that stage-3 beasts are near).
+
+**Renderer (`TerrainRenderer`, pure Kotlin):** after computing the on-screen
+height `sh`, pick the level whose native height is the smallest one at or
+above `sh * 0.9` (clamped to `d0`/`d9`), and use the key
+`prop_tree_<kind>_d<i>`, falling back to the old `prop_tree`. Keep the
+level heights in one table that matches `D` in `scenery.py`, and treat it
+like `CREATURE_CANVAS`: change both or neither. Drawing costs about the same,
+because sampling is per screen pixel, and `SpriteBank` loads each key once,
+only when it's first seen.
+
+**Sim (`WorldMap`):** replace `TREE`/`PINE` with a tree `PropKind` per kind
+(sprite base, world height and trunk radius). Placement stays seeded and
+terrain-aware, as above. Place trees in groves with at least 0.9 tiles
+between trunks, using grid rejection, so there's always a way through (see
+C).
+
+### C. Trees without collisions: the "sidestep"
+
+No colliders, and the rule still holds: the player must never get stuck.
+Instead, the auto-walk leans around a tree it's about to hit, which is your
+idea of "slow down and move aside when a tree is big (close)", done in the
+sim so it stays deterministic:
+
+1. **Precompute once** at map generation: `treeCells`, a per-tile bucket of
+   tree indices (an `IntArray` of offsets and ids) built from the seed. It's
+   derived data, so snapshots don't change.
+2. **Each tick, players only:** probe the point 1.2 tiles ahead along the
+   heading, and look at the trees in that tile and its 8 neighbours
+   (usually 0–2 trees). For each tree, compute forward distance
+   `f = dot(tree - pos, heading)` and sideways offset
+   `lat = dot(tree - pos, right)`. It's a threat if `0 < f < 1.2` and
+   `|lat| < radius + 0.35`.
+3. **Respond to the nearest threat:**
+   - Strafe away from it at up to 0.9 tiles/s along `right * -sign(lat)`.
+     If `lat` is exactly 0, pick the side from the tree index's parity so it
+     stays deterministic.
+   - Scale forward speed by `lerp(1.0, 0.7, closeness)`.
+   - Leave the heading alone, so steering input and the auto-walk route
+     aren't disturbed. The path just shifts slightly and never bounces back.
+4. **Never blocks:** forward speed never drops below 70%. If both sides are
+   closed in, pick the side with the larger `|lat|` and carry on. If a trunk
+   is still overlapped, just walk through it, since it's a billboard. Beasts
+   don't dodge, which is cheaper, and a chase through a grove looks
+   deliberate.
+5. **Render-only polish (no sim state):**
+   - The camera leans about 2° toward the strafe.
+   - When a tree's `depthZ` drops under about 0.8, dither-fade it with the
+     Bayer pattern, as `pixelkit.dither` does. Brushing past a canopy then
+     never fills the screen with blown-up pixels.
+   - A few leaf pixels flick past when the player passes inside a canopy
+     radius.
+6. **Cost:** at most 9 bucket reads and a few dot products per player per
+   tick, with no allocation and no pairwise checks.
+7. **Tests** in `tools/world_preview` (WorldPreview soak):
+   - Determinism is unchanged (same seed and inputs give the same snapshots).
+   - Ticks spent inside a trunk radius should be close to 0.
+   - Forward progress never drops below 0.7 x walk speed over any 1 s window.
+   - Add a preview PNG walking straight at a grove.
+   - Update `rhc-android/README.md` §5.1 with the new behaviour when it's
+     built.
 
 ## Conventions
 
