@@ -81,5 +81,7 @@ rm -rf "$OBJ_DIR" rhc-desktop/app.res
 echo "✅ SUCCESS! rhc_desktop.exe and rhc_guardian_svc.exe generated."
 
 echo "📦 Packaging installer..."
-( cd rhc-desktop && makensis installer.nsi )
+# release.sh exports RHC_VERSION (X.Y.Z from the release tag); local builds
+# fall back to the installer's default version.
+( cd rhc-desktop && makensis ${RHC_VERSION:+"-DVERSION=$RHC_VERSION"} installer.nsi )
 echo "✅ SUCCESS! RHC_Installer.exe generated."

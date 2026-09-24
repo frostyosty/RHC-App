@@ -1,0 +1,15 @@
+{
+  "version": "9",
+  "items": {
+    "a17fdb4fafc8e13123c5926fe34c400e": {
+      "src": "/home/codespace/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-wasm-js/1.9.22/184ac1ecda4780e160cb3a52bd47ac922fcdd2c/kotlin-stdlib-wasm-js-1.9.22.klib"
+    },
+    "a66860f155cb10a237acb5f7d0f6d0e3": {
+      "src": "/home/codespace/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-test-js-runner/1.9.22/e9b1fc55af69eb09d63b271d17c217d9483241cc/kotlin-test-js-runner-1.9.22.jar",
+      "target": "kotlin-test-js-runner/0.0.1"
+    },
+    "b975e3c90d2dd3d9ee4542f1a20c5559": {
+      "src": "/home/codespace/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-test-wasm-js/1.9.22/687780d050ab01c34257805b791a60465d019e49/kotlin-test-wasm-js-1.9.22.klib"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "RockHardBlocker",
+  "version": "unspecified",
+  "private": true,
+  "workspaces": [
+    "packages/RockHardBlocker-world-core-wasm-js",
+    "packages/RockHardBlocker-world-core-wasm-js-test",
+    "packages_imported/kotlin-test-js-runner/0.0.1"
+  ],
+  "resolutions": {},
+  "devDependencies": {},
+  "dependencies": {},
+  "peerDependencies": {},
+  "optionalDependencies": {},
+  "bundledDependencies": []
+}

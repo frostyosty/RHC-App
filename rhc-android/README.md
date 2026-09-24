@@ -73,7 +73,7 @@ Exploring is a first-person walk through an open 3D field. It's on by default. S
 | `WorldView`, `SpriteBank` | The Android side: the frame loop, touch steering and look, the HUD (timer, cage, minimap), and decoding the autogen GIFs into textures. |
 | `WorldBridge.kt` | Glue into `GameActivity`: starting a walk, turning an encounter into `startWildBattle`, resuming, and the end-of-walk reward. |
 
-Creatures use their `walk_front`, `explore` (side walk, mirrored for leftward) and `idle` GIFs. Scenery and the cage are `prop_*.gif` from `tools/sprite_studio/autogen`.
+Creatures are seen from 8 directions (45° steps) using 5 drawn views: front, fq (¾ front), side, bq (¾ back) and back; the right-facing views are mirrored for the other side. Walking uses `walk_front`, `walk_fq`, `explore` (side), `walk_bq` and `walk_back`; standing uses `idle_front`, `idle_fq`, `idle` (side), `idle_bq` and `idle_back`. A row that has no ¾/back art yet falls back to the old front/side GIFs. Scenery and the cage are `prop_*.gif` from `sprite_studio/autogen`.
 
 To test without a phone, run `bash tools/world_preview/run.sh`. It compiles the sim and renderer on the plain JVM, soak-tests a full walk (map determinism, encounters, snapshot round-trip, frame time) and writes preview PNGs to `tools/world_preview/out/`.
 
@@ -93,7 +93,7 @@ To test without a phone, run `bash tools/world_preview/run.sh`. It compiles the 
 
 A local zero-dependency Python/HTML5 tool for the Gamers flavor, providing AI sprite generation, background stripping, 8-bit resizing, GIF tweening, onion skinning, and audio synthesis.
 
-**Autogen:** `python3 tools/sprite_studio/autogen/autogen.py` draws every sprite in the Studio matrix (all 23 rows × 10 animations, 230 GIFs) from the designs in `tools/sprite_studio/autogen/designs.py`. Each creature is drawn once per pose (walk step, wing flap, eyes, mouth), and the animations are built from those poses, so a beast looks the same in every GIF. Use `--only cacheon,titan`, `--anims idle,attack`, `--preview sheet.png` (contact sheet), or `--skip-existing` to keep GIFs you've touched up by hand in the Studio.
+**Autogen:** `python3 sprite_studio/autogen/autogen.py` draws every sprite in the Studio matrix (all 23 rows × 10 animations, 230 GIFs) from the designs in `sprite_studio/autogen/designs.py`. Each creature is drawn once per pose (walk step, wing flap, eyes, mouth), and the animations are built from those poses, so a beast looks the same in every GIF. Use `--only cacheon,titan`, `--anims idle,attack`, `--preview sheet.png` (contact sheet), or `--skip-existing` to keep GIFs you've touched up by hand in the Studio. Designs that also draw the ¾ and back views list them with `views=ALL_VIEWS`, which adds their 3D-Wilds walk/idle GIFs. `--turnaround views.png` renders the 5 views side by side, and `bash tools/world_preview/run.sh` writes `turn.png`, a Cacheon turned through all 8 headings in the renderer.
 
 ## 8. Critical Blocklist Parsing Bug — FIXED 08/09/2026
 

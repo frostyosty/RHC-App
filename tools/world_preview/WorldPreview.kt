@@ -1,6 +1,7 @@
 import com.rockhard.blocker.world.render.*
 import com.rockhard.blocker.world.sim.*
 import java.awt.image.BufferedImage
+import kotlin.math.PI
 import java.io.File
 import javax.imageio.ImageIO
 
@@ -56,6 +57,21 @@ fun main(args: Array<String>) {
     }
     println("encounter events: $log")
     s.resolveEncounter(b.id, EncounterOutcome.BEAST_DEFEATED)
+
+    // turnaround: a lone Cacheon 1.6 tiles ahead in an empty world, turned
+    // through the 8 headings (walking on the top row, standing on the bottom)
+    val tw = World(map); tw.entities.clear()
+    val cam = Entity(1, EntityKind.PLAYER, me.x, me.y, 0.0, "", 1.0)
+    val beast = Entity(2, EntityKind.BEAST, map.wrap(me.x + 1.6), me.y, 0.0, "Cacheon", b.size)
+    tw.entities[1] = cam; tw.entities[2] = beast
+    val turn = BufferedImage(8 * 90, 2 * 110, BufferedImage.TYPE_INT_ARGB)
+    val tr = TerrainRenderer(90, 110, map)
+    for (row in 0..1) for (i in 0 until 8) {
+        beast.moving = row == 0; beast.angle = PI + i * PI / 4 // i=0 faces the camera
+        tr.render(tw, cam, 0, Palette.DAY, src, 0)
+        turn.setRGB(i * 90, row * 110, 90, 110, tr.fb, 0, 90)
+    }
+    ImageIO.write(turn, "png", File("$out/turn.png"))
 
     // soak: steer randomly for the whole exploration, count encounters
     val rng = kotlin.random.Random(1)

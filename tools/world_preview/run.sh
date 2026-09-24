@@ -7,7 +7,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="${1:-$ROOT/tools/world_preview/out}"
-WORLD="$ROOT/rhc-android/app/src/main/java/com/rockhard/blocker/world"
+WORLD="$ROOT/rhc-android/world-core/src/commonMain/kotlin/com/rockhard/blocker/world"
 LIB="$(find "$HOME/.gradle/wrapper/dists" -type d -path '*gradle-8.7/lib' | head -n 1)"
 if [ -z "$LIB" ]; then echo "❌ Gradle 8.7 not found; run ./gradlew once in rhc-android first."; exit 1; fi
 

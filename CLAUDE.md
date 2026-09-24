@@ -8,7 +8,8 @@ share logic:
 | `rhc-android/` | Kotlin app, package `com.rockhard.blocker`, 4 product flavors (Gamers/Timesavers × Male/Female) | Gradle 8.7, AGP + Kotlin 1.9.22, JDK 17, compileSdk 34 |
 | `rhc-desktop/` | Win32/GDI C++17 app + Windows service + NSIS installer | mingw-w64 cross-compile, `makensis` |
 | `rhc-common/` | Shared C++ engines (SQLite `DatabaseManager`, Momentum, ShieldRuleEngine, Leaderboard) used by desktop; mirrors the Android Kotlin logic | — |
-| `tools/` | Sprite Studio (Python, port 8080) + sprite autogen, icon generator (Node/sharp), 3D world preview, helper scripts | Python 3 + Pillow, Node, JVM |
+| `sprite_studio/` | Sprite Studio (Python, port 8080, start with `./launch-sprite-studio.sh`) + sprite autogen (`sprite_studio/autogen`) | Python 3 + Pillow |
+| `tools/` | Icon generator (Node/sharp), 3D world preview, helper scripts | Node, JVM |
 
 Feature-level detail (blocking, cooldown, Momentum, Netbeasts) lives in
 `rhc-android/README.md`. Read it before changing behaviour.
@@ -80,7 +81,7 @@ exploring. Rules that keep the design working:
   obstacles are walk-through billboards and water is wadeable.
 - Test sim/render changes with `bash tools/world_preview/run.sh` (JVM soak test
   + preview PNGs) before building an APK.
-- New creature or scenery art comes from `tools/sprite_studio/autogen`
+- New creature or scenery art comes from `sprite_studio/autogen`
   (`designs.py`; props are `prop_*.gif`), not hand-made files.
 
 ## Conventions

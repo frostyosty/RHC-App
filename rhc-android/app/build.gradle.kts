@@ -79,3 +79,6 @@ android {
         }
     }
 }
+dependencies {
+    implementation(project(":world-core"))
+}

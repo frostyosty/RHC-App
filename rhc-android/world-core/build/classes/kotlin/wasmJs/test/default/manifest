@@ -1,0 +1,10 @@
+abi_version=1.8.0
+builtins_platform=WASM
+compiler_version=1.9.22
+depends=RockHardBlocker\:world-core kotlin-test kotlin
+ir_signature_versions=1,2
+jsOutputName=RockHardBlocker-world-core-wasm-js-test
+metadata_version=1.4.1
+serializedIrFileFingerprints=3sw45meo55me1.237llyn008ceq
+serializedKlibFingerprint=39y0krtvi9px4.14jmxmea5x9f5
+unique_name=RockHardBlocker\:world-core_test

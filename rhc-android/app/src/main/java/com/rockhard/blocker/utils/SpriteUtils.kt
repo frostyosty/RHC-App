@@ -3,7 +3,7 @@ package com.rockhard.blocker
 import android.content.Context
 
 // Resolves a beast's display name (e.g. "[Strong] Cacheon") to the
-// spr_<beast>_<anim>.gif drawable saved by tools/sprite_studio, mirroring
+// spr_<beast>_<anim>.gif drawable saved by sprite_studio, mirroring
 // the "spr_<name>_<anim>" naming AudioEngine already uses for SFX lookups.
 object SpriteUtils {
     fun resolveSpriteRes(context: Context, displayName: String, anim: String = "idle"): Int {

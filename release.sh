@@ -59,6 +59,38 @@ echo "Building:"
 for t in "${SELECTED[@]}"; do echo "  - ${TARGET_NAMES[$t]}"; done
 echo
 
+# Log in and work out the version before building, so it can be stamped
+# into the builds. Always publish: no prompts for confirmation, title or
+# notes. The only interactive step left is `gh auth login` if the CLI isn't logged in.
+# If Codespaces injected GITHUB_TOKEN/GH_TOKEN, don't let those
+# override the GitHub CLI's stored credentials.
+unset GITHUB_TOKEN GH_TOKEN
+
+if ! gh auth status >/dev/null 2>&1; then
+  echo "🔐 GitHub login is required."
+  gh auth login
+fi
+if ! gh release list --repo "$RELEASE_REPO" --limit 1 >/dev/null 2>&1; then
+  echo "🔐 Cannot access $RELEASE_REPO yet. Please log in with an account that has access."
+  gh auth login
+fi
+
+# Version: take the highest vMAJOR.MINOR.PATCH release on the repo and bump
+# PATCH. The old timestamp tags (v20260922124541) don't match and are ignored.
+# With no semver release yet, start at v1.0.0.
+LAST_TAG=$(gh release list --repo "$RELEASE_REPO" --limit 1000 --json tagName -q '.[].tagName' \
+  | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)
+if [ -n "$LAST_TAG" ]; then
+  IFS=. read -r MAJOR MINOR PATCH <<< "${LAST_TAG#v}"
+  TAG="v$MAJOR.$MINOR.$((PATCH + 1))"
+else
+  TAG="v1.0.0"
+fi
+# Stamped into the builds (installer version / Add-Remove Programs).
+export RHC_VERSION="${TAG#v}"
+echo "🏷️  This release will be $TAG."
+echo
+
 # Quicksave first (same steps as zz_quicksave.txt): commit everything, rebase
 # onto origin/main and push, so the release is built from pushed code and the
 # commit named in the release notes exists on GitHub. A rebase conflict stops
@@ -102,32 +134,6 @@ echo "✅ Build complete. Artifacts:"
 for a in "${ARTIFACTS[@]}"; do echo "  - $a"; done
 echo
 
-# Always publish: no prompts for confirmation, title or notes. The only
-# interactive step left is `gh auth login` if the CLI isn't logged in.
-# If Codespaces injected GITHUB_TOKEN/GH_TOKEN, don't let those
-# override the GitHub CLI's stored credentials.
-unset GITHUB_TOKEN GH_TOKEN
-
-if ! gh auth status >/dev/null 2>&1; then
-  echo "🔐 GitHub login is required."
-  gh auth login
-fi
-if ! gh release list --repo "$RELEASE_REPO" --limit 1 >/dev/null 2>&1; then
-  echo "🔐 Cannot access $RELEASE_REPO yet. Please log in with an account that has access."
-  gh auth login
-fi
-
-# Version: take the highest vMAJOR.MINOR.PATCH release on the repo and bump
-# PATCH. The old timestamp tags (v20260922124541) don't match and are ignored.
-# With no semver release yet, start at v1.0.0.
-LAST_TAG=$(gh release list --repo "$RELEASE_REPO" --limit 1000 --json tagName -q '.[].tagName' \
-  | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)
-if [ -n "$LAST_TAG" ]; then
-  IFS=. read -r MAJOR MINOR PATCH <<< "${LAST_TAG#v}"
-  TAG="v$MAJOR.$MINOR.$((PATCH + 1))"
-else
-  TAG="v1.0.0"
-fi
 TITLE="Dev Build $TAG"
 NOTES="Built from $(git rev-parse --short HEAD) on $(date '+%Y-%m-%d %H:%M')."$'\n\n'"Includes:"
 for t in "${SELECTED[@]}"; do NOTES+=$'\n'"- ${TARGET_NAMES[$t]}"; done
