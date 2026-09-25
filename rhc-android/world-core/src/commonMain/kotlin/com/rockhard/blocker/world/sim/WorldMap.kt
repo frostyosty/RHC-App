@@ -50,6 +50,9 @@ enum class PropKind(val sprite: String, val size: Double, val radius: Double = 0
 /** Scenery billboard. Nothing collides: the player can never get stuck. */
 data class Prop(val x: Double, val y: Double, val kind: PropKind)
 
+/** A coin lying in the Wilds: walk into it to pick it up (World.stepPlayer). */
+data class Coin(val x: Double, val y: Double)
+
 /** A patrol area. Beasts of [species] (evo [stage]) wander inside it. */
 data class Zone(val id: Int, val x: Double, val y: Double, val radius: Double, val species: String, val stage: Int)
 
@@ -77,6 +80,7 @@ class WorldMap(
     val terrain: IntArray,
     val props: List<Prop>,
     val zones: List<Zone>,
+    val coins: List<Coin> = emptyList(),
 ) {
     companion object {
         const val WATER_LEVEL = 0.55
@@ -179,7 +183,44 @@ class WorldMap(
                 val s = pool[rng.nextInt(pool.size)]
                 zones += Zone(zones.size, x + 0.5, y + 0.5, 4.0 + stage, s.name, s.stage)
             }
-            return WorldMap(size, seed, region, heights, terrain, props, zones)
+            return WorldMap(size, seed, region, heights, terrain, props, zones, placeCoins(seed, size, terrain))
+        }
+
+        /**
+         * Coins: short trails along the walking tracks, plus singles scattered
+         * over dry land, more of them the further out you go. Its own RNG, so
+         * placing them leaves the rest of the map as it was.
+         */
+        private fun placeCoins(seed: Long, size: Int, terrain: IntArray): List<Coin> {
+            val rng = Random(seed xor COIN_SALT)
+            val c = size / 2.0
+            val coins = mutableListOf<Coin>()
+            fun t(x: Double, y: Double) = terrain[floor(y).toInt().mod(size) * size + floor(x).toInt().mod(size)]
+            fun clear(x: Double, y: Double, gap: Double) = coins.none { hypot(it.x - x, it.y - y) < gap }
+            // trails: 3-5 coins 0.9 tiles apart, heading along the track (no trig: one of 8 unit steps)
+            var tries = 0; var trails = 0
+            while (trails < COIN_TRAILS && tries++ < 4000) {
+                val x = rng.nextInt(size); val y = rng.nextInt(size)
+                if (terrain[y * size + x] != Terrain.PATH || !clear(x + 0.5, y + 0.5, 8.0)) continue
+                val ways = (0 until 8).filter { i -> val (dx, dy) = STEP[i]; terrain[(y + dy).mod(size) * size + (x + dx).mod(size)] == Terrain.PATH }
+                if (ways.isEmpty()) continue
+                val (dx, dy) = STEP[ways[rng.nextInt(ways.size)]]
+                val k = if (dx != 0 && dy != 0) DIAG else 1.0
+                repeat(3 + rng.nextInt(3)) { i ->
+                    val px = x + 0.5 + dx * k * 0.9 * i; val py = y + 0.5 + dy * k * 0.9 * i
+                    if (t(px, py) != Terrain.WATER) coins += Coin(px.mod(size.toDouble()), py.mod(size.toDouble()))
+                }
+                trails++
+            }
+            // singles: rarer near the start, commoner in the far territories
+            tries = 0; var singles = 0
+            while (singles < COIN_SINGLES && tries++ < 4000) {
+                val x = rng.nextDouble(size.toDouble()); val y = rng.nextDouble(size.toDouble())
+                val far = (hypot(x - c, y - c) / c).coerceAtMost(1.0)
+                if (rng.nextDouble() > 0.15 + 0.85 * far || t(x, y) == Terrain.WATER || !clear(x, y, 3.0)) continue
+                coins += Coin(x, y); singles++
+            }
+            return coins
         }
 
         /**
@@ -230,6 +271,12 @@ class WorldMap(
                 }
             }
         }
+
+        private const val COIN_SALT = 0x0C01_4C01_4L
+        private const val COIN_TRAILS = 8
+        private const val COIN_SINGLES = 18
+        private const val DIAG = 0.7071067811865476 // 1 / sqrt(2), written out so it's the same everywhere
+        private val STEP = arrayOf(1 to 0, 1 to 1, 0 to 1, -1 to 1, -1 to 0, -1 to -1, 0 to -1, 1 to -1)
 
         /** Trunks never closer than this, so there's always a way through a grove. */
         const val MIN_TRUNK_GAP = 0.9

@@ -104,7 +104,7 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers) View.GONE else View.VISIBLE
         findViewById<View>(R.id.llSafariCard).visibility = if (isGamers) View.VISIBLE else View.GONE
 
-        WeatherEngine.fetchSilent(this, onSuccess = { city, weather, icon, terrain, debugStr -> prefs.edit().putString("CURRENT_CITY", city).putString("DEBUG_API_DATA", debugStr).apply() }, {})
+        refreshWeather()
 
         if (!prefs.getBoolean("INITIALIZED", false)) {
             val starterParty = "Cacheon,Tech,120,120,Ping,Glitch,System Wipe,0,0,0,0,false,None,0,0,0,0,None,0;Cardiol,Fitness,150,150,Momentum,Heavy Lift,Flex,0,0,0,0,false,None,0,0,0,0,None,0"
@@ -582,12 +582,33 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
                 isEnabled = !isIgnoringDoze
                 setOnClickListener { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }); dialog.dismiss() }
             })
+            // The game offers this once; here you can say yes later (Android's own Settings are behind the Guardian)
+            if (isGamers) {
+                val hasLocation = LocationEngine.hasPermission(this)
+                content.addView(Button(this).apply {
+                    text = if (hasLocation) "Weather From Your Location ✔️" else "📍 Use My Location for the Weather"
+                    setBackgroundResource(if (hasLocation) R.drawable.bg_btn_success else R.drawable.bg_btn_accent); setTextColor(android.graphics.Color.WHITE)
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 16, 0, 0) }
+                    isEnabled = !hasLocation
+                    setOnClickListener { LocationEngine.requestPermission(this@MainActivity); dialog.dismiss() }
+                })
+            }
             dialog.findViewById<Button>(R.id.btnDialogPositive)?.setOnClickListener { 
                 prefs.edit().putBoolean("GAMIFICATION", cbGame.isChecked).putBoolean("LAUNCH_GAME_DEFAULT", cbDefault.isChecked).putBoolean("DEBUG_UI_TOASTS", cbDebug.isChecked).putBoolean("WORLD_3D", cbWorld3d.isChecked).apply()
                 CloakEngine.uncloak(this@MainActivity, cbDefault.isChecked)
                 dialog.dismiss() 
             }
         }
+    }
+
+    private fun refreshWeather() {
+        WeatherEngine.fetchSilent(this, onSuccess = { city, weather, icon, terrain, debugStr -> prefs.edit().putString("CURRENT_CITY", city).putString("DEBUG_API_DATA", debugStr).apply() }, {})
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        // Settings' location button: look again from where you really are
+        if (requestCode == LocationEngine.REQUEST_CODE && LocationEngine.onPermissionResult(this)) refreshWeather()
     }
 
     override fun onDestroy() { super.onDestroy(); mainHandler.removeCallbacks(tickRunnable) }

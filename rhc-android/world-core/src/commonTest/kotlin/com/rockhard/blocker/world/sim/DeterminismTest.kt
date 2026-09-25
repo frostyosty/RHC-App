@@ -18,6 +18,7 @@ class DeterminismTest {
         map.terrain.forEach { h = fnv(h, it.toLong()) }
         map.props.forEach { h = fnv(fnv(fnv(h, it.x.toRawBits()), it.y.toRawBits()), it.kind.ordinal.toLong()) }
         map.zones.forEach { h = fnv(fnv(fnv(h, it.x.toRawBits()), it.y.toRawBits()), it.radius.toRawBits()) }
+        map.coins.forEach { h = fnv(fnv(h, it.x.toRawBits()), it.y.toRawBits()) }
         for (i in 0 until 64) h = fnv(h, map.groundAt(i * 1.37, i * 2.11).toRawBits())
         return h
     }
@@ -47,6 +48,7 @@ class DeterminismTest {
             val events = world.step(mapOf(me to PlayerInput(look, cage)))
             if (fightAt < 0 && events.any { it is WorldEvent.Encounter }) fightAt = t
             world.snapshot().entities.forEach { e -> h = fnv(fnv(fnv(h, e.id.toLong()), e.x.toRawBits()), e.y.toRawBits()) }
+            world.coinGone.forEach { h = fnv(h, it.toLong()) }
         }
         assertEquals(true, fightAt >= 0, "the scripted walk should meet a beast")
         assertEquals(WALK_PRINT, h)
@@ -63,8 +65,8 @@ class DeterminismTest {
     }
 
     companion object {
-        const val MAP_PRINT = 8688509753090929432L
-        const val COAST_PRINT = -3427884941111941105L
-        const val WALK_PRINT = -4852988031535589576L
+        const val MAP_PRINT = 1753128500768626353L
+        const val COAST_PRINT = 6737657199655346600L
+        const val WALK_PRINT = -8272280016561550702L
     }
 }

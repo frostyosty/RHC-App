@@ -61,6 +61,9 @@ class GameActivity : Activity() {
     internal var worldSession: com.rockhard.blocker.world.sim.WorldSession? = null
     internal var worldFight: WorldFight? = null
     internal var inWorld = false
+    internal var nextWalk: PreparedWalk? = null   // today's walk, made ahead for its first frame
+    internal var preparingWalk = false
+    internal var walkCoins = 0                    // coins picked up on this walk
     internal var weatherIcon = "☀️"
     internal var currentCity = "Local Sanctuary"
 
@@ -228,39 +231,56 @@ class GameActivity : Activity() {
             printLog("> INITIALIZING NETBEAST SAFARI...")
             printLog("> Welcome back, $playerName!")
 
-            WeatherEngine.fetchSilent(
-                this,
-                onSuccess = { city, weather, icon, terrain, debugStr ->
-                    currentCity = city
-                    currentWeather = weather
-                    weatherIcon = icon
-                    prefs
-                        .edit()
-                        .putString("CURRENT_CITY", city)
-                        .putString("DEBUG_API_DATA", debugStr)
-                        .apply()
-                    runOnUiThread {
-                        printLog("\n=== WEATHER UPLINK ===")
-                        printLog("> Base: $city")
-                        printLog("> Terrain: $terrain")
-                        printLog("> Weather: $weather $icon")
-                        printLog("> " + debugStr.replace("\n", "\n> "))
-                        printLog("======================")
-                        findViewById<Button>(R.id.btnInfuse)?.text = "INFUSE WITH CURRENT WEATHER ($icon)"
-                    }
-                },
-                onFail = { reason ->
-                    runOnUiThread {
-                        printLog(
-                            "\n> ⚠️ UPLINK FAILED: $reason\n> Base Locked: Local Sanctuary\n> Weather: Offline\n> Awaiting orders.",
-                        )
-                    }
-                },
-            )
+            // The first time, offer to use the phone's location, and look up the weather once that's answered
+            if (LocationEngine.shouldOffer(this)) LocationEngine.offer(this, onDeclined = { refreshWeather() }) else refreshWeather()
 
             processFleePenalty()
             checkOfflineExpeditions()
             mainHandler.postDelayed(exploreRunnable, 3000)
+        }
+    }
+
+    /** The weather where you are (it also reshapes the Wilds' region), reported as a WEATHER UPLINK. */
+    private fun refreshWeather() {
+        WeatherEngine.fetchSilent(
+            this,
+            onSuccess = { city, weather, icon, terrain, debugStr ->
+                currentCity = city
+                currentWeather = weather
+                weatherIcon = icon
+                prefs
+                    .edit()
+                    .putString("CURRENT_CITY", city)
+                    .putString("DEBUG_API_DATA", debugStr)
+                    .apply()
+                runOnUiThread {
+                    printLog("\n=== WEATHER UPLINK ===")
+                    printLog("> Base: $city")
+                    printLog("> Terrain: $terrain")
+                    printLog("> Weather: $weather $icon")
+                    printLog("> " + debugStr.replace("\n", "\n> "))
+                    printLog("======================")
+                    findViewById<Button>(R.id.btnInfuse)?.text = "INFUSE WITH CURRENT WEATHER ($icon)"
+                }
+            },
+            // the Wilds' first frame shows the real weather, and the region once it's probed
+            onRegion = { runOnUiThread { prepareNextWalk() } },
+            onFail = { reason ->
+                runOnUiThread {
+                    printLog(
+                        "\n> ⚠️ UPLINK FAILED: $reason\n> Base Locked: Local Sanctuary\n> Weather: Offline\n> Awaiting orders.",
+                    )
+                }
+            },
+        )
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        // LocationEngine.offer's prompt: the weather waited for the answer
+        if (requestCode == LocationEngine.REQUEST_CODE) {
+            LocationEngine.onPermissionResult(this)
+            refreshWeather()
         }
     }
 

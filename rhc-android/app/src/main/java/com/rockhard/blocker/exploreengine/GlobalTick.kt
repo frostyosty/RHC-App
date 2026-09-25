@@ -15,10 +15,7 @@ internal fun GameActivity.performGlobalTick() {
     }
 
     val currentCity = prefs.getString("CURRENT_CITY", "") ?: ""
-    val currentSuburb = if (LocationEngine.hasGPSPermission(this)) {
-        val loc = LocationEngine.getCurrentLocation(this)
-        if (loc != null) LocationEngine.getSuburbName(this, loc.first, loc.second) else ""
-    } else ""
+    val currentSuburb = LocationEngine.currentSuburb(this)
 
     val rescues = RescueEngine.getCapturedNearby(prefs, currentSuburb, currentCity)
     rescues.forEach { capturedBeast -> spawnRescueQTE(capturedBeast, if (currentSuburb.isNotEmpty()) currentSuburb else currentCity) }

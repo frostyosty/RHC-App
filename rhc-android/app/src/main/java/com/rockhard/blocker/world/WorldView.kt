@@ -38,7 +38,15 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
     interface Listener {
         fun onEncounter(e: WorldEvent.Encounter)
         fun onCompanionOut(e: WorldEvent.CompanionOut)
+        /** You walked into a coin. */
+        fun onCoinPicked(e: WorldEvent.CoinPicked)
         fun onExplorationOver()
+    }
+
+    /** What's in your pockets, for the counters under the timer. */
+    interface Purse {
+        fun coins(): Int
+        fun nets(): Int
     }
 
     /** A fighter's name and health, for the bars over their heads. */
@@ -52,17 +60,23 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         fun patience(): Float
     }
 
+    companion object {
+        /** Render width in portrait (the frame is scaled up unfiltered); WorldPreviewView uses it too. */
+        const val PORTRAIT_W = 200
+    }
+
     var session: WorldSession? = null
         set(value) { if (field !== value) { field = value; renderer = null; minimap = null } }
     var palette: Palette = Palette.DAY
     var listener: Listener? = null
     var fightHud: FightHud? = null
+    var purse: Purse? = null
 
     private val sprites = SpriteBank(context)
     private var renderer: TerrainRenderer? = null
     private var frame: Bitmap? = null
     private var minimap: Bitmap? = null
-    private var rw = 200
+    private var rw = PORTRAIT_W
     private var rh = 300
     private val dst = Rect()
     private val pixelPaint = Paint().apply { isFilterBitmap = false }
@@ -79,6 +93,12 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
     private var touchId = -1
     private var lastX = 0f
     private var lastY = 0f
+
+    // The coin counter rolls toward the real count: up at once with a "+1" pop, down (coins
+    // lost) visibly, fast and flashing red
+    private var shownCoins = Double.NaN
+    private var coinGain = 0
+    private var coinGainAt = 0L
 
     // Battle log lines shown along the bottom for a few seconds each
     private class Caption(val text: String, val at: Long)
@@ -109,7 +129,7 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         if (w <= 0 || h <= 0) return
-        rw = if (w > h) 320 else 200
+        rw = if (w > h) 320 else PORTRAIT_W
         rh = (rw * h.toFloat() / w).toInt().coerceAtLeast(1)
         frame = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
         renderer = null
@@ -133,6 +153,7 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
             for (e in events) when (e) {
                 is WorldEvent.Encounter -> listener?.onEncounter(e)
                 is WorldEvent.CompanionOut -> listener?.onCompanionOut(e)
+                is WorldEvent.CoinPicked -> if (e.playerId == s.localPlayerId) listener?.onCoinPicked(e)
                 is WorldEvent.ExplorationOver -> { stop(); listener?.onExplorationOver(); return }
             }
         }
@@ -176,16 +197,22 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         hud.setShadowLayer(3f, 0f, 0f, Color.BLACK)
         hud.color = Color.WHITE; hud.textSize = 16 * density
         canvas.drawText("⏱ %d:%02d".format(secs / 60, secs % 60), 12 * density, 26 * density, hud)
-        hud.textSize = 12 * density
+        purse?.let { drawPurse(canvas, it, 46 * density) }
+        hud.textSize = 12 * density; hud.textAlign = Paint.Align.LEFT
         if (!fighting) {
             hud.color = Color.rgb(255, 214, 102)
-            canvas.drawText("🔒 ${me.companion ?: "no netbeasts: you fight"}", 12 * density, 44 * density, hud)
+            canvas.drawText("🔒 ${me.companion ?: "no netbeasts: you fight"}", 12 * density, 64 * density, hud)
         }
         // what's underfoot, when it changes your pace
         when (s.world.map.terrainAt(me.x, me.y)) {
-            Terrain.WATER -> { hud.color = Color.rgb(140, 200, 255); canvas.drawText("wading…", 12 * density, 60 * density, hud) }
-            Terrain.MUD -> { hud.color = Color.rgb(190, 160, 120); canvas.drawText("squelching through mud…", 12 * density, 60 * density, hud) }
-            Terrain.PATH -> { hud.color = Color.rgb(230, 210, 170); canvas.drawText("on a track: quicker", 12 * density, 60 * density, hud) }
+            Terrain.WATER -> { hud.color = Color.rgb(140, 200, 255); canvas.drawText("wading…", 12 * density, 80 * density, hud) }
+            Terrain.MUD -> { hud.color = Color.rgb(190, 160, 120); canvas.drawText("squelching through mud…", 12 * density, 80 * density, hud) }
+            Terrain.PATH -> { hud.color = Color.rgb(230, 210, 170); canvas.drawText("on a track: quicker", 12 * density, 80 * density, hud) }
+        }
+        // after a fight: up off the ground, then slow for a few seconds
+        if (!fighting && (me.downTicks > 0 || me.recoverTicks > 0)) {
+            hud.color = Color.rgb(200, 200, 200)
+            canvas.drawText(if (me.downTicks > 0) "you pick yourself up…" else "catching your breath…", 12 * density, 96 * density, hud)
         }
         if (fighting) drawFightHud(canvas, s)
         drawCaptions(canvas, fighting)
@@ -195,6 +222,45 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
             canvas.drawText("Beasts shy away: walk at one to fight it.", width / 2f, height - 24 * density, hud)
         }
         hud.clearShadowLayer()
+    }
+
+    /**
+     * Coins and nets under the timer. A gain shows at once with a fading "+N"; a loss rolls
+     * the count down fast (about a second), shaking and flashing red, so you see it go.
+     */
+    private fun drawPurse(canvas: Canvas, p: Purse, y: Float) {
+        val now = SystemClock.uptimeMillis()
+        val real = p.coins().toDouble()
+        if (shownCoins.isNaN()) shownCoins = real
+        var dropping = false
+        when {
+            real > shownCoins -> {
+                if (now - coinGainAt > POP_MS) coinGain = 0
+                coinGain += (real - shownCoins).toInt(); coinGainAt = now; shownCoins = real
+            }
+            real < shownCoins -> {
+                dropping = true
+                shownCoins = maxOf(real, shownCoins - maxOf(1.0, (shownCoins - real) * 0.06))
+            }
+        }
+        val flash = dropping && (now / 90) % 2 == 0L
+        val shake = if (dropping) (if ((now / 40) % 2 == 0L) 2 else -2) * density else 0f
+        val x = 12 * density + shake
+        hud.textAlign = Paint.Align.LEFT; hud.textSize = 14 * density
+        val coins = "🪙 ${shownCoins.toInt()}"
+        hud.color = when { flash -> Color.WHITE; dropping -> Color.rgb(255, 82, 82); else -> Color.rgb(255, 214, 102) }
+        canvas.drawText(coins, x, y, hud)
+        val coinsEnd = x + hud.measureText(coins)
+        hud.color = Color.rgb(170, 210, 255)
+        canvas.drawText("🕸️ ${p.nets()}", coinsEnd + 14 * density, y, hud)
+        // the "+N" floats up off the end of the count and fades
+        val age = now - coinGainAt
+        if (coinGain > 0 && age < POP_MS) {
+            val k = age.toFloat() / POP_MS
+            hud.textSize = 11 * density
+            hud.color = Color.argb((255 * (1 - k)).toInt(), 255, 230, 140)
+            canvas.drawText("+$coinGain", coinsEnd - 4 * density, y - 12 * density - 8 * density * k, hud)
+        }
     }
 
     /** Health bars over the wild beast and your netbeast, and the beast's patience under its bar. */
@@ -278,6 +344,8 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         }
     }
 }
+
+private const val POP_MS = 900L
 
 /** Shortens a line with "…" to fit [maxWidth] px. */
 private object TextFit {

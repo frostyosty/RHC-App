@@ -177,168 +177,8 @@ matrix rows. Only real creatures (and player/poacher/aegis/titan) are rows.
   moves (or a `playFx` call), and its name in `EFFECTS` in
   `sprite_studio/server.py` so the Studio dashboard shows it.
 
-## Planned work (agreed plan)
 
-A, B, C and E are done. D is next: a long-running goal worked through a few
-effects at a time.
-
-### A. Sprite Studio: "✏️ EDIT" does nothing (done 2026-09-24)
-
-Fixed. `/load` in `server.py` detects autogen's 2x write and returns frames
-at their real size (84, or 32 for props/fx) with per-frame `durations` and
-`scale`. The page's `setCanvasSize(n, keepFrames)` adds a missing `<option>`,
-and there's no more timeout. `/save` writes through `pixelkit.save_gif` at
-the loaded scale, keeps the durations, and appends the file to
-`sprite_studio/autogen/hand_edits.txt`. `autogen.py` skips listed files
-unless `--force`. Set `STUDIO_PORT` to run a second Studio on another port.
-
-### B. Trees: 10 kinds x 10 distance levels (done 2026-09-24)
-
-Built as planned below. `scenery.py` draws the 100 `prop_tree_<kind>_d<i>.gif`
-(`autogen.py --scenery`, review sheet `--trees sheet.png`), `PropKind` has one
-entry per kind (height and trunk radius match `@tree(...)` in `scenery.py`),
-`TerrainRenderer.TREE_LOD`/`treeLevel` picks the level and `WorldMap.placeTrees`
-makes the groves. Grove points are picked by rejection sampling, not `cos`/`sin`,
-because trig isn't bit-identical on JVM and wasm and `DeterminismTest` pins the
-map. `SpriteBank` shares repeated frames, so slow 2-frame sways stay cheap.
-The world code lives in `rhc-android/world-core/src/commonMain/.../world/`.
-The original plan, kept for reference:
-
-**Pipeline: same autogen, new module.** Reuse `pixelkit` (Painter, shading,
-outline, `save_gif`) and the "render, look, fix" loop. Put the trees in a new
-`sprite_studio/autogen/scenery.py` with its own `@tree(name, ...)` registry,
-so `designs.py` stays creature-only. Wire it into `autogen.py` as
-`--scenery` (all trees) and `--only oak,...`, plus `--turnaround`-style
-review sheets: `--trees sheet.png` with one row per kind and one column per
-distance. A separate pipeline would duplicate the shading and GIF code and
-drift from the creature style, so don't make one.
-
-**What "10 distances" means: hand-made mip levels.** The renderer currently
-scales one 32 px `prop_tree` with nearest-neighbour. Near trees go blocky,
-and far ones shimmer as pixels pop in and out. Instead, draw each tree
-natively at 10 heights:
-`D = [128, 96, 72, 56, 44, 32, 24, 16, 12, 8]` px, where `d0` is nearest.
-Draw each level at its own size, not as a downscale of the big one, because
-downscaled pixel art turns to mush. Each tree is one function
-`fn(p, s, lod)` written in relative units (`p.size`). The `lod` drops detail
-level by level:
-- `d0`–`d2`: bark lines, leaf clusters with highlights, roots, 1 px twigs,
-  2-frame sway.
-- `d3`–`d5`: clusters merged, no twigs, 2-frame sway.
-- `d6`–`d9`: silhouette plus two tones, no outline below 16 px, 1 frame
-  (static far trees).
-
-The rule at every level: the silhouette and trunk position stay the same, so
-switching level never looks like a pop. Write the files at 1x (native pixels
-are the point) as `prop_tree_<kind>_d<0-9>.gif`, which is 100 GIFs.
-
-**The 10 kinds** (moody, a little darker than today's bright props, so they
-sit with the dark creatures; placement in brackets):
-oak (grass) · pine (grass, hills) · birch (grass) · willow (next to water) ·
-palm (sand) · cypress/poplar (grass) · autumn maple (tall grass) ·
-dead snag (outer stage-3 ring) · giant mushroom (tall grass; removed in E) ·
-wire-tree (a glitched tech tree with cables and a faint cyan glow; outer ring
-only, as a hint that stage-3 beasts are near).
-
-**Renderer (`TerrainRenderer`, pure Kotlin):** after computing the on-screen
-height `sh`, pick the level whose native height is the smallest one at or
-above `sh * 0.9` (clamped to `d0`/`d9`), and use the key
-`prop_tree_<kind>_d<i>`, falling back to the old `prop_tree`. Keep the
-level heights in one table that matches `D` in `scenery.py`, and treat it
-like `CREATURE_CANVAS`: change both or neither. Drawing costs about the same,
-because sampling is per screen pixel, and `SpriteBank` loads each key once,
-only when it's first seen.
-
-**Sim (`WorldMap`):** replace `TREE`/`PINE` with a tree `PropKind` per kind
-(sprite base, world height and trunk radius). Placement stays seeded and
-terrain-aware, as above. Place trees in groves with at least 0.9 tiles
-between trunks, using grid rejection, so there's always a way through (see
-C).
-
-### E. The Wilds look like home, and fights stay in them (done 2026-09-25)
-
-The user asked for this: no giant mushrooms (tiny ones are fine), terrain from
-their real location (a big harbour for Tauranga), local trees and houses,
-rain synced to the real weather, open meadows and small dense forests, and
-battles that don't leave the 3D world. Built:
-- `Region` (world-core) from `RegionProbe` (one Open-Meteo elevation request
-  of 36 points in rings; the sea reads as exactly 0 m) and the country code.
-  Coastal regions get a sea band on the real compass side.
-- A woodland noise field splits the land into `Terrain.FOREST`, meadows
-  (flowers) and groves. The flora sets are TEMPERATE, NZ (pōhutukawa, cabbage,
-  ponga, nīkau, some plantation pine), TROPICAL and BOREAL. New props:
-  `flowers`, `mushrooms` (tiny), `fern`.
-- The horizon (`Skyline` in `TerrainRenderer`): hills, a flat sea line toward
-  the sea, and towns of `prop_house_<style>_<n>` (5 styles x 8 in
-  `scenery.py`, `autogen.py --houses sheet.png`) with lit windows at night.
-  Fetching real photos or tree images was considered and dropped: photos near
-  a GPS point are unreliable and would clash with the pixel art.
-- Weather: rain, storm, snow and fog palettes, with streaks and ripples.
-- Later (same day): beasts stopped chasing. They shy away and you pick your
-  fights. Mud (0.8x pace) and walking tracks (`Terrain.PATH`, 1.1x) were added.
-- Fights: circling in the sim (`World.ENGAGED`, `PlayerInput.throwCage`,
-  `WorldEvent.CompanionOut`), the cage and move panel on the left, and the
-  beast's patience (7s: before a cage it knocks one loose, after that it gets
-  a free hit, and with no netbeasts it goes for you).
-
-### C. Trees without collisions: the "sidestep" (done 2026-09-25)
-
-Built as planned below, in `World.sidestep` (constants `PROBE`, `CLEARANCE`,
-`STRAFE_MAX`, `MIN_FORWARD`, `GAP_GAIN`), with the tree buckets as
-`WorldMap.treeStart`/`treeIds`. Two changes from the plan: the 3x3 tiles are
-searched around the middle of the corridor (0.6 ahead), so trunks right at
-your feet are covered too; and with trunks on both sides you head for the
-middle of the gap, which leans toward the side with more room, rather than
-always stepping to the roomier side, which bounced between two trunks. The
-lean is worked out in the renderer from how the camera moved. The soak test in
-`tools/world_preview` measures forest walks: 0.00-0.01% of ticks inside a
-trunk (2% with the sidestep off), and forward pace never under 0.70. The
-original plan:
-
-No colliders, and the rule still holds: the player must never get stuck.
-Instead, the auto-walk leans around a tree it's about to hit, which is your
-idea of "slow down and move aside when a tree is big (close)", done in the
-sim so it stays deterministic:
-
-1. **Precompute once** at map generation: `treeCells`, a per-tile bucket of
-   tree indices (an `IntArray` of offsets and ids) built from the seed. It's
-   derived data, so snapshots don't change.
-2. **Each tick, players only:** probe the point 1.2 tiles ahead along the
-   heading, and look at the trees in that tile and its 8 neighbours
-   (usually 0–2 trees). For each tree, compute forward distance
-   `f = dot(tree - pos, heading)` and sideways offset
-   `lat = dot(tree - pos, right)`. It's a threat if `0 < f < 1.2` and
-   `|lat| < radius + 0.35`.
-3. **Respond to the nearest threat:**
-   - Strafe away from it at up to 0.9 tiles/s along `right * -sign(lat)`.
-     If `lat` is exactly 0, pick the side from the tree index's parity so it
-     stays deterministic.
-   - Scale forward speed by `lerp(1.0, 0.7, closeness)`.
-   - Leave the heading alone, so steering input and the auto-walk route
-     aren't disturbed. The path just shifts slightly and never bounces back.
-4. **Never blocks:** forward speed never drops below 70%. If both sides are
-   closed in, pick the side with the larger `|lat|` and carry on. If a trunk
-   is still overlapped, just walk through it, since it's a billboard. Beasts
-   don't dodge, which is cheaper, and a chase through a grove looks
-   deliberate.
-5. **Render-only polish (no sim state):**
-   - The camera leans about 2° toward the strafe.
-   - When a tree's `depthZ` drops under about 0.8, dither-fade it with the
-     Bayer pattern, as `pixelkit.dither` does. Brushing past a canopy then
-     never fills the screen with blown-up pixels.
-   - A few leaf pixels flick past when the player passes inside a canopy
-     radius.
-6. **Cost:** at most 9 bucket reads and a few dot products per player per
-   tick, with no allocation and no pairwise checks.
-7. **Tests** in `tools/world_preview` (WorldPreview soak):
-   - Determinism is unchanged (same seed and inputs give the same snapshots).
-   - Ticks spent inside a trunk radius should be close to 0.
-   - Forward progress never drops below 0.7 x walk speed over any 1 s window.
-   - Add a preview PNG walking straight at a grove.
-   - Update `rhc-android/README.md` §5.1 with the new behaviour when it's
-     built.
-
-### D. Every attack gets an effect (eventually)
+### D. Every attack gets an effect (TODO only half done)
 
 Goal: every move in `SkillEngine.SKILL_DATABASE` has an `fx`, so no attack
 lands with just the flying move-name text. Items and other actions (potion,
@@ -364,9 +204,299 @@ hit (e.g. slash/claw moves, shield/buff moves, poison/drain moves), which
 keeps the GIF count down. Ultimates should each get their own. Ask the user
 before settling a grouping. When adding effects, update the two lists above.
 
+## Wilds roadmap (temporary)
+
+**Delete this whole section once every phase is done** (the user asked for
+that). Before deleting it, move anything that should last (new rules,
+constants that must match, test commands) into "Netbeasts: the 3D Wilds"
+above and README §5.1.
+
+Work through the phases in order. Build each one, soak-test it with
+`bash tools/world_preview/run.sh`, and ship it before starting the next.
+Later phases depend on earlier ones: a caught flee uses phase 1's get-up
+and phase 2's coin counter, the colossus uses phase 3's scaling and phase 4's
+chase, and mounts need phase 2's coins. Mark each item `(done <date>)` when it lands and update
+README §5.1 in the same change. **Ask** marks a decision the user makes.
+Ask it when that phase starts and don't settle it yourself. Where there's a
+default, propose it.
+Anything new in the sim follows the rules above: deterministic, the sim's own
+RNG, `DetMath` trig, in `EntitySnapshot`, and `DeterminismTest` re-pinned only
+on purpose.
+
+### Phase 1. Fights that feel better (done 2026-09-25)
+
+Built as planned below, with these details:
+- The reversal is `Entity.orbitSpin` easing toward `orbitDir` by `SPIN_RATE`
+  a tick inside `World.orbit`, with the timer `swapTicks` on the player. A
+  swipe holds its direction for at least `SWAP_MIN_TICKS`, without using RNG.
+- The hit waits in the sim, not the renderer: `World.perform` and `effect`
+  hold a HIT (or a FAINT behind it) and its fx in `pendingAction`/`pendingFx`
+  until the attacker's lunge peaks. The lunge reach is
+  `TerrainRenderer.lungeReach`: bodies meet at `LUNGE_CONTACT` x their summed
+  sizes, and a lunge at you stops `LUNGE_FACE` short.
+- `EncounterOutcome.PLAYER_BEATEN` knocks you flat (`downTicks`: `LIE_TICKS`
+  flat, then getting up). `WorldFight` sends it when the beast hit YOU (a lost
+  last stand). Every fight then sets `recoverTicks` (`RECOVER_PACE` 0.6
+  easing to 1 over 8 s). `downTicks` and `recoverTicks` are in the snapshot,
+  because the camera reads them. Phase 4's "caught" uses `PLAYER_BEATEN`.
+- `DeterminismTest.WALK_PRINT` was re-pinned. The preview checks the
+  reversals, the held hit, the pace and the get-up, and writes
+  `fight_lunge.png` and `getup_*.png`.
+
+The plan:
+
+1. **Circling changes direction.** Circling one way the whole time made the
+   user dizzy. Each fight gets one swap timer, on the player. Everyone circles
+   one way for 3 s plus up to 3 s more (sim RNG), then the orbit speed eases to
+   0 over about 0.6 s, `orbitDir` flips, and the speed eases back up. The
+   standoff, the watch circle and the duel all follow the timer, and the duel
+   keeps turning against your circle (`b.orbitDir = -p.orbitDir`). A swipe
+   still picks the direction and restarts the timer. This changes
+   `DeterminismTest`'s scripted fight, so re-pin it.
+2. **Lunges connect.** This is render-only, in `TerrainRenderer.drawSprites`.
+   The attack lunge covers about 80% of the distance to the foe instead of a
+   fixed 0.45 tiles, so the two sprites collide, and the foe's HIT knock-back
+   starts at the peak of the lunge. Check `fight_attack.png`.
+3. **Picking yourself up.** After every fight you get up and walk on at 60%
+   pace, easing back to 100% over about 8 s. If you were knocked down (phase
+   4's caught flee), the camera rises from the ground first. Store it as a
+   player field (`recoverTicks`) that scales `forward` in `stepPlayer`.
+4. **Item buttons.** They already exist: NET, POT and SPRY appear in the left
+   panel once a netbeast is out, but only for items equipped on that
+   netbeast, which makes them easy to miss. Show the row in every fight once
+   a netbeast is out. Grey out items at 0, and have a tap on one say to equip
+   it in the Bag.
+
+### Phase 2. The Wilds as the start screen, coins, HUD (done 2026-09-25)
+
+Built as planned below, with these details:
+- The first frame is `WorldPreviewView` in `peaceControls`, 140dp tall.
+  `WorldBridge.prepareNextWalk` makes the map, the world and its frame on a
+  background thread (`walkMaker`) at `WorldView.PORTRAIT_W`. It publishes them
+  as `nextWalk` only when they're done, so the main thread never shares a
+  world with it. It remakes them for a new day or region (`walkKey`), or for
+  new weather or a new hour (`look`). `enterWorld` sets off in `nextWalk` if
+  its key matches, and otherwise makes a world on the spot.
+  `WeatherEngine.fetchSilent`'s `onRegion` fires after `RegionProbe`. It took
+  about 45 ms on a warm desktop JVM; it hasn't been timed on a phone yet.
+- Coins aren't entities. They're `WorldMap.coins`, placed by `placeCoins`
+  from their own RNG (`COIN_SALT`), so the rest of the map didn't move: the
+  old fingerprints still passed with coins left out of the hash. `World`
+  keeps `coinGone` (ticks until each one is back), and the snapshot carries
+  only the gone ones (`CoinGone`).
+- The numbers: 8 trails of 3-5 coins plus 18 singles, about 54 per map.
+  `COIN_REACH` is 0.5 tiles. `COIN_RESPAWN_TICKS` is 5 minutes, longer than a
+  walk. Coins aren't on the minimap. In the soak, a wanderer picks up 0-1 and
+  a bot that knows where every coin is picks up nearly all of them (49-53).
+  Tune `COIN_TRAILS`/`COIN_SINGLES` for the phase 6 prices.
+- `MAP_PRINT`, `COAST_PRINT` and `WALK_PRINT` now hash the coins, and were
+  re-pinned on purpose.
+- There's no coin sound yet: `onWorldCoin` plays `sfx_coin` once that sound
+  exists in `res/raw`.
+
+The plan:
+
+1. **The first frame instead of the button.** With 3D on, the Netbeasts tab
+   shows the Wilds where `btnDispatch` is: today's map from the spawn point,
+   rendered once (not ticking) with a small "drag to start walking" hint. The
+   first touch calls `enterWorld()`, and the same drag already steers. When
+   Aether is depleted, dim the frame and put the message on it. Text mode (3D
+   off) keeps the button. Generate the map when the tab opens and reuse it
+   for the walk, so the first frame and the walk are the same world. Time
+   `WorldMap.generate` on a phone. If it's slow, run it off the main thread
+   and show a plain placeholder until it's ready.
+2. **HUD counters.** Top left, under the timer: `🪙 coins  🕸️ nets`. Keep
+   them live, so coins picked up on the walk count straight away. Nets is the
+   bag's `nets`. When coins are lost (getting caught in phase 4 costs 90%),
+   the counter visibly plummets: it rolls down fast, flashes red, and shows a
+   caption like "-540 🪙 dropped as you ran".
+3. **Fewer coins, and coins to pick up.** There are no coin pickups in the
+   Wilds yet. Coins come from the end-of-walk purse (5-15 in
+   `finishExploration`), [Looter], StealCoins, the market and selling. The
+   fast mount ("collect coins fast") assumes coins lying around. Plan:
+   - Sparse `EntityKind.COIN` pickups, placed from the seed: more along tracks
+     and in far territories, none in the air, and they respawn on a timer.
+   - A spinning `prop_coin` from autogen.
+   - A `WorldEvent.CoinPicked` that the host adds to `focusCoins`.
+   - Agreed with the user: walking into a coin picks it up (a contact radius
+     checked every tick, so you never have to stop or tap), and the end of a
+     walk pays a flat **5 coins** plus whatever you picked up. Tune how many
+     coins lie around with the phase 6 prices in mind.
+
+### Phase 3. Fair fights: the power curve and size
+
+1. **The first fights follow a curve.** The reference level is the average
+   level of your netbeasts, leaving out legendaries (Aegis, Titan, type
+   "Legendary"). In the first encounter the wild beast is a little weaker
+   than that (about 0.85x HP). In the second it's a little stronger (about
+   1.15x). From the third on, use the standard rule in `onWorldEncounter`:
+   lead max HP x (0.6 + 0.2 x stage) x 0.85-1.15. Agreed with the user: the
+   easy-then-hard pair happens **once ever** after install, not every walk,
+   so count world encounters in prefs.
+2. **Bigger when it outlevels you.** The wild beast's size scales with its
+   level against the reference level, not by much: roughly
+   `sqrt(wild / yours)`, clamped to 0.85-1.3x its stage size. Measure against
+   the reference level, not the netbeast that's out, so the size doesn't
+   change when you swap. The host rolls the level at `Encounter`, so the
+   beast grows as it squares up (eased over about 0.5 s, so it looks like it
+   rears up). Do it through a host call like `perform` (`World.scaleBeast`)
+   that sets `Entity.size`, which is already in the snapshot. The renderer
+   doesn't change.
+
+### Phase 4. Fleeing
+
+This is the biggest change to the sim. It adds player states for fleeing, up
+a tree and under water, a beast `CHASE` state, and `PlayerInput` fields for
+flee and the three escapes. It all goes in the snapshot.
+
+- **FLEE** is a button in the fight panel. You turn round and auto-run,
+  faster than walking and still steerable, and the beast chases you. Once
+  you flee there are no more cages this fight: a netbeast that's out goes
+  back in its cage, and the panel shows only the three escapes.
+- **The chase.** The beast is slightly faster than you, so running alone
+  doesn't lose it. It's behind you, so the minimap shows it; the chaser's
+  dot pulses.
+- **Climb tree** works only if you're within about a tile of a tree, the
+  beast isn't Flying, and it's shorter than that tree (its height is
+  `size x CREATURE_CANVAS`; trees are `PropKind.size`, 2.4-3.2). The camera
+  rises into the canopy. The beast comes to the trunk, looks up for a couple
+  of seconds, then turns and walks off, and you've escaped. When the climb
+  can't work, the button says why: no tree near, it can fly, or it's too big.
+- **Lie down** works only in water. You go under (the view goes dark blue)
+  and an oxygen bar drains (about 8 s). The beast loses you, searches for a
+  few seconds, then leaves. If the oxygen runs out while it's still close,
+  you come up and the chase goes on. On land, lying down does nothing.
+- **Turn and yell** startles the beast, and it stops for a moment before it
+  chases on. Each yell stops it for less time (about 1 s, then 0.6 s, then
+  0.35 s, and so on) until yelling does nothing. The effect comes back if you
+  don't yell for about 10 s. The yell count is sim state.
+- **Escaping** is `EncounterOutcome.PLAYER_FLED`, which already exists: the
+  beast goes back to its zone.
+- **Getting caught** (agreed with the user) costs **90% of your coins**. It
+  also knocks you down, the fight counts as lost (like a last stand, without
+  the 9,999 hit), and you get up at 60% pace (phase 1.3). The sim sends a
+  `WorldEvent.Caught`, the host takes the coins off `focusCoins`, and the
+  phase 2 counter plummets so you see them go. Escaping costs nothing.
+- **Tests.** Add soak cases for each escape and for being caught, and a
+  scripted flee in `DeterminismTest`. Add preview PNGs: running with the beast
+  on the minimap, up a tree looking down at it, and under water.
+
+### Phase 5. The red-wall colossus
+
+When the red wall drops and you tap Defend, the invader (`isUnderAttack`,
+"[Colossal]", 8000 HP, evades everything) fights you in the Wilds instead of
+on the old battle screen. It's the only creature allowed to come at you, so
+update the "Beasts never ambush" rule when this lands. The battle rules stay
+the same.
+
+- **Where.** If you're on a walk, it interrupts the walk. If you're not, the
+  Wilds open at today's spawn point for this fight only and close after it.
+- **The charge.** It appears on the horizon in front of you, about 25 tiles
+  out, with the ground shaking. It charges straight in and stops towering
+  over you, and the standoff circle is wider so it fits on screen and you
+  look up at it. It animates at about 0.8x speed, so it looks heavy without
+  being slow motion.
+- **Size.** Several times the tallest tree (about 6-8 tiles against 3), so it
+  looks like one hit would flatten any netbeast. It's too big to escape by
+  climbing a tree. Lying down in water still works.
+- **Keeping it sharp** (agreed: it needs the bigger sizes). The world
+  renders at only about 200x300 px and is scaled up, so a sprite looks
+  blocky only when its source has fewer pixels than the render pixels it
+  covers. A 64-grid creature (84 px frames) is
+  fine up to about 84 px tall. A colossus 300 px tall would be 3-4x blockier
+  than everything around it. So draw it the way the trees are drawn: size
+  levels at 64, 128 and 256 grid, with the renderer picking a level by
+  on-screen height like `treeLevel`. Add detail as the size goes up (plate
+  seams, rivets, scars and glowing veins at 256) rather than blowing up a
+  small sprite. At 256 its pixels are about the size of the terrain's. The
+  cacheon helpers already take `p.size`, so the silhouette carries across
+  levels. Draw only the views and animations it uses (charge, idle, attack,
+  roar and fade, facing you). Load them when it appears and free them after
+  the fight, because 256-grid frames are about 340x340 px.
+- **Art: one giant per kind of breach** (agreed with the user; general
+  categories, not one per app). Only walls with a Defend button lead to a
+  fight (`canDefend` in `ShieldRuleEngine`), and they come in four kinds,
+  read from the reason's prefix:
+  - **App**: "App Overcome:", a blocked app.
+  - **Web**: "Hyperlink Overcome:" and "Explicit Input/Query:", a blocked
+    link or search.
+  - **Content**: "Content Guard:", adult content.
+  - **Tamper**: "Anti-Tamper:", trying to switch the blocker off.
+
+  Nightfall and the strict modes (Nuclear, Dumb Phone, No Internet, No
+  Videos) lock you out with no Defend button, so they get no giant.
+  `GuardianService` only passes the trigger word today, so add the kind as
+  an extra on the `UNDER_ATTACK` intent. Each giant is its own row in the
+  cacheon style from `sprite_studio/autogen`, with its own Kit and accent
+  colour. Show the user each design before moving on to the next.
+- **Tests.** Add a preview sequence of the charge and the standoff. The
+  wanderer soak must still meet no normal beast that comes at it.
+
+### Phase 6. Mounts: two ridable netbeasts and a dragon
+
+The user swapped the vehicles for creatures you ride and kept the same
+ideas: the bike is now a quick mount, the car a fast mount, and the plane a
+dragon. You buy mounts; you don't catch them, and they don't fight or join
+the party. Do it in this order: the shop and saving what you own, then the
+quick mount (it brings the riding camera and getting on and off), then the
+fast mount (stamina and no encounters), then the dragon.
+
+- **Shop and party screen.** Quick mount 200, fast mount 1,000, dragon
+  10,000, each bought once and saved in prefs. The shop shows each mount's
+  animated sprite next to its price, and the party screen shows the mounts
+  you own with their sprites, in their own row apart from your fighters. The
+  car's fuel becomes the fast mount's stamina, refilled with feed bought in
+  the shop.
+  **Ask:** the feed price and how long a full stamina bar lasts, and
+  whether the dragon needs feed too.
+- **Who they are** (agreed with the user; the names can change later): a
+  horse-like netbeast, **Gigahoof** (quick mount), an elephant-like one,
+  **Teraphant** (fast mount), and a dragon, **Petadrake**. The names follow
+  the tech-pun style of the others, and giga, tera, peta go up with the
+  price.
+- **Waiting near the start.** Every mount you own waits near the start of
+  each walk (`EntityKind.MOUNT`, placed from the seed on open ground,
+  idling). Walk up to it to climb on.
+- **Riding camera.** On a mount the view pulls back and up (about 2 tiles
+  behind, a little higher) and shows you on its back. The renderer takes a
+  camera offset and stops skipping the player's own sprite.
+- **Art.** Mounts are creatures, so each is a row in `designs.py` in the
+  cacheon style with all 5 views. Draw the rider into the design with a
+  `ride` pose, so autogen makes `ride_*` animations with the rider sitting
+  right in every view, rather than stacking the player sprite on top.
+- **Quick mount** (was the bike). About 1.8x walking pace, no stamina. Wild
+  beasts can still engage you: you jump off to fight and climb back on after.
+- **Fast mount** (was the car). About 3.5x walking pace, with a stamina bar
+  in the HUD. Wild beasts can't engage you (they scatter), so it's for
+  collecting coins fast. When the stamina runs out you climb off and walk,
+  and it lies down where it stopped. There are still no colliders: the
+  sidestep's probe grows with speed, so it swerves round trunks.
+  **Ask:** what happens at water. Default: it stops at the shore and you
+  climb off.
+- **Dragon** (was the plane). It takes off from open ground, and you steer
+  and climb by dragging. The voxel renderer draws from altitude: raise the
+  eye height and the draw distance, and watch the frame time. There are no
+  coins in the air, but special netbeasts fly high in the sky (new rows in
+  the `FlyingKit` style) and are only found up there. Fighting one is the
+  normal fight: you circle each other, in the air. Agreed with the user:
+  in the sky **the dragon fights for you** (you just sit on its back), so
+  there are no cages up there. You can still throw a net at a sky beast, and
+  a netted one falls to the ground. The map wraps every 96 tiles, so from
+  high up you'd see it repeat: cap the altitude or thicken the fog with
+  height.
+- **Tests.** Soak a ride (never stuck, stamina runs out, no encounters on the
+  fast mount) and a flight (frame time at altitude, and a sky fight that
+  circles).
+
 ## Conventions
 
 - Match the surrounding style: emoji-prefixed `echo` status lines in shell
   scripts, and `set -euo pipefail` in new scripts.
 - Keep the Android Kotlin logic and the `rhc-common` C++ engines in sync. A
   change to the rules or scoring in one usually needs the same change in the other.
+- Android's runtime permission prompts come from the permission controller,
+  which the Guardian blocks as anti-tamper. Ask the way
+  `LocationEngine.requestPermission` does: set `ALLOW_PERMISSION_PROMPT_UNTIL`
+  (`ShieldRuleEngine` then lets only that package through) and clear it in
+  `onRequestPermissionsResult`. Don't use `ALLOW_SETTINGS_UNTIL` for this,
+  because it unlocks all of Settings.

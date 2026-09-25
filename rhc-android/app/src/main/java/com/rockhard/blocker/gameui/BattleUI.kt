@@ -104,11 +104,17 @@ internal fun GameActivity.hideBattleArena() {
 
 internal fun GameActivity.updateDispatchButton() {
     val btn = findViewById<Button>(R.id.btnDispatch) ?: return
+    val preview = findViewById<com.rockhard.blocker.world.WorldPreviewView>(R.id.worldPreview)
     if (world3dEnabled) {
-        btn.text = if (inWorld) "EXPLORING THE WILDS…" else "🌲 EXPLORE THE WILDS"
-        btn.isEnabled = !inWorld
+        // the first frame of today's walk stands in for the button: touch it to set off
+        btn.visibility = View.GONE
+        preview?.visibility = View.VISIBLE
+        preview?.message = if (aetherDepleted) "Aether depleted. Return tomorrow." else null
+        prepareNextWalk() // a new one after each walk, or when the day or region changes
         return
     }
+    btn.visibility = View.VISIBLE
+    preview?.visibility = View.GONE
     // Key -1 is the player's own expedition, not a beast.
     val idle = party.indices.count { !activeExpeditions.containsKey(it) }
     if (party.isEmpty()) {

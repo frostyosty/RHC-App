@@ -160,10 +160,13 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
         val dirX = cos(cam.angle); val dirY = sin(cam.angle)
         val rightX = -dirY; val rightY = dirX
 
-        // Eye height follows the ground smoothly; lower when wading, with a walking bob
+        // Eye height follows the ground smoothly; lower when wading, with a walking bob, and
+        // down on the ground when a fight knocked you flat, rising as you pick yourself up
         val wading = map.terrainAt(camX, camY) == Terrain.WATER
-        val target = map.surfaceAt(camX, camY) + if (wading) 0.42 else 0.6
-        camH = if (camH.isNaN()) target else camH + (target - camH) * 0.15
+        val standing = if (wading) 0.42 else 0.6
+        val up = getUp(cam)
+        val target = map.surfaceAt(camX, camY) + DOWN_EYE + (standing - DOWN_EYE) * up * up * (3 - 2 * up)
+        camH = if (camH.isNaN()) target else camH + (target - camH) * (if (cam.downTicks > 0) 0.3 else 0.15)
         val eye = camH + if (cam.moving) sin(timeMs / 110.0) * 0.015 else 0.0
 
         lean(cam, rightX, rightY, timeMs)
@@ -176,11 +179,31 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
         if (cam.action == Action.HIT) for (i in fb.indices) fb[i] = lerp(fb[i], 0xFFB02020.toInt(), 0.22)
     }
 
-    /** Rolls the view up to [LEAN] toward your sideways speed while walking (the sidestep), easing back. */
+    /**
+     * How far an attack lunges (tiles): far enough that the two bodies meet and overlap a
+     * little, since each creature is about its size long. At you (the camera) it stops a
+     * little short of your face, or it would fill the screen.
+     */
+    private fun lungeReach(e: Entity, foe: Entity, atCamera: Boolean): Double {
+        val gap = map.distance(e.x, e.y, foe.x, foe.y)
+        val reach = if (atCamera) gap - LUNGE_FACE else gap - LUNGE_CONTACT * (e.size + foe.size)
+        return reach.coerceIn(0.45, gap * 0.9)
+    }
+
+    /** 0 while you lie knocked flat, rising to 1 as you get up (1 when you're on your feet). */
+    private fun getUp(cam: Entity): Double =
+        if (cam.downTicks <= 0) 1.0
+        else ((World.DOWN_TICKS - World.LIE_TICKS - cam.downTicks).toDouble() / (World.DOWN_TICKS - World.LIE_TICKS)).coerceIn(0.0, 1.0)
+
+    /**
+     * Rolls the view up to [LEAN] toward your sideways speed while walking (the sidestep),
+     * easing back; lying knocked flat, the view is tipped on its side.
+     */
     private fun lean(cam: Entity, rightX: Double, rightY: Double, timeMs: Long) {
         val dt = timeMs - lastMs
         var target = 0.0
-        if (cam.state == EntityState.WALKING && !lastCamX.isNaN() && dt in 1..250) {
+        if (cam.downTicks > 0) target = DOWN_ROLL * (1 - getUp(cam))
+        else if (cam.state == EntityState.WALKING && !lastCamX.isNaN() && dt in 1..250) {
             val side = (map.delta(lastCamX, cam.x) * rightX + map.delta(lastCamY, cam.y) * rightY) / (dt / 1000.0)
             target = (side / World.STRAFE_MAX).coerceIn(-1.0, 1.0) * LEAN
         }
@@ -315,17 +338,23 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
             if (p.kind.isTree) draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, timeMs + (p.x * 7919 + p.y * 104729).toLong(), "prop_tree", tree = true, prop = true)
             else draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, timeMs, prop = true)
         }
+        // coins spin and bob a little above the ground
+        for (i in map.coins.indices) {
+            if (world.coinGone[i] > 0) continue
+            val c = map.coins[i]
+            draw(c.x, c.y, COIN_LIFT + 0.04 * sin(timeMs / 280.0 + i), COIN_SIZE, "prop_coin", false, timeMs + i * 97L)
+        }
         for (e in world.entities.values) {
             if (e.id == cam.id) continue
             if (e.state == EntityState.GONE && !(e.action == Action.FAINT && e.actionTicks > 0)) continue
             val v = spriteFor(e, cam, rightX, rightY)
             val size = if (e.kind == EntityKind.CAGE) e.size else e.size * CREATURE_CANVAS
-            // attack lunges toward the foe, a hit knocks back from it
+            // attack lunges into the foe, a hit knocks back from it
             var ex = e.x; var ey = e.y
             val foe = world.entities[e.foe]
             if (foe != null && (e.action == Action.ATTACK || e.action == Action.HIT)) {
                 val p = 1 - e.actionTicks.toDouble() / e.action.ticks
-                val k = if (e.action == Action.ATTACK) sin(PI * p) * 0.45 else -sin(PI * p) * 0.18
+                val k = if (e.action == Action.ATTACK) sin(PI * p) * lungeReach(e, foe, foe.id == cam.id) else -sin(PI * p) * 0.18
                 val a = atan2(map.delta(e.y, foe.y), map.delta(e.x, foe.x))
                 ex = map.wrap(ex + cos(a) * k); ey = map.wrap(ey + sin(a) * k)
             }
@@ -484,6 +513,19 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
 
         /** How far the view rolls toward a full-speed sidestep (radians, about 2 degrees). */
         const val LEAN = 0.035
+
+        /** The coin billboard (the prop_coin canvas; the coin itself is about 60% of it) and its hover. */
+        const val COIN_SIZE = 0.55
+        const val COIN_LIFT = 0.1
+
+        /** Knocked flat: your eye is this high off the ground and the view rolls this far (radians). */
+        const val DOWN_EYE = 0.12
+        const val DOWN_ROLL = 0.35
+
+        /** A lunge stops when the bodies are this much of their summed sizes apart (a little overlap). */
+        const val LUNGE_CONTACT = 0.3
+        /** ...or this far (tiles) short of your face. */
+        const val LUNGE_FACE = 0.9
 
         private const val LEAVES = 16
         private const val LEAF_MS = 900L

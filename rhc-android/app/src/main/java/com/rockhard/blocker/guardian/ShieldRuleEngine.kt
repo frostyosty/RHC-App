@@ -96,7 +96,14 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
             rootPkg.contains("com.rockhard.blocker") || rootPkg.contains("com.rockhard")) {
             return ShieldAction.Allow
         }
-        
+
+        // Android's permission prompt while the app is asking for one (LocationEngine.requestPermission).
+        // Only the prompt's own package: Settings stays locked
+        if ((lowerPkg.contains("permissioncontroller") || lowerPkg.contains("packageinstaller")) &&
+            System.currentTimeMillis() < prefs.getLong("ALLOW_PERMISSION_PROMPT_UNTIL", 0L)) {
+            return ShieldAction.Allow
+        }
+
         val isHomeLauncher = listOf("launcher", "trebuchet", "quickstep").any { lowerPkg.contains(it) || lowerClass.contains(it) } || 
                              lowerPkg.contains("home") || 
                              (lowerClass.contains("home") && (lowerPkg.contains("launcher") || lowerPkg.contains("home") || lowerPkg.contains("systemui")))

@@ -42,8 +42,19 @@ fun overview(map: WorldMap, name: String) {
         }
         img.setRGB((p.x * s).toInt().coerceIn(0, map.size * s - 1), (p.y * s).toInt().coerceIn(0, map.size * s - 1), c)
     }
+    for (c in map.coins) for (d in 0 until 4) img.setRGB(((c.x * s).toInt() + d % 2).coerceIn(0, map.size * s - 1), ((c.y * s).toInt() + d / 2).coerceIn(0, map.size * s - 1), 0xFFD700)
     for (dy in -3..3) for (dx in -3..3) img.setRGB((map.spawnX * s).toInt() + dx, (map.spawnY * s).toInt() + dy, 0xFFFFFF)
     ImageIO.write(img, "png", File(name))
+}
+
+/** Steering that heads for the nearest coin still lying there: a player out for coins. */
+fun coinSteer(w: World, me: Entity): Double {
+    val m = w.map
+    val i = m.coins.indices.filter { w.coinGone[it] == 0 }.minByOrNull { m.distance(me.x, me.y, m.coins[it].x, m.coins[it].y) } ?: return 0.0
+    var diff = atan2(m.delta(me.y, m.coins[i].y), m.delta(me.x, m.coins[i].x)) - me.angle
+    while (diff > PI) diff -= 2 * PI
+    while (diff < -PI) diff += 2 * PI
+    return diff.coerceIn(-0.08, 0.08)
 }
 
 /** Steering that heads for the nearest beast: what a player who wants a fight does. */
@@ -93,6 +104,10 @@ fun main(args: Array<String>) {
         println("[$name] terrain % (0 grass,1 tall,2 sand,3 water,4 forest): $counts zones=${map.zones.size} props=${map.props.size}")
         check(WorldMap.generate(map.seed, species, map.region).terrain.contentEquals(map.terrain))
         check(WorldMap.generate(map.seed, species, map.region).props == map.props)
+        check(WorldMap.generate(map.seed, species, map.region).coins == map.coins)
+        val onTrack = map.coins.count { map.terrainAt(it.x, it.y) == Terrain.PATH }
+        println("[$name] coins ${map.coins.size} ($onTrack on tracks), none in water: ${map.coins.none { map.terrainAt(it.x, it.y) == Terrain.WATER }}")
+        check(map.coins.size in 30..80 && map.coins.none { map.terrainAt(it.x, it.y) == Terrain.WATER })
         check(map.props.none { it.kind.sprite.contains("mushroom") && it.kind.isTree }) { "no giant mushrooms" }
         // trees: kinds, spacing (there must always be a way through), levels
         val trees = map.props.filter { it.kind.isTree }
@@ -181,16 +196,87 @@ fun main(args: Array<String>) {
     val watch = map.distance(me.x, me.y, (comp.x + b.x) / 2, (comp.y + b.y) / 2)
     println("fight: gap before cage ${"%.2f".format(gap)}, you circle the pair at ~${"%.2f".format(watch)} tiles, beasts ${"%.2f".format(map.distance(comp.x, comp.y, b.x, b.y))} apart")
     rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_duel.png")
-    s.perform(Role.COMPANION, Action.ATTACK); run(6); s.effect(Role.BEAST, "bite"); s.perform(Role.BEAST, Action.HIT)
-    run(4); rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_attack.png")
+    // nobody circles one way for long: with no swipes the fight turns round every 3-6s, easing to a stop first
+    var flips = 0; var lastSign = 0; var slowest = Double.MAX_VALUE
+    run(360) {
+        val d = me.orbitSpin
+        val sign = if (d > 0.5) 1 else if (d < -0.5) -1 else 0
+        if (sign != 0 && lastSign != 0 && sign != lastSign) flips++
+        if (sign != 0) lastSign = sign
+        slowest = minOf(slowest, kotlin.math.abs(d))
+    }
+    println("fight: circled the other way $flips times in 12s (slowest ${"%.2f".format(slowest)})")
+    check(flips in 2..4 && slowest < 0.1) { "the circling should reverse every 3-6s, easing through a stop: $flips flips" }
+    // a hit lands when the attacker's lunge peaks, not when the move is called
+    s.perform(Role.COMPANION, Action.ATTACK); run(3); s.effect(Role.BEAST, "bite"); s.perform(Role.BEAST, Action.HIT)
+    check(b.action != Action.HIT && b.fx == null) { "the hit should wait for the lunge" }
+    run(4)
+    check(b.action == Action.HIT && b.fx == "bite") { "the hit should land at the lunge's peak" }
+    rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_attack.png")
     run(60)
+    // the beast's counter at the top of its lunge, with no effect in the way: the bodies should meet
+    s.perform(Role.BEAST, Action.ATTACK); run(Action.ATTACK.ticks / 2)
+    rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_lunge.png")
+    run(30)
     val a0 = me.orbitA; run(60); check(me.orbitA != a0) { "you stopped circling" }
     s.perform(Role.BEAST, Action.FAINT); run(30); rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_faint.png")
     val onScreen = rc.onScreen.keys
     s.resolveEncounter(b.id, EncounterOutcome.BEAST_DEFEATED)
-    run(60)
+    // you walk on at 60% pace, easing back to full over 8s
+    var x0 = me.x; var y0 = me.y
+    run(30)
+    val firstSecond = map.distance(x0, y0, me.x, me.y)
     check(world.roleEntity(me.id, Role.COMPANION) == null && me.state == EntityState.WALKING)
     println("fight events: $log; drawn: $onScreen")
+    println("after the fight: ${"%.2f".format(firstSecond)} tiles in the first second (full pace ${World.WALK_SPEED})")
+    check(firstSecond < World.WALK_SPEED * 0.75) { "you should walk on slowly after a fight" }
+
+    // clobbered (a last stand lost): you're knocked flat, lie there, get up, then walk on slowly
+    val b2 = world.entities.values.first { it.kind == EntityKind.BEAST && it.state != EntityState.GONE && it !== b }
+    b2.x = map.wrap(me.x + kotlin.math.cos(me.angle) * 2); b2.y = map.wrap(me.y + kotlin.math.sin(me.angle) * 2)
+    b2.state = EntityState.PAUSE; b2.timer = 9999; me.grace = 0
+    run(30)
+    check(me.state == EntityState.ENGAGED) { "no second encounter: $log" }
+    s.perform(Role.BEAST, Action.ATTACK); run(8); s.perform(Role.PLAYER, Action.HIT); run(20)
+    s.resolveEncounter(b2.id, EncounterOutcome.PLAYER_BEATEN)
+    x0 = me.x; y0 = me.y
+    // one render a tick with the clock running, so the eased roll and eye height play out as in the app
+    fun live(ticks: Int) = run(ticks) { rc.render(world, me, 0, Palette.DAY, src, t * 33L) }
+    live(8); save(rc, "$out/getup_down.png")
+    live(20); save(rc, "$out/getup_rising.png")
+    check(map.distance(x0, y0, me.x, me.y) == 0.0) { "you walked off while knocked flat" }
+    live(30); save(rc, "$out/getup_walking.png")
+
+    // the Netbeasts screen's first frame (a 360x140dp window, 200 px wide like the walk), made the
+    // way WorldBridge.prepareNextWalk makes it, and how long that takes
+    run {
+        val t0 = System.nanoTime()
+        val fw = World(WorldMap.generate(seed, species, tauranga)); val fs = LocalWorldSession(fw, "p", "Cacheon", 180)
+        val t1 = System.nanoTime()
+        val fr = TerrainRenderer(200, 200 * 140 / 360, fw.map)
+        fr.render(fw, fw.entities[fs.localPlayerId]!!, 0, Palette.DAY, src, 0L)
+        val t2 = System.nanoTime()
+        save(fr, "$out/first_frame.png")
+        println("first frame: map and world ${(t1 - t0) / 1_000_000}ms, renderer and frame ${(t2 - t1) / 1_000_000}ms (JVM, warm)")
+    }
+
+    // a coin trail on a track, seen from a few steps back, and walking it picks every coin up
+    run {
+        val cw = World(map); val cs = LocalWorldSession(cw, "c", null, 180); val cme = cw.entities[cs.localPlayerId]!!
+        cw.entities.values.removeAll { it.kind == EntityKind.BEAST }
+        val a = map.coins[0]; val b = map.coins[1]
+        val len = map.distance(a.x, a.y, b.x, b.y)
+        val dx = map.delta(a.x, b.x) / len; val dy = map.delta(a.y, b.y) / len
+        cme.x = map.wrap(a.x - dx * 2.5); cme.y = map.wrap(a.y - dy * 2.5); cme.angle = atan2(dy, dx); cme.grace = 999
+        val crc = TerrainRenderer(200, 300, map)
+        repeat(10) { crc.render(cw, cme, 0, Palette.DAY, src, it * 33L) }
+        save(crc, "$out/coins.png")
+        var got = 0
+        repeat(30 * 4) { for (e in cs.update(World.DT)) if (e is WorldEvent.CoinPicked) got++ }
+        println("coin trail: walked it and picked up $got")
+        check(got >= 3) { "walking along a trail should pick its coins up" }
+    }
+    check(me.downTicks == 0 && me.moving) { "you should be up and walking" }
 
     // the horizon all the way round from that open spot, by day and at night (8 views, north first)
     val pano = BufferedImage(8 * 120, 2 * 160, BufferedImage.TYPE_INT_ARGB)
@@ -301,21 +387,25 @@ fun main(args: Array<String>) {
     // ambushed; a hunter heads for the nearest beast and catches them. Each fight throws a
     // cage after 2s, trades a few blows and ends.
     val t0 = System.nanoTime()
-    for ((name, m) in maps) for (hunter in listOf(false, true)) {
+    // A coin seeker heads for the nearest coin (and fights whatever it walks into on the way).
+    for ((name, m) in maps) for (mode in listOf("wanderer", "hunter", "coins")) {
+    val hunter = mode == "hunter"
     val rng = kotlin.random.Random(1)
     val sw = World(m); val ss = LocalWorldSession(sw, "soak", "Cacheon", 180)
     val me2 = sw.entities[ss.localPlayerId]!!
-    var enc = 0; var over = false; var ticks = 0; var fightTicks = -1; var beastId = -1; var outs = 0; var behind = 0
+    var enc = 0; var over = false; var ticks = 0; var fightTicks = -1; var beastId = -1; var outs = 0; var behind = 0; var coins = 0
     while (!over && ticks < 30 * 1200) {
         ticks++
         if (hunter && me2.state == EntityState.WALKING) ss.steer(huntSteer(sw, me2))
+        else if (mode == "coins" && me2.state == EntityState.WALKING) ss.steer(coinSteer(sw, me2))
         else if (ticks % 60 == 0) ss.steer(rng.nextDouble(-0.6, 0.6))
         if (fightTicks >= 0) {
             fightTicks++
             if (fightTicks == 60) ss.throwCage(listOf("Cacheon", "Bytelet").random(rng))
             if (fightTicks in 120..300 && fightTicks % 45 == 0) { ss.perform(Role.COMPANION, Action.ATTACK); ss.perform(Role.BEAST, Action.HIT) }
             if (fightTicks == 330) ss.perform(Role.BEAST, Action.FAINT)
-            if (fightTicks == 390) { ss.resolveEncounter(beastId, EncounterOutcome.BEAST_DEFEATED); fightTicks = -1 }
+            // every third fight you lose and get knocked flat
+            if (fightTicks == 390) { ss.resolveEncounter(beastId, if (enc % 3 == 0) EncounterOutcome.PLAYER_BEATEN else EncounterOutcome.BEAST_DEFEATED); fightTicks = -1 }
         }
         val hx = kotlin.math.cos(me2.angle); val hy = kotlin.math.sin(me2.angle)
         for (e in ss.update(World.DT)) when (e) {
@@ -326,12 +416,21 @@ fun main(args: Array<String>) {
                 if (m.delta(me2.x, b.x) * hx + m.delta(me2.y, b.y) * hy <= 0) behind++
             }
             is WorldEvent.CompanionOut -> outs++
+            is WorldEvent.CoinPicked -> {
+                coins++
+                val c = m.coins[e.coin]
+                check(m.distance(me2.x, me2.y, c.x, c.y) <= World.COIN_REACH + 1e-9) { "picked up a coin from afar" }
+            }
             is WorldEvent.ExplorationOver -> over = true
         }
     }
-    println("[$name] ${if (hunter) "hunter" else "wanderer"}: over=$over after ${ticks / 30}s of sim, fights=$enc (from behind: $behind), netbeasts out=$outs")
+    println("[$name] $mode: over=$over after ${ticks / 30}s of sim, fights=$enc (from behind: $behind), netbeasts out=$outs, coins=$coins")
     check(over && outs == enc && behind == 0)
-    if (hunter) check(enc >= 3) { "a hunter should catch beasts" } else check(enc <= 1) { "a wanderer got into $enc fights" }
+    when (mode) {
+        "hunter" -> check(enc >= 3) { "a hunter should catch beasts" }
+        "coins" -> check(coins >= 15) { "heading for coins should pick plenty up: $coins" }
+        else -> check(enc <= 1) { "a wanderer got into $enc fights" }
+    }
     }
     println("soaks: sim ${(System.nanoTime() - t0) / 1_000_000}ms")
     for ((name, m) in maps) {
@@ -341,5 +440,6 @@ fun main(args: Array<String>) {
         val t1 = System.nanoTime(); repeat(60) { p.angle += 0.1; r.render(w, p, 0, Palette.forWeather("Rain", 12), src, it * 16L) }
         println("[$name] render ${"%.2f".format((System.nanoTime() - t1) / 1e6 / 60)}ms/frame (rain)")
     }
-    val snap = world.snapshot(); val w2 = World(map); w2.applySnapshot(snap); check(w2.snapshot() == snap); println("snapshot ok")
+    world.coinGone[0] = 99 // so the round trip carries a picked-up coin too
+    val snap = world.snapshot(); val w2 = World(map); w2.applySnapshot(snap); check(w2.snapshot() == snap && w2.coinGone[0] == 99); println("snapshot ok")
 }

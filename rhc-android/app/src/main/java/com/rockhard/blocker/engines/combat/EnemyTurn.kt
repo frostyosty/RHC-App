@@ -70,7 +70,7 @@ internal fun GameActivity.triggerEnemyCounterAttack() {
                 AnimUtils.animDeath(findViewById(R.id.spritePlayer)); playSpriteAnim(true, target.name, "faint", revertToIdle = false); vibratePhone(500)
                 val maxPartyHp = party.maxOfOrNull { it.maxHp } ?: 0
                 if (target.maxHp >= maxPartyHp) {
-                    val targetLoc = if (LocationEngine.hasGPSPermission(this)) { val loc = LocationEngine.getCurrentLocation(this); val lat = loc?.first ?: -36.8485; val lon = loc?.second ?: 174.7633; LocationEngine.generateNearbySuburb(this, lat, lon) } else { val city = prefs.getString("CURRENT_CITY", "The Outskirts") ?: "The Outskirts"; "the outskirts of $city" }
+                    val targetLoc = LocationEngine.nearbySuburb(this).ifEmpty { val city = prefs.getString("CURRENT_CITY", "The Outskirts") ?: "The Outskirts"; "the outskirts of $city" }
                     RescueEngine.captureBeast(prefs, target, targetLoc); printLog("\n> 🚁 A Poacher chopper swooped in!\n> ⚠️ ${target.name} WAS CAPTURED AND TAKEN TO: ${targetLoc.uppercase()}!")
                 } else printLog("> 💀 ${target.name} HAS BEEN KILLED!")
 

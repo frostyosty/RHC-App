@@ -2983,11 +2983,13 @@ poacher = design('poacher', 'Villain', 'net', '#4A4E3A', views=ALL_VIEWS, size=6
 # Scenery billboards for the 3D world (prop_<name>.gif). Not in the Studio
 # matrix; drawn to fill the full 32px height so trees stand taller than beasts.
 PROPS = {}
+PROP_TIMING = {}  # name -> (frames, ms per frame); a gentle 2-frame sway unless given
 
 
-def prop(name):
+def prop(name, frames=2, ms=700):
     def wrap(fn):
         PROPS[name] = fn
+        PROP_TIMING[name] = (frames, ms)
         return fn
     return wrap
 
@@ -3093,3 +3095,27 @@ def cage(p, s):
         p.rect('#9AA4B2', (x, 10, x + 1, 27), shade=False)
     p.line('#5E6F82', [(12, 8), (15, 3), (19, 8)])
     p.px('#F2C84B', [(15, 17), (16, 17), (15, 18), (16, 18)])
+
+
+@prop('coin', frames=6, ms=110)
+def coin(p, s):
+    """A Focus Coin lying in the Wilds, spinning: a half turn over 6 frames
+    (both faces look alike), so frame 3 is the coin edge-on."""
+    w = abs(math.cos(math.pi * s.t / 6))
+    cx, top, bot = 15.5, 12, 30
+    if w < 0.2:
+        p.rect('#B8862A', (15, top + 1, 16, bot - 1), shade=False)
+        p.px('#FFE38A', [(15, top + 3), (15, top + 4)])
+        return
+    rx = 9 * w
+    p.ell('#B8862A', (cx - rx, top, cx + rx, bot))  # the rim
+    if rx >= 4:
+        p.ell('#E8B83A', (cx - rx + 2, top + 2, cx + rx - 2, bot - 2), sep=False)  # the face
+    if rx >= 6:
+        # a raised diamond in the middle, lit on its upper left
+        e = max(1.0, 3 * w)
+        p.poly('#C9982C', [(cx, 17), (cx + e, 21), (cx, 25), (cx - e, 21)], shade=False, sep=False)
+        p.px('#FFE38A', [(round(cx - e / 2), 19)])
+    # the glint
+    g = round(cx - rx * 0.5)
+    p.px('#FFF4C8', [(g, top + 3), (g + 1, top + 3), (g, top + 4)])

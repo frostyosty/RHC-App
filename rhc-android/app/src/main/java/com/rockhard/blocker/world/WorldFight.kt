@@ -42,6 +42,7 @@ internal class WorldFight(val beastId: Int) {
     var patienceMs = PATIENCE_MS
     var busyUntil = 0L              // an exchange is playing out: patience waits
     var lastTap = 0L                // no double-taps while a move resolves
+    var clobbered = false           // it hit YOU (a last stand lost): you're knocked flat when the fight ends
     var tick: Runnable? = null
 }
 
@@ -86,7 +87,12 @@ internal fun GameActivity.endWorldFight() {
     val enemy = currentEnemy
     // beaten, or caught in a net (then it's in your party now)
     val won = enemy != null && (enemy.hp <= 0 || party.any { it === enemy })
-    worldSession?.resolveEncounter(f.beastId, if (won) EncounterOutcome.BEAST_DEFEATED else EncounterOutcome.PLAYER_FLED)
+    val outcome = when {
+        won -> EncounterOutcome.BEAST_DEFEATED
+        f.clobbered -> EncounterOutcome.PLAYER_BEATEN // you pick yourself up off the ground
+        else -> EncounterOutcome.PLAYER_FLED
+    }
+    worldSession?.resolveEncounter(f.beastId, outcome)
     worldFight = null
     if (!battleOver) { battleOver = true; isWildBattle = false }
     findViewById<View>(R.id.worldFightPanel)?.visibility = View.GONE
@@ -119,7 +125,10 @@ internal fun GameActivity.worldPatienceReset() {
 internal fun GameActivity.worldAct(isPlayer: Boolean, name: String, anim: String) {
     if (worldFight == null) return
     val action = when (anim) { "attack" -> Action.ATTACK; "hit" -> Action.HIT; "faint" -> Action.FAINT; "victory" -> Action.VICTORY; else -> return }
-    worldSession?.perform(roleFor(isPlayer, name), action)
+    val role = roleFor(isPlayer, name)
+    // in the world the beast only ever hits YOU with the blow that ends a lost last stand
+    if (role == Role.PLAYER && action == Action.HIT) worldFight?.clobbered = true
+    worldSession?.perform(role, action)
 }
 
 /** From playFx: the effect over the fighter in the world. */
@@ -169,9 +178,20 @@ internal fun GameActivity.setupWorldFightControls() {
         }
     }
     // the items reuse the battle screen's buttons, so the rules stay in one place
-    findViewById<Button>(R.id.worldNet)?.setOnClickListener { worldTap { findViewById<Button>(R.id.btnBattleNet)?.performClick() } }
-    findViewById<Button>(R.id.worldPot)?.setOnClickListener { worldTap { findViewById<Button>(R.id.btnBattlePot)?.performClick() } }
-    findViewById<Button>(R.id.worldSpray)?.setOnClickListener { worldTap { findViewById<Button>(R.id.btnBattleSpray)?.performClick() } }
+    findViewById<Button>(R.id.worldNet)?.setOnClickListener { worldItem("nets", { it.eqNets }, R.id.btnBattleNet) }
+    findViewById<Button>(R.id.worldPot)?.setOnClickListener { worldItem("potions", { it.eqPots }, R.id.btnBattlePot) }
+    findViewById<Button>(R.id.worldSpray)?.setOnClickListener { worldItem("sprays", { it.eqSprays }, R.id.btnBattleSpray) }
+}
+
+/**
+ * An item button: uses it through the battle screen's button, or, when the netbeast that's
+ * out has none equipped, says where to get some (without passing the tap on, which would
+ * reset the beast's patience).
+ */
+private fun GameActivity.worldItem(what: String, count: (Netbeast) -> Int, battleButton: Int) {
+    val p = party.getOrNull(activePetIndex) ?: return
+    if (count(p) <= 0) { worldCaption("${speciesOf(p)} has no $what equipped. Equip them in the Bag."); return }
+    worldTap { findViewById<Button>(battleButton)?.performClick() }
 }
 
 private fun moveOf(p: Netbeast, n: Int) = when (n) { 1 -> p.move1; 2 -> p.move2; else -> p.move3 }
@@ -256,11 +276,13 @@ internal fun GameActivity.refreshWorldFightPanel() {
             moves.visibility = View.VISIBLE
             b1.text = p.move1; b2.text = p.move2; b3.text = p.move3
             b2.visibility = View.VISIBLE; b3.visibility = View.VISIBLE
-            val net = findViewById<Button>(R.id.worldNet); val pot = findViewById<Button>(R.id.worldPot); val spray = findViewById<Button>(R.id.worldSpray)
-            net.visibility = if (p.eqNets > 0) View.VISIBLE else View.GONE; net.text = "NET ${p.eqNets}"
-            pot.visibility = if (p.eqPots > 0) View.VISIBLE else View.GONE; pot.text = "POT ${p.eqPots}"
-            spray.visibility = if (p.eqSprays > 0) View.VISIBLE else View.GONE; spray.text = "SPRY ${p.eqSprays}"
-            if (p.eqNets + p.eqPots + p.eqSprays > 0) items.visibility = View.VISIBLE
+            // always there once a netbeast is out; dimmed when it has none equipped
+            for ((btn, label, n) in listOf(
+                Triple(findViewById<Button>(R.id.worldNet), "NET", p.eqNets),
+                Triple(findViewById<Button>(R.id.worldPot), "POT", p.eqPots),
+                Triple(findViewById<Button>(R.id.worldSpray), "SPRY", p.eqSprays),
+            )) { btn.text = "$label $n"; btn.alpha = if (n > 0) 1f else 0.4f }
+            items.visibility = View.VISIBLE
             // the others, small, to swap in (costs a turn)
             val others = party.indices.filter { it != activePetIndex }
             others.chunked(4).forEach { rowIdx ->

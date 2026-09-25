@@ -37,7 +37,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pixelkit as pk  # noqa: E402
-from designs import DESIGNS, PROPS, Pose  # noqa: E402
+from designs import DESIGNS, PROPS, PROP_TIMING, Pose  # noqa: E402
 import scenery  # noqa: E402
 import effects  # noqa: E402
 
@@ -447,19 +447,22 @@ def hand_edits():
         return {line.strip() for line in f if line.strip() and not line.startswith('#')}
 
 
-def write_props(out, keep=frozenset()):
-    """3D-world scenery: prop_<name>.gif, a 2-frame gentle sway."""
+def write_props(out, keep=frozenset(), names=None):
+    """3D-world scenery: prop_<name>.gif, a 2-frame gentle sway (or its own timing, like the coin's spin)."""
     n = 0
     for name, fn in PROPS.items():
+        if names is not None and name not in names:
+            continue
         if f'prop_{name}.gif' in keep:
             print(f'✋ prop_{name}.gif is hand-edited, skipped (--force to redraw)')
             continue
+        count, ms = PROP_TIMING.get(name, (2, 700))
         frames = []
-        for t in range(2):
+        for t in range(count):
             p = pk.Painter()
             fn(p, Pose(t=t))
             frames.append(p.done())
-        pk.save_gif(frames, [700, 700], os.path.join(out, f'prop_{name}.gif'))
+        pk.save_gif(frames, [ms] * count, os.path.join(out, f'prop_{name}.gif'))
         n += 1
     print(f'🌲 {n} world props')
     return n
@@ -532,12 +535,14 @@ def main():
     rows = [r for r in rows if r in DESIGNS]
     trees = list(scenery.TREES)
     fx = list(effects.EFFECTS)
+    props = []
     if args.only:
         want = [x.strip().lower() for x in args.only.split(',')]
         rows = [r for r in want if r in DESIGNS]
         trees = [r for r in want if r in scenery.TREES]
         fx = [r for r in want if r in effects.EFFECTS]
-        unknown = [r for r in want if r not in DESIGNS and r not in scenery.TREES and r not in effects.EFFECTS]
+        props = [r for r in want if r in PROPS]
+        unknown = [r for r in want if r not in DESIGNS and r not in scenery.TREES and r not in effects.EFFECTS and r not in PROPS]
         if unknown:
             print(f"⚠️  Unknown rows/trees: {', '.join(unknown)}")
     anims = [a.strip() for a in args.anims.split(',')] if args.anims else ANIMATIONS + list(VIEW_ANIMS)
@@ -576,6 +581,8 @@ def main():
             written += write_trees(trees, args.out, keep)
         if fx:
             written += write_effects(fx, args.out, keep)
+        if props:
+            written += write_props(args.out, keep, props)
     for n in rows:
         for anim in anims_for(DESIGNS[n], anims):
             path = os.path.join(args.out, filename(n, anim))

@@ -56,18 +56,27 @@ class Entity(
     var companion: String? = null   // player: the netbeast that's out (or the lead, before a fight)
     var exploreTicks = 0        // player: auto-walk time left
     var grace = 0               // player: ticks before beasts can engage again
+    var downTicks = 0           // player: knocked flat after losing a fight, picking yourself up
+    var recoverTicks = 0        // player: after a fight you walk on slowly, back to full pace when this runs out
 
     // While ENGAGED everyone circles a centre, facing their foe
     var orbitX = 0.0
     var orbitY = 0.0
     var orbitA = 0.0
     var orbitR = 0.0
-    var orbitDir = 1
+    var orbitDir = 1            // the way you're meant to be circling
+    var orbitSpin = 0.0         // how you're actually circling (-1..1): eases toward orbitDir, so a reversal slows first
+    var swapTicks = 0           // player: ticks until the fight circles the other way
 
     var action = Action.NONE
     var actionTicks = 0
     var fx: String? = null      // an effect playing over this entity (fx_<name>.gif)
     var fxAge = 0               // ticks since it started
+
+    // A hit (and its effect) held back until the attacker's lunge reaches you
+    var pendingAction = Action.NONE
+    var pendingFx: String? = null
+    var pendingTicks = 0
 }
 
 /**
@@ -85,11 +94,14 @@ sealed class WorldEvent {
     data class Encounter(val playerId: Int, val beastId: Int, val species: String, val stage: Int) : WorldEvent()
     /** A thrown netbeast is out of its cage and facing the wild one. */
     data class CompanionOut(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
+    /** The player walked into coin [coin] (an index into WorldMap.coins): it's worth one coin. */
+    data class CoinPicked(val playerId: Int, val coin: Int) : WorldEvent()
     /** The player's exploration timer ran out. */
     data class ExplorationOver(val playerId: Int) : WorldEvent()
 }
 
-enum class EncounterOutcome { BEAST_DEFEATED, PLAYER_FLED }
+/** How a fight ended. PLAYER_BEATEN: it clobbered you (a last stand lost), so you're knocked flat first. */
+enum class EncounterOutcome { BEAST_DEFEATED, PLAYER_FLED, PLAYER_BEATEN }
 
 data class EntitySnapshot(
     val id: Int, val kind: EntityKind, val x: Double, val y: Double, val z: Double, val angle: Double,
@@ -97,10 +109,14 @@ data class EntitySnapshot(
     val moving: Boolean, val state: EntityState, val link: Int,
     val foe: Int = -1, val action: Action = Action.NONE, val actionTicks: Int = 0, val fx: String? = null, val fxAge: Int = 0,
     val orbitX: Double = 0.0, val orbitY: Double = 0.0, val orbitR: Double = 0.0,
+    val downTicks: Int = 0, val recoverTicks: Int = 0,
 )
 
+/** A picked-up coin (index into WorldMap.coins) and the ticks until it's back. */
+data class CoinGone(val coin: Int, val ticks: Int)
+
 /** Everything a remote client needs besides the seed and region: small enough to send often. */
-data class WorldSnapshot(val tick: Long, val entities: List<EntitySnapshot>)
+data class WorldSnapshot(val tick: Long, val entities: List<EntitySnapshot>, val coinsGone: List<CoinGone> = emptyList())
 
 /**
  * The authoritative simulation. Advances in fixed ticks ([TICK_HZ]) from
@@ -132,6 +148,21 @@ class World(val map: WorldMap) {
         const val WATCH_SPEED = 0.7
         const val DUEL_SPEED = 0.4
         const val FADE_TICKS = 20         // a fainted beast lingers this long after the fight
+        // Nobody circles one way for long (it's dizzying): 3s plus up to 3s, then everyone
+        // slows to a stop and circles back the other way
+        const val SWAP_MIN_TICKS = 3 * TICK_HZ
+        const val SWAP_EXTRA_TICKS = 3 * TICK_HZ
+        const val SPIN_RATE = 1.0 / 18    // orbitSpin change per tick: 0.6s from full speed to a stop
+
+        // After a fight: knocked flat (a lost last stand) you lie there, then get up; either way
+        // you walk on at RECOVER_PACE and ease back to full pace
+        const val LIE_TICKS = 15          // 0.5s flat on the ground
+        const val DOWN_TICKS = 45         // ...then 1s getting up
+        const val RECOVER_TICKS = 8 * TICK_HZ
+        const val RECOVER_PACE = 0.6
+
+        const val COIN_REACH = 0.5          // walk within this (tiles) of a coin and it's yours
+        const val COIN_RESPAWN_TICKS = 300 * TICK_HZ  // longer than a walk: a coin is only yours once per walk
 
         // The sidestep: the auto-walk leans around trunks instead of walking into them
         const val PROBE = 1.2             // a trunk this far ahead (tiles) is in the way
@@ -151,6 +182,9 @@ class World(val map: WorldMap) {
     private val rng = Random(map.seed xor 0x5EED)
     private var nextId = 1
     val entities = LinkedHashMap<Int, Entity>()
+
+    /** Per coin in [WorldMap.coins]: ticks until it's back after being picked up (0 = lying there). */
+    val coinGone = IntArray(map.coins.size)
 
     init {
         for (z in map.zones) repeat(if (z.stage >= 3) 1 else 2) { spawnBeast(z) }
@@ -192,6 +226,7 @@ class World(val map: WorldMap) {
     fun step(inputs: Map<Int, PlayerInput>): List<WorldEvent> {
         tick++
         val events = mutableListOf<WorldEvent>()
+        for (i in coinGone.indices) if (coinGone[i] > 0) coinGone[i]--
         val players = entities.values.filter { it.kind == EntityKind.PLAYER }
 
         for (p in players) stepPlayer(p, inputs[p.id] ?: PlayerInput(), events)
@@ -203,6 +238,11 @@ class World(val map: WorldMap) {
             }
             if (e.actionTicks > 0 && e.action != Action.FAINT && --e.actionTicks == 0) e.action = Action.NONE
             if (e.fx != null && ++e.fxAge > 3 * TICK_HZ) e.fx = null
+            if (e.pendingTicks > 0 && --e.pendingTicks == 0) {
+                if (e.pendingAction != Action.NONE && e.action != Action.FAINT) { e.action = e.pendingAction; e.actionTicks = e.pendingAction.ticks }
+                e.pendingFx?.let { e.fx = it; e.fxAge = 0 }
+                e.pendingAction = Action.NONE; e.pendingFx = null
+            }
         }
         return events
     }
@@ -211,13 +251,20 @@ class World(val map: WorldMap) {
         when (p.state) {
             EntityState.WALKING -> {
                 p.angle += input.lookDelta
-                val hx = cos(p.angle); val hy = sin(p.angle)
-                val rx = -hy; val ry = hx // your right (y points down the map)
-                val strafe = sidestep(p, hx, hy, rx, ry)
-                val forward = WALK_SPEED * speedFactor(map.terrainAt(p.x, p.y)) * (1 - (1 - MIN_FORWARD) * dodgeCloseness)
-                p.x = map.wrap(p.x + (hx * forward + rx * strafe) * DT)
-                p.y = map.wrap(p.y + (hy * forward + ry * strafe) * DT)
-                p.moving = true
+                if (p.downTicks > 0) {
+                    // knocked flat: you pick yourself up before walking on (you can look round meanwhile)
+                    p.downTicks--; p.moving = false
+                } else {
+                    val hx = cos(p.angle); val hy = sin(p.angle)
+                    val rx = -hy; val ry = hx // your right (y points down the map)
+                    val strafe = sidestep(p, hx, hy, rx, ry)
+                    val forward = WALK_SPEED * speedFactor(map.terrainAt(p.x, p.y)) * (1 - (1 - MIN_FORWARD) * dodgeCloseness) * recoveryPace(p)
+                    p.x = map.wrap(p.x + (hx * forward + rx * strafe) * DT)
+                    p.y = map.wrap(p.y + (hy * forward + ry * strafe) * DT)
+                    p.moving = true
+                    if (p.recoverTicks > 0) p.recoverTicks--
+                    pickUpCoins(p, events)
+                }
                 if (p.grace > 0) p.grace--
                 if (--p.exploreTicks <= 0) {
                     p.state = EntityState.DONE; p.moving = false
@@ -229,8 +276,15 @@ class World(val map: WorldMap) {
                 if (b == null) { p.state = EntityState.WALKING; p.link = -1; return }
                 if (input.throwCage != null) throwCage(p, b, input.throwCage)
                 else if (input.recall) recall(p, b)
-                // swiping picks which way you circle: drag right and you step to your right
-                if (abs(input.lookDelta) > 1e-4) p.orbitDir = if (input.lookDelta > 0) -1 else 1
+                // swiping picks which way you circle (drag right and you step to your right) and holds it
+                // for a while; otherwise the fight turns round every few seconds
+                if (abs(input.lookDelta) > 1e-4) {
+                    p.orbitDir = if (input.lookDelta > 0) -1 else 1
+                    p.swapTicks = maxOf(p.swapTicks, SWAP_MIN_TICKS)
+                } else if (--p.swapTicks <= 0) {
+                    p.orbitDir = -p.orbitDir
+                    p.swapTicks = nextSwap()
+                }
                 val inFight = entities.values.any { (it.kind == EntityKind.COMPANION || it.kind == EntityKind.CAGE) && it.link == p.id }
                 if (inFight) {
                     // the fight moved to between the cage and the beast: drift your circle there
@@ -243,6 +297,29 @@ class World(val map: WorldMap) {
             else -> p.moving = false
         }
     }
+
+    /** Any coin within [COIN_REACH] is picked up: you only have to walk into it. */
+    private fun pickUpCoins(p: Entity, events: MutableList<WorldEvent>) {
+        val coins = map.coins
+        for (i in coins.indices) {
+            if (coinGone[i] > 0) continue
+            val c = coins[i]
+            val dx = map.delta(p.x, c.x); if (dx > COIN_REACH || dx < -COIN_REACH) continue
+            val dy = map.delta(p.y, c.y); if (dy > COIN_REACH || dy < -COIN_REACH) continue
+            if (dx * dx + dy * dy > COIN_REACH * COIN_REACH) continue
+            coinGone[i] = COIN_RESPAWN_TICKS
+            events += WorldEvent.CoinPicked(p.id, i)
+        }
+    }
+
+    /** Your pace after a fight: [RECOVER_PACE] at first, easing back up to 1. */
+    private fun recoveryPace(p: Entity): Double {
+        if (p.recoverTicks <= 0) return 1.0
+        val t = 1 - p.recoverTicks.toDouble() / RECOVER_TICKS
+        return RECOVER_PACE + (1 - RECOVER_PACE) * t * t * (3 - 2 * t)
+    }
+
+    private fun nextSwap() = SWAP_MIN_TICKS + rng.nextInt(SWAP_EXTRA_TICKS + 1)
 
     /** How close the trunk being dodged is this tick: 0 (none, or 1.2 tiles off) .. 1 (at your feet). */
     private var dodgeCloseness = 0.0
@@ -289,12 +366,20 @@ class World(val map: WorldMap) {
         }
     }
 
-    /** One tick around [e]'s centre: the radius eases toward [radius]; [advance] = false holds the angle. */
+    /**
+     * One tick around [e]'s centre: the radius eases toward [radius]; [advance] = false holds
+     * the angle. The speed eases toward [Entity.orbitDir], so turning round means slowing to
+     * a stop and picking up the other way.
+     */
     private fun orbit(e: Entity, radius: Double, speed: Double, advance: Boolean) {
         e.orbitR += (radius - e.orbitR) * 0.08
-        if (advance) e.orbitA += e.orbitDir * speed * DT / e.orbitR.coerceAtLeast(0.5)
+        if (advance) {
+            val want = e.orbitDir.toDouble()
+            e.orbitSpin = if (e.orbitSpin < want) minOf(want, e.orbitSpin + SPIN_RATE) else maxOf(want, e.orbitSpin - SPIN_RATE)
+            e.orbitA += e.orbitSpin * speed * DT / e.orbitR.coerceAtLeast(0.5)
+        }
         place(e)
-        e.moving = advance
+        e.moving = advance && abs(e.orbitSpin) > 0.2
     }
 
     private fun place(e: Entity) {
@@ -382,6 +467,7 @@ class World(val map: WorldMap) {
             return
         }
         val still = b.actionTicks > 0 || comp.actionTicks > 0 || comp.action == Action.FAINT
+        b.orbitDir = -p.orbitDir // against your circle, so they sweep across your view, and turning when you do
         orbit(b, DUEL_R, DUEL_SPEED, !still)
         comp.orbitX = b.orbitX; comp.orbitY = b.orbitY; comp.orbitR = b.orbitR; comp.orbitA = b.orbitA + PI
         comp.orbitDir = b.orbitDir
@@ -397,9 +483,10 @@ class World(val map: WorldMap) {
         val dir = if (rng.nextBoolean()) 1 else -1
         for (e in listOf(p, b)) {
             e.state = EntityState.ENGAGED
-            e.orbitX = cx; e.orbitY = cy; e.orbitR = hypot(dx, dy) / 2; e.orbitDir = dir
+            e.orbitX = cx; e.orbitY = cy; e.orbitR = hypot(dx, dy) / 2; e.orbitDir = dir; e.orbitSpin = 0.0
             e.orbitA = atan2(map.delta(cy, e.y), map.delta(cx, e.x))
         }
+        p.swapTicks = nextSwap(); p.downTicks = 0; p.recoverTicks = 0
         p.link = b.id; b.link = p.id; p.foe = b.id; b.foe = p.id
         p.targetX = cx; p.targetY = cy
         p.timer = 0
@@ -471,7 +558,7 @@ class World(val map: WorldMap) {
                     b.orbitX = mx; b.orbitY = my
                     b.orbitR = map.distance(b.x, b.y, mx, my)
                     b.orbitA = atan2(map.delta(my, b.y), map.delta(mx, b.x))
-                    b.orbitDir = -p.orbitDir // against your circle, so they sweep across your view
+                    b.orbitDir = -p.orbitDir; b.orbitSpin = 0.0 // against your circle, so they sweep across your view
                     p.targetX = mx; p.targetY = my
                     events += WorldEvent.CompanionOut(p.id, b.id, out.species)
                 }
@@ -502,14 +589,33 @@ class World(val map: WorldMap) {
         }
     }
 
-    /** Called by the host when its battle rules resolve something: shows the pose. */
+    /**
+     * Called by the host when its battle rules resolve something: shows the pose. A hit
+     * waits until its attacker's lunge reaches its peak, so the blow lands on contact.
+     */
     fun perform(playerId: Int, role: Role, action: Action) {
-        roleEntity(playerId, role)?.let { it.action = action; it.actionTicks = action.ticks }
+        val e = roleEntity(playerId, role) ?: return
+        val wait = when (action) {
+            Action.HIT -> untilBlowLands(e)
+            Action.FAINT -> if (e.pendingAction != Action.NONE) e.pendingTicks else 0 // it drops when that blow lands
+            else -> 0
+        }
+        if (wait > 0) { e.pendingAction = action; e.pendingTicks = maxOf(e.pendingTicks, wait) }
+        else { e.action = action; e.actionTicks = action.ticks }
     }
 
-    /** Plays fx_<name> over the entity taking [role]. */
+    /** Plays fx_<name> over the entity taking [role], when the blow lands. */
     fun effect(playerId: Int, role: Role, fx: String) {
-        roleEntity(playerId, role)?.let { it.fx = fx; it.fxAge = 0 }
+        val e = roleEntity(playerId, role) ?: return
+        val wait = untilBlowLands(e)
+        if (wait > 0) { e.pendingFx = fx; e.pendingTicks = maxOf(e.pendingTicks, wait) }
+        else { e.fx = fx; e.fxAge = 0 }
+    }
+
+    /** Ticks until the lunge of whoever is attacking [e] peaks (0 if nobody is mid-lunge). */
+    private fun untilBlowLands(e: Entity): Int {
+        val a = entities[e.foe] ?: return 0
+        return if (a.action == Action.ATTACK) a.actionTicks - Action.ATTACK.ticks / 2 else 0
     }
 
     /** Called by the host once the battle for an Encounter is over. Walking resumes. */
@@ -520,17 +626,23 @@ class World(val map: WorldMap) {
             if (p.state == EntityState.ENGAGED) {
                 p.state = if (p.exploreTicks > 0) EntityState.WALKING else EntityState.DONE
                 p.angle = p.orbitA + p.orbitDir * PI / 2 // walk on the way you were circling
+                // pick yourself up (flat on the ground if it clobbered you) and walk on slowly
+                p.downTicks = if (outcome == EncounterOutcome.PLAYER_BEATEN) DOWN_TICKS else 0
+                p.recoverTicks = RECOVER_TICKS
+                p.grace += p.downTicks
             }
             p.action = Action.NONE; p.actionTicks = 0
+            p.pendingAction = Action.NONE; p.pendingFx = null; p.pendingTicks = 0
         }
         val b = entities[beastId] ?: return
         b.foe = -1
+        b.pendingAction = Action.NONE; b.pendingFx = null; b.pendingTicks = 0
         when (outcome) {
             EncounterOutcome.BEAST_DEFEATED -> {
                 b.state = EntityState.GONE; b.timer = RESPAWN_TICKS; b.moving = false
                 if (b.action == Action.FAINT) b.actionTicks = FADE_TICKS else { b.action = Action.NONE; b.actionTicks = 0 }
             }
-            EncounterOutcome.PLAYER_FLED -> {
+            EncounterOutcome.PLAYER_FLED, EncounterOutcome.PLAYER_BEATEN -> {
                 b.state = EntityState.RETURN; b.targetX = zoneOf(b).x; b.targetY = zoneOf(b).y
                 b.action = Action.NONE; b.actionTicks = 0
             }
@@ -539,18 +651,21 @@ class World(val map: WorldMap) {
 
     fun snapshot() = WorldSnapshot(tick, entities.values.map {
         EntitySnapshot(it.id, it.kind, it.x, it.y, it.z, it.angle, it.species, it.size, it.ownerId, it.zoneId, it.moving, it.state, it.link,
-            it.foe, it.action, it.actionTicks, it.fx, it.fxAge, it.orbitX, it.orbitY, it.orbitR)
-    })
+            it.foe, it.action, it.actionTicks, it.fx, it.fxAge, it.orbitX, it.orbitY, it.orbitR, it.downTicks, it.recoverTicks)
+    }, coinGone.indices.filter { coinGone[it] > 0 }.map { CoinGone(it, coinGone[it]) })
 
     /** For clients: replace local entities with the host's view. */
     fun applySnapshot(s: WorldSnapshot) {
         tick = s.tick
         entities.clear()
+        coinGone.fill(0)
+        for (g in s.coinsGone) if (g.coin in coinGone.indices) coinGone[g.coin] = g.ticks
         for (st in s.entities) {
             val e = Entity(st.id, st.kind, st.x, st.y, st.angle, st.species, st.size, st.ownerId, st.zoneId)
             e.z = st.z; e.moving = st.moving; e.state = st.state; e.link = st.link
             e.foe = st.foe; e.action = st.action; e.actionTicks = st.actionTicks; e.fx = st.fx; e.fxAge = st.fxAge
             e.orbitX = st.orbitX; e.orbitY = st.orbitY; e.orbitR = st.orbitR
+            e.downTicks = st.downTicks; e.recoverTicks = st.recoverTicks
             entities[e.id] = e
             if (e.id >= nextId) nextId = e.id + 1
         }

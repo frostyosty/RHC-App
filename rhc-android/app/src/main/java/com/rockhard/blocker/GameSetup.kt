@@ -112,6 +112,7 @@ internal fun GameActivity.setupBattleControls() {
 }
 
 internal fun GameActivity.setupDispatchControl() {
+    setupWorldPreview()
     findViewById<Button>(R.id.btnDispatch).setOnClickListener {
         if (aetherDepleted) { Toast.makeText(this, "Aether depleted! Return tomorrow.", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
         if (world3dEnabled) { enterWorld(); return@setOnClickListener }
