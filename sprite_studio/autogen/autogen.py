@@ -10,9 +10,10 @@ so every animation of a beast is guaranteed to be the same creature.
   python3 sprite_studio/autogen/autogen.py --anims idle,attack
   python3 sprite_studio/autogen/autogen.py --skip-existing
   python3 sprite_studio/autogen/autogen.py --force        # also redraw hand edits
-  python3 sprite_studio/autogen/autogen.py --scenery      # the trees only (all 10 kinds x 10 levels)
+  python3 sprite_studio/autogen/autogen.py --scenery      # world scenery only: props, every tree kind x 10 levels, far-off houses
   python3 sprite_studio/autogen/autogen.py --scenery --only oak,pine
   python3 sprite_studio/autogen/autogen.py --trees sheet.png   # tree review sheet
+  python3 sprite_studio/autogen/autogen.py --houses sheet.png  # far-off house review sheet
   python3 sprite_studio/autogen/autogen.py --only laser,bite,net   # battle effects (effects.py)
 
 GIFs saved from Sprite Studio are listed in hand_edits.txt and skipped, so a
@@ -495,6 +496,21 @@ def write_trees(names, out, keep=frozenset()):
     return n
 
 
+def write_houses(out, keep=frozenset()):
+    """prop_house_<style>_<n>.gif at 1x: the far-off towns on the horizon, from scenery.py."""
+    n = 0
+    for style in scenery.HOUSE_STYLES:
+        for i in range(scenery.HOUSE_VARIANTS):
+            fname = f'prop_house_{style}_{i}.gif'
+            if fname in keep:
+                print(f'✋ {fname} is hand-edited, skipped (--force to redraw)')
+                continue
+            pk.save_gif([scenery.house(style, i)], [1000], os.path.join(out, fname), scale=1)
+            n += 1
+    print(f'🏠 {n} far-off houses ({", ".join(scenery.HOUSE_STYLES)})')
+    return n
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--only', help='comma-separated rows, e.g. cacheon,titan')
@@ -503,8 +519,9 @@ def main():
     ap.add_argument('--force', action='store_true', help='also overwrite GIFs listed in hand_edits.txt')
     ap.add_argument('--preview', metavar='PNG', help='write a contact sheet instead of GIFs')
     ap.add_argument('--turnaround', metavar='PNG', help='write a sheet of the 5 drawn views instead of GIFs')
-    ap.add_argument('--scenery', action='store_true', help='write only the tree GIFs (--only picks kinds)')
+    ap.add_argument('--scenery', action='store_true', help='write only the world scenery: props, trees, houses (--only picks tree kinds)')
     ap.add_argument('--trees', metavar='PNG', help='write a tree review sheet (kinds x distance levels) instead of GIFs')
+    ap.add_argument('--houses', metavar='PNG', help='write a review sheet of the far-off houses instead of GIFs')
     ap.add_argument('--out', default=SAVE_DIR, help='output directory')
     args = ap.parse_args()
 
@@ -525,6 +542,10 @@ def main():
             print(f"⚠️  Unknown rows/trees: {', '.join(unknown)}")
     anims = [a.strip() for a in args.anims.split(',')] if args.anims else ANIMATIONS + list(VIEW_ANIMS)
 
+    if args.houses:
+        scenery.house_sheet(args.houses)
+        print(f'🏠 House sheet written to {args.houses}')
+        return
     if args.trees:
         scenery.sheet(trees, args.trees)
         print(f'🌳 Tree sheet written to {args.trees}')
@@ -541,11 +562,14 @@ def main():
     keep = frozenset() if args.force else hand_edits()
     if args.scenery:
         written = write_trees(trees, args.out, keep)
+        if not args.only:
+            written += write_props(args.out, keep) + write_houses(args.out, keep)
         print(f'🎨 Wrote {written} GIFs to {os.path.relpath(args.out, ROOT)}')
         return
     if not args.only and not args.anims:
         written += write_props(args.out, keep)
         written += write_trees(trees, args.out, keep)
+        written += write_houses(args.out, keep)
         written += write_effects(fx, args.out, keep)
     elif not args.anims:
         if trees:

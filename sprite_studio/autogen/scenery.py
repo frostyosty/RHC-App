@@ -1,4 +1,5 @@
-"""Trees for the 3D Wilds: 10 kinds, each drawn natively at 10 distance levels.
+"""Trees for the 3D Wilds, each kind drawn natively at 10 distance levels, and the
+small far-off houses painted along the horizon.
 
 The renderer used to scale one 32px prop_tree with nearest-neighbour, so near
 trees went blocky and far ones shimmered. Here every tree is drawn at the
@@ -381,21 +382,6 @@ def snag(t):
         t.p.ell('#15181F', t.box(.505, .70, .018, .03), shade=False, sep=False)
 
 
-@tree('mushroom', height=2.4, radius=0.12, where='tall grass')
-def mushroom(t):
-    t.p.ell('#9E927E', t.box(.50, .94, .12, .06), shade=t.tier < 2)  # bulb
-    t.trunk('#B7AC98', [(.42, .96), (.58, .96), (.555, .46), (.445, .46)], bark='#8C8272', lines=2)
-    t.p.ell('#2A1624', t.box(.50, .47, .34, .05), shade=False)  # gills under the cap
-    arc = [(.50 + .44 * math.cos(a), .46 - .40 * math.sin(a)) for a in (math.pi * i / 12 for i in range(13))]
-    cap = [('poly', arc)]
-    t.canopy('#5E2A4E', cap, light='#80406C', dark='#3E1A34', speck='#2E1026')
-    if t.tier <= 1:
-        for cx, cy, r in ((.32, .30, .05), (.55, .18, .06), (.72, .32, .045), (.44, .40, .03), (.84, .42, .03)):
-            t.p.ell('#D9CBB3', t.box(cx, cy, r, r * .8, t.sway), shade=t.tier == 0, sep=False)
-    # faint spores drifting under the cap
-    t.dots('#E07AC0', [(.30, .60), (.70, .66)] if t.frame == 0 else [(.31, .56), (.69, .62)], min_tier=0, sway=False)
-
-
 @tree('wiretree', height=2.8, radius=0.12, where='outer ring (stage-3 hint)')
 def wiretree(t):
     """A glitched tech tree: circuit-trace limbs, a crown of dark chips,
@@ -425,3 +411,206 @@ def wiretree(t):
     # glow: at the chip clusters and cable ends, one node even far away
     nodes = [(.32, .24), (.68, .26), (.50, .09), (.18, .21), (.84, .22)] if t.tier <= 1 else [(.50, .09)]
     t.dots(glow, nodes + ends, min_tier=2, sway=False)
+
+
+# ---------------------------------------------------------------- New Zealand
+# The NZ flora set (Region.flora = NZ in WorldMap): pōhutukawa on the coast,
+# cabbage trees in the paddocks, and tree ferns and nīkau in the bush.
+
+@tree('pohutukawa', height=2.8, radius=0.18, where='coast, sand (NZ)')
+def pohutukawa(t):
+    """Gnarled, many-trunked and wider than it is tall: a low dark dome of
+    grey-green leaves with a few crimson flower tufts."""
+    bark = '#4E4038'
+    # three twisting trunks leaning out from one base
+    t.trunk(bark, [(.43, 1), (.55, 1), (.52, .78), (.47, .60), (.42, .62), (.46, .80)], bark='#2E2622', lines=2)
+    t.branch(bark, [(.51, .86), (.62, .70), (.72, .56)], .045, min_tier=1)
+    t.branch(bark, [(.46, .82), (.34, .70), (.22, .58)], .04, min_tier=1)
+    t.branch(bark, [(.47, .64), (.56, .50)], .03, min_tier=0)
+    crown = [
+        ('ell', .50, .38, .30, .15), ('ell', .22, .48, .17, .11), ('ell', .78, .47, .17, .11),
+        ('ell', .36, .28, .17, .11), ('ell', .65, .29, .17, .11), ('ell', .08, .57, .08, .06),
+        ('ell', .92, .56, .08, .06), ('ell', .50, .50, .22, .09),
+    ]
+    t.canopy('#2F4A2E', crown, light='#52704A', dark='#1C3020', speck='#24382A')
+    # a few crimson flower tufts on the sunny side
+    t.dots('#C0303A', [(.30, .22), (.44, .20), (.62, .23), (.18, .40), (.73, .38), (.55, .31), (.40, .30), (.84, .48)], min_tier=1)
+
+
+def star(cx, cy, r, points=9, inner=.42, squash=1.0, lean=0.0):
+    """A spiky tuft of sword leaves: a star polygon, flattened by squash."""
+    pts = []
+    for i in range(points * 2):
+        a = -math.pi / 2 + math.pi * i / points
+        rr = r if i % 2 == 0 else r * inner
+        pts.append((cx + math.cos(a) * rr + lean * max(0, -math.sin(a)) * r, cy + math.sin(a) * rr * squash))
+    return ('poly', pts)
+
+
+@tree('cabbage', height=2.6, radius=0.07, where='paddocks, tall grass (NZ)')
+def cabbage(t):
+    """Tī kōuka: a slim grey trunk forking into a few stems, each ending in a
+    spiky tuft of sword leaves over a skirt of dead brown ones."""
+    grey = '#6A6258'
+    t.trunk(grey, [(.47, 1), (.53, 1), (.52, .58), (.48, .58)], bark='#4A443C', lines=1)
+    heads = [(.34, .24, .15), (.63, .17, .15), (.74, .38, .12)]
+    for (hx, hy, _), base in zip(heads, [(.49, .60), (.51, .58), (.51, .62)]):
+        t.branch(grey, [base, (hx, hy + .06)], .03, min_tier=2)
+    for hx, hy, r in heads:  # the dead-leaf skirts hang under each tuft
+        if t.tier <= 1:
+            t.p.poly('#6E5E3E', [t.pt(hx - r * .45, hy + .02, t.sway), t.pt(hx + r * .45, hy + .02, t.sway),
+                                 t.pt(hx + r * .3, hy + r * .9), t.pt(hx - r * .3, hy + r * .9)], shade=t.tier == 0)
+    t.canopy('#5A7038', [star(hx, hy, r, 11 if t.tier == 0 else 7, .38, .85) for hx, hy, r in heads],
+             light='#7E9450', dark='#3C4E26', speck='#8A9A5A')
+
+
+@tree('ponga', height=2.4, radius=0.08, where='native bush (NZ)')
+def ponga(t):
+    """Silver tree fern: a dark fibrous trunk under a wide crown of arching,
+    feathery fronds, silver underneath."""
+    t.trunk('#3A2C22', [(.465, 1), (.535, 1), (.53, .42), (.47, .42)], bark='#22190F', lines=2)
+    if t.tier <= 1:  # old fronds hang down the trunk
+        t.p.poly('#5A4630', [t.pt(.45, .42), t.pt(.55, .42), t.pt(.57, .56), t.pt(.43, .56)], shade=t.tier == 0)
+    top = (.50, .40)
+    fronds = [frond(top, tip, w, d) for tip, w, d in (
+        ((.03, .56), .05, .08), ((.97, .56), .05, .08), ((.12, .30), .05, .10), ((.88, .30), .05, .10),
+        ((.30, .12), .045, .08), ((.70, .12), .045, .08), ((.50, .06), .04, .04), ((.24, .64), .04, .02), ((.76, .64), .04, .02))]
+    t.canopy('#3C6230', fronds, light='#5E8646', dark='#264420', speck='#A7B3A0')
+    if t.tier == 0:  # the midribs
+        for tip in ((.03, .56), (.97, .56), (.12, .30), (.88, .30), (.30, .12), (.70, .12)):
+            t.p.line('#243A1E', [t.pt(*top, t.sway), t.pt((top[0] + tip[0]) / 2, min(top[1], tip[1]) - .05, t.sway)], sep=False)
+
+
+@tree('nikau', height=2.8, radius=0.08, where='native bush, coast (NZ)')
+def nikau(t):
+    """Nīkau palm: a straight ringed trunk, a smooth green crownshaft, and
+    stiff fronds that point up like a feather duster."""
+    t.trunk('#6E6A58', [(.475, 1), (.525, 1), (.52, .38), (.48, .38)])
+    if t.tier <= 1:  # leaf-scar rings
+        for y in (.9, .8, .7, .6, .5, .42):
+            t.p.line('#4E4A3C', [t.pt(.475, y), t.pt(.525, y)], sep=False)
+    if t.tier < 2:  # the smooth green crownshaft (far away it's just trunk)
+        t.p.ell('#6E8A4E', t.box(.50, .34, .035, .07), sep=False)
+    t.dots('#8A3A50', [(.47, .42), (.53, .43)], min_tier=0)  # flowers under it
+    top = (.50, .28)
+    # stiff fronds held up and out: a shuttlecock, not a drooping coconut palm
+    fronds = [frond(top, tip, w, d) for tip, w, d in (
+        ((.24, .03), .05, .03), ((.76, .03), .05, .03), ((.38, .00), .04, .01), ((.62, .00), .04, .01),
+        ((.10, .16), .05, .04), ((.90, .16), .05, .04), ((.50, .00), .035, .0))]
+    t.canopy('#3A5A30', fronds, light='#5A7A42', dark='#243E1C', speck='#1E3418')
+
+
+# ---------------------------------------------------------------- far-off houses
+# A town on the horizon, in the house style of the player's country
+# (Region.houses): prop_house_<style>_<n>.gif, 8 variants per style, drawn
+# small at 1x because they're only ever seen far away. WINDOW pixels are
+# swapped by the renderer (Skyline.WINDOW): lit at night, dark glass by day.
+
+WINDOW = '#FFE8A0'
+HOUSE_VARIANTS = 8  # Skyline.HOUSE_VARIANTS must match
+
+HOUSE_STYLES = {
+    # weatherboard villas and bungalows under corrugated iron
+    'nz': dict(walls=['#E6E2D6', '#D8CCA6', '#A6B8C4', '#B2C09E', '#E0D4C0'],
+               roofs=['#8A2E28', '#3E5E3A', '#3A3E44', '#8A9096', '#3A5470', '#7A3A2A'],
+               shapes=['hip', 'hip', 'gable', 'gable'], two=0.12, width=(13, 20), boards=True, iron=True, veranda=0.5, chimney=0.3),
+    # brick and render terraces under tile and slate
+    'euro': dict(walls=['#8A4A38', '#9A5A40', '#D6CAAE', '#7E4634', '#C8B89A'],
+                 roofs=['#A0482C', '#3E4450', '#8A3E28', '#4A4E58'],
+                 shapes=['gable', 'gable', 'hip'], two=0.7, width=(10, 15), boards=False, iron=False, veranda=0.0, chimney=0.8),
+    # clapboard houses with asphalt shingles and garages
+    'us': dict(walls=['#DCD6C0', '#A8B4BE', '#D8C890', '#E8E6E0', '#B8A48A'],
+               roofs=['#4A4E54', '#5A4638', '#3E4248'],
+               shapes=['gable', 'gable', 'hip'], two=0.45, width=(14, 22), boards=True, iron=False, veranda=0.25, chimney=0.2),
+    # Falu red and ochre timber under steep dark roofs
+    'nordic': dict(walls=['#8A2A20', '#8A2A20', '#C89A3A', '#E4E0D4', '#6A7A5A'],
+                   roofs=['#2A2A2E', '#3A3434', '#2E3A2E'],
+                   shapes=['steep', 'steep', 'gable'], two=0.35, width=(11, 17), boards=True, iron=False, veranda=0.0, chimney=0.4),
+    # pastel concrete with flat roofs and the odd tin one
+    'tropical': dict(walls=['#E0A6A0', '#86C6BE', '#E6D080', '#E8E4DA', '#B0C88A'],
+                     roofs=['#C8C4B8', '#9A5A3A', '#8A9096'],
+                     shapes=['flat', 'flat', 'gable'], two=0.4, width=(12, 18), boards=False, iron=True, veranda=0.3, chimney=0.0),
+}
+
+
+def house(style, n):
+    """One far-off house as an RGBA image, sized to fit (about 12-24 px)."""
+    st = HOUSE_STYLES[style]
+    rng = random.Random(zlib.crc32(f'{style}:{n}'.encode()))
+    wall, roof = rng.choice(st['walls']), rng.choice(st['roofs'])
+    shape = rng.choice(st['shapes'])
+    two = rng.random() < st['two']
+    bw = rng.randint(*st['width'])
+    wall_h = 9 if two else 5
+    roof_h = {'hip': max(3, bw // 4), 'gable': max(4, bw // 3), 'steep': max(5, bw // 2), 'flat': 1}[shape]
+    W, H = bw + 4, wall_h + roof_h + 3
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    x0, x1 = 2, 2 + bw - 1
+    wy0, wy1 = H - wall_h, H - 1
+    # walls, the right end a shade darker (light from the left)
+    d.rectangle((x0, wy0, x1, wy1), fill=pk.rgb(wall))
+    d.rectangle((x1 - max(1, bw // 6), wy0, x1, wy1), fill=pk.lo(wall))
+    if st['boards']:  # weatherboards / clapboard
+        for y in range(wy0 + 1, wy1, 2):
+            d.line((x0, y, x1, y), fill=pk.shift(wall, -0.06))
+    # windows (the renderer lights these at night) and a door
+    floors = [wy0 + 1] + ([wy0 + 5] if two else [])
+    door_x = rng.choice([x0 + 2, x1 - 3, (x0 + x1) // 2])
+    for fy in floors:
+        for wx in range(x0 + 2, x1 - 1, 4):
+            if abs(wx - door_x) <= 1 and fy == floors[-1]:
+                continue
+            d.rectangle((wx, fy + 1, wx + 1, fy + 2), fill=pk.rgb(WINDOW))
+    d.rectangle((door_x, wy1 - 3, door_x + 1, wy1), fill=pk.ink(wall))
+    # the roof: eaves overhang a pixel each side
+    ry1 = wy0 - 1
+    if shape == 'flat':
+        d.rectangle((x0 - 1, ry1, x1 + 1, ry1), fill=pk.rgb(roof))
+    else:
+        top = ry1 - roof_h + 1
+        mid = (x0 + x1) / 2
+        if shape == 'hip':  # the long side faces you: a trapezoid
+            pts = [(x0 - 1, ry1), (x1 + 1, ry1), (x1 - roof_h + 1, top), (x0 + roof_h - 1, top)]
+        else:  # a gable end facing you
+            pts = [(x0 - 1, ry1), (x1 + 1, ry1), (mid, top)]
+        d.polygon(pts, fill=pk.rgb(roof))
+        # lit left slope, shaded right
+        d.polygon([(mid, top), (x1 + 1, ry1), (mid, ry1)] if shape != 'hip' else [(mid, top), (x1 - roof_h + 1, top), (x1 + 1, ry1), (mid, ry1)],
+                  fill=pk.lo(roof))
+        if st['iron']:  # corrugated iron ribs
+            px = img.load()
+            for x in range(x0, x1 + 1, 2):
+                for y in range(top, ry1 + 1):
+                    if px[x, y][3]:
+                        px[x, y] = pk.shift(roof, 0.05) + (255,)
+        if rng.random() < st['chimney']:
+            cx = int(rng.choice([x0 + 2, x1 - 3]))
+            ctop = max(0, top + roof_h // 3 - 3)
+            d.rectangle((cx, ctop, cx + 1, ry1 - 1), fill=pk.rgb('#7A4436'))
+    if rng.random() < st['veranda']:  # a veranda roof across the front with posts
+        vy = wy0 + (5 if two else 2)
+        d.line((x0 - 1, vy, x1 + 1, vy), fill=pk.rgb(roof))
+        for x in (x0, (x0 + x1) // 2, x1):
+            d.line((x, vy + 1, x, wy1), fill=pk.rgb('#E8E4DA'))
+    return pk.outline(img)
+
+
+def house_sheet(path, cell=4):
+    """Every style's variants in rows, scaled up `cell` times, then at native size on a baseline."""
+    rows = list(HOUSE_STYLES)
+    imgs = {s: [house(s, n) for n in range(HOUSE_VARIANTS)] for s in rows}
+    W = max(sum(i.width + 2 for i in v) for v in imgs.values())
+    H = max(i.height for v in imgs.values() for i in v)
+    out = Image.new('RGBA', (W * cell + W + 24, len(rows) * (H * cell + 8)), (120, 150, 170, 255))
+    for r, s in enumerate(rows):
+        x = 4; y = r * (H * cell + 8) + 4
+        for i in imgs[s]:
+            out.alpha_composite(i.resize((i.width * cell, i.height * cell), Image.Resampling.NEAREST), (x, y + (H - i.height) * cell))
+            x += (i.width + 2) * cell
+        x = W * cell + 16
+        for i in imgs[s]:
+            out.alpha_composite(i, (x, y + H * cell - i.height))
+            x += i.width
+    out.save(path)
+    return path

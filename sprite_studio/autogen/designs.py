@@ -3012,8 +3012,8 @@ def pine(p, s):
 
 @prop('bush')
 def bush(p, s):
-    p.ell('#3F8A3A', (4, 16, 17, 31))
-    p.ell('#4E9A42', (13, 14, 28, 31))
+    p.ell('#3A6430', (4, 16, 17, 31))
+    p.ell('#46723A', (13, 14, 28, 31))
     p.px('#E05A7A', [(10, 20), (20, 19), (23, 24)])
 
 
@@ -3027,8 +3027,61 @@ def stone(p, s):
 @prop('tuft')
 def tuft(p, s):
     for x, h in ((9, 10), (13, 16), (16, 12), (19, 17), (23, 9)):
-        p.line('#5DAE4A', [(x, 31), (x + (1 if x > 15 else -1), 31 - h)])
-    p.px('#8FCB5A', [(13, 16), (19, 15)])
+        p.line('#5A8A3E', [(x, 31), (x + (1 if x > 15 else -1), 31 - h)])
+    p.px('#8A9A56', [(13, 16), (19, 15)])
+
+
+@prop('flowers')
+def flowers(p, s):
+    """A small patch of meadow wildflowers: buttercups, clover and self-heal
+    peeking out of a low leafy clump."""
+    sway = s.t % 2
+    p.ell('#46692E', (3, 24, 16, 31))
+    p.ell('#4E7732', (12, 23, 29, 31))
+    p.px('#5E8A3C', [(7, 25), (8, 25), (17, 24), (18, 24), (23, 25)])
+    heads = ((6, 22, '#E8C84A'), (10, 20, '#EEEAE0'), (14, 23, '#8E6EBE'), (17, 19, '#E8C84A'),
+             (21, 22, '#EEEAE0'), (24, 20, '#E8C84A'), (27, 23, '#8E6EBE'))
+    for x, top, col in heads:
+        x += sway if top < 21 else 0
+        p.px('#3E6428', [(x, top + 2), (x, top + 3)])
+        p.px(col, [(x - 1, top), (x, top), (x + 1, top), (x, top - 1), (x, top + 1)])
+        p.px(lo(col), [(x, top)])
+
+
+@prop('mushrooms')
+def mushrooms(p, s):
+    """Tiny field mushrooms in the leaf litter, and one little fly agaric."""
+    for x0, x1, cap_top, cap_h, stem, cap in ((3, 12, 17, 5, '#E4DCCB', '#9A7650'), (13, 20, 22, 4, '#DDD3BF', '#B08A5E'),
+                                               (21, 30, 14, 5, '#E4DCCB', '#8A2A22'), (10, 14, 26, 2, '#DDD3BF', '#A88458')):
+        mid = (x0 + x1) // 2
+        p.rect(stem, (mid - 1, cap_top + cap_h - 1, mid + 1, 30))
+        # a dome: the top half of an ellipse
+        rx = (x1 - x0) / 2
+        p.poly(cap, [(mid + rx * math.cos(a), cap_top + cap_h - cap_h * math.sin(a)) for a in (math.pi * i / 10 for i in range(11))])
+    # cap undersides (gills) and the agaric's white spots
+    p.px('#5A4A3A', [(5, 21), (6, 21), (9, 21), (10, 21), (15, 25), (18, 25)])
+    p.px('#F2EEE6', [(23, 15), (26, 16), (28, 17), (24, 17)])
+    p.px('#6E5A3E', [(1, 30), (2, 30), (8, 30), (19, 30), (27, 30), (30, 30)])
+
+
+@prop('fern')
+def fern(p, s):
+    """A ground fern: arching fronds from one crown, with leaflets."""
+    sway = s.t % 2
+    fronds = (((1, 20), 3.2), ((31, 20), 3.2), ((4, 11), 3.0), ((28, 11), 3.0), ((16 + sway, 5), 2.6), ((9, 26), 2.2), ((23, 26), 2.2))
+    for (tx, ty), width in fronds:
+        bx, by = 16, 30
+        mx, my = (bx + tx) / 2, min(by, ty) - 5
+        top, bot, mid = [], [], []
+        for i in range(9):
+            u = i / 8
+            x = (1 - u) ** 2 * bx + 2 * (1 - u) * u * mx + u * u * tx
+            y = (1 - u) ** 2 * by + 2 * (1 - u) * u * my + u * u * ty
+            hw = width * math.sin(math.pi * min(u * 1.4, 1)) * (1 - u * .5) + .6
+            top.append((x, y - hw)); bot.append((x, y + hw)); mid.append((round(x), round(y)))
+        p.poly('#3E6A34', top + bot[::-1], sep=False)
+        p.px('#5E8A48', mid[2:-1:2])  # lit midrib
+    p.px('#2A4A24', [(16, 30), (15, 29), (17, 29)])
 
 
 @prop('cage')

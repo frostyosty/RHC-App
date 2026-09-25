@@ -22,6 +22,11 @@ class SpriteBank(private val context: Context) : SpriteSource {
         return anim.frames[((timeMs / anim.frameMs) % anim.frames.size).toInt()]
     }
 
+    override fun durationMs(key: String): Long {
+        val anim = cache.getOrPut(key) { load(key) } ?: return 0
+        return anim.frames.size * anim.frameMs
+    }
+
     private fun load(key: String): Anim? {
         val id = context.resources.getIdentifier(key, "drawable", context.packageName)
         if (id == 0) return null

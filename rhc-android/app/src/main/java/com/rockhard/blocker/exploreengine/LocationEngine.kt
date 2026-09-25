@@ -38,6 +38,13 @@ object LocationEngine {
         } catch (e: Exception) { "The Outskirts" }
     }
 
+    /** ISO country code ("NZ") for a point, or null if the geocoder can't tell. */
+    fun getCountryCode(context: Context, lat: Double, lon: Double): String? {
+        return try {
+            Geocoder(context, Locale.getDefault()).getFromLocation(lat, lon, 1)?.firstOrNull()?.countryCode
+        } catch (e: Exception) { null }
+    }
+
     fun generateNearbySuburb(context: Context, currentLat: Double, currentLon: Double): String {
         // Offsets by approx 2-4km
         val latOffset = Random.nextDouble(-0.04, 0.04)

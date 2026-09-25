@@ -16,6 +16,7 @@ object WeatherEngine {
                 var lat: Double
                 var lon: Double
                 var city: String
+                var country: String? = null
                 var sourceStr = "IP Geolocation"
 
                 // 1. Try Hardware GPS First!
@@ -26,6 +27,7 @@ object WeatherEngine {
                     lat = gpsLoc.first
                     lon = gpsLoc.second
                     city = LocationEngine.getSuburbName(context, lat, lon)
+                    country = LocationEngine.getCountryCode(context, lat, lon)
                     sourceStr = "Hardware GPS"
                 } else {
                     // Fallback to IP Geolocation
@@ -37,6 +39,7 @@ object WeatherEngine {
                     city = ipJson.getString("city")
                     lat = ipJson.getDouble("latitude")
                     lon = ipJson.getDouble("longitude")
+                    country = ipJson.optString("country_code").ifEmpty { null }
                 }
 
                 // 2. Open-Meteo Weather API
@@ -76,6 +79,8 @@ object WeatherEngine {
                 val debugStr = "Loc Source: $sourceStr\nLat/Lon: $lat, $lon\nElevation: ${elevation}m | Hum: $humidity%\nWMO Code: $wCode"
                 
                 onSuccess(city, weatherText, icon, terrain, debugStr)
+                // what the land around you looks like, for the 3D Wilds
+                com.rockhard.blocker.world.RegionProbe.probe(context.getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE), lat, lon, country)
             } catch (e: Exception) {
                 onFail(e.message ?: "Network Timeout / Parse Error")
             }

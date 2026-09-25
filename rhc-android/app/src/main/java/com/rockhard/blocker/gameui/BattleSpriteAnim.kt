@@ -7,6 +7,7 @@ package com.rockhard.blocker
 // false for a terminal pose (faint/victory) that should stick until the
 // arena resets.
 internal fun GameActivity.playSpriteAnim(isPlayer: Boolean, name: String, anim: String, holdMs: Long = 450, revertToIdle: Boolean = true) {
+    worldAct(isPlayer, name, anim) // the same pose on the fighter in the 3D Wilds, if the fight is there
     val gifView = findViewById<GifView>(if (isPlayer) R.id.spritePlayerGif else R.id.spriteEnemyGif) ?: return
     val res = SpriteUtils.resolveSpriteRes(this, name, anim)
     if (res == 0) return
@@ -34,6 +35,7 @@ internal fun GameActivity.playAttackFx(onPlayer: Boolean, moveName: String) {
 // Plays fx_<fx>.gif once over one combatant, then hides it. The GIFs end on
 // an empty frame, so hiding a frame late never shows a stuck effect.
 internal fun GameActivity.playFx(onPlayer: Boolean, fx: String) {
+    worldFx(onPlayer, fx)
     val view = findViewById<GifView>(if (onPlayer) R.id.spritePlayerFx else R.id.spriteEnemyFx) ?: return
     val res = resources.getIdentifier("fx_$fx", "drawable", packageName)
     if (res == 0) return

@@ -26,10 +26,10 @@ internal fun GameActivity.showBattleArena(playerName: String, enemyName: String)
     val eLabel = findViewById<TextView>(R.id.spriteEnemyLabel)
     val tvEnemyTraits = findViewById<TextView>(R.id.tvEnemyTraits)
 
-    CombatState.reset(); arena.visibility = View.VISIBLE
-    if (currentEnemy != null && currentEnemy!!.type != "Poacher" && currentEnemy!!.infusionEl == "None" && currentWeather != "Clear" && currentWeather != "Offline" && kotlin.random.Random.nextInt(100) < 25) {
-        currentEnemy!!.infusionEl = currentWeather; currentEnemy!!.infusionStacks = kotlin.random.Random.nextInt(1, 4)
-    }
+    resetArenaRules()
+    // a fight in the 3D Wilds stays in the world: the new fighter's cage flies instead
+    if (worldFight != null) { worldFighterChanged(playerName); return }
+    arena.visibility = View.VISIBLE
     
     var pScale = 1.0f; var eScale = 1.0f
     val pLvl = if (!playerLastStand) party[activePetIndex].maxHp / 10 else 1
@@ -85,6 +85,14 @@ internal fun GameActivity.showBattleArena(playerName: String, enemyName: String)
     pContainer.translationX = -400f; eContainer.translationX = 400f
     pContainer.animate().translationX(20f).setDuration(500).start()
     eContainer.animate().translationX(-20f).setDuration(500).start()
+}
+
+/** The rules part of sending a fighter in: fresh combat state, and the wild one may soak up the weather. */
+internal fun GameActivity.resetArenaRules() {
+    CombatState.reset()
+    if (currentEnemy != null && currentEnemy!!.type != "Poacher" && currentEnemy!!.infusionEl == "None" && currentWeather != "Clear" && currentWeather != "Offline" && kotlin.random.Random.nextInt(100) < 25) {
+        currentEnemy!!.infusionEl = currentWeather; currentEnemy!!.infusionStacks = kotlin.random.Random.nextInt(1, 4)
+    }
 }
 
 internal fun GameActivity.hideBattleArena() {
@@ -175,10 +183,13 @@ internal fun GameActivity.updateBattleUI() {
 internal fun GameActivity.cancelBattleTimer() {
     battleTimerRunnable?.let { mainHandler.removeCallbacks(it) }
     findViewById<ProgressBar>(R.id.pbBattleTimer)?.visibility = View.GONE
+    worldPatienceReset()
 }
 
 internal fun GameActivity.startBattleTimer() {
     cancelBattleTimer()
+    // in the 3D Wilds the pressure is the wild beast's patience (WorldFight.kt)
+    if (worldFight != null) { refreshWorldFightPanel(); return }
     if (battleOver || playerLastStand || currentEnemy == null) return
     
     var ticks = 0

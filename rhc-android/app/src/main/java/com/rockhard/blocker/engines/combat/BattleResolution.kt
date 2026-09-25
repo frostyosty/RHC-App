@@ -85,5 +85,11 @@ internal fun GameActivity.endBattle() {
     hideBattleArena()
     party.forEach { p -> if (p.name.contains("[Regenerative]")) { val healAmount = (p.maxHp * 0.20).toInt(); p.hp = (p.hp + healAmount).coerceAtMost(p.maxHp); printLog("> 💚 ${p.name}'s Regenerative trait restored $healAmount HP!") } }
     updatePartyScreen(); saveParty()
-    mainHandler.postDelayed({ if (party.isEmpty()) { printLog("> You got clobbered and returned to the Hub."); setUIState("HUB") } else { printLog("> Returning to Hub..."); setUIState("HUB") } }, 2000)
+    // in the 3D Wilds a fight ends where it happened and the walk goes on
+    val inWilds = worldFight != null
+    mainHandler.postDelayed({
+        if (party.isEmpty()) printLog(if (inWilds) "> You got clobbered, but you pick yourself up and walk on." else "> You got clobbered and returned to the Hub.")
+        else printLog(if (inWilds) "> The Wilds go quiet. You walk on." else "> Returning to Hub...")
+        setUIState("HUB")
+    }, 2000)
 }

@@ -104,6 +104,7 @@ cancelBattleTimer()
     if (battleOver) return
     printLog("\n--- PLAYER TURN ---\n> YOU THROW A PUNCH!")
     AnimUtils.animAttack(findViewById(R.id.spritePlayer), true)
+    playSpriteAnim(true, "YOU", "attack")
     AudioEngine.playSfx(this, "fx_hit")
     
     val hasPlayerAmulet = prefs.getBoolean("PLAYER_HAS_AMULET", false); var dmg = Random.nextInt(1, 5)
@@ -119,6 +120,6 @@ cancelBattleTimer()
         if (currentEnemy!!.name.contains("[Spiked]") && dmg > 0) { printLog("> 🌵 [Spiked] recoil! You cut your hand! (Ouch)") }
         
         if (currentEnemy!!.hp <= 0) { printLog("> 👑 UNBELIEVABLE! YOU KILLED IT WITH YOUR BARE HANDS!"); processEnemyVictory() } 
-        else { mainHandler.postDelayed({ AnimUtils.animAttack(findViewById(R.id.spriteEnemy), false); mainHandler.postDelayed({ AnimUtils.animDeath(findViewById(R.id.spritePlayer)); vibratePhone(1000); printLog("\n--- ENEMY TURN ---\n> ${currentEnemy?.name} obliterates you for 9,999 damage."); endBattle() }, 300) }, 1500) }
+        else { mainHandler.postDelayed({ AnimUtils.animAttack(findViewById(R.id.spriteEnemy), false); currentEnemy?.let { playSpriteAnim(false, it.name, "attack") }; mainHandler.postDelayed({ AnimUtils.animDeath(findViewById(R.id.spritePlayer)); playSpriteAnim(true, "YOU", "hit"); vibratePhone(1000); printLog("\n--- ENEMY TURN ---\n> ${currentEnemy?.name} obliterates you for 9,999 damage."); endBattle() }, 300) }, 1500) }
     }, 300)
 }

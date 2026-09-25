@@ -59,7 +59,7 @@ class GameActivity : Activity() {
 
     // 3D Wilds (world/WorldBridge.kt)
     internal var worldSession: com.rockhard.blocker.world.sim.WorldSession? = null
-    internal var worldEncounter: com.rockhard.blocker.world.sim.WorldEvent.BattleReady? = null
+    internal var worldFight: WorldFight? = null
     internal var inWorld = false
     internal var weatherIcon = "☀️"
     internal var currentCity = "Local Sanctuary"
@@ -303,6 +303,7 @@ class GameActivity : Activity() {
 
     internal fun printLog(msg: String) {
         runOnUiThread {
+            if (inWorld) worldCaption(msg) // over the 3D Wilds, which cover the log
             tvConsole.text = "${tvConsole.text}\n$msg"
             (tvConsole.parent as? android.widget.ScrollView)?.post {
                 (tvConsole.parent as? android.widget.ScrollView)?.fullScroll(android.view.View.FOCUS_DOWN)

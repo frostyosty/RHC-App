@@ -6,4 +6,41 @@
 
     <!-- No leave button: once you set off you walk until the timer runs out. -->
     <com.rockhard.blocker.world.WorldView android:id="@+id/worldView" android:layout_width="match_parent" android:layout_height="match_parent"/>
+
+    <!-- Fights happen right here in the world (world/WorldFight.kt): cages to throw
+         first, then the moves you shout at your netbeast, down the left edge. -->
+    <LinearLayout android:id="@+id/worldFightPanel" android:layout_width="148dp" android:layout_height="wrap_content"
+        android:layout_gravity="start|center_vertical" android:layout_marginStart="6dp"
+        android:orientation="vertical" android:visibility="gone">
+
+        <TextView android:id="@+id/worldFightTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#FFD666" android:textSize="11sp" android:textStyle="bold" android:shadowColor="#000000"
+            android:shadowRadius="3" android:layout_marginBottom="4dp" android:text="THROW A CAGE"/>
+
+        <LinearLayout android:id="@+id/worldCages" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+
+        <LinearLayout android:id="@+id/worldMoves" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:visibility="gone">
+            <Button android:id="@+id/worldMove1" style="@style/AppButton.Standard" android:layout_height="46dp" android:layout_marginBottom="6dp"
+                android:backgroundTint="#DDD32F2F" android:textSize="12sp" android:text="MOVE 1"/>
+            <Button android:id="@+id/worldMove2" style="@style/AppButton.Standard" android:layout_height="46dp" android:layout_marginBottom="6dp"
+                android:backgroundTint="#DDC2185B" android:textSize="12sp" android:text="MOVE 2"/>
+            <Button android:id="@+id/worldMove3" style="@style/AppButton.Standard" android:layout_height="46dp" android:layout_marginBottom="6dp"
+                android:backgroundTint="#DD7B1FA2" android:textSize="12sp" android:text="MOVE 3"/>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/worldItems" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:visibility="gone">
+            <Button android:id="@+id/worldNet" android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
+                style="@style/AppButton.Standard" android:layout_marginBottom="0dp" android:layout_marginEnd="3dp"
+                android:backgroundTint="#DD1976D2" android:textSize="9sp" android:text="NET"/>
+            <Button android:id="@+id/worldPot" android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
+                style="@style/AppButton.Standard" android:layout_marginBottom="0dp" android:layout_marginEnd="3dp"
+                android:backgroundTint="#DD388E3C" android:textSize="9sp" android:text="POT"/>
+            <Button android:id="@+id/worldSpray" android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp"
+                style="@style/AppButton.Standard" android:layout_marginBottom="0dp"
+                android:backgroundTint="#DDFBC02D" android:textColor="#000000" android:textSize="9sp" android:text="SPRY"/>
+        </LinearLayout>
+    </LinearLayout>
 </FrameLayout>

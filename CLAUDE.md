@@ -78,10 +78,32 @@ exploring. Rules that keep the design working:
   imports**. The sim is the future multiplayer authority: keep it deterministic
   (fixed ticks, inputs only, its own seeded RNG, no wall-clock time), and put
   anything a remote player must see into `EntitySnapshot`.
+- **Sim trig goes through `DetMath`**, never `kotlin.math`'s
+  `sin`/`cos`/`atan2`/`hypot`, which differ in the last bit between the JVM and
+  wasm. Map generation avoids trig altogether (rejection sampling, smoothstep
+  waves). `DeterminismTest` pins the map, a coastal NZ map and a scripted fight:
+  run `./gradlew :world-core:jvmTest :world-core:wasmJsNodeTest`, and re-pin
+  only when you meant to change generation or the sim.
+- The map is `WorldMap.generate(seed, species, region)`. The `Region` (from
+  `RegionProbe`: sea side, hills, flora, house style) is part of the map's
+  identity, so keep it small whole numbers and enums.
+- **Grounded, not fantastical.** The user wants the Wilds to feel like their
+  real surroundings (they're in Tauranga, NZ), so no giant fantasy props.
+  Creatures are the only strange thing out there.
+- **Beasts never ambush.** They shy away from you (`World.SHY_SPEED`, slower
+  than walking) and a fight only starts when you catch one in front of you, so
+  fighting is always the player's choice. The preview soak checks both a
+  wanderer (no fights) and a hunter.
 - **No walls or colliders.** The player auto-walks and must never get stuck;
-  obstacles are walk-through billboards and water is wadeable.
+  obstacles are walk-through billboards and water is wadeable. The walk
+  sidesteps trunks (plan C) but never stops or turns for them.
 - Test sim/render changes with `bash tools/world_preview/run.sh` (JVM soak test
-  + preview PNGs) before building an APK.
+  + preview PNGs, including `map_*.png` overviews and the fight sequence) before
+  building an APK.
+- Fights stay in the world (`world/WorldFight.kt`). The rules are still the
+  battle code in `engines/combat/`; it reaches the world only through the hooks
+  in `playSpriteAnim`, `playFx`, `showBattleArena`, the battle timer and
+  `printLog`. Don't fork the rules into the world code.
 - New creature or scenery art comes from `sprite_studio/autogen`
   (`designs.py`; props are `prop_*.gif`), not hand-made files.
 
@@ -157,8 +179,8 @@ matrix rows. Only real creatures (and player/poacher/aegis/titan) are rows.
 
 ## Planned work (agreed plan)
 
-A and B are done; C and D are not started. C is next; D is a long-running
-goal worked through a few effects at a time.
+A, B, C and E are done. D is next: a long-running goal worked through a few
+effects at a time.
 
 ### A. Sprite Studio: "✏️ EDIT" does nothing (done 2026-09-24)
 
@@ -214,7 +236,7 @@ are the point) as `prop_tree_<kind>_d<0-9>.gif`, which is 100 GIFs.
 sit with the dark creatures; placement in brackets):
 oak (grass) · pine (grass, hills) · birch (grass) · willow (next to water) ·
 palm (sand) · cypress/poplar (grass) · autumn maple (tall grass) ·
-dead snag (outer stage-3 ring) · giant mushroom (tall grass) ·
+dead snag (outer stage-3 ring) · giant mushroom (tall grass; removed in E) ·
 wire-tree (a glitched tech tree with cables and a faint cyan glow; outer ring
 only, as a hint that stage-3 beasts are near).
 
@@ -233,7 +255,45 @@ terrain-aware, as above. Place trees in groves with at least 0.9 tiles
 between trunks, using grid rejection, so there's always a way through (see
 C).
 
-### C. Trees without collisions: the "sidestep"
+### E. The Wilds look like home, and fights stay in them (done 2026-09-25)
+
+The user asked for this: no giant mushrooms (tiny ones are fine), terrain from
+their real location (a big harbour for Tauranga), local trees and houses,
+rain synced to the real weather, open meadows and small dense forests, and
+battles that don't leave the 3D world. Built:
+- `Region` (world-core) from `RegionProbe` (one Open-Meteo elevation request
+  of 36 points in rings; the sea reads as exactly 0 m) and the country code.
+  Coastal regions get a sea band on the real compass side.
+- A woodland noise field splits the land into `Terrain.FOREST`, meadows
+  (flowers) and groves. The flora sets are TEMPERATE, NZ (pōhutukawa, cabbage,
+  ponga, nīkau, some plantation pine), TROPICAL and BOREAL. New props:
+  `flowers`, `mushrooms` (tiny), `fern`.
+- The horizon (`Skyline` in `TerrainRenderer`): hills, a flat sea line toward
+  the sea, and towns of `prop_house_<style>_<n>` (5 styles x 8 in
+  `scenery.py`, `autogen.py --houses sheet.png`) with lit windows at night.
+  Fetching real photos or tree images was considered and dropped: photos near
+  a GPS point are unreliable and would clash with the pixel art.
+- Weather: rain, storm, snow and fog palettes, with streaks and ripples.
+- Later (same day): beasts stopped chasing. They shy away and you pick your
+  fights. Mud (0.8x pace) and walking tracks (`Terrain.PATH`, 1.1x) were added.
+- Fights: circling in the sim (`World.ENGAGED`, `PlayerInput.throwCage`,
+  `WorldEvent.CompanionOut`), the cage and move panel on the left, and the
+  beast's patience (7s: before a cage it knocks one loose, after that it gets
+  a free hit, and with no netbeasts it goes for you).
+
+### C. Trees without collisions: the "sidestep" (done 2026-09-25)
+
+Built as planned below, in `World.sidestep` (constants `PROBE`, `CLEARANCE`,
+`STRAFE_MAX`, `MIN_FORWARD`, `GAP_GAIN`), with the tree buckets as
+`WorldMap.treeStart`/`treeIds`. Two changes from the plan: the 3x3 tiles are
+searched around the middle of the corridor (0.6 ahead), so trunks right at
+your feet are covered too; and with trunks on both sides you head for the
+middle of the gap, which leans toward the side with more room, rather than
+always stepping to the roomier side, which bounced between two trunks. The
+lean is worked out in the renderer from how the camera moved. The soak test in
+`tools/world_preview` measures forest walks: 0.00-0.01% of ticks inside a
+trunk (2% with the sidestep off), and forward pace never under 0.70. The
+original plan:
 
 No colliders, and the rule still holds: the player must never get stuck.
 Instead, the auto-walk leans around a tree it's about to hit, which is your
