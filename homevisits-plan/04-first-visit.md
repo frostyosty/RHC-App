@@ -23,7 +23,7 @@ This step also builds the machinery that every later step uses:
 The core never touches the camera. Its **director** hands the app one **beat** at a
 time. The app acts it out and hands back a **result**. While a beat runs, the app
 also streams observations to the core: the camera pose, the tracking state, surfaces
-found and taps. The core turns those into walks and spots (03).
+found (the corner of the front door for z-level?) and taps. The core turns those into walks and spots (03).
 
 ```kotlin
 // homevisits-core/story/Beat.kt
