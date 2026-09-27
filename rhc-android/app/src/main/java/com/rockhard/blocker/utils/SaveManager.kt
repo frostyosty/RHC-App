@@ -8,7 +8,8 @@ fun loadParty(prefs: SharedPreferences, key: String): MutableList<Netbeast> {
         val data = prefs.getString(key, "") ?: ""
         if (data.isNotEmpty()) {
             data.split(";").forEach {
-                val p = it.split(",")
+                // move1..move3 and lastMove are move names: bring renamed moves up to date
+                val p = it.split(",").mapIndexed { i, v -> if (i in 4..6 || i == 17) SkillEngine.migrate(v) else v }
                 if (p.size >= 14) {
                     val m3 = if (p.size >= 16) p[6] else "Tackle"
                     val exp = if (p.size >= 16) p[15].toInt() else 0

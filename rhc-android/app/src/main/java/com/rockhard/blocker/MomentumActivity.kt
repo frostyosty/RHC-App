@@ -21,12 +21,16 @@ class MomentumActivity : Activity() {
     private lateinit var llSpent: LinearLayout
     
     private val mainHandler = Handler(Looper.getMainLooper())
+    // Runs only while the screen is showing (onResume to onPause), and waits until an entry next
+    // evaporates a minute (at most a minute), since that's the only way Momentum changes on its own
     private val tickRunnable = object : Runnable {
         override fun run() {
             updateUI()
-            mainHandler.postDelayed(this, 10000) // Update every 10 secs
+            mainHandler.postDelayed(this, MomentumEngine.msUntilNextChange(prefs).coerceAtMost(60_000L - 50L) + 50L)
         }
     }
+    // The Earned list as last drawn, so it's rebuilt only when it changes
+    private var renderedEarned: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,13 +62,13 @@ class MomentumActivity : Activity() {
         findViewById<Button>(R.id.btnExitMomentum).setOnClickListener { finish() }
 
         populateSpendingTasks()
-        updateUI()
-        mainHandler.postDelayed(tickRunnable, 10000)
     }
 
     
     override fun onResume() {
         super.onResume()
+        mainHandler.removeCallbacks(tickRunnable)
+        mainHandler.post(tickRunnable)
         if (prefs.getBoolean("IN_APP_GRAYSCALE", false)) {
             val matrix = ColorMatrix().apply { setSaturation(0f) }
             val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) }
@@ -72,6 +76,11 @@ class MomentumActivity : Activity() {
         } else {
             window.decorView.setLayerType(View.LAYER_TYPE_NONE, null)
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mainHandler.removeCallbacks(tickRunnable)
     }
 
     override fun onDestroy() {
@@ -92,8 +101,11 @@ class MomentumActivity : Activity() {
     }
 
     private fun renderEarnedList() {
-        llEarned.removeAllViews()
         val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        val shown = earnedStr + "#" + prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+        if (shown == renderedEarned) return
+        renderedEarned = shown
+        llEarned.removeAllViews()
         if (earnedStr.isEmpty() && prefs.getInt("SLEEP_MOMENTUM_BONUS", 0) == 0) {
             llEarned.addView(TextView(this).apply { text = "No momentum reclaimed today."; setTextColor(Color.GRAY) })
             return

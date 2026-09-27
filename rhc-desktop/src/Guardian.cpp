@@ -36,6 +36,13 @@ namespace RHC {
         }
 
         int syncCounter = 0;
+        // One connection for the whole loop instead of opening the file every second. It holds no cache,
+        // so it still sees what the dashboard writes
+        RHC::DatabaseManager db("rhc_state.db");
+        // The foreground window's text is read again when the window or its title changes, and otherwise
+        // every 5 s: reading it asks the app for every element on screen, so once a second was costly
+        HWND lastScanHwnd = NULL; std::wstring lastScanTitle; std::string lastScannedText;
+        auto lastScanAt = std::chrono::steady_clock::now();
         while (true) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             
@@ -47,7 +54,6 @@ namespace RHC {
 
             if (syncCounter++ >= 60) { RHC::DashboardUI::SyncHostsFileFromDB(); syncCounter = 0; }
 
-            RHC::DatabaseManager db("rhc_state.db");
             int nfStart = db.getInt("NIGHTFALL_START", -1);
             int nfEnd = db.getInt("NIGHTFALL_END", -1);
             
@@ -106,7 +112,12 @@ namespace RHC {
                 SetTimer(g_hMainWindow, 1, 3000, NULL); continue; 
             }
 
-            std::string scannedText = RHC::UIAScanner::ScanForeground();
+            auto scanNow = std::chrono::steady_clock::now();
+            if (hwnd != lastScanHwnd || wtitle != lastScanTitle || scanNow - lastScanAt >= std::chrono::seconds(5)) {
+                lastScannedText = RHC::UIAScanner::ScanForeground();
+                lastScanHwnd = hwnd; lastScanTitle = wtitle; lastScanAt = scanNow;
+            }
+            const std::string& scannedText = lastScannedText;
             if (g_DebugMode) {
                 std::cout << "\n[SCAN] Active App: " << u8Exe << std::endl;
                 std::cout << "[SCAN] Window Title: " << RHC::Utils::wstring_to_utf8(wtitle) << std::endl;

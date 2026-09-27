@@ -59,8 +59,12 @@ internal fun MainActivity.loadLeaderboard() {
 internal fun MainActivity.renderEarnedList() {
     val activity = this
     val llEarned = findViewById<LinearLayout>(R.id.llEarnedList)
-    llEarned.removeAllViews()
     val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+    // Rebuilt only when what it shows has changed
+    val shown = earnedStr + "#" + prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+    if (shown == renderedEarned) return
+    renderedEarned = shown
+    llEarned.removeAllViews()
     if (earnedStr.isEmpty() && prefs.getInt("SLEEP_MOMENTUM_BONUS", 0) == 0) {
         llEarned.addView(TextView(activity).apply { text = "No momentum reclaimed today."; setTextColor(Color.GRAY) })
         return

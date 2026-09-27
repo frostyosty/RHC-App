@@ -69,6 +69,7 @@ internal fun GameActivity.updateBagScreen() {
         llBagActions?.addView(btn)
     }
     
+    updateRelicsUI()
     updateMarketUI()
 }
 
@@ -92,7 +93,7 @@ internal fun GameActivity.updateMarketUI() {
                     printShopLog("> 🤝 Sold $beastName for ${offerAmount}c!")
                 }
             }
-        }; marketContainer.addView(btnOffer)
+        }; marketContainer.addView(marketRow(btnOffer, beastName))
     }
 
     marketBeasts.forEach { beast ->
@@ -101,12 +102,28 @@ internal fun GameActivity.updateMarketUI() {
             setBackgroundResource(R.drawable.bg_btn_standard); setTextColor(Color.WHITE)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 16) }
             setOnClickListener { openBidDialog(beast) } 
-        }; marketContainer.addView(btnBuy)
+        }; marketContainer.addView(marketRow(btnBuy, beast.name))
     }
 
     if (marketBeasts.isEmpty() && activeOffers.isEmpty()) {
         marketContainer.addView(TextView(this).apply { text = "The market is empty right now."; setTextColor(Color.LTGRAY); textAlignment = View.TEXT_ALIGNMENT_CENTER })
     }
+}
+
+/** A market entry: its button, with the beast's spinning `turn` sprite on the right. */
+private fun GameActivity.marketRow(btn: Button, beastName: String): View {
+    btn.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+    val row = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL
+        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 16) }
+    }
+    row.addView(btn)
+    val spriteRes = SpriteUtils.resolveSpriteRes(this, beastName, "turn")
+    if (spriteRes != 0) row.addView(GifView(this).apply {
+        layoutParams = LinearLayout.LayoutParams(140, 140).apply { setMargins(16, 0, 0, 0) }
+        setGifResource(spriteRes)
+    })
+    return row
 }
 
 internal fun GameActivity.setupShop() {

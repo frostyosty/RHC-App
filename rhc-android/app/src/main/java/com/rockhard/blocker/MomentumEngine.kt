@@ -46,6 +46,30 @@ object MomentumEngine {
         return Math.max(0, (totalEarned + sleepBonus) - totalSpent - totalEvaporated)
     }
 
+    /**
+     * Milliseconds until evaporation next changes [calculateCurrentMomentum] (a minute goes every 5 minutes
+     * once an entry is 2 hours old), so a screen can refresh then instead of polling. Long.MAX_VALUE if never.
+     * Screen timing only: follow any change to the decay above.
+     */
+    fun msUntilNextChange(prefs: SharedPreferences): Long {
+        val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        if (earnedStr.isEmpty()) return Long.MAX_VALUE
+        val now = System.currentTimeMillis()
+        val decayStart = 2 * 60 * 60 * 1000L
+        val step = 5 * 60 * 1000L
+        var next = Long.MAX_VALUE
+        earnedStr.split(",").forEach { entry ->
+            val parts = entry.split("|")
+            if (parts.size == 3) {
+                val mins = parts[1].toInt()
+                val elapsed = now - parts[2].toLong()
+                val stepsDone = if (elapsed < decayStart) 0L else (elapsed - decayStart) / step
+                if (stepsDone < mins) next = Math.min(next, decayStart + (stepsDone + 1) * step - elapsed)
+            }
+        }
+        return next
+    }
+
     fun addEarnedMomentum(prefs: SharedPreferences, source: String, isAdultContent: Boolean) {
         val now = System.currentTimeMillis()
         val mins = if (isAdultContent) kotlin.random.Random.nextInt(15, 28) else kotlin.random.Random.nextInt(10, 20)

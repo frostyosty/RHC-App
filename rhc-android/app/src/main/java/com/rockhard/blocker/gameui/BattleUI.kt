@@ -164,6 +164,7 @@ internal fun GameActivity.updateBattleUI() {
         btn1.text = "THROW PUNCH"
         btn2.visibility = View.GONE; btn3?.visibility = View.GONE; infoRow.visibility = View.GONE
         actionRow?.visibility = View.GONE; btnAbandon.visibility = View.GONE
+        armLastStandStrike() // it comes for you on its own clock, however fast you punch
     } else if (party.isNotEmpty()) {
         val p = party[activePetIndex]
         btn1.text = p.move1; btn2.text = p.move2; btn3?.text = p.move3

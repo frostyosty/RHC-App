@@ -1,16 +1,19 @@
-import http.server, socketserver, sys, json, base64, os, io, re, urllib.request, urllib.parse, random
+import http.server, socketserver, sys, json, base64, os, io, re, urllib.request, urllib.parse, random, subprocess, threading
 from urllib.parse import urlparse, parse_qs
 from PIL import Image, ImageSequence
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'autogen'))
 import pixelkit  # noqa: E402  (same GIF writer as autogen: shared palette, index 0 transparent)
+import effects  # noqa: E402  (attack effects: the Attacks tab lists effects.MOVES)
 
 PORT = int(os.environ.get("STUDIO_PORT", 8080))
 SAVE_DIR = "../rhc-android/app/src/main/res/drawable-nodpi/"
 AUDIO_DIR = "../rhc-android/app/src/main/res/raw/"
 MODELS_FILE = "../rhc-android/app/src/main/java/com/rockhard/blocker/GameModels.kt"
 HAND_EDITS = "autogen/hand_edits.txt"
-EFFECTS = ["laser", "bite", "net"]  # autogen/effects.py EFFECTS  # autogen.py skips these unless --force
+AUTOGEN = "autogen/autogen.py"
+regen_lock = threading.Lock()  # one autogen run at a time: two would write the same GIFs
+BASE_EFFECTS = ["laser", "net", "sword_of_the_spirit"]  # shared effects that aren't one move's (net is the thrown item)
 
 
 def is_2x(frames):
@@ -44,12 +47,59 @@ def load_gif(path):
     return frames, durations, scale
 
 
+def hand_edits():
+    """GIF names saved from the Studio, which autogen.py skips unless --force."""
+    if not os.path.exists(HAND_EDITS): return set()
+    with open(HAND_EDITS) as f: return {l.strip() for l in f if l.strip() and not l.startswith('#')}
+
+
 def note_hand_edit(filename):
-    listed = set()
-    if os.path.exists(HAND_EDITS):
-        with open(HAND_EDITS) as f: listed = {l.strip() for l in f if l.strip() and not l.startswith('#')}
-    if filename not in listed:
+    if filename not in hand_edits():
         with open(HAND_EDITS, 'a') as f: f.write(filename + "\n")
+
+
+def forget_hand_edits(names):
+    """Drop names from hand_edits.txt (autogen has just redrawn them), keeping comments."""
+    if not os.path.exists(HAND_EDITS): return
+    with open(HAND_EDITS) as f: lines = f.readlines()
+    with open(HAND_EDITS, 'w') as f: f.writelines(l for l in lines if l.strip() not in names)
+
+
+def row_files(beast, effect=False):
+    """The GIF names in a matrix row (what /dashboard_data checks for)."""
+    if effect: return {f"fx_{beast}.gif"}
+    return {f"fx_{beast}.gif" if anim == 'fx' else f"spr_{beast}_{anim}.gif" for anim in ANIMATIONS}
+
+
+def attack_rows():
+    """The Attacks tab: one fx GIF per move (effects.MOVES), then the base effects.
+    Re-imports effects.py so a new move added there shows up without a restart."""
+    import importlib
+    importlib.reload(effects)
+    painted = hand_edits()
+    rows = [{'beast': effects.slug(m), 'move': m, 'family': fam, 'line': col} for m, (fam, col, _) in effects.MOVES.items()]
+    rows += [{'beast': b, 'move': f'({b})', 'family': 'base', 'line': ''} for b in BASE_EFFECTS]
+    for r in rows:
+        f = f"fx_{r['beast']}.gif"
+        r.update(file=f, exists=os.path.exists(os.path.join(SAVE_DIR, f)), hand_edited=[f] if f in painted else [])
+    return rows
+
+
+def regenerate(beast, force):
+    """Redraw one row (or a comma list of rows) with autogen.py. A fresh process, so edits to designs.py are picked up."""
+    cmd = [sys.executable, AUTOGEN, '--only', beast] + (['--force'] if force else [])
+    print(f"🔄 Regenerating {beast}{' (--force)' if force else ''}...", flush=True)
+    with regen_lock:
+        run = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', timeout=600,
+                             env=dict(os.environ, PYTHONIOENCODING='utf-8'))
+    log = (run.stdout + run.stderr).strip()
+    if run.returncode != 0:
+        return {'status': 'error', 'error': log.splitlines()[-1] if log else f'autogen exited {run.returncode}', 'log': log}
+    if force: forget_hand_edits(set().union(*(row_files(b) | row_files(b, effect=True) for b in beast.split(','))))
+    wrote = re.search(r'Wrote (\d+) GIFs', log)
+    return {'status': 'success', 'written': int(wrote.group(1)) if wrote else 0, 'log': log,
+            'kept': [l.split()[1] for l in log.splitlines() if l.startswith('✋')],
+            'warnings': [l for l in log.splitlines() if l.startswith('⚠️')]}
 
 # ADDED FRONT FACING ANIMATIONS
 ANIMATIONS =['idle', 'attack', 'hit', 'evade', 'faint', 'victory', 'explore', 'fx', 'walk_front', 'attack_front']
@@ -65,18 +115,16 @@ class SpriteHandler(http.server.SimpleHTTPRequestHandler):
             if os.path.exists(MODELS_FILE):
                 with open(MODELS_FILE, 'r') as f: beasts.extend([b.lower().replace(" ", "_") for b in re.findall(r'BeastDef\("([^"]+)"', f.read())])
             matrix =[]
+            painted = hand_edits()
             for beast in sorted(list(set(beasts))):
-                row = {'beast': beast, 'anims': {}}
+                row = {'beast': beast, 'anims': {}, 'hand_edited': sorted(row_files(beast) & painted)}
                 for anim in ANIMATIONS:
                     filename = f"spr_{beast}_{anim}.gif"
                     if anim == 'fx': filename = f"fx_{beast}.gif"
                     row['anims'][anim] = {'exists': os.path.exists(os.path.join(SAVE_DIR, filename)), 'file': filename}
                 matrix.append(row)
-            # attack effects (autogen/effects.py): one fx GIF each, no creature animations
-            for fx in EFFECTS:
-                matrix.append({'beast': fx, 'effect': True, 'anims': {'fx': {'exists': os.path.exists(os.path.join(SAVE_DIR, f"fx_{fx}.gif")), 'file': f"fx_{fx}.gif"}}})
             self.send_response(200); self.send_header('Content-type', 'application/json'); self.end_headers()
-            self.wfile.write(json.dumps({'matrix': matrix, 'animations': ANIMATIONS}).encode('utf-8'))
+            self.wfile.write(json.dumps({'matrix': matrix, 'animations': ANIMATIONS, 'attacks': attack_rows()}).encode('utf-8'))
         elif parsed_url.path.startswith('/drawable/'):
             filepath = os.path.join(SAVE_DIR, parsed_url.path.replace('/drawable/', ''))
             if os.path.exists(filepath):
@@ -146,6 +194,17 @@ class SpriteHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'status': 'error', 'error': str(e)}, 400); return
             note_hand_edit(filename)
             self.send_json({'status': 'success', 'file': filename, 'scale': scale})
+
+        elif self.path == '/regenerate':
+            data = json.loads(self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8'))
+            beast = str(data.get('beast', '')).lower()
+            if not re.fullmatch(r'[a-z0-9_]+(,[a-z0-9_]+)*', beast):
+                self.send_json({'status': 'error', 'error': f'bad row name {beast!r}'}, 400); return
+            try:
+                result = regenerate(beast, bool(data.get('force')))
+            except subprocess.TimeoutExpired:
+                result = {'status': 'error', 'error': 'autogen took over 10 minutes'}
+            self.send_json(result, 200 if result['status'] == 'success' else 500)
 
     def send_json(self, obj, code=200):
         self.send_response(code); self.send_header('Content-type', 'application/json'); self.end_headers()

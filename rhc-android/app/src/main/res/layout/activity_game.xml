@@ -5,6 +5,13 @@
 
     <include layout="@layout/game_nav_tabs"/>
 
+    <LinearLayout android:id="@+id/peaceControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="visible" android:layout_marginTop="8dp">
+        <Button android:id="@+id/btnDispatch" style="@style/AppButton.Accent" android:text="DISPATCH NETBEAST" android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
+        <!-- With 3D exploring on, the first frame of today's walk replaces the button: touch it to set off (world/WorldPreviewView) -->
+        <com.rockhard.blocker.world.WorldPreviewView android:id="@+id/worldPreview" android:layout_width="match_parent" android:layout_height="140dp"
+            android:layout_marginTop="8dp" android:layout_marginBottom="8dp" android:visibility="gone"/>
+    </LinearLayout>
+
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp">
         
         <!-- NEW: EXPLORE TAB NOW HAS THE SLIDER -->
@@ -28,12 +35,6 @@
     <LinearLayout android:id="@+id/qteContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp"/>
     <include layout="@layout/game_controls_battle"/>
 
-    <LinearLayout android:id="@+id/peaceControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="visible">
-        <Button android:id="@+id/btnDispatch" style="@style/AppButton.Accent" android:text="DISPATCH NETBEAST" android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
-        <!-- With 3D exploring on, the first frame of today's walk replaces the button: touch it to set off (world/WorldPreviewView) -->
-        <com.rockhard.blocker.world.WorldPreviewView android:id="@+id/worldPreview" android:layout_width="match_parent" android:layout_height="140dp"
-            android:layout_marginTop="8dp" android:layout_marginBottom="8dp" android:visibility="gone"/>
-    </LinearLayout>
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="50dp" android:orientation="horizontal" android:gravity="center_vertical">
         <Button android:id="@+id/btnExit" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="EXIT" style="@style/AppButton.Standard" android:backgroundTint="#333" android:textColor="#AAA" android:textSize="12sp" android:layout_marginBottom="0dp"/>

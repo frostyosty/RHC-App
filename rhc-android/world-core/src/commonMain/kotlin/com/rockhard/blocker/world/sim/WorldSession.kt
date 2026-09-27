@@ -18,9 +18,14 @@ interface WorldSession {
     fun update(elapsedSeconds: Double): List<WorldEvent>
     fun resolveEncounter(beastId: Int, outcome: EncounterOutcome)
     fun setCompanion(species: String?)
+    fun setCloak(beasts: Int)
     /** The battle rules resolved something: show it on whoever has [role] in your fight. */
     fun perform(role: Role, action: Action)
     fun effect(role: Role, fx: String)
+    /** Puts a visitor (a poacher, a boss) in your path a little way ahead (see World.summon); returns its id. */
+    fun summon(kind: EntityKind, species: String, size: Double): Int
+    /** The rival you're fighting sends out his netbeast [species] (see World.rivalSendOut). */
+    fun rivalSendOut(species: String)
 }
 
 /** Single-player: the world runs right here with a fixed-timestep accumulator. */
@@ -54,7 +59,13 @@ class LocalWorldSession(override val world: World, ownerId: String, companion: S
 
     override fun setCompanion(species: String?) = world.setCompanion(localPlayerId, species)
 
+    override fun setCloak(beasts: Int) = world.setCloak(localPlayerId, beasts)
+
     override fun perform(role: Role, action: Action) = world.perform(localPlayerId, role, action)
 
     override fun effect(role: Role, fx: String) = world.effect(localPlayerId, role, fx)
+
+    override fun summon(kind: EntityKind, species: String, size: Double) = world.summon(localPlayerId, kind, species, size)
+
+    override fun rivalSendOut(species: String) = world.rivalSendOut(localPlayerId, species)
 }

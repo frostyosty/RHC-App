@@ -14,6 +14,17 @@ sealed class ShieldAction {
 
 class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName: String) {
 
+    companion object {
+        /** True inside the Nightfall hours (NIGHTFALL_START..NIGHTFALL_END, minutes past midnight, may wrap midnight). */
+        fun isNightfall(prefs: SharedPreferences, cal: Calendar = Calendar.getInstance()): Boolean {
+            val nfStart = prefs.getInt("NIGHTFALL_START", -1)
+            val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
+            if (nfStart == -1 || nfEnd == -1 || nfStart == nfEnd) return false
+            val currentMins = (cal.get(Calendar.HOUR_OF_DAY) * 60) + cal.get(Calendar.MINUTE)
+            return if (nfStart < nfEnd) currentMins in nfStart..nfEnd else currentMins >= nfStart || currentMins <= nfEnd
+        }
+    }
+
     private val safeDomains = listOf("aistudio", "github", "codespaces")
     private val safePackages = listOf(
             "org.thoughtcrime.securesms", "com.whatsapp", "com.rockhard",
@@ -69,51 +80,7 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         "twitch" to "tv.twitch.android.app", "spotify" to "com.spotify.music"
     )
 
-    private fun getRedirect(triggerWord: String): String? {
-        val redirects = prefs.getString("REDIRECTS", "") ?: ""
-        for (r in redirects.split(",")) {
-            val parts = r.split("|")
-            if (parts.size >= 2) {
-                val trigger = parts[0].trim()
-                val dest = parts[1].trim()
-                if (triggerWord.trim().equals(trigger, ignoreCase = true) || triggerWord.trim().contains(trigger, ignoreCase = true)) {
-                    return dest
-                }
-            }
-        }
-        return null
-    }
-
-    private var lastPackage: String = ""
-    private var lastKnownUrl: String? = null
-
-    fun evaluate(packageName: String, className: String, rootNode: AccessibilityNodeInfo?, isAdminActive: Boolean): ShieldAction {
-        val lowerPkg = packageName.lowercase()
-        val lowerClass = className.lowercase()
-        
-        val rootPkg = rootNode?.packageName?.toString()?.lowercase() ?: ""
-        if (lowerPkg.contains("com.rockhard.blocker") || lowerPkg.contains("com.rockhard") ||
-            rootPkg.contains("com.rockhard.blocker") || rootPkg.contains("com.rockhard")) {
-            return ShieldAction.Allow
-        }
-
-        // Android's permission prompt while the app is asking for one (LocationEngine.requestPermission).
-        // Only the prompt's own package: Settings stays locked
-        if ((lowerPkg.contains("permissioncontroller") || lowerPkg.contains("packageinstaller")) &&
-            System.currentTimeMillis() < prefs.getLong("ALLOW_PERMISSION_PROMPT_UNTIL", 0L)) {
-            return ShieldAction.Allow
-        }
-
-        val isHomeLauncher = listOf("launcher", "trebuchet", "quickstep").any { lowerPkg.contains(it) || lowerClass.contains(it) } || 
-                             lowerPkg.contains("home") || 
-                             (lowerClass.contains("home") && (lowerPkg.contains("launcher") || lowerPkg.contains("home") || lowerPkg.contains("systemui")))
-        if (isHomeLauncher) return ShieldAction.Allow
-
-        // PERMANENT SAFE HAVENS: Productivity, Utilities, Banks, Navigation, and Security
-    val allowNotesAtNight =
-        prefs.getBoolean("NIGHTFALL_ALLOW_NOTES", true)
-
-    val notesApps = listOf(
+    private val notesApps = listOf(
         "notion",
         "evernote",
         "simplenote",
@@ -142,7 +109,7 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         "tasks"
     )
 
-    val permanentSafeHavens = listOf(
+    private val permanentSafeHavens = listOf(
         "calculator",
         "calc",
         "clock",
@@ -194,30 +161,96 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         "dashlane"
     )
 
+    private val homeLauncherWords = listOf("launcher", "trebuchet", "quickstep")
+    private val explicitUrlWords = listOf("sexy", "porn", "nude", "naked", "nsfw", "porno", "onlyfans", "xvideo", "pornhub", "rule34", "erotic")
+    private val nonAlphanumeric = Regex("[^a-zA-Z0-9]")
+    private val wholeWordRequired = listOf("ass", "butt", "strip", "sex", "tits", "fap", "milf", "anal", "breast", "breasts", "mature", "nude", "naked", "dick", "cock", "pussy", "cum")
+    // Fixed safe phrases are erased before any matching
+    private val safePhrases = listOf("chicken breast", "turkey breast", "breast cancer", "weather stripping", "power strip", "comic strip", "strip mall", "sex education", "fair sex")
+    // If a word is found, check the surrounding words. If they match these, it's safe.
+    private val safeContextMap = mapOf(
+        "breast" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
+        "breasts" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
+        "mature" to listOf("cheese", "cheddar", "tree", "forest", "nature", "audience", "rating", "market", "economy", "student", "age"),
+        "strip" to listOf("weather", "power", "comic", "mall", "led", "light", "bacon", "steak", "pork", "beef", "wood", "metal", "plastic", "stripes"),
+        "naked" to listOf("eye", "truth", "mole rat", "gun", "snake", "bike", "motorcycle", "short", "option"),
+        "nude" to listOf("lipstick", "makeup", "color", "colour", "shoe", "heels", "palette", "nails", "painting", "art", "museum")
+    )
+    private val searchEnginesAndWhitelist = listOf("google.", "bing.com", "duckduckgo", "yahoo.com", "gab.com", "search.brave", "ecosia.org", "qwant.com")
+
+    // The blocklists are split again only when their saved text changes
+    private var appListRaw: String? = null
+    private var appList: List<String> = emptyList()
+    private var webListRaw: String? = null
+    private var webList: List<String> = emptyList()
+
+    private fun blockedApps(): List<String> {
+        val raw = prefs.getString("BLOCKLIST_APP", "") ?: ""
+        if (raw != appListRaw) { appListRaw = raw; appList = raw.split(",").filter { it.isNotEmpty() } }
+        return appList
+    }
+
+    private fun blockedWebs(): List<String> {
+        val raw = prefs.getString("BLOCKLIST_WEB", "") ?: ""
+        if (raw != webListRaw) { webListRaw = raw; webList = raw.split(",").filter { it.isNotEmpty() } }
+        return webList
+    }
+
+    // Everything the text rules read. The same screen gives the same answer, so a screen that was
+    // allowed and hasn't changed since is allowed again without matching every word against it
+    private data class TextRulesInput(val pkg: String, val url: String?, val images: Int, val webList: String?, val text: String)
+    private var lastAllowedText: TextRulesInput? = null
+
+    private fun getRedirect(triggerWord: String): String? {
+        val redirects = prefs.getString("REDIRECTS", "") ?: ""
+        for (r in redirects.split(",")) {
+            val parts = r.split("|")
+            if (parts.size >= 2) {
+                val trigger = parts[0].trim()
+                val dest = parts[1].trim()
+                if (triggerWord.trim().equals(trigger, ignoreCase = true) || triggerWord.trim().contains(trigger, ignoreCase = true)) {
+                    return dest
+                }
+            }
+        }
+        return null
+    }
+
+    private var lastPackage: String = ""
+    private var lastKnownUrl: String? = null
+
+    fun evaluate(packageName: String, className: String, rootNode: AccessibilityNodeInfo?, isAdminActive: () -> Boolean): ShieldAction {
+        val lowerPkg = packageName.lowercase()
+        val lowerClass = className.lowercase()
+        
+        val rootPkg = rootNode?.packageName?.toString()?.lowercase() ?: ""
+        if (lowerPkg.contains("com.rockhard.blocker") || lowerPkg.contains("com.rockhard") ||
+            rootPkg.contains("com.rockhard.blocker") || rootPkg.contains("com.rockhard")) {
+            return ShieldAction.Allow
+        }
+
+        // Android's permission prompt while the app is asking for one (LocationEngine.requestPermission).
+        // Only the prompt's own package: Settings stays locked
+        if ((lowerPkg.contains("permissioncontroller") || lowerPkg.contains("packageinstaller")) &&
+            System.currentTimeMillis() < prefs.getLong("ALLOW_PERMISSION_PROMPT_UNTIL", 0L)) {
+            return ShieldAction.Allow
+        }
+
+        val isHomeLauncher = homeLauncherWords.any { lowerPkg.contains(it) || lowerClass.contains(it) } || 
+                             lowerPkg.contains("home") || 
+                             (lowerClass.contains("home") && (lowerPkg.contains("launcher") || lowerPkg.contains("home") || lowerPkg.contains("systemui")))
+        if (isHomeLauncher) return ShieldAction.Allow
+
+        // PERMANENT SAFE HAVENS: Productivity, Utilities, Banks, Navigation, and Security
+    val allowNotesAtNight =
+        prefs.getBoolean("NIGHTFALL_ALLOW_NOTES", true)
+
     if (permanentSafeHavens.any { lowerPkg.contains(it) }) {
         return ShieldAction.Allow
     }
 
     // Check Nightfall timing early for Notes logic.
-    val nfStart = prefs.getInt("NIGHTFALL_START", -1)
-    val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
-
-    var isNightfallActive = false
-
-    if (nfStart != -1 && nfEnd != -1 && nfStart != nfEnd) {
-        val cal = java.util.Calendar.getInstance()
-
-        val currentMins =
-            (cal.get(java.util.Calendar.HOUR_OF_DAY) * 60) +
-            cal.get(java.util.Calendar.MINUTE)
-
-        isNightfallActive =
-            if (nfStart < nfEnd) {
-                currentMins in nfStart..nfEnd
-            } else {
-                currentMins >= nfStart || currentMins <= nfEnd
-            }
-    }
+    val isNightfallActive = isNightfall(prefs)
 
     if (notesApps.any { lowerPkg.contains(it) }) {
         if (!isNightfallActive || allowNotesAtNight) {
@@ -237,8 +270,12 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
             GuardianService.addLog("📱 Focused App: " + lowerPkg + " (" + className + ")")
         }
 
+        // One walk of the screen gives its text, image count and (in browsers) the address bar. It's only
+        // done when a rule below needs it, because every walk calls into the app on screen
+        val page by lazy(LazyThreadSafetyMode.NONE) { ScannerUtils.scanPage(rootNode, findUrlBar = isBrowserApp) }
+
         if (isBrowserApp && rootNode != null) {
-            val currentUrl = ScannerUtils.extractUrlBarText(rootNode)?.lowercase()
+            val currentUrl = page.urlBarText?.lowercase()
                         if (currentUrl != null && currentUrl.isNotBlank() && currentUrl != lastKnownUrl) {
                             lastKnownUrl = currentUrl
                             GuardianService.addLog("🎯 Browser navigated to: " + currentUrl)
@@ -246,36 +283,12 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         }
         val urlBarText = lastKnownUrl
 
-                // --- EXTRACT PAGE TEXT EARLY FOR MULTI-LAYERED SCANNING ---
-                var lazyAllText: String? = null
-                fun getAllText(): String {
-                    if (rootNode == null) return ""
-                    if (lazyAllText == null) lazyAllText = ScannerUtils.extractAllText(rootNode)
-                    return lazyAllText!!
-                }
-                val lowerAllText = getAllText()
-
-                // Detect simplified Query-in-Omnibox (where Chrome hides the search URL and only shows query keywords)
-                val isQueryInOmnibox = urlBarText != null && !urlBarText.contains(".") && !urlBarText.contains("http")
-
-                // Google Search and Google Images layout identification checks
-                val isGoogleImages = (urlBarText != null && urlBarText.contains("google.") && urlBarText.contains("tbm=isch")) ||
-                                     (isBrowserApp && isQueryInOmnibox && lowerAllText.contains("google") && (lowerAllText.contains("images") || lowerAllText.contains("图片")))
-
-                val isGoogleSearch = (urlBarText != null && urlBarText.contains("google.") && urlBarText.contains("/search")) ||
-                                     (isBrowserApp && isQueryInOmnibox && lowerAllText.contains("google") && !lowerAllText.contains("images") && !lowerAllText.contains("图片"))
-
-                val isBingImages = (urlBarText != null && urlBarText.contains("bing.com") && urlBarText.contains("/images"))
-                val isBingSearch = (urlBarText != null && urlBarText.contains("bing.com") && urlBarText.contains("/search"))
-
-                val isDuckImages = (urlBarText != null && urlBarText.contains("duckduckgo.com") && (urlBarText.contains("ia=images") || urlBarText.contains("iax=images")))
-                val isDuckSearch = (urlBarText != null && urlBarText.contains("duckduckgo.com") && (urlBarText.contains("?q=") || urlBarText.contains("&q=")))
+        val lowerAllText by lazy(LazyThreadSafetyMode.NONE) { page.text }
 
         if (isBrowserApp && urlBarText != null) {
             val cleanUrl = urlBarText.trim()
-            val explicitWords = listOf("sexy", "porn", "nude", "naked", "nsfw", "porno", "onlyfans", "xvideo", "pornhub", "rule34", "erotic")
-            val hasExplicit = explicitWords.any { cleanUrl.contains(it) } || 
-                              cleanUrl.split(Regex("[^a-zA-Z0-9]")).contains("sex")
+            val hasExplicit = explicitUrlWords.any { cleanUrl.contains(it) } || 
+                              cleanUrl.split(nonAlphanumeric).contains("sex")
             
             if (hasExplicit) {
                 GuardianService.addLog("Explicit block: matched query '" + cleanUrl + "'")
@@ -285,16 +298,7 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
 
 
         if (!isGodModeActive) {
-            val nfStart = prefs.getInt("NIGHTFALL_START", -1)
-            val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
-            var isNightfall = false
-            if (nfStart != -1 && nfEnd != -1 && nfStart != nfEnd) {
-                val cal = Calendar.getInstance()
-                val currentMins = (cal.get(Calendar.HOUR_OF_DAY) * 60) + cal.get(Calendar.MINUTE)
-                isNightfall = if (nfStart < nfEnd) { currentMins in nfStart..nfEnd } else { currentMins >= nfStart || currentMins <= nfEnd }
-            }
-
-            if (isNightfall) {
+            if (isNightfallActive) {
                 val allowedCallsOnly = listOf("dialer", "contacts", "telecom", "android.phone", "keyboard", "inputmethod", "incallui", "systemui", "swiftkey", "honeyboard", "gboard", "touchpal", "sogou", "baidu")
                 if (!allowedCallsOnly.any { lowerPkg.contains(it) || lowerClass.contains(it) }) {
                     return ShieldAction.Block("Nightfall Mode: Restricted App!", false)
@@ -320,7 +324,7 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
                 val videoPkgs = listOf("youtube", "netflix", "hulu", "twitch", "primevideo", "disney", "max", "crunchyroll", "mxtech.videoplayer")
                 if (videoPkgs.any { lowerPkg.contains(it) || lowerClass.contains(it) }) return ShieldAction.Block("No Videos Mode: Video App Blocked", false)
 
-                val fullText = getAllText()
+                val fullText = lowerAllText
                 val isGab = lowerPkg.contains("gab") || (urlBarText != null && urlBarText.contains("gab")) || fullText.contains("gab.com") || fullText.contains("gab social")
                 
                 if (!isGab) {
@@ -391,12 +395,11 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         if (rootNode == null) return ShieldAction.Allow
 
         if (Config.UNINSTALL_PROTECTION_ENABLED && isGodModeActive) {
-            val tamperAction = checkAntiTamperNative(packageName, className, rootNode, isAdminActive)
+            val tamperAction = checkAntiTamperNative(packageName, className, rootNode, isAdminActive())
             if (tamperAction is ShieldAction.Block) return tamperAction
         }
 
-        val blockedApps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
-        val triggeredAppEntry = blockedApps.firstOrNull { blockEntry ->
+        val triggeredAppEntry = blockedApps().firstOrNull { blockEntry ->
             val parts = blockEntry.split("|")
             val targetPkg = parts.getOrNull(0)?.trim()?.lowercase() ?: ""
             val displayName = parts.getOrNull(3)?.trim()?.lowercase() ?: targetPkg
@@ -422,30 +425,17 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
             return ShieldAction.Allow
         }
 
-        // Already declared early in evaluate()
+        val blockedWebs = blockedWebs()
+        val textInput = TextRulesInput(lowerPkg, urlBarText, page.imageCount, webListRaw, lowerAllText)
+        if (textInput == lastAllowedText) return ShieldAction.Allow
 
-        if (safeDomains.any { lowerAllText.contains(it) }) return ShieldAction.Allow
+        if (safeDomains.any { lowerAllText.contains(it) }) { lastAllowedText = textInput; return ShieldAction.Allow }
 
-        val wholeWordRequired = listOf("ass", "butt", "strip", "sex", "tits", "fap", "milf", "anal", "breast", "breasts", "mature", "nude", "naked", "dick", "cock", "pussy", "cum")
-        
         // --- PRE-PROCESSING: SAFE PHRASES ---
-        // Completely erases fixed safe phrases before any logic runs
-        val safePhrases = listOf("chicken breast", "turkey breast", "breast cancer", "weather stripping", "power strip", "comic strip", "strip mall", "sex education", "fair sex")
         var sanitizedText = lowerAllText
         for (phrase in safePhrases) {
             sanitizedText = sanitizedText.replace(phrase, "***")
         }
-
-        // --- CONTEXTUAL PROXIMITY MAPPING ---
-        // If a word is found, check the surrounding words. If they match these, it's safe.
-        val safeContextMap = mapOf(
-            "breast" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
-            "breasts" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
-            "mature" to listOf("cheese", "cheddar", "tree", "forest", "nature", "audience", "rating", "market", "economy", "student", "age"),
-            "strip" to listOf("weather", "power", "comic", "mall", "led", "light", "bacon", "steak", "pork", "beef", "wood", "metal", "plastic", "stripes"),
-            "naked" to listOf("eye", "truth", "mole rat", "gun", "snake", "bike", "motorcycle", "short", "option"),
-            "nude" to listOf("lipstick", "makeup", "color", "colour", "shoe", "heels", "palette", "nails", "painting", "art", "museum")
-        )
 
         fun isMatchValid(word: String, index: Int, text: String): Boolean {
             val isWholeWord = if (wholeWordRequired.contains(word)) {
@@ -484,15 +474,12 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         }
         if (foundHard != null) return ShieldAction.Block("Content Guard: " + foundHard, true, getRedirect(foundHard))
 
-        val searchEnginesAndWhitelist = listOf("google.", "bing.com", "duckduckgo", "yahoo.com", "gab.com", "search.brave", "ecosia.org", "qwant.com")
-        
         val isOnWhitelistedSite = urlBarText != null && searchEnginesAndWhitelist.any { urlBarText.contains(it) }
 
         val isSearchEngineUrl = urlBarText != null && isOnWhitelistedSite && 
                                (urlBarText.contains("/search") || urlBarText.contains("?q=") || urlBarText.contains("&q=") || 
                                 !urlBarText.contains(".") || urlBarText.contains(" "))
 
-        val blockedWebs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
         for (entry in blockedWebs) {
             val parts = entry.split("|")
             val targetDomain = parts.getOrNull(0)?.lowercase()?.trim() ?: continue
@@ -552,7 +539,7 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         }
     }
 
-    val imageCount = if (rootNode != null) ScannerUtils.countImages(rootNode) else 0
+    val imageCount = page.imageCount
         val softThreshold = if (imageCount >= 8) 2 else 4
 
         var softCount = 0
@@ -575,6 +562,7 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
             return ShieldAction.Block("Content Guard: " + caughtWords.distinct().joinToString(" & ") + " (detected " + softCount + " times)", true)
         }
 
+        lastAllowedText = textInput
         return ShieldAction.Allow
     }
 

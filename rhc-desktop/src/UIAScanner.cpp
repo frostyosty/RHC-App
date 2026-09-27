@@ -19,6 +19,14 @@ namespace RHC {
                 if (FAILED(hr)) return result; // Fallback to just scanning window title
             }
 
+            // One cross-process request that brings back every element's name, instead of a call into the
+            // app per element. Mode None: just the cached names, not live elements
+            static IUIAutomationCacheRequest* pNameCache = NULL;
+            if (pAutomation != NULL && pNameCache == NULL && SUCCEEDED(pAutomation->CreateCacheRequest(&pNameCache))) {
+                pNameCache->AddProperty(UIA_NamePropertyId);
+                pNameCache->put_AutomationElementMode(AutomationElementMode_None);
+            }
+
             if (pAutomation != NULL) {
                 IUIAutomationElement* pWindow = NULL;
                 HRESULT hr = pAutomation->ElementFromHandle(hwnd, &pWindow);
@@ -27,15 +35,17 @@ namespace RHC {
                     pAutomation->CreateTrueCondition(&pCondition);
                     
                     IUIAutomationElementArray* pArray = NULL; 
-                    pWindow->FindAll(TreeScope_Descendants, pCondition, &pArray); 
+                    if (pNameCache) pWindow->FindAllBuildCache(TreeScope_Descendants, pCondition, pNameCache, &pArray);
+                    else pWindow->FindAll(TreeScope_Descendants, pCondition, &pArray);
                     
                     if (pArray != NULL) {
                         int count = 0; pArray->get_Length(&count);
                         for (int i = 0; i < count; i++) {
                             IUIAutomationElement* pChild = NULL;
                             if (SUCCEEDED(pArray->GetElement(i, &pChild))) {
-                                BSTR name;
-                                if (SUCCEEDED(pChild->get_CurrentName(&name)) && name != NULL) {
+                                BSTR name = NULL;
+                                HRESULT hrName = pNameCache ? pChild->get_CachedName(&name) : pChild->get_CurrentName(&name);
+                                if (SUCCEEDED(hrName) && name != NULL) {
                                     int len = SysStringLen(name); 
                                     int size_needed = WideCharToMultiByte(CP_UTF8, 0, name, len, NULL, 0, NULL, NULL);
                                     std::string strTo(size_needed, 0); 

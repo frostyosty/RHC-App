@@ -7,6 +7,12 @@
     <!-- No leave button: once you set off you walk until the timer runs out. -->
     <com.rockhard.blocker.world.WorldView android:id="@+id/worldView" android:layout_width="match_parent" android:layout_height="match_parent"/>
 
+    <!-- While you walk: your cages in the order they'll be thrown (top first). Drag one
+         up or down to change the order (world/WorldCages.kt). -->
+    <LinearLayout android:id="@+id/worldWalkCages" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="start|center_vertical" android:layout_marginStart="6dp"
+        android:orientation="vertical" android:visibility="gone"/>
+
     <!-- Fights happen right here in the world (world/WorldFight.kt): cages to throw
          first, then the moves you shout at your netbeast, down the left edge. -->
     <LinearLayout android:id="@+id/worldFightPanel" android:layout_width="148dp" android:layout_height="wrap_content"

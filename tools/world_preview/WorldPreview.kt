@@ -278,6 +278,65 @@ fun main(args: Array<String>) {
     }
     check(me.downTicks == 0 && me.moving) { "you should be up and walking" }
 
+    // Visitors (WorldVisitors.kt in the app): a boss and a poacher put in your path. Walk straight
+    // on and you walk into them; they stand and wait and never come at you. The poacher throws his
+    // own cages, one netbeast at a time, and walks off beaten; a boss you lose to waits again.
+    run {
+        val vw = World(map); vw.entities.values.removeAll { it.kind == EntityKind.BEAST } // just the visitors
+        val vs = LocalWorldSession(vw, "v", "Cacheon", 180); val vme = vw.entities[vs.localPlayerId]!!
+        vme.x = map.wrap(z.x - 14); vme.y = z.y; vme.angle = 0.0; vme.grace = 0
+        val vr = TerrainRenderer(200, 300, map)
+        val vlog = mutableListOf<String>()
+        var vt = 0
+        fun step(ticks: Int, each: (WorldEvent) -> Unit = {}) = repeat(ticks) { for (e in vs.update(World.DT)) { vlog += "t=$vt ${e::class.simpleName}"; each(e) }; vt++ }
+        fun shot(file: String) { repeat(3) { vr.render(vw, vme, 0, Palette.DAY, src, vt * 33L) }; save(vr, "$out/$file.png") }
+        /** Walks on without steering until you square up to [id]; it mustn't have moved. Returns the seconds it took. */
+        fun walkInto(id: Int): Double {
+            val v = vw.entities[id]!!; val x0 = v.x; val y0 = v.y; val t0 = vt
+            var met = false
+            step(30 * 3); shot(if (v.kind == EntityKind.RIVAL) "visitor_poacher" else "visitor_boss") // on the way in
+            while (!met && vt - t0 < 30 * 12) step(1) { e -> if (e is WorldEvent.Encounter) { check(e.beastId == id) { "squared up to ${e.species}" }; met = true } }
+            check(met) { "walking straight on never reached the ${v.species}: $vlog" }
+            check(v.x == x0 && v.y == y0) { "the ${v.species} moved toward you" }
+            return (vt - t0) / 30.0
+        }
+
+        val boss = vs.summon(EntityKind.BEAST, "Titan", 1.5)
+        val bossIn = walkInto(boss)
+        vs.throwCage("Cacheon"); step(60); shot("visitor_boss_fight")
+        // lost: you walk on, and it waits there again without squaring up to you straight away
+        vs.resolveEncounter(boss, EncounterOutcome.PLAYER_BEATEN)
+        step(30 * 6) { e -> check(e !is WorldEvent.Encounter) { "the boss squared up again straight after" } }
+        check(vw.entities[boss]?.state == EntityState.WAIT && vme.state == EntityState.WALKING)
+
+        val poacher = vs.summon(EntityKind.RIVAL, "Poacher", 0.7)
+        val poacherIn = walkInto(poacher)
+        var outs = 0
+        vs.rivalSendOut("Bytelet"); step(60) { e -> if (e is WorldEvent.RivalOut) outs++ }
+        val first = checkNotNull(vw.roleEntity(vme.id, Role.BEAST)) { "his netbeast didn't come out: $vlog" }
+        check(outs == 1 && first.species == "Bytelet") { "the wrong netbeast came out: $vlog" }
+        vs.throwCage("Cacheon"); step(60)
+        check(vw.roleEntity(vme.id, Role.COMPANION) != null) { "yours didn't come out: $vlog" }
+        step(60); shot("poacher_duel")
+        val pr = vw.entities[poacher]!!
+        check(map.distance(vme.x, vme.y, pr.x, pr.y) > map.distance(vme.x, vme.y, first.x, first.y) + 1) { "the poacher should hang back behind his netbeast" }
+        // his first falls and lies there; he sends out the next where it fell
+        vs.perform(Role.BEAST, Action.FAINT); step(30)
+        vs.rivalSendOut("Chirplet"); step(60) { e -> if (e is WorldEvent.RivalOut) outs++ }
+        val second = checkNotNull(vw.roleEntity(vme.id, Role.BEAST)) { "his second netbeast didn't come out: $vlog" }
+        check(outs == 2 && second.species == "Chirplet" && first.state == EntityState.GONE) { "his first should lie there and the second be out: $vlog" }
+        step(30); shot("poacher_second")
+        vs.perform(Role.BEAST, Action.FAINT); step(30)
+        vs.resolveEncounter(poacher, EncounterOutcome.BEAST_DEFEATED)
+        step(30)
+        check(pr.state == EntityState.LEAVE && vme.state == EntityState.WALKING)
+        val vsnap = vw.snapshot(); val w3 = World(map); w3.applySnapshot(vsnap); check(w3.snapshot() == vsnap) { "visitors in a snapshot" }
+        step(World.LEAVE_TICKS + World.FADE_TICKS)
+        check(listOf(poacher, first.id, second.id).none { it in vw.entities }) { "the poacher and his netbeasts should be gone" }
+        println("visitors: walked into the boss ${"%.1f".format(bossIn)}s and the poacher ${"%.1f".format(poacherIn)}s after they appeared; " +
+            "the poacher sent out $outs and walked off; events $vlog")
+    }
+
     // the horizon all the way round from that open spot, by day and at night (8 views, north first)
     val pano = BufferedImage(8 * 120, 2 * 160, BufferedImage.TYPE_INT_ARGB)
     val pr = TerrainRenderer(120, 160, map)
@@ -416,11 +475,13 @@ fun main(args: Array<String>) {
                 if (m.delta(me2.x, b.x) * hx + m.delta(me2.y, b.y) * hy <= 0) behind++
             }
             is WorldEvent.CompanionOut -> outs++
+            is WorldEvent.RivalOut -> {}
             is WorldEvent.CoinPicked -> {
                 coins++
                 val c = m.coins[e.coin]
                 check(m.distance(me2.x, me2.y, c.x, c.y) <= World.COIN_REACH + 1e-9) { "picked up a coin from afar" }
             }
+            is WorldEvent.SlippedPast -> {}
             is WorldEvent.ExplorationOver -> over = true
         }
     }

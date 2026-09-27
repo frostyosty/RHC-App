@@ -29,6 +29,9 @@
                     <Button android:id="@+id/btnBuyLargeHp" android:layout_width="0dp" android:layout_height="45dp" android:layout_weight="1" android:text="BUY LG HP POT (600c)" style="@style/AppButton.Standard" android:backgroundTint="#7B1FA2" android:textSize="9sp" android:layout_marginStart="4dp"/>
                 </LinearLayout>
                 
+                <!-- RELICS: bought once, then equip/unequip (Relics.kt) -->
+                <LinearLayout android:id="@+id/llRelics" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="8dp"/>
+
                 <Button android:id="@+id/btnGraveyard" android:layout_width="match_parent" android:layout_height="45dp" android:text="RESURRECT FALLEN ENEMY (1000c)" style="@style/AppButton.Accent" android:backgroundTint="#D32F2F" android:textSize="10sp" android:layout_marginBottom="16dp" android:visibility="gone"/>
                 <LinearLayout android:id="@+id/marketContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
             </LinearLayout>

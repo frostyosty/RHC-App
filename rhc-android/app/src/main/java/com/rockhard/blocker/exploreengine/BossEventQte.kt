@@ -3,6 +3,14 @@ package com.rockhard.blocker
 import android.view.View
 import android.widget.Button
 
+/** The invading boss as a battle enemy, the same on the battle screen and in the 3D Wilds (WorldVisitors.kt). */
+internal fun GameActivity.makeEventBoss(): Netbeast {
+    val bossName = prefs.getString("EVENT_BOSS_NAME", "Unknown Titan") ?: "Unknown Titan"
+    // Generate the massive boss! (FIX: 19 Variables!)
+    val pl = 1500 + (party.size * 200)
+    return Netbeast("[Ephemeral] [Elusive] [Colossal] $bossName", "EventBoss", pl, pl, "Cataclysm", "Obliterate", "Annihilate", 0L, 0, 0, 0, false, "None", 0, 0, 0, 0, "None", 0)
+}
+
 internal fun GameActivity.spawnEventBossQTE() {
     val bossName = prefs.getString("EVENT_BOSS_NAME", "Unknown Titan") ?: "Unknown Titan"
     val weakness = prefs.getString("EVENT_WEAKNESS", "Cacheon") ?: "Cacheon"
@@ -27,11 +35,7 @@ internal fun GameActivity.spawnEventBossQTE() {
         setOnClickListener {
             qteContainer.removeView(qteView)
             
-            // Generate the massive boss! (FIX: 19 Variables!)
-            val pl = 1500 + (party.size * 200) 
-            val eventBoss = Netbeast("[Ephemeral] [Elusive] [Colossal] $bossName", "EventBoss", pl, pl, "Cataclysm", "Obliterate", "Annihilate", 0L, 0, 0, 0, false, "None", 0, 0, 0, 0, "None", 0)
-            
-            currentEnemy = eventBoss
+            currentEnemy = makeEventBoss()
             isWildBattle = true
             battleOver = false
             setUIState("BATTLE")

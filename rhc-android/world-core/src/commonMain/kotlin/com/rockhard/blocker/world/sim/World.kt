@@ -12,9 +12,9 @@ import kotlin.random.Random
 // Pure Kotlin (no Android imports) so a future server can run the same sim.
 // Trig comes from DetMath, which is bit-identical on every platform.
 
-enum class EntityKind { PLAYER, BEAST, CAGE, COMPANION }
+enum class EntityKind { PLAYER, BEAST, CAGE, COMPANION, RIVAL }
 
-enum class EntityState { WALKING, PATROL, PAUSE, SHY, RETURN, ENGAGED, THROWN, LANDED, GONE, DONE }
+enum class EntityState { WALKING, PATROL, PAUSE, SHY, RETURN, ENGAGED, THROWN, LANDED, GONE, DONE, WAIT, LEAVE }
 
 /**
  * A one-off pose the host asks for when the battle rules resolve something
@@ -32,7 +32,9 @@ enum class Role { PLAYER, BEAST, COMPANION }
  * Anything in the world. Players are keyed by [ownerId] (a device/account id
  * once multiplayer exists); beasts belong to a [zoneId]; a CAGE is a thrown
  * cage in flight or on the ground; a COMPANION is the player's netbeast that
- * came out of it.
+ * came out of it. A RIVAL is a person with netbeasts of their own (a poacher);
+ * a rival's netbeasts, and a boss, are beasts with no zone (-1). Those are
+ * visitors: see [World.summon].
  */
 class Entity(
     val id: Int,
@@ -56,6 +58,7 @@ class Entity(
     var companion: String? = null   // player: the netbeast that's out (or the lead, before a fight)
     var exploreTicks = 0        // player: auto-walk time left
     var grace = 0               // player: ticks before beasts can engage again
+    var cloak = 0               // player: beasts that will still let you walk past (Cloak of Christ)
     var downTicks = 0           // player: knocked flat after losing a fight, picking yourself up
     var recoverTicks = 0        // player: after a fight you walk on slowly, back to full pace when this runs out
 
@@ -94,8 +97,12 @@ sealed class WorldEvent {
     data class Encounter(val playerId: Int, val beastId: Int, val species: String, val stage: Int) : WorldEvent()
     /** A thrown netbeast is out of its cage and facing the wild one. */
     data class CompanionOut(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
+    /** The rival's netbeast [beastId] is out of its cage: it's the one the player fights now. */
+    data class RivalOut(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
     /** The player walked into coin [coin] (an index into WorldMap.coins): it's worth one coin. */
     data class CoinPicked(val playerId: Int, val coin: Int) : WorldEvent()
+    /** A beast would have squared up to a cloaked player, but never noticed them. */
+    data class SlippedPast(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
     /** The player's exploration timer ran out. */
     data class ExplorationOver(val playerId: Int) : WorldEvent()
 }
@@ -139,6 +146,14 @@ class World(val map: WorldMap) {
         const val GRACE_TICKS = 3 * TICK_HZ
         const val CAGE_FLIGHT_TICKS = 15   // 0.5s arc
         const val CAGE_OPEN_TICKS = 30     // 1s on the ground before the netbeast emerges
+        const val NETBEAST_SIZE = 0.65     // a netbeast out of its cage, yours or a rival's
+
+        // Visitors (a poacher, a boss) wait this far ahead of you: a few seconds' walk, far
+        // enough to see them coming out of the haze
+        const val SUMMON_AHEAD = 12.0
+        const val RIVAL_LAND = 0.35       // a rival's first cage lands this share of the way to you
+        const val LEAVE_SPEED = 1.2       // tiles/s: a visitor walking off, under your pace
+        const val LEAVE_TICKS = 8 * TICK_HZ
 
         // The fight's circles: you and the beast before a cage, then the two beasts, with you further out
         const val STANDOFF_R = 1.2
@@ -147,7 +162,8 @@ class World(val map: WorldMap) {
         const val STANDOFF_SPEED = 0.8    // tiles/s along the circle
         const val WATCH_SPEED = 0.7
         const val DUEL_SPEED = 0.4
-        const val FADE_TICKS = 20         // a fainted beast lingers this long after the fight
+        const val FADE_TICKS = 8 * TICK_HZ // a fainted beast lies there this long after the fight
+        const val BODY_TICKS = 8 * TICK_HZ // ...and so does a fallen netbeast of yours, counted from the fight's end
         // Nobody circles one way for long (it's dizzying): 3s plus up to 3s, then everyone
         // slows to a stop and circles back the other way
         const val SWAP_MIN_TICKS = 3 * TICK_HZ
@@ -201,6 +217,9 @@ class World(val map: WorldMap) {
         return e
     }
 
+    /** How many beasts will let this player walk past unseen (the Cloak of Christ). */
+    fun setCloak(playerId: Int, beasts: Int) { entities[playerId]?.cloak = beasts }
+
     fun setCompanion(playerId: Int, companion: String?) { entities[playerId]?.companion = companion }
 
     fun removePlayer(id: Int) { entities.remove(id) }
@@ -222,6 +241,23 @@ class World(val map: WorldMap) {
         e.state = EntityState.PATROL
     }
 
+    /**
+     * Puts a visitor in [playerId]'s path, [ahead] tiles straight in front of
+     * them: a RIVAL (a poacher, with netbeasts of his own) or a BEAST from no
+     * territory (a boss). It stands there watching the player and never moves
+     * toward them; catch it in front of you, as with any beast, and you square
+     * up. Keep walking and you can't miss it; steer round it and you've left it.
+     * Uses no RNG. Returns its id.
+     */
+    fun summon(playerId: Int, kind: EntityKind, species: String, size: Double, ahead: Double = SUMMON_AHEAD): Int {
+        require(kind == EntityKind.RIVAL || kind == EntityKind.BEAST)
+        val p = entities[playerId] ?: return -1
+        val v = Entity(nextId++, kind, map.wrap(p.x + cos(p.angle) * ahead), map.wrap(p.y + sin(p.angle) * ahead), p.angle + PI, species, size)
+        v.state = EntityState.WAIT; v.link = p.id
+        entities[v.id] = v
+        return v.id
+    }
+
     /** Advance one tick. [inputs] maps player entity id -> that player's input. */
     fun step(inputs: Map<Int, PlayerInput>): List<WorldEvent> {
         tick++
@@ -232,8 +268,10 @@ class World(val map: WorldMap) {
         for (p in players) stepPlayer(p, inputs[p.id] ?: PlayerInput(), events)
         for (e in entities.values.toList()) {
             when (e.kind) {
-                EntityKind.BEAST -> stepBeast(e, players, events)
+                EntityKind.BEAST -> if (e.zoneId < 0) stepVisitor(e, events) else stepBeast(e, players, events)
+                EntityKind.RIVAL -> stepVisitor(e, events)
                 EntityKind.CAGE -> stepCage(e, events)
+                EntityKind.COMPANION -> if (e.state == EntityState.GONE) { stepBody(e); continue }
                 else -> {}
             }
             if (e.actionTicks > 0 && e.action != Action.FAINT && --e.actionTicks == 0) e.action = Action.NONE
@@ -413,7 +451,12 @@ class World(val map: WorldMap) {
         }
         if (near != null) {
             val ahead = (map.delta(near.x, b.x) * cos(near.angle) + map.delta(near.y, b.y) * sin(near.angle)) / nearD.coerceAtLeast(1e-6)
-            if (nearD < ENGAGE_RANGE && ahead > ENGAGE_CONE && near.grace <= 0) { engage(near, b, events); return }
+            if (nearD < ENGAGE_RANGE && ahead > ENGAGE_CONE && near.grace <= 0) {
+                if (near.cloak <= 0) { engage(near, b, events); return }
+                // cloaked: it never notices you, and you walk straight past
+                near.cloak--; near.grace = GRACE_TICKS
+                events += WorldEvent.SlippedPast(near.id, b.id, b.species)
+            }
             b.state = EntityState.SHY; b.link = near.id
         } else if (b.state == EntityState.SHY) { b.state = EntityState.RETURN; b.targetX = z.x; b.targetY = z.y }
 
@@ -447,6 +490,63 @@ class World(val map: WorldMap) {
         val sx = -hy * side + vx / d * 0.5; val sy = hx * side + vy / d * 0.5
         val n = hypot(sx, sy)
         return sx / n to sy / n
+    }
+
+    /**
+     * A visitor ([summon]) waits where it was put, turned to watch the player it
+     * came for, until they catch it in front of them; the Cloak of Christ doesn't
+     * hide you from one, since you came for it. After a fight a fainted one fades
+     * and one that's leaving walks off, and then it's gone for good.
+     */
+    private fun stepVisitor(v: Entity, events: MutableList<WorldEvent>) {
+        val p = entities[v.link]
+        if (p == null && v.state != EntityState.GONE) { entities.remove(v.id); return }
+        when (v.state) {
+            EntityState.WAIT -> {
+                v.moving = false
+                face(v, p!!.x, p.y)
+                if (p.state != EntityState.WALKING || p.grace > 0) return
+                val d = map.distance(v.x, v.y, p.x, p.y)
+                val ahead = (map.delta(p.x, v.x) * cos(p.angle) + map.delta(p.y, v.y) * sin(p.angle)) / d.coerceAtLeast(1e-6)
+                if (d < ENGAGE_RANGE && ahead > ENGAGE_CONE) engage(p, v, events)
+            }
+            EntityState.ENGAGED -> if (v.kind == EntityKind.RIVAL) stepEngagedRival(v, p!!) else stepEngagedBeast(v)
+            EntityState.LEAVE -> {
+                val dx = map.delta(p!!.x, v.x); val dy = map.delta(p.y, v.y); val d = hypot(dx, dy).coerceAtLeast(1e-6)
+                moveToward(v, map.wrap(v.x + dx / d * 2), map.wrap(v.y + dy / d * 2), LEAVE_SPEED)
+                if (--v.timer <= 0) entities.remove(v.id)
+            }
+            EntityState.GONE -> {
+                if (v.actionTicks > 0 && --v.actionTicks == 0) v.action = Action.NONE // the fainted body fades
+                if (--v.timer <= 0) entities.remove(v.id)
+            }
+            else -> {}
+        }
+    }
+
+    /**
+     * The rival in a fight: squared up to you on your circle until he throws a
+     * cage, watching it while it flies, then hanging back behind his netbeast,
+     * across the fight from you (easing there, so he never jumps).
+     */
+    private fun stepEngagedRival(r: Entity, p: Entity) {
+        val cage = entities.values.firstOrNull { it.kind == EntityKind.CAGE && it.link == r.id }
+        val beast = entities[p.link]?.takeIf { it.kind == EntityKind.BEAST }
+        r.foe = p.id
+        when {
+            cage != null -> { r.moving = false; face(r, cage.x, cage.y) }
+            beast == null -> {
+                r.orbitX = p.orbitX; r.orbitY = p.orbitY; r.orbitR = p.orbitR; r.orbitA = p.orbitA + PI
+                place(r); face(r, p.x, p.y); r.moving = p.moving
+            }
+            else -> {
+                val tx = map.wrap(p.orbitX - cos(p.orbitA) * WATCH_R); val ty = map.wrap(p.orbitY - sin(p.orbitA) * WATCH_R)
+                val sx = map.delta(r.x, tx) * 0.08; val sy = map.delta(r.y, ty) * 0.08
+                r.x = map.wrap(r.x + sx); r.y = map.wrap(r.y + sy)
+                r.moving = sx * sx + sy * sy > 1e-5
+                face(r, beast.x, beast.y)
+            }
+        }
     }
 
     /**
@@ -490,7 +590,7 @@ class World(val map: WorldMap) {
         p.link = b.id; b.link = p.id; p.foe = b.id; b.foe = p.id
         p.targetX = cx; p.targetY = cy
         p.timer = 0
-        events += WorldEvent.Encounter(p.id, b.id, b.species, zoneOf(b).stage)
+        events += WorldEvent.Encounter(p.id, b.id, b.species, if (b.zoneId >= 0) zoneOf(b).stage else 0)
     }
 
     /**
@@ -500,7 +600,7 @@ class World(val map: WorldMap) {
      * becomes the point between the cage and the beast.
      */
     private fun throwCage(p: Entity, b: Entity, species: String) {
-        val old = companionOf(p)
+        val old = companionOf(p)?.takeUnless { leaveBody(it) }
         entities.values.removeAll { (it.kind == EntityKind.COMPANION || it.kind == EntityKind.CAGE) && it.link == p.id }
         p.companion = species
         val (lx, ly) = if (old != null) old.x to old.y else {
@@ -523,6 +623,7 @@ class World(val map: WorldMap) {
 
     /** Your netbeast goes back in its cage: the beast turns on you again. */
     private fun recall(p: Entity, b: Entity) {
+        companionOf(p)?.let { leaveBody(it) }
         entities.values.removeAll { (it.kind == EntityKind.COMPANION || it.kind == EntityKind.CAGE) && it.link == p.id }
         p.companion = null
         // circle each other again around the point between you
@@ -531,6 +632,95 @@ class World(val map: WorldMap) {
         p.orbitR = map.distance(p.x, p.y, cx, cy)
         p.orbitA = atan2(map.delta(cy, p.y), map.delta(cx, p.x))
         if (b.action != Action.FAINT) { b.action = Action.NONE; b.actionTicks = 0 }
+    }
+
+    /**
+     * A fainted netbeast stays where it fell instead of going back in its cage: unlinked from
+     * its player, it lies there for the rest of the fight and [BODY_TICKS] after. True if it did.
+     */
+    private fun leaveBody(c: Entity): Boolean {
+        if (c.action != Action.FAINT) return false
+        c.state = EntityState.GONE; c.link = -1; c.foe = -1; c.moving = false
+        c.actionTicks = BODY_TICKS
+        c.pendingAction = Action.NONE; c.pendingFx = null; c.pendingTicks = 0
+        return true
+    }
+
+    /**
+     * The rival in [playerId]'s fight sends out [species]: the netbeast he has
+     * out goes back in its cage (or, fainted, lies where it fell and fades) and
+     * he throws the new one's cage in, where the last one stood or, the first
+     * time, [RIVAL_LAND] of the way to you. Until it's out ([WorldEvent.RivalOut])
+     * the fight is between you and him.
+     */
+    fun rivalSendOut(playerId: Int, species: String) {
+        val p = entities[playerId] ?: return
+        val r = rivalOf(p) ?: return
+        entities.values.removeAll { it.kind == EntityKind.CAGE && it.link == r.id }
+        val old = entities[p.link]?.takeIf { it.kind == EntityKind.BEAST }
+        val (lx, ly) = if (old != null) map.wrap(old.x + map.delta(old.x, r.x) * 0.3) to map.wrap(old.y + map.delta(old.y, r.y) * 0.3)
+            else map.wrap(r.x + map.delta(r.x, p.x) * RIVAL_LAND) to map.wrap(r.y + map.delta(r.y, p.y) * RIVAL_LAND)
+        if (old != null) {
+            if (old.action == Action.FAINT) fadeBody(old) else entities.remove(old.id)
+            p.link = r.id
+        }
+        r.companion = species
+        val cage = Entity(nextId++, EntityKind.CAGE, r.x, r.y, atan2(map.delta(r.y, ly), map.delta(r.x, lx)), "cage", 0.4)
+        cage.state = EntityState.THROWN; cage.link = r.id; cage.timer = CAGE_FLIGHT_TICKS
+        cage.targetX = lx; cage.targetY = ly; cage.z = 0.6
+        entities[cage.id] = cage
+    }
+
+    private fun rivalOf(p: Entity) = entities.values.firstOrNull { it.kind == EntityKind.RIVAL && it.link == p.id && it.state == EntityState.ENGAGED }
+
+    /**
+     * The rival's cage opens: his netbeast is the one you fight now. It faces
+     * yours if it's out (the two circle the point between them), your cage if
+     * that's in the air, else you (and you circle each other).
+     */
+    private fun rivalBeastOut(r: Entity, c: Entity, events: MutableList<WorldEvent>) {
+        entities.remove(c.id)
+        val p = entities[r.link] ?: return
+        val b = Entity(nextId++, EntityKind.BEAST, c.x, c.y, c.angle, r.companion ?: r.species, NETBEAST_SIZE)
+        b.state = EntityState.ENGAGED; b.link = p.id
+        entities[b.id] = b
+        p.link = b.id
+        val comp = companionOf(p)
+        val mine = cageOf(p)
+        when {
+            comp != null -> {
+                val mx = map.wrap(b.x + map.delta(b.x, comp.x) / 2); val my = map.wrap(b.y + map.delta(b.y, comp.y) / 2)
+                b.orbitX = mx; b.orbitY = my
+                b.orbitR = map.distance(b.x, b.y, mx, my)
+                b.orbitA = atan2(map.delta(my, b.y), map.delta(mx, b.x))
+                b.orbitDir = -p.orbitDir; b.orbitSpin = 0.0
+                p.targetX = mx; p.targetY = my
+                face(b, comp.x, comp.y); b.foe = comp.id; comp.foe = b.id
+            }
+            mine != null -> { face(b, mine.x, mine.y); b.foe = p.id }
+            else -> {
+                val cx = map.wrap(p.x + map.delta(p.x, b.x) / 2); val cy = map.wrap(p.y + map.delta(p.y, b.y) / 2)
+                p.orbitX = cx; p.orbitY = cy; p.targetX = cx; p.targetY = cy
+                p.orbitR = map.distance(p.x, p.y, cx, cy)
+                p.orbitA = atan2(map.delta(cy, p.y), map.delta(cx, p.x))
+                b.orbitX = cx; b.orbitY = cy; b.orbitR = p.orbitR; b.orbitA = p.orbitA + PI
+                face(b, p.x, p.y); b.foe = p.id; p.foe = b.id
+            }
+        }
+        events += WorldEvent.RivalOut(p.id, b.id, b.species)
+    }
+
+    /** A fainted beast with no territory to go back to lies there [FADE_TICKS], then it's gone. */
+    private fun fadeBody(b: Entity) {
+        b.state = EntityState.GONE; b.link = -1; b.foe = -1; b.moving = false
+        b.actionTicks = FADE_TICKS; b.timer = FADE_TICKS
+        b.pendingAction = Action.NONE; b.pendingFx = null; b.pendingTicks = 0
+    }
+
+    private fun stepBody(c: Entity) {
+        val owner = entities.values.firstOrNull { it.kind == EntityKind.PLAYER && it.ownerId == c.ownerId }
+        if (owner?.state == EntityState.ENGAGED) return // the fight goes on around it
+        if (--c.actionTicks <= 0) entities.remove(c.id)
     }
 
     private fun stepCage(c: Entity, events: MutableList<WorldEvent>) {
@@ -545,8 +735,9 @@ class World(val map: WorldMap) {
                 if (--c.timer <= 0) { c.z = 0.0; c.state = EntityState.LANDED; c.timer = CAGE_OPEN_TICKS }
             }
             EntityState.LANDED -> if (--c.timer <= 0) {
+                if (p.kind == EntityKind.RIVAL) { rivalBeastOut(p, c, events); return }
                 val b = entities[p.link]
-                val out = Entity(nextId++, EntityKind.COMPANION, c.x, c.y, c.angle, p.companion ?: "player", 0.65, ownerId = p.ownerId)
+                val out = Entity(nextId++, EntityKind.COMPANION, c.x, c.y, c.angle, p.companion ?: "player", NETBEAST_SIZE, ownerId = p.ownerId)
                 out.state = EntityState.ENGAGED; out.link = p.id
                 entities.remove(c.id)
                 entities[out.id] = out
@@ -618,8 +809,13 @@ class World(val map: WorldMap) {
         return if (a.action == Action.ATTACK) a.actionTicks - Action.ATTACK.ticks / 2 else 0
     }
 
-    /** Called by the host once the battle for an Encounter is over. Walking resumes. */
+    /**
+     * Called by the host once the battle for an Encounter is over. Walking resumes. A beaten
+     * visitor is gone for good: a boss faints and fades, a rival walks off. Otherwise a visitor
+     * waits there again, except a boss you drove off, which walks off.
+     */
     fun resolveEncounter(playerId: Int, beastId: Int, outcome: EncounterOutcome) {
+        val fought = entities[playerId]?.let { entities[it.link] } // a rival's netbeast, if he had one out
         entities.values.removeAll { it.kind == EntityKind.COMPANION && it.link == playerId || it.kind == EntityKind.CAGE && it.link == playerId }
         entities[playerId]?.let { p ->
             p.grace = GRACE_TICKS; p.link = -1; p.foe = -1; p.timer = 0
@@ -637,16 +833,30 @@ class World(val map: WorldMap) {
         val b = entities[beastId] ?: return
         b.foe = -1
         b.pendingAction = Action.NONE; b.pendingFx = null; b.pendingTicks = 0
+        if (b.kind == EntityKind.RIVAL) { resolveRival(b, fought?.takeIf { it.kind == EntityKind.BEAST }, outcome); return }
+        val visitor = b.zoneId < 0
         when (outcome) {
             EncounterOutcome.BEAST_DEFEATED -> {
-                b.state = EntityState.GONE; b.timer = RESPAWN_TICKS; b.moving = false
+                b.state = EntityState.GONE; b.timer = if (visitor) FADE_TICKS else RESPAWN_TICKS; b.moving = false
                 if (b.action == Action.FAINT) b.actionTicks = FADE_TICKS else { b.action = Action.NONE; b.actionTicks = 0 }
             }
             EncounterOutcome.PLAYER_FLED, EncounterOutcome.PLAYER_BEATEN -> {
-                b.state = EntityState.RETURN; b.targetX = zoneOf(b).x; b.targetY = zoneOf(b).y
+                when {
+                    !visitor -> { b.state = EntityState.RETURN; b.targetX = zoneOf(b).x; b.targetY = zoneOf(b).y }
+                    outcome == EncounterOutcome.PLAYER_FLED -> { b.state = EntityState.LEAVE; b.timer = LEAVE_TICKS }
+                    else -> b.state = EntityState.WAIT
+                }
                 b.action = Action.NONE; b.actionTicks = 0
             }
         }
+    }
+
+    /** A rival's fight is over: his netbeast that's out goes back in its cage (or fades, fainted); beaten, he walks off. */
+    private fun resolveRival(r: Entity, out: Entity?, outcome: EncounterOutcome) {
+        entities.values.removeAll { it.kind == EntityKind.CAGE && it.link == r.id }
+        if (out != null) { if (out.action == Action.FAINT) fadeBody(out) else entities.remove(out.id) }
+        r.action = Action.NONE; r.actionTicks = 0
+        if (outcome == EncounterOutcome.BEAST_DEFEATED) { r.state = EntityState.LEAVE; r.timer = LEAVE_TICKS } else r.state = EntityState.WAIT
     }
 
     fun snapshot() = WorldSnapshot(tick, entities.values.map {

@@ -7,6 +7,13 @@ import java.util.Date
 import java.util.Locale
 
 object BossEventEngine {
+    /** The invasion is on and its day has come. It stays due until it's beaten or you flee it. */
+    fun isDue(prefs: SharedPreferences): Boolean {
+        if (!prefs.getBoolean("EVENT_ACTIVE", false)) return false
+        val today = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+        return today >= (prefs.getString("EVENT_TARGET_DATE", "") ?: "")
+    }
+
     fun checkAndGenerateEvent(prefs: SharedPreferences, party: List<Netbeast>, city: String): String? {
         val hasEvent = prefs.getBoolean("EVENT_ACTIVE", false)
         if (hasEvent) return null

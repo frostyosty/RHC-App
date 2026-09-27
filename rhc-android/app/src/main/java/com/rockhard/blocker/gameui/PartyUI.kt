@@ -157,9 +157,14 @@ internal fun GameActivity.updatePartyScreen() {
             else -> "the digital frontier"
         }
         val loreText = if (originSite.contains(" ")) originSite else "www.$originSite"
-        val tvLore = TextView(this).apply { text = "\nFound roaming $loreText"; setTextColor(Color.parseColor("#888888")); setTypeface(null, android.graphics.Typeface.ITALIC); setPadding(0, 16, 0, 0) }
+        val flyingNote = if (p.type == "Flying") "\n✈️ Flying: most attacks can't reach it. Only moves marked \"Can hit Flying beasts\" land." else ""
+        val tvLore = TextView(this).apply { text = "\nFound roaming $loreText$flyingNote"; setTextColor(Color.parseColor("#888888")); setTypeface(null, android.graphics.Typeface.ITALIC); setPadding(0, 16, 0, 0) }
 
         detailsPanel.addView(headerLayout); detailsPanel.addView(traitLayout); 
+        partyTraits(p).forEach { t ->
+            val desc = if (t == "Herd") "${herdSize(p)} in the party: +${herdChance(p)}% Double Strike chance." else GameData.traits.find { it.name == t }?.desc ?: ""
+            detailsPanel.addView(TextView(this).apply { text = "[$t] $desc"; setTextColor(Color.parseColor("#FFBB33")); textSize = 13f; setPadding(0, 8, 0, 0) })
+        }
         
         if (p.infusionStacks > 0) {
             detailsPanel.addView(TextView(this@updatePartyScreen).apply { 

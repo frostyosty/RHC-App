@@ -54,6 +54,53 @@ class DeterminismTest {
         assertEquals(WALK_PRINT, h)
     }
 
+    /**
+     * A poacher put in your path: you walk straight into him, he throws his cage, yours goes in,
+     * his first netbeast falls and he sends out another where it lay, that one falls too, and he
+     * walks off beaten.
+     */
+    @Test
+    fun scriptedPoacherFightIsIdenticalOnEveryPlatform() {
+        val world = World(WorldMap.generate(seed, species))
+        world.entities.values.removeAll { it.kind == EntityKind.BEAST } // just him
+        val me = world.addPlayer("test", "Zephyrlet", 180).id
+        var poacher = -1
+        var stage = 0 // walking, met him, his first out, yours out, his second out, over
+        var since = 0
+        var h = 0L
+        repeat(World.TICK_HZ * 40) { t ->
+            if (t == 30) poacher = world.summon(me, EntityKind.RIVAL, "Poacher", 0.7)
+            since++
+            var cage: String? = null
+            when {
+                stage == 1 && since == 1 -> world.rivalSendOut(me, "Airstream")
+                stage == 2 && since == 30 -> cage = "Zephyrlet"
+                stage == 3 && since == 30 -> world.perform(me, Role.COMPANION, Action.ATTACK)
+                stage == 3 && since == 34 -> world.perform(me, Role.BEAST, Action.HIT)
+                stage == 3 && since == 60 -> world.perform(me, Role.BEAST, Action.FAINT)
+                stage == 3 && since == 90 -> world.rivalSendOut(me, "Stratolord")
+                stage == 4 && since == 30 -> world.perform(me, Role.BEAST, Action.ATTACK)
+                stage == 4 && since == 34 -> world.perform(me, Role.COMPANION, Action.HIT)
+                stage == 4 && since == 60 -> world.perform(me, Role.BEAST, Action.FAINT)
+                stage == 4 && since == 90 -> { world.resolveEncounter(me, poacher, EncounterOutcome.BEAST_DEFEATED); stage = 5 }
+            }
+            val look = if (stage !in 1..4) 0.0 else if (t % 90 < 45) 0.02 else -0.015
+            for (e in world.step(mapOf(me to PlayerInput(look, cage)))) {
+                when (e) {
+                    is WorldEvent.Encounter -> if (e.beastId == poacher) stage = 1
+                    is WorldEvent.RivalOut -> stage = if (stage == 1) 2 else 4
+                    is WorldEvent.CompanionOut -> stage = 3
+                    else -> continue
+                }
+                since = 0
+            }
+            world.snapshot().entities.forEach { e -> h = fnv(fnv(fnv(fnv(h, e.id.toLong()), e.x.toRawBits()), e.y.toRawBits()), e.state.ordinal.toLong()) }
+        }
+        assertEquals(5, stage, "the scripted poacher fight should play out")
+        assertEquals(null, world.entities[poacher], "beaten, the poacher walks off")
+        assertEquals(POACHER_PRINT, h)
+    }
+
     /** Turn toward the nearest beast, at most 0.08 rad a tick (DetMath, so it's the same everywhere). */
     private fun huntSteer(world: World, me: Entity): Double {
         val b = world.entities.values.filter { it.kind == EntityKind.BEAST }
@@ -68,5 +115,6 @@ class DeterminismTest {
         const val MAP_PRINT = 1753128500768626353L
         const val COAST_PRINT = 6737657199655346600L
         const val WALK_PRINT = -8272280016561550702L
+        const val POACHER_PRINT = 0L
     }
 }

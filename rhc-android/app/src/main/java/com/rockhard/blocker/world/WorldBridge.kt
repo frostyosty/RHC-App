@@ -49,8 +49,7 @@ private fun todaysSeed(): Long {
 internal fun speciesOf(p: Netbeast) = p.name.replace(Regex("\\[.*?\\]"), "").trim()
 
 /** The species in your lead cage, or null if you have no netbeasts. */
-private fun GameActivity.leadCompanion(): String? =
-    party.getOrNull(activePetIndex.coerceIn(0, (party.size - 1).coerceAtLeast(0)))?.let { speciesOf(it) }
+internal fun GameActivity.leadCompanion(): String? = walkOrder().firstOrNull()?.let { speciesOf(it) }
 
 private val beastSpecies get() = GameData.beasts.map { Species(it.name, it.evoStage) }
 
@@ -119,7 +118,9 @@ internal fun GameActivity.enterWorld() {
     nextWalk = null
     worldSession = ready?.also { it.setCompanion(leadCompanion()) }
         ?: LocalWorldSession(World(WorldMap.generate(todaysSeed(), beastSpecies, region)), playerId, leadCompanion(), EXPLORE_SECONDS)
+    worldSession?.setCloak(if (Relics.cloakOn(prefs)) Relics.CLOAK_BEASTS else 0)
     walkCoins = 0
+    worldVisitors.clear() // a new world: the boss and poachers due are put in its path as you walk (WorldVisitors.kt)
     inWorld = true
     val cages = if (party.isEmpty()) "You have no netbeasts. You'll have to fight yourself." else "${party.size} netbeast${if (party.size == 1) "" else "s"} rattle in their cages."
     val where = if (region.houses != HouseStyle.NONE) " on the edge of $currentCity" else ""
@@ -141,10 +142,13 @@ internal fun GameActivity.showWorld() {
     view.listener = object : WorldView.Listener {
         override fun onEncounter(e: WorldEvent.Encounter) = onWorldEncounter(e)
         override fun onCompanionOut(e: WorldEvent.CompanionOut) = onWorldCompanionOut(e)
+        override fun onRivalOut(e: WorldEvent.RivalOut) = onWorldRivalOut(e)
         override fun onCoinPicked(e: WorldEvent.CoinPicked) = onWorldCoin()
         override fun onExplorationOver() = finishExploration()
+        override fun onSlippedPast(e: WorldEvent.SlippedPast) = printLog("> 🕊️ A wild ${e.species} looks straight through you. The Cloak of Christ hides you.")
     }
     setupWorldFightControls()
+    refreshWalkCages()
     findViewById<View>(R.id.worldOverlay)?.visibility = View.VISIBLE
     findViewById<View>(R.id.navTabs)?.visibility = View.GONE
     findViewById<View>(R.id.peaceControls)?.visibility = View.GONE
@@ -155,6 +159,7 @@ internal fun GameActivity.hideWorld() {
     findViewById<WorldView>(R.id.worldView)?.stop()
     findViewById<View>(R.id.worldOverlay)?.visibility = View.GONE
     findViewById<View>(R.id.worldFightPanel)?.visibility = View.GONE
+    findViewById<View>(R.id.worldWalkCages)?.visibility = View.GONE
     findViewById<View>(R.id.navTabs)?.visibility = View.VISIBLE
     findViewById<View>(R.id.peaceControls)?.visibility = View.VISIBLE
 }

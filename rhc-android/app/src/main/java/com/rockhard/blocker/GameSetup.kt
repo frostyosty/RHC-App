@@ -27,7 +27,7 @@ internal fun GameActivity.setupBattleControls() {
                 val btn = Button(this).apply { text = options[index]; setBackgroundResource(R.drawable.bg_btn_standard); setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 16) }
                     setOnClickListener {
                         if (index == activePetIndex) printLog("\n> ${p.name} is already fighting!") 
-                        else { activePetIndex = index; prefs.edit().putInt("ACTIVE_PET_INDEX", activePetIndex).apply(); printLog("\n> You swapped to ${party[activePetIndex].name}!"); showBattleArena(party[activePetIndex].name, currentEnemy!!.name); updateBattleUI(); triggerEnemyCounterAttack() }
+                        else { activePetIndex = index; prefs.edit().putInt("ACTIVE_PET_INDEX", activePetIndex).apply(); printLog("\n> You swapped to ${party[activePetIndex].name}!"); showBattleArena(party[activePetIndex].name, currentEnemy!!.name); updateBattleUI(); if (hasHoard()) printLog("> 📦 [Hoard] The swap cost no turn!") else triggerEnemyCounterAttack() }
                         dialog.dismiss()
                     }
                 }; content.addView(btn)
@@ -117,14 +117,14 @@ internal fun GameActivity.setupDispatchControl() {
         if (aetherDepleted) { Toast.makeText(this, "Aether depleted! Return tomorrow.", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
         if (world3dEnabled) { enterWorld(); return@setOnClickListener }
         if (party.isEmpty()) {
-            if (activeExpeditions.containsKey(-1)) printLog("> You are already exploring!") else { activeExpeditions[-1] = System.currentTimeMillis() + (180 * 1000); printLog("\n> You bravely step out into the wild to explore..."); SaveManager.saveExpeditions(prefs, activeExpeditions); updateDispatchButton() }
+            if (activeExpeditions.containsKey(-1)) printLog("> You are already exploring!") else { activeExpeditions[-1] = System.currentTimeMillis() + EXPEDITION_MS; prefs.edit().putInt("CLOAK_LEFT", if (Relics.cloakOn(prefs)) Relics.CLOAK_BEASTS else 0).apply(); printLog("\n> You bravely step out into the wild to explore..."); SaveManager.saveExpeditions(prefs, activeExpeditions); updateDispatchButton() }
             return@setOnClickListener
         }
         val availablePets = party.indices.filter { !activeExpeditions.containsKey(it) }
         if (availablePets.isEmpty()) { printLog("> All Netbeasts are exploring!"); return@setOnClickListener }
 
         var dispatched = 0
-        for (idx in availablePets) { activeExpeditions[idx] = System.currentTimeMillis() + (180 * 1000); printLog("\n> Dispatched ${party[idx].name} to explore..."); dispatched++ }
+        for (idx in availablePets) { activeExpeditions[idx] = System.currentTimeMillis() + EXPEDITION_MS; printLog("\n> Dispatched ${party[idx].name} to explore..."); dispatched++ }
         if (dispatched > 0) { SaveManager.saveExpeditions(prefs, activeExpeditions); updateDispatchButton() }
     }
 

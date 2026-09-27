@@ -68,7 +68,7 @@ internal fun GameActivity.setupDistributeButton() {
             if (unclaimed > 0) {
                 DialogUtils.showCustomDialog(this, "Equip Titan Amulet", "Permanently grants +30% Damage. Who gets it?", true, "CANCEL", null) { content, dialog ->
                     val btnMe = Button(this).apply {
-                        text = "EQUIP TO MYSELF (God Punch)"; setBackgroundResource(R.drawable.bg_btn_accent); setTextColor(Color.WHITE)
+                        text = "EQUIP TO MYSELF: POWER PUNCH\nYour bare-handed punches hit for 25% of a beast's max HP (at least 100) instead of 1-4"; setBackgroundResource(R.drawable.bg_btn_accent); setTextColor(Color.WHITE)
                         layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 16) }
                         setOnClickListener {
                             prefs.edit().putBoolean("PLAYER_HAS_AMULET", true).putInt("PLAYER_UNCLAIMED_AMULETS", unclaimed - 1).apply()

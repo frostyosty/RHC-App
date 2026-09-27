@@ -12,43 +12,60 @@ object SkillEngine {
         val isDoubleAir: Boolean = false,
         val type: String = "Standard",
         // Attack effect played over the defender when the move lands:
-        // fx_<fx>.gif, drawn by sprite_studio/autogen/effects.py. null = none.
-        val fx: String? = null,
+        // fx_<fx>.gif, drawn by sprite_studio/autogen/effects.py (its MOVES
+        // table). Every move has its own, named after the move.
+        val fx: String? = fxName(name),
     )
+
+    // "Data Drain" -> data_drain, "Sky-Breaker" -> sky_breaker (effects.slug in effects.py)
+    fun fxName(move: String) = move.lowercase().split(Regex("[^a-z0-9]+")).filter { it.isNotEmpty() }.joinToString("_")
+
+    // Old move names -> new ones. Saved parties store moves by name, so
+    // SaveManager runs every loaded move through this.
+    val RENAMED =
+        mapOf(
+            "Tweet" to "Shriek", "Flee" to "Screech", "Dodge" to "Short Circuit", "Cry" to "Tantrum",
+            "Spam Click" to "Rapid Fire", "G-Fuel" to "Venom Rush", "XP Boost" to "Power Surge",
+            "Loot Box" to "Plunder", "Skip" to "Jump Cut", "Ad Break" to "Hijack",
+            "Tryhard Mode" to "Final Boss", "Cancel" to "Silence", "Doomscroll" to "Ensnare",
+            "The Algorithm" to "Overload", "Rage Quit" to "Rage", "Browse" to "Snatch", "Wishlist" to "Price Gouge",
+        )
+
+    fun migrate(move: String) = RENAMED[move] ?: move
 
     val SKILL_DATABASE =
         mapOf(
-            "Ping" to SkillDef("Ping", "DoubleStrike", 15, isAntiAir = true, fx = "laser"),
+            "Ping" to SkillDef("Ping", "DoubleStrike", 15, isAntiAir = true),
             "Glitch" to SkillDef("Glitch", "Stun", 15),
-            "Data Drain" to SkillDef("Data Drain", "Lifesteal", 20, fx = "bite"),
+            "Data Drain" to SkillDef("Data Drain", "Lifesteal", 20),
             "Overclock" to SkillDef("Overclock", "Shield", 20),
-            "Static" to SkillDef("Static", "Poison", 25, isDoubleAir = true, fx = "laser"),
+            "Static" to SkillDef("Static", "Poison", 25, isDoubleAir = true),
             "Timeshift" to SkillDef("Timeshift", "None", 0, type = "Timeshift"),
-            "Tweet" to SkillDef("Tweet", "DoubleStrike", 15, isAntiAir = true),
-            "Cancel" to SkillDef("Cancel", "Stun", 15),
+            "Shriek" to SkillDef("Shriek", "DoubleStrike", 15, isAntiAir = true),
+            "Silence" to SkillDef("Silence", "Stun", 15),
             "Doxx" to SkillDef("Doxx", "StealCoins", 25),
-            "Doomscroll" to SkillDef("Doomscroll", "StealSpray", 10),
+            "Ensnare" to SkillDef("Ensnare", "StealSpray", 10),
             "Ratio" to SkillDef("Ratio", "Poison", 25),
             "Annihilate" to SkillDef("Annihilate", type = "Ultimate"),
             "Cleanse" to SkillDef("Cleanse", "PurgeEnemy", 100, type = "Utility"),
             "Basic Attack" to SkillDef("Basic Attack", "PercentCurrentHP", 100, type = "Basic"),
-            "Spam Click" to SkillDef("Spam Click", "DoubleStrike", 15, isAntiAir = true),
-            "Rage Quit" to SkillDef("Rage Quit", "Stun", 15),
-            "G-Fuel" to SkillDef("G-Fuel", "Poison", 25),
-            "XP Boost" to SkillDef("XP Boost", "Shield", 20),
-            "Loot Box" to SkillDef("Loot Box", "StealNet", 10),
+            "Rapid Fire" to SkillDef("Rapid Fire", "DoubleStrike", 15, isAntiAir = true),
+            "Rage" to SkillDef("Rage", "Stun", 15),
+            "Venom Rush" to SkillDef("Venom Rush", "Poison", 25),
+            "Power Surge" to SkillDef("Power Surge", "Shield", 20),
+            "Plunder" to SkillDef("Plunder", "StealNet", 10),
             "Lag" to SkillDef("Lag", "DoubleStrike", 15, isAntiAir = true),
-            "Skip" to SkillDef("Skip", "Terrify", 10),
-            "Binge" to SkillDef("Binge", "Lifesteal", 20, fx = "bite"),
+            "Jump Cut" to SkillDef("Jump Cut", "Terrify", 10),
+            "Binge" to SkillDef("Binge", "Lifesteal", 20),
             "Autoplay" to SkillDef("Autoplay", "Shield", 20),
-            "Ad Break" to SkillDef("Ad Break", "StealCoins", 25),
+            "Hijack" to SkillDef("Hijack", "StealCoins", 25),
             "Cyber Strike" to SkillDef("Cyber Strike", "DoubleStrike", 15, isAntiAir = true),
-            "Aero Beam" to SkillDef("Aero Beam", "Terrify", 10, fx = "laser"),
+            "Aero Beam" to SkillDef("Aero Beam", "Terrify", 10),
             "Mecha Dash" to SkillDef("Mecha Dash", "Lifesteal", 20),
             "Pixel Slash" to SkillDef("Pixel Slash", "Terrify", 10),
-            "Light Pulse" to SkillDef("Light Pulse", "StealPotion", 10, isAntiAir = true, fx = "laser"),
+            "Light Pulse" to SkillDef("Light Pulse", "StealPotion", 10, isAntiAir = true),
             "Tackle" to SkillDef("Tackle", "DoubleStrike", 15, isAntiAir = true),
-            "Bite" to SkillDef("Bite", "Lifesteal", 20, isAntiAir = true, fx = "bite"),
+            "Bite" to SkillDef("Bite", "Lifesteal", 20, isAntiAir = true),
             "Scratch" to SkillDef("Scratch", "StealCoins", 25, isAntiAir = true),
             "Growl" to SkillDef("Growl", "Terrify", 10),
             "Swipe" to SkillDef("Swipe", "Lifesteal", 20, isAntiAir = true),
@@ -60,22 +77,28 @@ object SkillEngine {
             "Parry" to SkillDef("Parry", "Shield", 20),
             "Marathon" to SkillDef("Marathon", "Terrify", 10),
             "Hypnotize" to SkillDef("Hypnotize", "Terrify", 10),
-            "Chrono Blast" to SkillDef("Chrono Blast", "Terrify", 10, fx = "laser"),
+            "Chrono Blast" to SkillDef("Chrono Blast", "Terrify", 10),
             "Nova Shield" to SkillDef("Nova Shield", "Shield", 20),
             "Ambush" to SkillDef("Ambush", "Terrify", 10),
-            "Feral Strike" to SkillDef("Feral Strike", "Terrify", 10, fx = "bite"),
-            "Fatal Exception" to SkillDef("Fatal Exception", type = "Ultimate", fx = "laser"),
-            "The Algorithm" to SkillDef("The Algorithm", type = "Ultimate"),
-            "Tryhard Mode" to SkillDef("Tryhard Mode", type = "Ultimate"),
+            "Feral Strike" to SkillDef("Feral Strike", "Terrify", 10),
+            "Fatal Exception" to SkillDef("Fatal Exception", type = "Ultimate"),
+            "Overload" to SkillDef("Overload", type = "Ultimate"),
+            "Final Boss" to SkillDef("Final Boss", type = "Ultimate"),
             "DMCA Takedown" to SkillDef("DMCA Takedown", type = "Ultimate"),
-            "Orbital Cannon" to SkillDef("Orbital Cannon", type = "Ultimate", fx = "laser"),
+            "Orbital Cannon" to SkillDef("Orbital Cannon", type = "Ultimate"),
             "Sky-Breaker" to SkillDef("Sky-Breaker", isDoubleAir = true, type = "Ultimate"),
-            "Apex Predator" to SkillDef("Apex Predator", type = "Ultimate", fx = "bite"),
+            "Apex Predator" to SkillDef("Apex Predator", type = "Ultimate"),
+            "Short Circuit" to SkillDef("Short Circuit", "Stun", 15),
+            "Digital Swipe" to SkillDef("Digital Swipe", "DoubleStrike", 15),
+            "Screech" to SkillDef("Screech", "Terrify", 10, isAntiAir = true),
+            "Tantrum" to SkillDef("Tantrum", "Stun", 15),
+            "Snatch" to SkillDef("Snatch", "StealPotion", 10),
+            "Price Gouge" to SkillDef("Price Gouge", "StealCoins", 25),
             "Cataclysm" to SkillDef("Cataclysm", "Terrify", 20),
             "Obliterate" to SkillDef("Obliterate", "Shield", 30),
         )
 
-    fun fxFor(move: String) = SKILL_DATABASE[move]?.fx
+    fun fxFor(move: String) = SKILL_DATABASE[move]?.fx ?: fxName(move)
 
     fun isAntiAir(move: String) = SKILL_DATABASE[move]?.isAntiAir == true
 
@@ -88,9 +111,9 @@ object SkillEngine {
         val p1 =
             when (type) {
                 "Tech" -> listOf("Ping", "Glitch", "Data Drain", "Overclock", "Static", "Timeshift").shuffled()
-                "Social" -> listOf("Tweet", "Cancel", "Doxx", "Doomscroll", "Ratio").shuffled()
-                "Gaming" -> listOf("Spam Click", "Rage Quit", "G-Fuel", "XP Boost", "Loot Box").shuffled()
-                "Streaming" -> listOf("Lag", "Skip", "Binge", "Autoplay", "Ad Break").shuffled()
+                "Social" -> listOf("Shriek", "Silence", "Doxx", "Ensnare", "Ratio").shuffled()
+                "Gaming" -> listOf("Rapid Fire", "Rage", "Venom Rush", "Power Surge", "Plunder").shuffled()
+                "Streaming" -> listOf("Lag", "Jump Cut", "Binge", "Autoplay", "Hijack").shuffled()
                 "Reclaimed" -> listOf("Cyber Strike", "Aero Beam", "Mecha Dash", "Pixel Slash", "Light Pulse").shuffled()
                 "Flying" -> listOf("Tackle", "Swipe", "Bite").shuffled()
                 else -> listOf("Tackle", "Bite", "Scratch", "Growl", "Swipe").shuffled()
@@ -108,8 +131,8 @@ object SkillEngine {
         val ultimate =
             when (type) {
                 "Tech" -> "Fatal Exception"
-                "Social" -> "The Algorithm"
-                "Gaming" -> "Tryhard Mode"
+                "Social" -> "Overload"
+                "Gaming" -> "Final Boss"
                 "Streaming" -> "DMCA Takedown"
                 "Reclaimed" -> "Orbital Cannon"
                 "Flying" -> "Sky-Breaker"
@@ -273,6 +296,12 @@ object SkillEngine {
                     log += "\n> 👻 TERRIFIED! Enemy breaks formation!"
                 }
             }
+        }
+        val struckTwice = bonusRoll < def.effectChance && def.effect == "DoubleStrike"
+        val herd = act.herdChance(pet)
+        if (!struckTwice && herd > 0 && Random.nextInt(100) < herd) {
+            dmg *= 2
+            log += "\n> 🐾⚔️ [Herd] DOUBLE STRIKE! Its pack drove it on! ($herd%)"
         }
         return Pair(dmg.coerceAtLeast(1), log)
     }

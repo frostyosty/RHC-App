@@ -26,23 +26,36 @@ class MainActivity : Activity() {
     
     internal val mainHandler = Handler(Looper.getMainLooper())
     
+    // Runs only while the screen is showing (onResume to onPause). Momentum only changes when an entry
+    // evaporates another minute, so it waits until then (at most a minute); the debug log still ticks every second
     internal val tickRunnable = object : Runnable {
         override fun run() {
-            if (!BuildConfig.FLAVOR.lowercase().contains("gamers")) updateMomentumUI()
-            
+            var next = 60_000L
+            if (!BuildConfig.FLAVOR.lowercase().contains("gamers")) {
+                updateMomentumUI()
+                next = MomentumEngine.msUntilNextChange(prefs).coerceAtMost(next - 50L) + 50L
+            }
+
             if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
                 findViewById<View>(R.id.llDebugTerminal)?.visibility = View.VISIBLE
                 val terminalText = GuardianService.actionLogs.joinToString("\n")
                 findViewById<TextView>(R.id.tvTerminalOutput)?.text = terminalText
+                next = 1000L
             } else {
                 findViewById<View>(R.id.llDebugTerminal)?.visibility = View.GONE
             }
-            mainHandler.postDelayed(this, 1000)
+            mainHandler.postDelayed(this, next)
         }
     }
+    // The Earned list as last drawn, so it's rebuilt only when it changes
+    internal var renderedEarned: String? = null
 
     internal var setupPollHandler: Handler? = null
     internal var setupPollRunnable: Runnable? = null
+    // Set when a setup button sends the user to the battery setting: until then, onPause watches for it
+    // being granted and brings the app back
+    private var setupPollUntil = 0L
+    private val SETUP_POLL_MS = 3 * 60 * 1000L
     internal var allAppsList = listOf<Pair<String, String>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +102,10 @@ class MainActivity : Activity() {
         CloakEngine.uncloak(this, prefs.getBoolean("LAUNCH_GAME_DEFAULT", false))
 
         if (prefs.getBoolean("LAUNCH_GAME_DEFAULT", false) && !intent.getBooleanExtra("FROM_GAME", false)) {
-            if (isGamers) { startActivity(Intent(this, GameActivity::class.java)); finish(); return }
+            // Nightfall or no Aether left: stay here and say why
+            val closed = if (isGamers) AetherEngine.closedReason(prefs) else null
+            if (closed != null) Toast.makeText(this, closed, Toast.LENGTH_LONG).show()
+            else if (isGamers) { startActivity(Intent(this, GameActivity::class.java)); finish(); return }
         }
         setContentView(R.layout.activity_main)
         
@@ -99,7 +115,6 @@ class MainActivity : Activity() {
         compName = ComponentName(this, AdminReceiver::class.java)
 
         if (!isGamers) { MomentumEngine.resetDailyIfNeeded(prefs); setupMomentumUI() }
-        mainHandler.postDelayed(tickRunnable, 1000)
 
         findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers) View.GONE else View.VISIBLE
         findViewById<View>(R.id.llSafariCard).visibility = if (isGamers) View.VISIBLE else View.GONE
@@ -116,7 +131,7 @@ class MainActivity : Activity() {
         val grantSettingsAccess = { prefs.edit().putLong("ALLOW_SETTINGS_UNTIL", System.currentTimeMillis() + 120000L).apply() }
         findViewById<Button>(R.id.btnStep1).setOnClickListener { if (!isAccessibilityServiceEnabled(this, GuardianService::class.java)) { grantSettingsAccess(); DialogUtils.showCustomDialog(this, "Step 1: Rock Hard Shield", "Android hides this setting for security.\n\n→ Tap 'Downloaded apps' or 'Installed services'.\n→ Find '${getString(R.string.app_name)}'.\n→ Turn the switch ON.", true, "GO TO SETTINGS", { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }) } }
         findViewById<Button>(R.id.btnStep2).setOnClickListener { if (!dpm.isAdminActive(compName)) { grantSettingsAccess(); DialogUtils.showCustomDialog(this, "Step 2: Lock App", "This prevents the app from being uninstalled.", true, "LOCK APP", { startActivity(Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply { putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName); putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Locks app down.") }) }) } }
-        findViewById<Button>(R.id.btnStepBatteryOpt).setOnClickListener { grantSettingsAccess(); val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }; try { startActivity(intent) } catch (e: Exception) { Toast.makeText(this, "Setting unavailable.", Toast.LENGTH_SHORT).show() } }
+        findViewById<Button>(R.id.btnStepBatteryOpt).setOnClickListener { grantSettingsAccess(); setupPollUntil = System.currentTimeMillis() + SETUP_POLL_MS; val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }; try { startActivity(intent) } catch (e: Exception) { Toast.makeText(this, "Setting unavailable.", Toast.LENGTH_SHORT).show() } }
 
         val isChinesePhone = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
         val btn4 = findViewById<Button>(R.id.btnStep4); val btn5 = findViewById<Button>(R.id.btnStep5) 
@@ -147,7 +162,11 @@ class MainActivity : Activity() {
             btn5.text = "STEP 5: SECURE APP MANAGER"; btn5.setOnClickListener { prefs.edit().putBoolean("STEP5_CLICKED", true).apply(); DialogUtils.showCustomDialog(this, "Step 5: App Manager", "We will now aggressively block the Android/MIUI 'Manage Apps' list screen so the shield cannot be bypassed.", true, "SECURE IT", { refreshUI() }) }
         }
 
-        findViewById<Button>(R.id.btnGame).setOnClickListener { startActivity(Intent(this, GameActivity::class.java)) }
+        findViewById<Button>(R.id.btnGame).setOnClickListener {
+            val closed = AetherEngine.closedReason(prefs)
+            if (closed != null) Toast.makeText(this, closed, Toast.LENGTH_LONG).show()
+            else startActivity(Intent(this, GameActivity::class.java))
+        }
         
         // --- NEW: Attach Uninstaller listener to the main layout button ---
         findViewById<Button>(R.id.btnSafeAppManager)?.setOnClickListener { showSafeUninstaller() }
@@ -580,7 +599,7 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
                 setBackgroundResource(if (isIgnoringDoze) R.drawable.bg_btn_success else R.drawable.bg_btn_danger); setTextColor(android.graphics.Color.WHITE)
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 16, 0, 0) }
                 isEnabled = !isIgnoringDoze
-                setOnClickListener { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }); dialog.dismiss() }
+                setOnClickListener { setupPollUntil = System.currentTimeMillis() + SETUP_POLL_MS; startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }); dialog.dismiss() }
             })
             // The game offers this once; here you can say yes later (Android's own Settings are behind the Guardian)
             if (isGamers) {
@@ -623,21 +642,19 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
 
     override fun onPause() {
         super.onPause()
+        mainHandler.removeCallbacks(tickRunnable)
         val powMan = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
-        val stepBatteryDone = powMan.isIgnoringBatteryOptimizations(packageName)
-        val step4Done = prefs.getBoolean("STEP4_CLICKED", false)
 
-        if (!stepBatteryDone || !step4Done) {
+        // Only just after a setup button sent the user to the battery setting, and for a few minutes at most.
+        // (Step 4 isn't watched: STEP4_CLICKED is only set in onResume, so it can't change while we're away.)
+        if (System.currentTimeMillis() < setupPollUntil && !powMan.isIgnoringBatteryOptimizations(packageName)) {
             setupPollHandler = Handler(Looper.getMainLooper())
             setupPollRunnable = object : Runnable {
                 override fun run() {
-                    val nowBattery = powMan.isIgnoringBatteryOptimizations(packageName)
-                    val nowStep4 = prefs.getBoolean("STEP4_CLICKED", false)
-                    
-                    if ((!stepBatteryDone && nowBattery) || (!step4Done && nowStep4)) {
+                    if (powMan.isIgnoringBatteryOptimizations(packageName)) {
                         val intent = Intent(this@MainActivity, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) }
                         try { startActivity(intent); setupPollHandler?.removeCallbacksAndMessages(null) } catch (e: Exception) {}
-                    } else setupPollHandler?.postDelayed(this, 1000)
+                    } else if (System.currentTimeMillis() < setupPollUntil) setupPollHandler?.postDelayed(this, 1000)
                 }
             }
             setupPollHandler?.postDelayed(setupPollRunnable!!, 1000)
@@ -647,6 +664,8 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
     override fun onResume() { 
         super.onResume()
         setupPollHandler?.removeCallbacksAndMessages(null)
+        mainHandler.removeCallbacks(tickRunnable)
+        mainHandler.post(tickRunnable)
         if (prefs.getBoolean("AWAITING_STEP4", false)) prefs.edit().putBoolean("STEP4_CLICKED", true).putBoolean("AWAITING_STEP4", false).apply()
         
         // Auto-waking foreground accessibility lifecycle on app entry

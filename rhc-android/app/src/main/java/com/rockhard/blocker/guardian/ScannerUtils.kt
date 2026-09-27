@@ -4,28 +4,40 @@ import android.view.accessibility.AccessibilityNodeInfo
 
 object ScannerUtils {
 
-    fun extractAllText(node: AccessibilityNodeInfo?): String {
-        if (node == null) return ""
-        val sb = StringBuilder(2048)
-        extractTextRecursive(node, sb)
-        return sb.toString().lowercase()
+    class PageScan(val text: String, val imageCount: Int, val urlBarText: String?)
+
+    /**
+     * One walk of the screen: all its text (lowercased), how many images it has and, with [findUrlBar],
+     * the first address-bar text in the same order a walk of its own would find it. Every child
+     * fetched is a call into the app on screen, so the rules share this walk rather than doing their own.
+     */
+    fun scanPage(root: AccessibilityNodeInfo?, findUrlBar: Boolean): PageScan {
+        if (root == null) return PageScan("", 0, null)
+        val walk = PageWalk(findUrlBar)
+        walk.visit(root)
+        return PageScan(walk.text.toString().lowercase(), walk.images, walk.urlBar)
     }
 
-    private fun extractTextRecursive(node: AccessibilityNodeInfo, sb: StringBuilder) {
-        node.text?.let { sb.append(it).append(" ") }
-        node.contentDescription?.let { sb.append(it).append(" ") }
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i)
-            if (child != null) {
-                extractTextRecursive(child, sb)
+    private class PageWalk(private var lookForUrlBar: Boolean) {
+        val text = StringBuilder(2048)
+        var images = 0
+        var urlBar: String? = null
+
+        fun visit(node: AccessibilityNodeInfo) {
+            node.text?.let { text.append(it).append(" ") }
+            node.contentDescription?.let { text.append(it).append(" ") }
+            if (isImage(node)) images++
+            if (lookForUrlBar) urlBarText(node)?.let { urlBar = it; lookForUrlBar = false }
+            for (i in 0 until node.childCount) {
+                val child = node.getChild(i) ?: continue
+                visit(child)
                 child.recycle()
             }
         }
     }
 
-    fun extractUrlBarText(node: AccessibilityNodeInfo?): String? {
-        if (node == null) return null
-        
+    /** This node's text if it looks like a browser's address bar. */
+    private fun urlBarText(node: AccessibilityNodeInfo): String? {
         val resName = node.viewIdResourceName?.lowercase() ?: ""
         val className = node.className?.toString()?.lowercase() ?: ""
 
@@ -45,33 +57,12 @@ object ScannerUtils {
                 return txtStr
             }
         }
-
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i)
-            if (child != null) {
-                val urlText = extractUrlBarText(child)
-                child.recycle()
-                if (urlText != null) return urlText
-            }
-        }
         return null
     }
 
-    fun countImages(node: AccessibilityNodeInfo?): Int {
-        if (node == null) return 0
-        var count = 0
+    private fun isImage(node: AccessibilityNodeInfo): Boolean {
         val className = node.className?.toString()?.lowercase() ?: ""
-        if (className.contains("imageview") || className.contains("image") || node.viewIdResourceName?.lowercase()?.contains("image") == true) {
-            count++
-        }
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i)
-            if (child != null) {
-                count += countImages(child)
-                child.recycle()
-            }
-        }
-        return count
+        return className.contains("imageview") || className.contains("image") || node.viewIdResourceName?.lowercase()?.contains("image") == true
     }
 
     fun extractDangerousContext(node: AccessibilityNodeInfo?, word: String): String? {

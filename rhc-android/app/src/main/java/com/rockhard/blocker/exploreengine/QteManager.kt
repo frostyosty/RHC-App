@@ -120,6 +120,27 @@ internal fun GameActivity.startWildBattle(petIndex: Int, wildBeast: Netbeast) {
     updateBattleUI()
 }
 
+/**
+ * The fight for [captive]: the poacher's netbeasts (a couple of levels under yours, two fewer),
+ * the first of them out. The battle screen and the 3D Wilds (WorldVisitors.kt) both use it.
+ */
+internal fun GameActivity.setUpPoacherBattle(captive: Netbeast) {
+    val playerAvgLvl = if (party.isNotEmpty()) (party.sumOf { it.maxHp / 10 } / party.size).coerceAtLeast(1) else 1
+    val poacherAvgLvl = (playerAvgLvl - 2).coerceAtLeast(1)
+    val poacherPartySize = (party.size - 2).coerceAtLeast(2)
+
+    enemyParty.clear()
+    for (i in 0 until poacherPartySize) {
+        val baseBeast = GameData.beasts.random()
+        val pl = (poacherAvgLvl * 10) + kotlin.random.Random.nextInt(-10, 10)
+        enemyParty.add(Netbeast(baseBeast.name, "Poacher", pl, pl, baseBeast.m1, baseBeast.m2, "Tackle", 0L, 0, 1, 0, false, "None", 0, 0, 0, 0, "None", 0))
+    }
+
+    capturedRescueTarget = captive
+    isTrainerBattle = true; isWildBattle = false; battleOver = false
+    currentEnemy = enemyParty[0]
+}
+
 internal fun GameActivity.spawnRescueQTE(capturedBeast: Netbeast, suburb: String) {
     if (activeQTEs.values.any { it.findViewById<TextView>(R.id.tvQteDesc)?.text?.contains(capturedBeast.name) == true }) return
 
@@ -138,22 +159,7 @@ internal fun GameActivity.spawnRescueQTE(capturedBeast: Netbeast, suburb: String
         setBackgroundResource(R.drawable.bg_btn_accent)
         setOnClickListener {
             qteContainer.removeAllViews(); activeQTEs.clear()
-
-            val playerAvgLvl = if (party.isNotEmpty()) (party.sumOf { it.maxHp / 10 } / party.size).coerceAtLeast(1) else 1
-            val poacherAvgLvl = (playerAvgLvl - 2).coerceAtLeast(1)
-            val poacherPartySize = (party.size - 2).coerceAtLeast(2)
-
-            enemyParty.clear()
-            for (i in 0 until poacherPartySize) {
-                val baseBeast = GameData.beasts.random()
-                val pl = (poacherAvgLvl * 10) + kotlin.random.Random.nextInt(-10, 10)
-                enemyParty.add(Netbeast(baseBeast.name, "Poacher", pl, pl, baseBeast.m1, baseBeast.m2, "Tackle", 0L, 0, 1, 0, false, "None", 0, 0, 0, 0, "None", 0))
-            }
-
-            capturedRescueTarget = capturedBeast
-            isTrainerBattle = true; isWildBattle = false; battleOver = false
-            currentEnemy = enemyParty[0]
-            
+            setUpPoacherBattle(capturedBeast)
             setUIState("BATTLE"); printLog("\n> 🦹 POACHER: 'Come and take it!'")
             
             if (party.isEmpty()) { playerLastStand = true; showBattleArena("YOU", currentEnemy!!.name) } 

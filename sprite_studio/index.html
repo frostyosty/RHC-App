@@ -130,6 +130,10 @@
             text-align: center;
         }
 
+        .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+        .tab-btn { background: #222; color: #ccc; border: 1px solid #444; padding: 6px 14px; cursor: pointer; font-family: monospace; font-size: 14px; }
+        .tab-btn.active { background: #FF9800; color: #121212; border-color: #FF9800; font-weight: bold; }
+
         .dashboard-panel {
             flex: 1;
             overflow-y: auto;
@@ -183,6 +187,32 @@
             width: 100%;
             box-sizing: border-box;
             margin-bottom: 2px;
+        }
+
+        .btn-regen {
+            background: #7B1FA2;
+            padding: 4px 6px;
+            font-size: 9px;
+            margin-top: 6px;
+            display: block;
+        }
+
+        .btn-regen:hover {
+            background: #4A148C;
+        }
+
+        .btn-regen:disabled {
+            background: #333;
+            color: #888;
+            cursor: wait;
+        }
+
+        .regen-note {
+            font-size: 9px;
+            font-weight: normal;
+            text-transform: none;
+            margin-top: 4px;
+            max-width: 140px;
         }
 
         .btn-create {
@@ -273,13 +303,28 @@
     </div>
 
     <div class="dashboard-panel">
-        <h3 style="margin-top: 0; color:#FF9800;">📊 Asset Matrix</h3>
-        <table>
-            <thead>
-                <tr id="matrixHeader"></tr>
-            </thead>
-            <tbody id="matrixBody"></tbody>
-        </table>
+        <div class="tabs">
+            <button id="tabBtn-creatures" class="tab-btn active" onclick="showTab('creatures')">📊 Creatures</button>
+            <button id="tabBtn-attacks" class="tab-btn" onclick="showTab('attacks')">💥 Attacks</button>
+        </div>
+        <div id="tab-creatures">
+            <table>
+                <thead>
+                    <tr id="matrixHeader"></tr>
+                </thead>
+                <tbody id="matrixBody"></tbody>
+            </table>
+        </div>
+        <div id="tab-attacks" style="display:none">
+            <p style="font-size:12px; color:#aaa; margin-top:0;">One effect per move, drawn by <code>autogen/effects.py</code> (change a move's look in its <code>MOVES</code> table), played over the defender when the move lands.
+                <button class="btn-regen" onclick="regenerate(attackNames(), this)">🔄 REGENERATE ALL</button><span class="regen-note"></span></p>
+            <table>
+                <thead>
+                    <tr><th>Move</th><th>Effect</th><th>Family</th><th>Colour</th><th>File</th></tr>
+                </thead>
+                <tbody id="attacksBody"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -415,7 +460,69 @@
                 }).catch(err => setStatus("❌ Save failed: " + err, '#D32F2F'));
         }
 
-        function loadDashboard() { fetch('/dashboard_data').then(res => res.json()).then(data => { const header = document.getElementById('matrixHeader'); header.innerHTML = '<th>Beast</th>'; data.animations.forEach(anim => { header.innerHTML += `<th>${anim}</th>`; }); const body = document.getElementById('matrixBody'); body.innerHTML = ''; data.matrix.forEach(row => { let tr = `<tr><td class="beast-name">${row.beast}${row.effect ? ' <span style="color:#888">(effect)</span>' : ''}</td>`; data.animations.forEach(anim => { const cell = row.anims[anim]; if (!cell) { tr += '<td></td>'; return; } const bareName = (anim === 'fx' ? 'fx_' : 'spr_') + (anim === 'fx' ? row.beast : row.beast + '_' + anim); if (cell.exists) { tr += `<td><img class="preview-img" src="/drawable/${cell.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${cell.file}', '${bareName}')">✏️ EDIT</button></td>`; } else { tr += `<td><div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('${bareName}')">➕ CREATE</button></td>`; } }); tr += '</tr>'; body.innerHTML += tr; }); }); }
+        function showTab(name) {
+            ['creatures', 'attacks'].forEach(t => {
+                document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+                document.getElementById('tabBtn-' + t).classList.toggle('active', t === name);
+            });
+            try { localStorage.setItem('studioTab', name); } catch (e) { }
+        }
+        let attackRows = [];
+        function attackNames() { return attackRows.map(r => r.beast).join(','); }
+        function attackCells(row) {
+            const img = row.exists ? `<img class="preview-img" src="/drawable/${row.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${row.file}', 'fx_${row.beast}')">✏️ EDIT</button>`
+                : `<div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('fx_${row.beast}')">➕ CREATE</button>`;
+            return `<td class="beast-name">${row.move}${row.hand_edited.length ? ' <span style="color:#FFC107" title="painted in the Studio">✋</span>' : ''}<button class="btn-regen" onclick="regenerate('${row.beast}', this)">🔄 REGENERATE</button><div class="regen-note"></div></td>`
+                + `<td>${img}</td><td>${row.family}</td><td>${row.line}</td><td style="color:#888">${row.file}</td>`;
+        }
+        function renderAttacks(attacks) {
+            attackRows = attacks || [];
+            attackRows.forEach(row => { rowsByBeast[row.beast] = row; });
+            document.getElementById('attacksBody').innerHTML = attackRows.map(row => `<tr id="row-${row.beast}">${attackCells(row)}</tr>`).join('');
+        }
+        let rowsByBeast = {};  // the last /dashboard_data rows, for regenerate's hand-edit check
+        function rowCells(row, animations) { let tr = `<td class="beast-name">${row.beast}${row.effect ? ' <span style="color:#888">(effect)</span>' : ''}<button class="btn-regen" onclick="regenerate('${row.beast}', this)">🔄 REGENERATE</button><div class="regen-note"></div></td>`; animations.forEach(anim => { const cell = row.anims[anim]; if (!cell) { tr += '<td></td>'; return; } const bareName = (anim === 'fx' ? 'fx_' : 'spr_') + (anim === 'fx' ? row.beast : row.beast + '_' + anim); if (cell.exists) { tr += `<td><img class="preview-img" src="/drawable/${cell.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${cell.file}', '${bareName}')">✏️ EDIT</button></td>`; } else { tr += `<td><div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('${bareName}')">➕ CREATE</button></td>`; } }); return tr; }
+        function loadDashboard() { fetch('/dashboard_data').then(res => res.json()).then(data => { const header = document.getElementById('matrixHeader'); header.innerHTML = '<th>Beast</th>'; data.animations.forEach(anim => { header.innerHTML += `<th>${anim}</th>`; }); rowsByBeast = {}; data.matrix.forEach(row => { rowsByBeast[row.beast] = row; }); document.getElementById('matrixBody').innerHTML = data.matrix.map(row => `<tr id="row-${row.beast}">${rowCells(row, data.animations)}</tr>`).join(''); renderAttacks(data.attacks); }); }
+
+        // Redraw one row from designs.py/effects.py (autogen.py --only <row>), then reload just that row.
+        // GIFs painted here are kept unless you say to redraw them too.
+        function regenerate(beast, btn) {
+            const painted = beast.split(',').flatMap(b => (rowsByBeast[b] && rowsByBeast[b].hand_edited) || []);
+            const force = painted.length > 0 && confirm(`${painted.length} GIF${painted.length === 1 ? ' in ' + beast + ' was' : 's in ' + beast + ' were'} painted in the Studio:\n\n${painted.join('\n')}\n\nOK: redraw those too (the painting is lost).\nCancel: keep them and redraw the rest.`);
+            const note = btn.parentElement.querySelector('.regen-note');
+            btn.disabled = true; btn.innerText = '⏳ REDRAWING'; note.style.color = '#FF9800'; note.innerText = ''; note.title = '';
+            fetch('/regenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ beast: beast, force: force }) })
+                .then(res => res.json()).then(data => {
+                    if (data.log) console.log(data.log);
+                    if (data.status !== 'success') throw new Error(data.error || 'autogen failed');
+                    let msg = `✅ ${data.written} GIF${data.written === 1 ? '' : 's'} redrawn`, color = '#4CAF50';
+                    if (data.kept.length) msg += `, ${data.kept.length} painted kept`;
+                    if (data.warnings.length) { msg += `, ⚠️ ${data.warnings.length} warning${data.warnings.length === 1 ? '' : 's'} (hover)`; color = '#FFC107'; }
+                    refreshRow(beast, msg, color, data.warnings.join('\n'));
+                }).catch(err => { btn.disabled = false; btn.innerText = '🔄 REGENERATE'; note.style.color = '#D32F2F'; note.innerText = '❌ ' + err.message; });
+        }
+        function refreshRow(beast, msg, color, title) {
+            fetch('/dashboard_data').then(res => res.json()).then(data => {
+                data.matrix.forEach(row => { rowsByBeast[row.beast] = row; });
+                if (beast.includes(',')) {  // REGENERATE ALL on the Attacks tab
+                    renderAttacks(data.attacks);
+                    const note = document.querySelector('#tab-attacks p .regen-note'); note.style.color = color; note.innerText = ' ' + msg; note.title = title;
+                    const btn = document.querySelector('#tab-attacks p .btn-regen'); btn.disabled = false; btn.innerText = '🔄 REGENERATE ALL';
+                    return;
+                }
+                (data.attacks || []).forEach(row => { rowsByBeast[row.beast] = row; });
+                if (rowsByBeast[beast] && rowsByBeast[beast].move) {
+                    const tr = document.getElementById('row-' + beast);
+                    tr.innerHTML = attackCells(rowsByBeast[beast]);
+                    const note = tr.querySelector('.regen-note'); note.style.color = color; note.innerText = msg; note.title = title;
+                    return;
+                }
+                const tr = document.getElementById('row-' + beast);
+                if (!tr || !rowsByBeast[beast]) return;
+                tr.innerHTML = rowCells(rowsByBeast[beast], data.animations);
+                const note = tr.querySelector('.regen-note'); note.style.color = color; note.innerText = msg; note.title = title;
+            });
+        }
         function prepareCreate(filename) { document.getElementById('filename').value = filename; initBlankFrames(); scale = 1; loadFrame(0); window.scrollTo(0, 0); }
         // /load returns frames at their real size (autogen's 2x write is undone) plus durations and scale.
         function loadFromMatrix(filename, bareName) {
@@ -431,6 +538,7 @@
         }
 
         initBlankFrames(); renderFrameList(); loadDashboard();
+        try { if (localStorage.getItem('studioTab') === 'attacks') showTab('attacks'); } catch (e) { }
     </script>
 </body>
 

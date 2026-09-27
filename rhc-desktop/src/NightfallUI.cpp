@@ -7,6 +7,7 @@ namespace RHC {
     namespace NightfallUI {
         HWND hwnd = NULL; HWND hSleepEdit = NULL; HWND hWakeEdit = NULL;
         HWND g_hOverlay = NULL; int g_OverlayMode = 0;
+        int g_StillTicks = 0; // flashlight timer ticks since the mouse last moved
 
         LRESULT CALLBACK OverlayProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch(uMsg) {
@@ -20,7 +21,11 @@ namespace RHC {
                     if (g_OverlayMode == 2) {
                         POINT pt; GetCursorPos(&pt);
                         static POINT lastPt = {-1, -1};
+                        // After half a second without the mouse moving, look 10 times a second instead of 60,
+                        // so a still night doesn't wake the CPU 60 times a second
                         if (pt.x != lastPt.x || pt.y != lastPt.y) {
+                            if (g_StillTicks >= 30) SetTimer(hwnd, 1, 16, NULL);
+                            g_StillTicks = 0;
                             lastPt = pt;
                             int vx = GetSystemMetrics(SM_XVIRTUALSCREEN); int vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
                             int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN); int vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
@@ -31,6 +36,9 @@ namespace RHC {
                             CombineRgn(hRgn, hRgn, hHole, RGN_DIFF);
                             SetWindowRgn(hwnd, hRgn, TRUE);
                             DeleteObject(hHole); // hRgn is now owned by the system
+                        } else if (g_StillTicks < 30) {
+                            g_StillTicks++;
+                            if (g_StillTicks == 30) SetTimer(hwnd, 1, 100, NULL);
                         }
                     }
                     return 0;
@@ -56,7 +64,7 @@ namespace RHC {
                     SetWindowLong(g_hOverlay, GWL_EXSTYLE, WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED);
                     SetLayeredWindowAttributes(g_hOverlay, 0, 255, LWA_ALPHA);
                     SetWindowPos(g_hOverlay, HWND_TOPMOST, GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN), GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN), SWP_NOACTIVATE);
-                    SetTimer(g_hOverlay, 1, 16, NULL); // 60 FPS Flashlight Tracking
+                    g_StillTicks = 0; SetTimer(g_hOverlay, 1, 16, NULL); // 60 FPS Flashlight Tracking
                     ShowWindow(g_hOverlay, SW_SHOWNA);
                 }
             }

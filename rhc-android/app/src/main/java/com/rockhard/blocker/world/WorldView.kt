@@ -38,9 +38,13 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
     interface Listener {
         fun onEncounter(e: WorldEvent.Encounter)
         fun onCompanionOut(e: WorldEvent.CompanionOut)
+        /** A poacher's netbeast came out of his cage. */
+        fun onRivalOut(e: WorldEvent.RivalOut) {}
         /** You walked into a coin. */
         fun onCoinPicked(e: WorldEvent.CoinPicked)
         fun onExplorationOver()
+        /** A beast let you walk past (the Cloak of Christ). */
+        fun onSlippedPast(e: WorldEvent.SlippedPast) {}
     }
 
     /** What's in your pockets, for the counters under the timer. */
@@ -153,6 +157,8 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
             for (e in events) when (e) {
                 is WorldEvent.Encounter -> listener?.onEncounter(e)
                 is WorldEvent.CompanionOut -> listener?.onCompanionOut(e)
+                is WorldEvent.RivalOut -> listener?.onRivalOut(e)
+                is WorldEvent.SlippedPast -> if (e.playerId == s.localPlayerId) listener?.onSlippedPast(e)
                 is WorldEvent.CoinPicked -> if (e.playerId == s.localPlayerId) listener?.onCoinPicked(e)
                 is WorldEvent.ExplorationOver -> { stop(); listener?.onExplorationOver(); return }
             }
@@ -308,7 +314,7 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         }
     }
 
-    /** Top-right overview: terrain, dots for beasts, arrow for you. */
+    /** Top-right overview: terrain, dots for beasts (gold for a visitor waiting for you), arrow for you. */
     private fun drawMinimap(canvas: Canvas, s: WorldSession) {
         val map = s.world.map
         val mm = minimap ?: Bitmap.createBitmap(map.size, map.size, Bitmap.Config.ARGB_8888).also { b ->
@@ -338,6 +344,8 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
                     canvas.drawCircle(x, y, 2.5f * density, hud)
                     canvas.drawLine(x, y, x + cos(e.angle).toFloat() * 6 * density, y + sin(e.angle).toFloat() * 6 * density, hud)
                 }
+                // a poacher or the boss waiting for you: bigger and gold, so you can go back for one you passed
+                e.state == EntityState.WAIT -> { hud.color = Color.rgb(255, 196, 64); canvas.drawCircle(x, y, 2.8f * density, hud) }
                 e.kind == EntityKind.BEAST && e.state != EntityState.GONE -> { hud.color = Color.rgb(255, 80, 80); canvas.drawCircle(x, y, 1.8f * density, hud) }
                 e.kind == EntityKind.PLAYER -> { hud.color = Color.CYAN; canvas.drawCircle(x, y, 2f * density, hud) }
             }

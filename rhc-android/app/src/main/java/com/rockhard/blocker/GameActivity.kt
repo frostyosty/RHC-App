@@ -23,6 +23,7 @@ class GameActivity : Activity() {
     internal lateinit var prefs: SharedPreferences
 
     internal var aetherSeconds = 600
+    internal var aetherDay = ""   // the day aetherSeconds belongs to (AetherEngine.today())
     internal var aetherDepleted = false
     internal var exploreDifficulty = 50
     internal var totalExpeds = 0
@@ -51,6 +52,7 @@ class GameActivity : Activity() {
     internal var transfusers = 0
     internal var party = mutableListOf<Netbeast>()
     internal var activePetIndex = 0
+    internal var lastStandStrike: Runnable? = null // the beast's clock while you're punching
     internal var forSaleParty = mutableListOf<Netbeast>()
     internal var marketBeasts = mutableListOf<Netbeast>()
     internal val activeOffers = mutableMapOf<String, Int>()
@@ -64,6 +66,8 @@ class GameActivity : Activity() {
     internal var nextWalk: PreparedWalk? = null   // today's walk, made ahead for its first frame
     internal var preparingWalk = false
     internal var walkCoins = 0                    // coins picked up on this walk
+    internal val worldVisitors = mutableMapOf<Int, WorldVisitor>() // this walk's boss and poachers, by entity id (WorldVisitors.kt)
+    internal val announcedVisitors = mutableSetOf<String>()       // ...and those mentioned since the game opened
     internal var weatherIcon = "☀️"
     internal var currentCity = "Local Sanctuary"
 
@@ -91,14 +95,17 @@ class GameActivity : Activity() {
                         tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4"))
                     }
                     tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
-                    
-                    if (aetherSeconds <= 0) {
-                        aetherDepleted = true
+                    if (tickCounter % 5 == 0) AetherEngine.save(prefs, aetherDay, aetherSeconds)
+
+                    if (aetherSeconds <= 0) aetherDepleted = true
+                    val closing = if (aetherSeconds <= 0) "Aether Depleted! Returning to reality." else if (tickCounter % 10 == 0) AetherEngine.nightfallReason(prefs) else null
+                    if (closing != null) {
                         // battleOver stays true after endBattle(), so "in a battle"
                         // needs an active battle flag, not just !battleOver.
                         val inBattle = !battleOver && (isWildBattle || isTrainerBattle)
                         if (!inBattle) {
-                            android.widget.Toast.makeText(this@GameActivity, "Aether Depleted! Returning to reality.", android.widget.Toast.LENGTH_LONG).show()
+                            AetherEngine.save(prefs, aetherDay, aetherSeconds)
+                            android.widget.Toast.makeText(this@GameActivity, closing, android.widget.Toast.LENGTH_LONG).show()
                             finish()
                             return
                         }
@@ -131,12 +138,13 @@ class GameActivity : Activity() {
             wipeCorruptSave()
         }
 
-        // Initialize Aether Engine!
-        if (aetherSeconds == 600 && !isUnderAttack) {
-            aetherSeconds = AetherEngine.calculateStartingAether(prefs)
-            val rems = prefs.getInt("CURRENT_REMNANTS", 0)
-            if (rems > 0) runOnUiThread { Toast.makeText(this, "$rems:00 unused aether remnants added!", Toast.LENGTH_LONG).show() }
-        }
+        // Initialize Aether Engine! What's left of today's, or a new day's
+        aetherDay = AetherEngine.today()
+        aetherSeconds = AetherEngine.loadToday(prefs)
+        aetherDepleted = aetherSeconds <= 0
+        tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}" // not the layout's 10:00 until the first tick
+        val rems = prefs.getInt("CURRENT_REMNANTS", 0)
+        if (rems > 0) runOnUiThread { Toast.makeText(this, "$rems:00 unused aether remnants added!", Toast.LENGTH_LONG).show() }
 
         generateMarket()
         setupTabs()
@@ -226,7 +234,10 @@ class GameActivity : Activity() {
                 showBattleArena("YOU", bossName)
             }
             updateBattleUI()
+            startTicking() // Aether and Nightfall pick up again once the invasion is over
         } else {
+            // Nightfall hours, or today's Aether is spent: no playing (a Defend fight above still goes ahead)
+            AetherEngine.closedReason(prefs)?.let { leaveGame(it); return }
             setUIState("HUB")
             printLog("> INITIALIZING NETBEAST SAFARI...")
             printLog("> Welcome back, $playerName!")
@@ -236,8 +247,26 @@ class GameActivity : Activity() {
 
             processFleePenalty()
             checkOfflineExpeditions()
-            mainHandler.postDelayed(exploreRunnable, 3000)
+            startTicking()
         }
+    }
+
+    /** The 1-second tick. singleTask: every reopen comes through onNewIntent, so never post a second one (it would drain Aether twice as fast). */
+    private fun startTicking() {
+        mainHandler.removeCallbacks(exploreRunnable)
+        mainHandler.postDelayed(exploreRunnable, 3000)
+    }
+
+    /**
+     * Out of the game with [reason]. When the game is the default launch, back to the
+     * main screen, since opening the app would only come straight back here.
+     */
+    private fun leaveGame(reason: String) {
+        Toast.makeText(this, reason, Toast.LENGTH_LONG).show()
+        if (prefs.getBoolean("LAUNCH_GAME_DEFAULT", false)) {
+            startActivity(Intent(this, MainActivity::class.java).apply { putExtra("FROM_GAME", true) })
+        }
+        finish()
     }
 
     /** The weather where you are (it also reshapes the Wilds' region), reported as a WEATHER UPLINK. */
@@ -303,6 +332,7 @@ class GameActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
+        AetherEngine.save(prefs, aetherDay, aetherSeconds)
         findViewById<com.rockhard.blocker.world.WorldView>(R.id.worldView)?.stop()
     }
 

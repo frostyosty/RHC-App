@@ -69,24 +69,11 @@ class WatchdogReceiver : BroadcastReceiver() {
             val pi = PendingIntent.getBroadcast(context, 1001, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             
             val triggerAt = System.currentTimeMillis() + (15 * 60 * 1000L)
-            
-            try {
-                // FIX: Use AlarmClock API to completely bypass Android 14+ Doze Mode
-                // and bypass the SCHEDULE_EXACT_ALARM permission restrictions.
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                    val info = AlarmManager.AlarmClockInfo(triggerAt, pi)
-                    am.setAlarmClock(info, pi)
-                } else {
-                    am.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-                }
-            } catch (e: Exception) {
-                // Ultimate Fallback
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-                } else {
-                    am.set(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-                }
-            }
+
+            // An ordinary alarm, not a wake-up one: it waits until the phone is next awake, which is when a
+            // disabled shield matters. (The alarm-clock kind pulled the phone out of deep sleep every 15 minutes,
+            // and the service going down is caught straight away by GuardianService.onUnbind anyway.)
+            am.set(AlarmManager.RTC, triggerAt, pi)
         }
     }
 }

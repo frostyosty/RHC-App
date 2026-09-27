@@ -2,9 +2,12 @@ package com.rockhard.blocker
 
 import android.accessibilityservice.AccessibilityService
 import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.CountDownTimer
@@ -46,6 +49,7 @@ class GuardianService : AccessibilityService() {
     private var tintView: View? = null
     private var isTintShowing = false
     private var tintParams: WindowManager.LayoutParams? = null
+    private var shownTintColor = 0
     private var bossTimer: CountDownTimer? = null
     private lateinit var ruleEngine: ShieldRuleEngine
     private lateinit var dpm: DevicePolicyManager
@@ -53,19 +57,42 @@ class GuardianService : AccessibilityService() {
     
     private var lastScanTime = 0L
     private val CONTENT_SCAN_COOLDOWN_MS = 1500L
-    
+    // Typing and focus changes are scanned once the typing pauses, not on every keystroke
+    private val TYPING_SCAN_DELAY_MS = 300L
+    private var typingScanPackage = ""
+
     private var currentActivityClass: String = ""
 
-    // Whitelisted wake lock to bypass aggressive Honor/Huawei/Meizu standby kills
-    private var wakeLock: android.os.PowerManager.WakeLock? = null
+    // No wake lock: the Guardian only has work while the screen is on, and a wake lock doesn't stop
+    // any phone killing the app (Huawei's whitelisted tags only stop it being killed FOR holding one)
 
     private val handler = Handler(Looper.getMainLooper())
-    private val nightfallRunnable = object : Runnable {
+    private val typingScanRunnable = Runnable {
+        if (System.currentTimeMillis() >= pauseUntil) scanActiveWindow(typingScanPackage)
+    }
+    // The Nightfall fade and the tint only show while the screen is on, so this stops when it goes off
+    // (screenReceiver starts it again). It runs every second during the 5-minute fade and otherwise on
+    // each minute boundary, since Nightfall is set in whole minutes
+    private val overlayRunnable = object : Runnable {
         override fun run() {
-            checkNightfallTick()
+            if (!(getSystemService(Context.POWER_SERVICE) as android.os.PowerManager).isInteractive) return
+            val fading = checkNightfallTick()
             checkTintTick()
-            handler.postDelayed(this, 1000)
+            handler.postDelayed(this, if (fading) 1000L else 60_000L - System.currentTimeMillis() % 60_000L + 50L)
         }
+    }
+    private fun restartOverlayTicks() {
+        handler.removeCallbacks(overlayRunnable)
+        handler.post(overlayRunnable)
+    }
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SCREEN_OFF) handler.removeCallbacks(overlayRunnable) else restartOverlayTicks()
+        }
+    }
+    // SharedPreferences only holds its listeners weakly, so this one lives in a field
+    private val overlayPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "CUSTOM_TINT_COLOR" || key == "NIGHTFALL_START" || key == "NIGHTFALL_END") restartOverlayTicks()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -111,12 +138,9 @@ class GuardianService : AccessibilityService() {
             .build()
         
         startForeground(1011, notification)
-        handler.post(nightfallRunnable)
-
-        // WakeLock Tag Hack initiation
-        val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
-        wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "LocationManagerService")
-        wakeLock?.acquire()
+        registerReceiver(screenReceiver, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF) })
+        getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(overlayPrefsListener)
+        handler.post(overlayRunnable)
 
         addLog("Service Connected.")
         Toast.makeText(this, "Rock Hard Shield Activated!", Toast.LENGTH_LONG).show()
@@ -127,7 +151,8 @@ class GuardianService : AccessibilityService() {
         }, 500)
     }
 
-    private fun checkNightfallTick() {
+    /** Updates the dimmer; true during the 5-minute fade before Nightfall, when it needs updating every second. */
+    private fun checkNightfallTick(): Boolean {
         val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
         val nfStart = prefs.getInt("NIGHTFALL_START", -1)
         val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
@@ -152,12 +177,14 @@ class GuardianService : AccessibilityService() {
                 var alpha = diff / 300f
                 if (alpha > 0.95f) alpha = 0.95f
                 updateNightfallDimmer(alpha)
+                return true
             } else {
                 updateNightfallDimmer(0f)
             }
         } else {
             updateNightfallDimmer(0f)
         }
+        return false
     }
 
     
@@ -180,13 +207,11 @@ class GuardianService : AccessibilityService() {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES } }
                 tintParams = params
                 tintView = View(this).apply { setBackgroundColor(tintColor) }
-                try { windowManager?.addView(tintView, params); isTintShowing = true } catch (e: Exception) {}
-            } else {
-                val view = tintView
-                if (view != null) {
-                    view.setBackgroundColor(tintColor)
-                    try { windowManager?.updateViewLayout(view, tintParams) } catch (e: Exception) {}
-                }
+                try { windowManager?.addView(tintView, params); isTintShowing = true; shownTintColor = tintColor } catch (e: Exception) {}
+            } else if (tintColor != shownTintColor) {
+                // Redraw the full-screen tint only when its colour changes
+                tintView?.setBackgroundColor(tintColor)
+                shownTintColor = tintColor
             }
         } else {
             if (isTintShowing && tintView != null) {
@@ -255,8 +280,6 @@ class GuardianService : AccessibilityService() {
             currentActivityClass = className
         }
 
-        val rootNode = rootInActiveWindow
-        val isAdminActive = dpm.isAdminActive(compName)
         val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
 
         if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
@@ -277,13 +300,22 @@ class GuardianService : AccessibilityService() {
         val isUrlTextChange = event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || 
                               event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED
 
-        if (!isWindowStateChange && !isUrlTextChange && now - lastScanTime < CONTENT_SCAN_COOLDOWN_MS) {
-            rootNode?.recycle()
+        if (isUrlTextChange) {
+            typingScanPackage = packageName
+            handler.removeCallbacks(typingScanRunnable)
+            handler.postDelayed(typingScanRunnable, TYPING_SCAN_DELAY_MS)
             return
         }
-        lastScanTime = now
+        // Checked before fetching the window, which is a call into the other app
+        if (!isWindowStateChange && now - lastScanTime < CONTENT_SCAN_COOLDOWN_MS) return
 
-        val action = ruleEngine.evaluate(packageName, currentActivityClass, rootNode, isAdminActive)
+        scanActiveWindow(packageName)
+    }
+
+    private fun scanActiveWindow(packageName: String) {
+        lastScanTime = System.currentTimeMillis()
+        val rootNode = rootInActiveWindow
+        val action = ruleEngine.evaluate(packageName, currentActivityClass, rootNode) { dpm.isAdminActive(compName) }
 
         when (action) {
             is ShieldAction.Block -> {
@@ -425,7 +457,7 @@ class GuardianService : AccessibilityService() {
         // --- INSTANT PRODUCTIVITY REDIRECT ---
         val destIntent = if (!isGamers) {
             Intent(this, MomentumActivity::class.java)
-        } else if (isGameDefault) {
+        } else if (isGameDefault && AetherEngine.closedReason(prefs) == null) { // not in Nightfall hours or once Aether is spent
             Intent(this, GameActivity::class.java)
         } else {
             Intent(this, MainActivity::class.java)
@@ -687,10 +719,10 @@ class GuardianService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacks(nightfallRunnable)
-        if (wakeLock?.isHeld == true) {
-            wakeLock?.release()
-        }
+        handler.removeCallbacks(overlayRunnable)
+        handler.removeCallbacks(typingScanRunnable)
+        try { unregisterReceiver(screenReceiver) } catch (e: Exception) {} // never registered if it didn't connect
+        getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(overlayPrefsListener)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {

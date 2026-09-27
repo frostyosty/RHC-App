@@ -3,22 +3,23 @@ import android.graphics.Color
 import android.widget.Toast
 import kotlin.random.Random
 
+const val EXPEDITION_MS = 180_000L // how long one explore lasts
+
 internal fun GameActivity.performGlobalTick() {
     val eventMsg = BossEventEngine.checkAndGenerateEvent(prefs, party, currentCity)
     if (eventMsg != null) { printLog(eventMsg); updateBagScreen() }
 
-    val isEventActive = prefs.getBoolean("EVENT_ACTIVE", false)
-    if (isEventActive && !isUnderAttack && !isWildBattle && activeQTEs.isEmpty()) {
-        val todayStr = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
-        val targetDate = prefs.getString("EVENT_TARGET_DATE", "") ?: "" 
-        if (todayStr >= targetDate) { spawnEventBossQTE(); return }
+    // With 3D exploring on, the boss and the poachers wait for you in the Wilds instead (WorldVisitors.kt)
+    if (world3dEnabled) tickWorldVisitors()
+    else {
+        if (BossEventEngine.isDue(prefs) && !isUnderAttack && !isWildBattle && activeQTEs.isEmpty()) { spawnEventBossQTE(); return }
+
+        val currentCity = prefs.getString("CURRENT_CITY", "") ?: ""
+        val currentSuburb = LocationEngine.currentSuburb(this)
+
+        val rescues = RescueEngine.getCapturedNearby(prefs, currentSuburb, currentCity)
+        rescues.forEach { capturedBeast -> spawnRescueQTE(capturedBeast, if (currentSuburb.isNotEmpty()) currentSuburb else currentCity) }
     }
-
-    val currentCity = prefs.getString("CURRENT_CITY", "") ?: ""
-    val currentSuburb = LocationEngine.currentSuburb(this)
-
-    val rescues = RescueEngine.getCapturedNearby(prefs, currentSuburb, currentCity)
-    rescues.forEach { capturedBeast -> spawnRescueQTE(capturedBeast, if (currentSuburb.isNotEmpty()) currentSuburb else currentCity) }
 
     if (forSaleParty.isNotEmpty() && Random.nextInt(100) < 20) {
         val target = forSaleParty.random()
@@ -58,7 +59,8 @@ if (now >= activeExpeditions[petIndex]!!) {
             if (!isPlayer) {
                 val pet = party[petIndex]
                 if (pet.name.contains("[Will to Live]")) {
-                    val heal = (pet.maxHp * 0.15).toInt()
+                    // 10% of max HP per minute out exploring (expeditions are 3 minutes)
+                    val heal = (pet.maxHp * 0.10 * (EXPEDITION_MS / 60_000)).toInt()
                     pet.hp = (pet.hp + heal).coerceAtMost(pet.maxHp)
                     printLog("> 💖[Will to Live] healed $petName for $heal HP!")
                 }
@@ -80,6 +82,10 @@ if (now >= activeExpeditions[petIndex]!!) {
                 else if (roll < 30) { printLog("> $petName found a Net!"); nets++; saveItems(); updateBagScreen() } 
                 else if (roll < 50) { printLog("> $petName found a Potion!"); potions++; saveItems(); updateBagScreen() } 
                 else if (roll < 70) { val c = Random.nextInt(5, 15); focusCoins += c; printLog("> $petName found $c Focus Coins!"); saveItems(); updateBagScreen() } 
+                else if (isPlayer && prefs.getInt("CLOAK_LEFT", 0) > 0) { // Cloak of Christ: it never notices you
+                    prefs.edit().putInt("CLOAK_LEFT", prefs.getInt("CLOAK_LEFT", 0) - 1).apply()
+                    printLog("> 🕊️ A wild netbeast looks straight through you. The Cloak of Christ hides you.")
+                }
                 else {
                     val dummyPet = if (isPlayer) Netbeast("You", "Human", 20, 20, "Punch", "Block", "None", 0L, 0, 0, 0, false, "None", 0, 0, 0, 0, "None", 0) else party[petIndex]
                     spawnWildQTE(petIndex, dummyPet)

@@ -30,14 +30,14 @@ internal fun GameActivity.executePlayerMove(moveName: String) {
     val isElusive = currentEnemy?.name?.contains("[Elusive]") == true
     
     if ((isEnemyFlying && !SkillEngine.isAntiAir(moveName) && !SkillEngine.isAntiFlyingDouble(moveName) && Random.nextInt(100) < 90) || (isElusive && Random.nextInt(100) < 30)) {
-        printLog(if (isElusive) "> 💨 ${currentEnemy?.name} is [Elusive] and dodged instantly!" else "> ✈️ ${currentEnemy?.name} is FLYING! The attack missed entirely!")
+        printLog(if (isElusive) "> 💨 ${currentEnemy?.name} is [Elusive] and dodged instantly!" else "> ✈️ ${currentEnemy?.name} is out of reach!")
         AnimUtils.animEvade(findViewById(R.id.spriteEnemy), false)
         mainHandler.postDelayed({ triggerEnemyCounterAttack() }, 1500)
         return
     }
 
     mainHandler.postDelayed({
-        if (isUnderAttack && currentEnemy?.type != "EventBoss") { printLog("> ${currentEnemy?.name} EVADED! It is invincible!"); AnimUtils.animEvade(findViewById(R.id.spriteEnemy), false); triggerEnemyCounterAttack() } 
+        if (isUnderAttack && currentEnemy?.type != "EventBoss") { printLog("> ${currentEnemy?.name} is out of reach!"); AnimUtils.animEvade(findViewById(R.id.spriteEnemy), false); triggerEnemyCounterAttack() } 
         else {
             val (skillDmg, skillLog) = SkillEngine.resolveSkill(this, activePet, moveName)
             var baseDmg = skillDmg
@@ -99,27 +99,67 @@ internal fun GameActivity.executePlayerMove(moveName: String) {
     }, 300)
 }
 
+/** In a last stand the beast doesn't wait for your turn: it strikes this long after it turns on you. */
+private const val LAST_STAND_STRIKE_MS = 3000L
+
+/**
+ * A punch takes no turn: tap as fast as you like. The beast's own clock ([armLastStandStrike],
+ * or its patience in the Wilds) decides when it strikes back.
+ */
 internal fun GameActivity.executeHumanPunch() {
-cancelBattleTimer()
     if (battleOver) return
-    printLog("\n--- PLAYER TURN ---\n> YOU THROW A PUNCH!")
+    val enemy = currentEnemy ?: return
+    armLastStandStrike()
     AnimUtils.animAttack(findViewById(R.id.spritePlayer), true)
     playSpriteAnim(true, "YOU", "attack")
     AudioEngine.playSfx(this, "fx_hit")
-    
+
+    if (Relics.swordOn(prefs)) { // Sword of the Spirit: the punch is a sword swing that slays it outright
+        playFx(false, "sword_of_the_spirit")
+        mainHandler.postDelayed({
+            if (battleOver || currentEnemy !== enemy) return@postDelayed
+            AnimUtils.animShake(findViewById(R.id.spriteEnemy)); playSpriteAnim(false, enemy.name, "hit"); vibratePhone(60)
+            printLog("> ⚔️ You swing the Sword of the Spirit! It cuts clean through ${enemy.name}!")
+            enemy.hp = 0; updateHealthBars(); processEnemyVictory()
+        }, 300)
+        return
+    }
+
     val hasPlayerAmulet = prefs.getBoolean("PLAYER_HAS_AMULET", false); var dmg = Random.nextInt(1, 5)
-    
+
     mainHandler.postDelayed({
-        AnimUtils.animShake(findViewById(R.id.spriteEnemy)); playSpriteAnim(false, currentEnemy!!.name, "hit"); vibratePhone(50)
-        if (hasPlayerAmulet) { dmg = (currentEnemy!!.maxHp * 0.25).toInt().coerceAtLeast(100); printLog("> 🔮 YOUR AMULET GLOWS! You strike with the force of a TITAN! $dmg damage!") } 
-        else printLog("> It barely connects... $dmg damage.\n> ${currentEnemy?.name} looks at you with pity.")
-        
-        if (currentEnemy?.name?.contains("[Enraged]") == true) { dmg = (dmg * 1.2).toInt() }
-        currentEnemy!!.hp -= dmg; updateHealthBars()
-        
-        if (currentEnemy!!.name.contains("[Spiked]") && dmg > 0) { printLog("> 🌵 [Spiked] recoil! You cut your hand! (Ouch)") }
-        
-        if (currentEnemy!!.hp <= 0) { printLog("> 👑 UNBELIEVABLE! YOU KILLED IT WITH YOUR BARE HANDS!"); processEnemyVictory() } 
-        else { mainHandler.postDelayed({ AnimUtils.animAttack(findViewById(R.id.spriteEnemy), false); currentEnemy?.let { playSpriteAnim(false, it.name, "attack") }; mainHandler.postDelayed({ AnimUtils.animDeath(findViewById(R.id.spritePlayer)); playSpriteAnim(true, "YOU", "hit"); vibratePhone(1000); printLog("\n--- ENEMY TURN ---\n> ${currentEnemy?.name} obliterates you for 9,999 damage."); endBattle() }, 300) }, 1500) }
+        if (battleOver || currentEnemy !== enemy) return@postDelayed
+        AnimUtils.animShake(findViewById(R.id.spriteEnemy)); playSpriteAnim(false, enemy.name, "hit"); vibratePhone(30)
+        if (hasPlayerAmulet) { dmg = (enemy.maxHp * 0.25).toInt().coerceAtLeast(100); printLog("> 🔮 POWER PUNCH! Your Titan Amulet surges and you hit for $dmg damage!") }
+        else printLog("> 👊 $dmg damage.")
+
+        if (enemy.name.contains("[Enraged]")) { dmg = (dmg * 1.2).toInt() }
+        enemy.hp -= dmg; updateHealthBars()
+
+        if (enemy.name.contains("[Spiked]") && dmg > 0) { printLog("> 🌵 [Spiked] recoil! You cut your hand! (Ouch)") }
+
+        if (enemy.hp <= 0) { printLog("> 👑 UNBELIEVABLE! YOU KILLED IT WITH YOUR BARE HANDS!"); processEnemyVictory() }
+    }, 300)
+}
+
+/** Starts the beast's clock on the battle screen (the Wilds use its patience instead). */
+internal fun GameActivity.armLastStandStrike() {
+    if (worldFight != null || lastStandStrike != null || battleOver || !playerLastStand) return
+    val enemy = currentEnemy ?: return
+    val r = Runnable {
+        lastStandStrike = null
+        if (!battleOver && playerLastStand && currentEnemy === enemy) enemyObliteratesYou()
+    }
+    lastStandStrike = r
+    mainHandler.postDelayed(r, LAST_STAND_STRIKE_MS)
+}
+
+private fun GameActivity.enemyObliteratesYou() {
+    val enemy = currentEnemy ?: return
+    AnimUtils.animAttack(findViewById(R.id.spriteEnemy), false); playSpriteAnim(false, enemy.name, "attack")
+    mainHandler.postDelayed({
+        if (battleOver || currentEnemy !== enemy) return@postDelayed
+        AnimUtils.animDeath(findViewById(R.id.spritePlayer)); playSpriteAnim(true, "YOU", "hit"); vibratePhone(1000)
+        printLog("\n--- ENEMY TURN ---\n> ${enemy.name} obliterates you for 9,999 damage."); endBattle()
     }, 300)
 }

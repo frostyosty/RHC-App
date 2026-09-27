@@ -35,7 +35,7 @@ object GameData {
         TraitDef("Regenerative", 10, "None", 1.0, "Heals 20% of Max HP after surviving a battle."),
         TraitDef("Persistence", 10, "Repetition", 1.0, "+15% Damage per consecutive repeated attack."),
         TraitDef("Dynamism", 10, "Variation", 1.0, "+15% Damage per consecutive alternating attack."),
-        TraitDef("Will to Live", 0, "Rescue", 1.0, "Heals 15% of Max HP after returning from exploration."),
+        TraitDef("Will to Live", 0, "Rescue", 1.0, "Heals 10% of Max HP for every minute spent exploring."),
         TraitDef("Vampiric", 10, "Combat Mutation", 1.0, "Heals 15% of damage dealt."),
         TraitDef("Thick-Skinned", 10, "Combat Mutation", 1.2, "Takes 15% less damage."),
         TraitDef("Frenzy", 10, "Combat Mutation", 0.9, "+15% Critical Hit Chance."),
@@ -46,25 +46,27 @@ object GameData {
         TraitDef("Elusive", 0, "Boss", 1.0, "+30% flat Evasion rate."),
         TraitDef("Colossal", 0, "Boss", 1.0, "Absolute immunity to Stun and Terrify."),
         TraitDef("Spiked", 10, "Wild Mutation", 1.0, "Reflects 10% of damage taken back to the attacker."),
+        TraitDef("Herd", 0, "Party", 1.0, "3+ of this species in the party: +50% Double Strike chance, +5% for each one past 3."),
+        TraitDef("Hoard", 0, "Party", 1.0, "More than 5 netbeasts in the party: swapping costs no turn."),
         TraitDef("Enraged", 10, "Wild Mutation", 1.0, "Deals 30% more damage, but takes 20% more damage.")
     )
 
     val beasts = listOf(
-        BeastDef("Bytelet", "Tech", 50, "Ping", "Dodge", "Tech", 1),
+        BeastDef("Bytelet", "Tech", 50, "Ping", "Short Circuit", "Tech", 1),
         BeastDef("Cacheon", "Tech", 120, "Digital Swipe", "Overclock", "Tech", 2),
         BeastDef("Technophasia", "Tech", 220, "System Wipe", "Firewall", "Tech", 3),
-        BeastDef("Chirplet", "Social", 40, "Tweet", "Flee", "Social", 1),
-        BeastDef("Viralia", "Social", 110, "Viral Surge", "Cancel", "Social", 2),
+        BeastDef("Chirplet", "Social", 40, "Shriek", "Screech", "Social", 1),
+        BeastDef("Viralia", "Social", 110, "Viral Surge", "Silence", "Social", 2),
         BeastDef("Trendrake", "Social", 200, "Ratio", "Doxx", "Social", 3),
-        BeastDef("Noobit", "Gaming", 60, "Spam Click", "Cry", "Gaming", 1),
-        BeastDef("Skirmalot", "Gaming", 130, "XP Boost", "Critical Strike", "Gaming", 2),
-        BeastDef("Grindlord", "Gaming", 250, "Rage Quit", "G-Fuel", "Gaming", 3),
-        BeastDef("Bufferoo", "Streaming", 50, "Lag", "Skip", "Streaming", 1),
+        BeastDef("Noobit", "Gaming", 60, "Rapid Fire", "Tantrum", "Gaming", 1),
+        BeastDef("Skirmalot", "Gaming", 130, "Power Surge", "Critical Strike", "Gaming", 2),
+        BeastDef("Grindlord", "Gaming", 250, "Rage", "Venom Rush", "Gaming", 3),
+        BeastDef("Bufferoo", "Streaming", 50, "Lag", "Jump Cut", "Streaming", 1),
         BeastDef("Streamlet", "Streaming", 110, "Binge", "Autoplay", "Streaming", 2),
         BeastDef("Bingewyrm", "Streaming", 210, "Marathon", "Hypnotize", "Streaming", 3),
         BeastDef("Zephyrlet", "Flying", 35, "Tackle", "Aero Beam", "Flying", 1),
         BeastDef("Airstream", "Flying", 75, "Swipe", "Chrono Blast", "Flying", 2),
         BeastDef("Stratolord", "Flying", 130, "Bite", "Sky-Breaker", "Flying", 3),
-        BeastDef("Cartini", "Shopping", 45, "Browse", "Wishlist", "Shopping", 1)
+        BeastDef("Cartini", "Shopping", 45, "Snatch", "Price Gouge", "Shopping", 1)
     )
 }
