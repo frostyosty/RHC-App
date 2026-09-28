@@ -84,7 +84,7 @@ android {
     }
 }
 dependencies {
-    gamersFemaleHomevisitsImplementation("com.google.ar:core:1.41.0")
+    add("gamersFemaleHomevisitsImplementation", "com.google.ar:core:1.41.0")
     implementation(project(":world-core"))
-    gamersFemaleHomevisitsImplementation(project(":homevisits-core"))
+    add("gamersFemaleHomevisitsImplementation", project(":homevisits-core"))
 }
