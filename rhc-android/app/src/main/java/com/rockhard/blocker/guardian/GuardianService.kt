@@ -370,7 +370,7 @@ class GuardianService : AccessibilityService() {
         if (listKey == "BLOCKLIST_APP") prefs.edit().putBoolean("FIRST_OVERCOME_APP_$triggerWord", true).apply()
         else prefs.edit().putBoolean("FIRST_OVERCOME_WEB_$triggerWord", true).apply()
 
-        val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+        val isGamers = Flavor.isGamers && !Flavor.homevisits()
         pauseUntil = System.currentTimeMillis() + 3000L
 
         if (isGamers) {
@@ -425,7 +425,7 @@ class GuardianService : AccessibilityService() {
         val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
 
         val currentFlavor = BuildConfig.FLAVOR.lowercase()
-        val isGamers = currentFlavor.contains("gamers")
+        val isGamers = Flavor.isGamers && !Flavor.homevisits()
         val isGameDefault = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false)
 
         val lockoutUntil = prefs.getLong("FLEE_LOCKOUT_UNTIL", 0L)

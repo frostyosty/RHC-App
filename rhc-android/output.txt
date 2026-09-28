@@ -1,0 +1,2320 @@
+===== app/src/main/AndroidManifest.xml =====
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    
+    <!-- Permissions for the Keep-Alive SyncAdapter -->
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+
+    <application android:allowBackup="false" android:supportsRtl="true" android:theme="@android:style/Theme.NoTitleBar" android:label="@string/app_name">
+        
+        <activity android:name=".MainActivity" android:exported="true" android:label="@string/app_name" />
+        <activity android:name=".TrapActivity" android:exported="false" android:launchMode="singleTask" />
+        <activity android:name=".GameActivity" android:exported="false" android:launchMode="singleTask" android:label="Netbeasts Safari" />
+        <activity android:name=".MomentumActivity" android:exported="false" android:launchMode="singleTask" />
+        
+        <activity-alias android:name=".DefaultLauncher" android:enabled="true" android:exported="true" android:icon="@mipmap/ic_launcher" android:targetActivity=".MainActivity" android:label="@string/app_name">
+            <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
+        </activity-alias>
+
+        <activity-alias android:name=".GameLauncher" android:enabled="false" android:exported="true" android:icon="@mipmap/ic_game" android:targetActivity=".MainActivity" android:label="Netbeasts">
+            <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
+        </activity-alias>
+
+        <service android:name=".GuardianService" android:foregroundServiceType="specialUse" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true" android:label="@string/app_name">
+            <intent-filter> <action android:name="android.accessibilityservice.AccessibilityService" /> </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/guardian_config" />
+        </service>
+        <receiver android:name=".AdminReceiver" android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true" android:label="@string/app_name" android:description="@string/app_name">
+            <meta-data android:name="android.app.device_admin" android:resource="@xml/device_admin" />
+            <intent-filter> <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" /> </intent-filter>
+        </receiver>
+        <receiver android:name=".guardian.BootReceiver" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+    
+        <receiver android:name=".ShutdownReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_SHUTDOWN" />
+                <action android:name="android.intent.action.QUICKBOOT_POWEROFF" />
+            </intent-filter>
+        </receiver>
+        <activity-alias android:name=".CloakLauncher" android:enabled="false" android:exported="true" android:icon="@drawable/ic_sys_sync" android:targetActivity=".MainActivity" android:label="Sync Services">
+            <intent-filter> <action android:name="android.intent.action.MAIN" /> <category android:name="android.intent.category.LAUNCHER" /> </intent-filter>
+        </activity-alias>
+
+        <activity android:name=".ProcessTextActivity" android:label="Overcome" android:theme="@android:style/Theme.NoDisplay" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <receiver android:name=".WatchdogReceiver" android:exported="false" />
+
+        <!-- SyncAdapter & Authenticator Services -->
+        <service android:name=".sync.StubAuthenticatorService" android:exported="true">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data android:name="android.accounts.AccountAuthenticator" android:resource="@xml/authenticator" />
+        </service>
+
+        <!-- In the app's own process, so the heartbeat keeps the Guardian's process warm rather than starting a second one -->
+        <service android:name=".sync.DummySyncService" android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter" android:resource="@xml/syncadapter" />
+        </service>
+
+        <provider android:name=".sync.StubContentProvider"
+            android:authorities="com.rockhard.blocker.provider"
+            android:exported="false"
+            android:syncable="true" />
+</application>
+</manifest>
+
+
+
+===== app/src/main/java/com/rockhard/blocker/MainActivity.kt =====
+package com.rockhard.blocker
+
+import android.widget.CheckBox
+import android.accounts.Account
+import android.accounts.AccountManager
+import android.app.Activity
+import android.app.admin.DevicePolicyManager
+import android.content.*
+import android.graphics.Color
+import android.net.Uri
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
+import android.text.TextUtils
+import android.view.View
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
+import android.widget.*
+
+class MainActivity : Activity() {
+    internal lateinit var dpm: DevicePolicyManager
+    internal lateinit var compName: ComponentName
+    internal lateinit var prefs: SharedPreferences
+    
+    internal val mainHandler = Handler(Looper.getMainLooper())
+    
+    // Runs only while the screen is showing (onResume to onPause). Momentum only changes when an entry
+    // evaporates another minute, so it waits until then (at most a minute); the debug log still ticks every second
+    internal val tickRunnable = object : Runnable {
+        override fun run() {
+            var next = 60_000L
+            if (!BuildConfig.FLAVOR.lowercase().contains("gamers")) {
+                updateMomentumUI()
+                next = MomentumEngine.msUntilNextChange(prefs).coerceAtMost(next - 50L) + 50L
+            }
+
+            if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
+                findViewById<View>(R.id.llDebugTerminal)?.visibility = View.VISIBLE
+                val terminalText = GuardianService.actionLogs.joinToString("\n")
+                findViewById<TextView>(R.id.tvTerminalOutput)?.text = terminalText
+                next = 1000L
+            } else {
+                findViewById<View>(R.id.llDebugTerminal)?.visibility = View.GONE
+            }
+            mainHandler.postDelayed(this, next)
+        }
+    }
+    // The Earned list as last drawn, so it's rebuilt only when it changes
+    internal var renderedEarned: String? = null
+
+    internal var setupPollHandler: Handler? = null
+    internal var setupPollRunnable: Runnable? = null
+    // Set when a setup button sends the user to the battery setting: until then, onPause watches for it
+    // being granted and brings the app back
+    private var setupPollUntil = 0L
+    private val SETUP_POLL_MS = 3 * 60 * 1000L
+    internal var allAppsList = listOf<Pair<String, String>>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+    // --- CLEANUP BAD NUMERIC ENTRIES (Fixes the 2026 Bug) ---
+    val appList = prefs.getString("BLOCKLIST_APP", "")
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?: emptyList()
+
+    val webList = prefs.getString("BLOCKLIST_WEB", "")
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?: emptyList()
+
+    val cleanApp = appList
+        .filter {
+            !it.split("|")[0]
+                .trim()
+                .matches(Regex("^[0-9]+$"))
+        }
+        .joinToString(",")
+
+    val cleanWeb = webList
+        .filter {
+            !it.split("|")[0]
+                .trim()
+                .matches(Regex("^[0-9]+$"))
+        }
+        .joinToString(",")
+
+    prefs.edit()
+        .putString("BLOCKLIST_APP", cleanApp)
+        .putString("BLOCKLIST_WEB", cleanWeb)
+        .apply()
+
+    // --------------------------------------------------------
+        try { prefs.getString("PARTY_DATA", "") } catch (e: Exception) { prefs.edit().clear().apply() }
+        if (!prefs.contains("INSTALL_TIME")) prefs.edit().putLong("INSTALL_TIME", System.currentTimeMillis()).apply()
+
+        val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+        CloakEngine.uncloak(this, prefs.getBoolean("LAUNCH_GAME_DEFAULT", false))
+
+        if (prefs.getBoolean("LAUNCH_GAME_DEFAULT", false) && !intent.getBooleanExtra("FROM_GAME", false)) {
+            // Nightfall or no Aether left: stay here and say why
+            val closed = if (isGamers) AetherEngine.closedReason(prefs) else null
+            if (closed != null) Toast.makeText(this, closed, Toast.LENGTH_LONG).show()
+            else if (isGamers) { startActivity(Intent(this, GameActivity::class.java)); finish(); return }
+        }
+        setContentView(R.layout.activity_main)
+        
+        WatchdogReceiver.scheduleWatchdog(this)
+        
+        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        compName = ComponentName(this, AdminReceiver::class.java)
+
+        if (!isGamers) { MomentumEngine.resetDailyIfNeeded(prefs); setupMomentumUI() }
+
+        findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.llSafariCard).visibility = if (isGamers) View.VISIBLE else View.GONE
+
+        refreshWeather()
+
+        if (!prefs.getBoolean("INITIALIZED", false)) {
+            val starterParty = "Cacheon,Tech,120,120,Ping,Glitch,System Wipe,0,0,0,0,false,None,0,0,0,0,None,0;Cardiol,Fitness,150,150,Momentum,Heavy Lift,Flex,0,0,0,0,false,None,0,0,0,0,None,0"
+            prefs.edit().putString("PARTY_DATA", starterParty).putInt("NETS", 5).putInt("SPRAYS", 2).putInt("POTIONS", 3).putBoolean("INITIALIZED", true).putBoolean("VIBRATION", true).apply()
+        }
+
+        findViewById<Button>(R.id.btnSettings).setOnClickListener { openSettingsMenu() }
+
+        val grantSettingsAccess = { prefs.edit().putLong("ALLOW_SETTINGS_UNTIL", System.currentTimeMillis() + 120000L).apply() }
+        findViewById<Button>(R.id.btnStep1).setOnClickListener { if (!isAccessibilityServiceEnabled(this, GuardianService::class.java)) { grantSettingsAccess(); DialogUtils.showCustomDialog(this, "Step 1: Rock Hard Shield", "Android hides this setting for security.\n\n→ Tap 'Downloaded apps' or 'Installed services'.\n→ Find '${getString(R.string.app_name)}'.\n→ Turn the switch ON.", true, "GO TO SETTINGS", { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }) } }
+        findViewById<Button>(R.id.btnStep2).setOnClickListener { if (!dpm.isAdminActive(compName)) { grantSettingsAccess(); DialogUtils.showCustomDialog(this, "Step 2: Lock App", "This prevents the app from being uninstalled.", true, "LOCK APP", { startActivity(Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply { putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName); putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Locks app down.") }) }) } }
+        findViewById<Button>(R.id.btnStepBatteryOpt).setOnClickListener { grantSettingsAccess(); setupPollUntil = System.currentTimeMillis() + SETUP_POLL_MS; val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }; try { startActivity(intent) } catch (e: Exception) { Toast.makeText(this, "Setting unavailable.", Toast.LENGTH_SHORT).show() } }
+
+        val isChinesePhone = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
+        val btn4 = findViewById<Button>(R.id.btnStep4); val btn5 = findViewById<Button>(R.id.btnStep5) 
+        if (isChinesePhone && btn4 != null && btn5 != null) {
+            btn4.visibility = View.VISIBLE; btn5.visibility = View.VISIBLE
+            btn4.text = "STEP 4: FIX AUTOSTART"; 
+            btn4.setOnClickListener { 
+                prefs.edit().putBoolean("AWAITING_STEP4", true).apply()
+                grantSettingsAccess()
+                DialogUtils.showCustomDialog(this, "Step 4: Autostart", "Set 'Autostart' to ON so the background process survives.", true, "FIX NOW", { 
+                    val intents = listOf(
+                        Intent().setComponent(ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")),
+                        Intent().setComponent(ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity")),
+                        Intent().setComponent(ComponentName("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity")),
+                        Intent().setComponent(ComponentName("com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity")),
+                        Intent().setComponent(ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity")),
+                        Intent().setComponent(ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager")),
+                        Intent().setComponent(ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity")),
+                        Intent().setComponent(ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"))
+                    )
+                    var success = false
+                    for (intent in intents) {
+                        try { startActivity(intent); success = true; break } catch (e: Exception) {}
+                    }
+                    if (!success) startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.parse("package:$packageName") })
+                }) 
+            }
+            btn5.text = "STEP 5: SECURE APP MANAGER"; btn5.setOnClickListener { prefs.edit().putBoolean("STEP5_CLICKED", true).apply(); DialogUtils.showCustomDialog(this, "Step 5: App Manager", "We will now aggressively block the Android/MIUI 'Manage Apps' list screen so the shield cannot be bypassed.", true, "SECURE IT", { refreshUI() }) }
+        }
+
+        findViewById<Button>(R.id.btnGame).setOnClickListener {
+            val closed = AetherEngine.closedReason(prefs)
+            if (closed != null) Toast.makeText(this, closed, Toast.LENGTH_LONG).show()
+            else startActivity(Intent(this, GameActivity::class.java))
+        }
+        
+        // --- NEW: Attach Uninstaller listener to the main layout button ---
+        findViewById<Button>(R.id.btnSafeAppManager)?.setOnClickListener { showSafeUninstaller() }
+        
+        findViewById<Button>(R.id.btnTestFilter)?.setOnClickListener {
+            val step1 = isAccessibilityServiceEnabled(this, GuardianService::class.java)
+            val step2 = dpm.isAdminActive(compName)
+            val pow = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            val step3 = pow.isIgnoringBatteryOptimizations(packageName)
+            val isChinese = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
+            val step4 = prefs.getBoolean("STEP4_CLICKED", false)
+            val step5 = prefs.getBoolean("STEP5_CLICKED", false)
+            val done = (step1 && step2 && step3 && (!isChinese || (step4 && step5)))
+            val isPremium = prefs.getBoolean("REWARD_PREMIUM", false)
+            if (done && !isPremium) {
+                prefs.edit().putBoolean("REWARD_PREMIUM", true).apply()
+                if (BuildConfig.FLAVOR.lowercase().contains("gamers")) {
+                    val legendary = if (kotlin.random.Random.nextBoolean()) "Aegis,Legendary,250,250,Light Pulse,Nova Shield,Orbital Cannon,0,0,0,0,true,None,0,0,0,0,None,0" else "Titan,Legendary,280,280,Feral Strike,Parry,Apex Predator,0,0,0,0,true,None,0,0,0,0,None,0"
+                    val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
+                    prefs.edit().putString("PARTY_DATA", if(partyStr.isEmpty()) legendary else "$partyStr;$legendary").apply()
+                    Toast.makeText(this, "🛡️ ALL SYSTEMS VERIFIED! Legendary Netbeast Unlocked!", Toast.LENGTH_LONG).show()
+                } else { MomentumEngine.addEarnedMomentum(prefs, "System Secured Bonus", false); Toast.makeText(this, "🛡️ ALL SYSTEMS VERIFIED! Gained 20 minutes of Momentum!", Toast.LENGTH_LONG).show() }
+            } else if (isPremium) {
+                Toast.makeText(this, "🛡️ Reward already claimed!", Toast.LENGTH_SHORT).show()
+            } else {
+                val missing = mutableListOf<String>()
+                if (!step1) missing.add("Step 1 (Accessibility)")
+                if (!step2) missing.add("Step 2 (Device Admin)")
+                if (!step3) missing.add("Step 3 (Battery Optimization)")
+                if (isChinese && !step4) missing.add("Step 4 (Autostart)")
+                if (isChinese && !step5) missing.add("Step 5 (Secure Manager)")
+                Toast.makeText(this, "⚠️ Setup incomplete! Missing: " + missing.joinToString(", "), Toast.LENGTH_LONG).show()
+            }
+            refreshUI()
+        }
+
+
+        setupCategorizedSpinners()
+        setupRedirectUI()
+        setupSyncAdapter()
+
+        findViewById<EditText>(R.id.etCustomWeb)?.apply {
+            setTextColor(Color.parseColor("#121212"))
+            setHintTextColor(Color.parseColor("#757575"))
+        }
+        findViewById<EditText>(R.id.etCustomRedirect)?.apply {
+            setTextColor(Color.parseColor("#121212"))
+            setHintTextColor(Color.parseColor("#757575"))
+        }
+
+        findViewById<Button>(R.id.btnAddWeb).setOnClickListener { 
+            val webInput = findViewById<EditText>(R.id.etCustomWeb).text.toString().trim().lowercase()
+            if (webInput.isNotEmpty()) {
+                if (webInput.matches(Regex("^[0-9]+$"))) {
+                    Toast.makeText(
+                        this,
+                        "Numeric-only blocks are too broad (e.g. blocking a year).",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@setOnClickListener
+                }
+
+                addBlockItem("BLOCKLIST_WEB", webInput, webInput)
+            }
+            findViewById<EditText>(R.id.etCustomWeb).setText("") 
+        }
+
+        val btnDumbPhoneCamera = findViewById<Button>(R.id.btnDrasticDumbPhoneCamera)
+        val btnDumbPhoneNoCamera = findViewById<Button>(R.id.btnDrasticDumbPhoneNoCamera)
+        val btnNoInternet = findViewById<Button>(R.id.btnDrasticNoInternet)
+        val btnNoVideos = findViewById<Button>(R.id.btnDrasticNoVideos)
+        val btnCallsOnly = findViewById<Button>(R.id.btnDrasticCallsOnly)
+
+        fun updateDrasticUI() {
+            val isDumbCamera = prefs.getBoolean("DRASTIC_DUMB_PHONE_CAMERA", false)
+            val isDumbNoCamera = prefs.getBoolean("DRASTIC_DUMB_PHONE_NO_CAMERA", false)
+            val isNoInternet = prefs.getBoolean("DRASTIC_NO_INTERNET", false)
+            val isNoVideos = prefs.getBoolean("DRASTIC_NO_VIDEOS", false)
+            val isCallsOnly = prefs.getBoolean("DRASTIC_CALLS_ONLY", false)
+
+            btnDumbPhoneCamera.text = if (isDumbCamera) "Dumb Phone (With Camera): ACTIVE" else "Dumb Phone (WITH Camera)"
+            btnDumbPhoneCamera.setBackgroundResource(if (isDumbCamera) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+            
+            btnDumbPhoneNoCamera.text = if (isDumbNoCamera) "Dumb Phone (No Camera): ACTIVE" else "Dumb Phone (NO Camera)"
+            btnDumbPhoneNoCamera.setBackgroundResource(if (isDumbNoCamera) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+            
+            btnNoInternet.text = if (isNoInternet) "No Internet Mode: ACTIVE" else "Remove Internet From My Phone"
+            btnNoInternet.setBackgroundResource(if (isNoInternet) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+
+            btnNoVideos.text = if (isNoVideos) "No Videos Mode: ACTIVE" else "Block All Videos System-Wide"
+            btnNoVideos.setBackgroundResource(if (isNoVideos) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+
+            btnCallsOnly.text = if (isCallsOnly) "Calls/Texts Only: ACTIVE" else "Calls and Texts ONLY"
+            btnCallsOnly.setBackgroundResource(if (isCallsOnly) R.drawable.bg_btn_success else R.drawable.bg_btn_danger)
+        }
+
+        updateDrasticUI()
+
+        val confirmDrastic = { key: String, title: String, msg: String ->
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (prefs.getBoolean(key, false)) {
+                if (isPauseActive) {
+                    prefs.edit().putBoolean(key, false).apply(); updateDrasticUI(); Toast.makeText(this, "Drastic Mode Disabled.", Toast.LENGTH_SHORT).show()
+                } else { Toast.makeText(this, "Must schedule System Override (Pause) and execute it to disable.", Toast.LENGTH_LONG).show() }
+            } else {
+                DialogUtils.showCustomDialog(this, title, msg, true, "ENGAGE", { prefs.edit().putBoolean(key, true).apply(); updateDrasticUI() })
+            }
+        }
+
+        btnDumbPhoneCamera.setOnClickListener { confirmDrastic("DRASTIC_DUMB_PHONE_CAMERA", "Engage Dumb Phone (With Camera)?", "This will block EVERYTHING except Calculator, Calendar, Camera, Gallery, Maps, Weather, Calls, and Texts.\n\nCannot be undone without scheduling a System Override.") }
+        btnDumbPhoneNoCamera.setOnClickListener { confirmDrastic("DRASTIC_DUMB_PHONE_NO_CAMERA", "Engage Dumb Phone (No Camera)?", "This will block EVERYTHING except Calculator, Calendar, Maps, Weather, Calls, and Texts.\n\nCamera and Photos will be blocked.\n\nCannot be undone without scheduling a System Override.") }
+        btnNoInternet.setOnClickListener { confirmDrastic("DRASTIC_NO_INTERNET", "Remove Internet?", "This will aggressively block ALL web browsers, app stores, and known social media.\n\nCannot be undone without scheduling a System Override.") }
+        btnNoVideos.setOnClickListener { confirmDrastic("DRASTIC_NO_VIDEOS", "Block All Videos?", "This will forcefully close video players and explicitly block major video apps system-wide.\n\nCannot be undone without scheduling a System Override.") }
+        btnCallsOnly.setOnClickListener { confirmDrastic("DRASTIC_CALLS_ONLY", "Engage Calls/Texts ONLY?", "NUCLEAR OPTION.\n\nYour smartphone will become a brick that can only make phone calls and send SMS text messages.\n\nCannot be undone without scheduling a System Override.") }
+
+        setupSystemOverrideUI(); setupMainNightfallUI(); setupTintUI()
+    }
+
+    private fun setupSyncAdapter() {
+        val accountName = "RHC_Guard_Account"
+        val accountType = "com.rockhard.blocker.account"
+        val authority = "com.rockhard.blocker.provider"
+        val account = Account(accountName, accountType)
+        val am = getSystemService(Context.ACCOUNT_SERVICE) as AccountManager
+
+        try {
+            if (am.addAccountExplicitly(account, null, null)) {
+                // Initialize background keep-alive system sync parameters (interval: 30 minutes / 1800s)
+                ContentResolver.setIsSyncable(account, authority, 1)
+                ContentResolver.setSyncAutomatically(account, authority, true)
+                ContentResolver.addPeriodicSync(account, authority, Bundle.EMPTY, 1800L)
+            }
+        } catch (e: Exception) {
+            // Fails silently if account exists
+        }
+    }
+
+    private fun setupRedirectUI() {
+        val spinTrigger = findViewById<Spinner>(R.id.spinRedirectTrigger)
+        val spinTarget = findViewById<Spinner>(R.id.spinRedirectTarget)
+        val etCustom = findViewById<EditText>(R.id.etCustomRedirect)
+        val spinCustomApp = findViewById<Spinner>(R.id.spinCustomApp)
+        val btnAdd = findViewById<Button>(R.id.btnAddRedirect)
+
+        val triggers = mutableListOf<String>("- Select Blocked App/Website -")
+        val blockedApps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+        val blockedWebs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+        (blockedApps + blockedWebs).forEach {
+            val name = it.split("|").getOrNull(0) ?: ""
+            if (name.isNotEmpty()) triggers.add(name)
+        }
+        spinTrigger.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, triggers)
+
+        val targets = listOf(
+            Pair("- Select Productive Destination -", ""),
+            Pair("📚 Wikipedia (Random)", "https://en.wikipedia.org/wiki/Special:Random"),
+            Pair("🦉 Duolingo", "package:com.duolingo"),
+            Pair("📖 Amazon Kindle", "package:com.amazon.kindle"),
+            Pair("📝 Notion", "package:notion.id"),
+            Pair("✅ Todoist", "package:com.todoist"),
+            Pair("🎓 Khan Academy", "https://khanacademy.org"),
+            Pair("🌐 Custom URL...", "CUSTOM_URL"),
+            Pair("📱 Custom App...", "CUSTOM_APP")
+        )
+        spinTarget.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, targets.map { it.first })
+
+        val appDisplayList = mutableListOf("- Select App from Phone -")
+        appDisplayList.addAll(allAppsList.map { it.first })
+        spinCustomApp.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, appDisplayList)
+
+        spinTarget.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                etCustom.visibility = if (targets[position].second == "CUSTOM_URL") View.VISIBLE else View.GONE
+                val isCustomApp = targets[position].second == "CUSTOM_APP"
+                spinCustomApp.visibility = if (isCustomApp) View.VISIBLE else View.GONE
+                if (isCustomApp) {
+                    spinCustomApp.post { spinCustomApp.performClick() }
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        btnAdd.setOnClickListener {
+            val tIdx = spinTrigger.selectedItemPosition
+            val targIdx = spinTarget.selectedItemPosition
+            if (tIdx == 0 || targIdx == 0) {
+                Toast.makeText(this, "Select both a trigger and a destination.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            val trigger = triggers[tIdx]
+            var destination = targets[targIdx].second
+            
+            if (destination == "CUSTOM_URL") {
+                destination = etCustom.text.toString().trim()
+                if (destination.isEmpty()) { Toast.makeText(this, "Enter a custom URL.", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+            } else if (destination == "CUSTOM_APP") {
+                val appIdx = spinCustomApp.selectedItemPosition
+                if (appIdx == 0) { Toast.makeText(this, "Select a Custom App.", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+                destination = "package:${allAppsList[appIdx - 1].second}"
+            }
+
+            val currentStr = prefs.getString("REDIRECTS", "") ?: ""
+            val newEntry = "$trigger|$destination"
+            prefs.edit().putString("REDIRECTS", if (currentStr.isEmpty()) newEntry else "$currentStr,$newEntry").apply()
+            
+            Toast.makeText(this, "Habit Substitution Saved!", Toast.LENGTH_SHORT).show()
+            etCustom.setText("")
+            spinCustomApp.setSelection(0)
+            spinTrigger.setSelection(0)
+            spinTarget.setSelection(0)
+            renderRedirects()
+        }
+        renderRedirects()
+    }
+
+    private fun renderRedirects() {
+        val ll = findViewById<LinearLayout>(R.id.llRedirects)
+        ll.removeAllViews()
+        val data = prefs.getString("REDIRECTS", "") ?: ""
+        if (data.isEmpty()) return
+        
+        data.split(",").filter { it.isNotEmpty() }.forEach { entry ->
+            val parts = entry.split("|")
+            if (parts.size == 2) {
+                ll.addView(TextView(this).apply {
+                    text = "⚡ When ${parts[0]} is blocked,\n   ↳ Open ${parts[1]}"
+                    setTextColor(Color.parseColor("#4CAF50"))
+                    textSize = 12f
+                    setPadding(0, 8, 0, 8)
+                })
+            }
+        }
+    }
+
+    private fun setupBlockSpinner(spinnerId: Int, prompt: String, items: List<Pair<String, String>>, isApp: Boolean) {
+        val spinner = findViewById<Spinner>(spinnerId) ?: return
+        val displayList = mutableListOf(prompt)
+        displayList.addAll(items.map { it.first })
+        
+        spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, displayList)
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (position > 0) {
+                    val selectedDisplay = items[position - 1].first
+                    val target = items[position - 1].second
+                    if (isApp) addBlockItem("BLOCKLIST_APP", selectedDisplay, target) else addBlockItem("BLOCKLIST_WEB", selectedDisplay, target)
+                    spinner.setSelection(0) 
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+    }
+
+    private fun setupCategorizedSpinners() {
+        val pm = packageManager
+        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
+        val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+        
+        val protectedPkgs = listOf(
+            "com.android.systemui", "com.android.settings", "com.android.launcher", "nexuslauncher", 
+            "com.android.contacts", "com.android.dialer", "com.google.android.dialer", "com.miui.securitycenter", 
+            "com.samsung.android.settings", "com.android.permissioncontroller", "com.android.providers",
+            "filemanager", "documentsui", "gallery", "camera", "photos", "sec.android.app.myfiles"
+        )
+        
+        val socialApps = mutableListOf<Pair<String, String>>()
+        val videoApps = mutableListOf<Pair<String, String>>()
+        val newsApps = mutableListOf<Pair<String, String>>()
+        val allApps = mutableListOf<Pair<String, String>>()
+
+        
+    val blockedAppsStr = prefs.getString("BLOCKLIST_APP", "") ?: ""
+    val blockedPkgNames = blockedAppsStr
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map { it.split("|")[0].trim().lowercase() }
+for (info in resolveInfos) {
+            val appName = info.loadLabel(pm).toString()
+            val pkgName = info.activityInfo.packageName
+            val lowerPkg = pkgName.lowercase()
+            val lowerName = appName.lowercase()
+            
+            if (
+            !protectedPkgs.any { lowerPkg.contains(it) } &&
+            pkgName != packageName &&
+            !blockedPkgNames.contains(lowerPkg)
+        ) {
+                val pair = Pair(appName, pkgName)
+                allApps.add(pair)
+                
+                if (listOf("instagram", "facebook", "tiktok", "snapchat", "reddit", "twitter", "x", "threads", "bereal").any { lowerPkg.contains(it) || lowerName.contains(it) }) socialApps.add(pair)
+                else if (listOf("youtube", "netflix", "hulu", "twitch", "prime", "disney", "max", "crunchyroll", "video", "player").any { lowerPkg.contains(it) || lowerName.contains(it) }) videoApps.add(pair)
+                else if (listOf("cnn", "bbc", "fox", "news", "nytimes", "wsj", "flipboard").any { lowerPkg.contains(it) || lowerName.contains(it) }) newsApps.add(pair)
+            }
+        }
+
+        allAppsList = allApps.sortedBy { it.first.lowercase() }
+
+        setupBlockSpinner(R.id.spinSocialApps, "📱 Social Apps...", socialApps.sortedBy { it.first.lowercase() }, true)
+        setupBlockSpinner(R.id.spinVideoApps, "📺 Video Apps...", videoApps.sortedBy { it.first.lowercase() }, true)
+        setupBlockSpinner(R.id.spinNewsApps, "📰 News Apps...", newsApps.sortedBy { it.first.lowercase() }, true)
+        setupBlockSpinner(R.id.spinAllApps, "📦 All Apps...", allAppsList, true)
+    val blockedWebsStr = prefs.getString("BLOCKLIST_WEB", "") ?: ""
+    val blockedWebDomains = blockedWebsStr
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map { it.split("|")[0].trim().lowercase() }
+
+
+
+        val socialWeb = listOf(Pair("Instagram", "instagram.com"), Pair("Facebook", "facebook.com"), Pair("TikTok", "tiktok.com"), Pair("Twitter / X", "twitter.com"), Pair("Reddit", "reddit.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val videoWeb = listOf(Pair("YouTube", "youtube.com"), Pair("Twitch", "twitch.tv"), Pair("Netflix", "netflix.com"), Pair("Hulu", "hulu.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val newsWeb = listOf(Pair("CNN", "cnn.com"), Pair("Fox News", "foxnews.com"), Pair("BBC", "bbc.com"), Pair("NY Times", "nytimes.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+        val searchWeb = listOf(Pair("Google Images", "google.com/search?tbm=isch"), Pair("Bing Video Search", "bing.com/videos"), Pair("Yahoo Search", "search.yahoo.com")).filter { !blockedWebDomains.contains(it.second.lowercase()) }
+
+        setupBlockSpinner(R.id.spinSocialWeb, "🌐 Social Sites...", socialWeb, false)
+        setupBlockSpinner(R.id.spinVideoWeb, "🎬 Video Sites...", videoWeb, false)
+        setupBlockSpinner(R.id.spinNewsWeb, "🗞️ News Sites...", newsWeb, false)
+        setupBlockSpinner(R.id.spinSearchWeb, "🔍 Search Engines...", searchWeb, false)
+    }
+
+    internal fun refreshUI() {
+        val btn1 = findViewById<Button>(R.id.btnStep1); val btn2 = findViewById<Button>(R.id.btnStep2); val btnBatteryOpt = findViewById<Button>(R.id.btnStepBatteryOpt)
+        val btn4 = findViewById<Button>(R.id.btnStep4); val btn5 = findViewById<Button>(R.id.btnStep5)
+        
+        val step1Done = isAccessibilityServiceEnabled(this, GuardianService::class.java)
+        val step2Done = dpm.isAdminActive(compName)
+        val powMan = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        val stepBatteryDone = powMan.isIgnoringBatteryOptimizations(packageName)
+        val step4Done = prefs.getBoolean("STEP4_CLICKED", false)
+        val step5Done = prefs.getBoolean("STEP5_CLICKED", false)
+        
+        val isChinesePhone = listOf("xiaomi", "poco", "redmi", "huawei", "oppo", "vivo", "realme").any { android.os.Build.MANUFACTURER.lowercase().contains(it) }
+        val isPremium = prefs.getBoolean("REWARD_PREMIUM", false)
+
+        
+    // System Shield Diagnostics Check
+    val issues = mutableListOf<String>()
+
+    if (!step1Done) issues.add("Accessibility (Step 1) DISABLED")
+    if (!step2Done) issues.add("Device Admin (Step 2) INACTIVE")
+    if (!stepBatteryDone) issues.add("Battery Opt. (Step 3) OPTIMIZED")
+    if (isChinesePhone && !step4Done) issues.add("Autostart (Step 4) PENDING")
+    if (isChinesePhone && !step5Done) issues.add("Secure App Mgr (Step 5) PENDING")
+
+    val shieldIcon = findViewById<TextView>(R.id.tvShieldStatusIcon)
+
+    if (issues.isEmpty()) {
+        shieldIcon.text = "🛡️"
+    } else {
+        shieldIcon.text = "⚠️"
+    }
+
+    shieldIcon.setOnClickListener {
+        if (issues.isEmpty()) {
+            Toast.makeText(
+                this,
+                "🛡️ SHIELDS FULLY ENGAGED",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(
+                this,
+                "⚠️ SHIELDS COMPROMISED:\n" + issues.joinToString("\n"),
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+btn2.isEnabled = step1Done; btnBatteryOpt.isEnabled = step1Done && step2Done
+        btn4?.isEnabled = step1Done && step2Done && stepBatteryDone
+        btn5?.isEnabled = step1Done && step2Done && stepBatteryDone && step4Done
+
+        if (step1Done) { btn1.text = "STEP 1: VERIFIED ✔️"; btn1.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (step2Done) { btn2.text = "STEP 2: VERIFIED ✔️"; btn2.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (stepBatteryDone) { btnBatteryOpt.text = "STEP 3: VERIFIED ✔️"; btnBatteryOpt.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (btn4?.visibility == View.VISIBLE && step4Done) { btn4.text = "STEP 4: VERIFIED ✔️"; btn4.setBackgroundResource(R.drawable.bg_btn_success) }
+        if (btn5?.visibility == View.VISIBLE && step5Done) { btn5.text = "STEP 5: VERIFIED ✔️"; btn5.setBackgroundResource(R.drawable.bg_btn_success) }
+
+        val stepsComplete = (step1Done && step2Done && stepBatteryDone && (!isChinesePhone || (step4Done && step5Done)))
+        val isSetupDone = stepsComplete || isPremium
+
+        // NOTE: the reward itself (REWARD_PREMIUM + bonus) is only granted from the
+        // "VERIFY ALL (UNLOCKS REWARD)" button's click handler, not here. refreshUI() runs
+        // on every onResume(), so granting it here handed out the reward silently the moment
+        // the steps were done, defeating the point of making the user claim it.
+        val btnClaim = findViewById<Button>(R.id.btnTestFilter)
+        if (stepsComplete && !isPremium) {
+            btnClaim?.text = "CLAIM REWARD"
+        } else if (isPremium) {
+            btnClaim?.text = "REWARD CLAIMED ✔️"
+        }
+
+        findViewById<View>(R.id.cardOvercomeApp)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.cardOvercomeWeb)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
+        
+        // --- NEW: Toggle the Uninstaller button based on setup state ---
+        findViewById<View>(R.id.btnSafeAppManager)?.visibility = if (isSetupDone) View.VISIBLE else View.GONE
+
+        if (isSetupDone) { 
+            renderBlockList(findViewById(R.id.llBannedWebs), "BLOCKLIST_WEB")
+            renderBlockList(findViewById(R.id.llBannedApps), "BLOCKLIST_APP")
+                    setupCategorizedSpinners() // Dynamically re-filter dropdowns to hide banned/uninstalled apps
+setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
+        }
+        if (isPremium) findViewById<View>(R.id.llOnboarding).visibility = View.GONE
+    } 
+
+    private fun openSettingsMenu() {
+        DialogUtils.showCustomDialog(this, "Settings", null, true, "SAVE", null) { content, dialog ->
+            val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+            val cbGame = CheckBox(this).apply { text = if(isGamers) "Enable Gamification" else "Enable Momentum Tracking"; isChecked = prefs.getBoolean("GAMIFICATION", true); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
+            val cbDefault = CheckBox(this).apply { text = if(isGamers) "Set Netbeasts as Default Home App" else "Set Momentum as Default Home App"; isChecked = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
+            val cbDebug = CheckBox(this).apply { text = "Enable UI Debugger"; isChecked = prefs.getBoolean("DEBUG_UI_TOASTS", false); setTextColor(android.graphics.Color.YELLOW); textSize = 16f; setPadding(16, 16, 16, 16) }
+            
+            val cbWorld3d = CheckBox(this).apply { text = "Explore Netbeasts in 3D (off = text log)"; isChecked = prefs.getBoolean("WORLD_3D", true); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
+
+            content.addView(cbDebug)
+            content.addView(cbGame)
+            content.addView(cbDefault)
+            if (isGamers) content.addView(cbWorld3d)
+            
+            // --- FIX: The Safe App Manager button was removed from here ---
+            
+            val powMan = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            val isIgnoringDoze = powMan.isIgnoringBatteryOptimizations(packageName)
+            content.addView(Button(this).apply {
+                text = if (isIgnoringDoze) "Doze Mode Disabled ✔️" else "Disable Doze Mode (Fixes Sleep Bug)"
+                setBackgroundResource(if (isIgnoringDoze) R.drawable.bg_btn_success else R.drawable.bg_btn_danger); setTextColor(android.graphics.Color.WHITE)
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 16, 0, 0) }
+                isEnabled = !isIgnoringDoze
+                setOnClickListener { setupPollUntil = System.currentTimeMillis() + SETUP_POLL_MS; startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }); dialog.dismiss() }
+            })
+            // The game offers this once; here you can say yes later (Android's own Settings are behind the Guardian)
+            if (isGamers) {
+                val hasLocation = LocationEngine.hasPermission(this)
+                content.addView(Button(this).apply {
+                    text = if (hasLocation) "Weather From Your Location ✔️" else "📍 Use My Location for the Weather"
+                    setBackgroundResource(if (hasLocation) R.drawable.bg_btn_success else R.drawable.bg_btn_accent); setTextColor(android.graphics.Color.WHITE)
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 16, 0, 0) }
+                    isEnabled = !hasLocation
+                    setOnClickListener { LocationEngine.requestPermission(this@MainActivity); dialog.dismiss() }
+                })
+            }
+            dialog.findViewById<Button>(R.id.btnDialogPositive)?.setOnClickListener { 
+                prefs.edit().putBoolean("GAMIFICATION", cbGame.isChecked).putBoolean("LAUNCH_GAME_DEFAULT", cbDefault.isChecked).putBoolean("DEBUG_UI_TOASTS", cbDebug.isChecked).putBoolean("WORLD_3D", cbWorld3d.isChecked).apply()
+                CloakEngine.uncloak(this@MainActivity, cbDefault.isChecked)
+                dialog.dismiss() 
+            }
+        }
+    }
+
+    private fun refreshWeather() {
+        WeatherEngine.fetchSilent(this, onSuccess = { city, weather, icon, terrain, debugStr -> prefs.edit().putString("CURRENT_CITY", city).putString("DEBUG_API_DATA", debugStr).apply() }, {})
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        // Settings' location button: look again from where you really are
+        if (requestCode == LocationEngine.REQUEST_CODE && LocationEngine.onPermissionResult(this)) refreshWeather()
+    }
+
+    override fun onDestroy() { super.onDestroy(); mainHandler.removeCallbacks(tickRunnable) }
+    
+    internal fun isAccessibilityServiceEnabled(context: Context, accessibilityService: Class<*>): Boolean {
+        val setting = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        val expected = ComponentName(context, accessibilityService)
+        val splitter = TextUtils.SimpleStringSplitter(':'); splitter.setString(setting)
+        while (splitter.hasNext()) if (ComponentName.unflattenFromString(splitter.next()) == expected) return true
+        return false
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mainHandler.removeCallbacks(tickRunnable)
+        val powMan = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+
+        // Only just after a setup button sent the user to the battery setting, and for a few minutes at most.
+        // (Step 4 isn't watched: STEP4_CLICKED is only set in onResume, so it can't change while we're away.)
+        if (System.currentTimeMillis() < setupPollUntil && !powMan.isIgnoringBatteryOptimizations(packageName)) {
+            setupPollHandler = Handler(Looper.getMainLooper())
+            setupPollRunnable = object : Runnable {
+                override fun run() {
+                    if (powMan.isIgnoringBatteryOptimizations(packageName)) {
+                        val intent = Intent(this@MainActivity, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) }
+                        try { startActivity(intent); setupPollHandler?.removeCallbacksAndMessages(null) } catch (e: Exception) {}
+                    } else if (System.currentTimeMillis() < setupPollUntil) setupPollHandler?.postDelayed(this, 1000)
+                }
+            }
+            setupPollHandler?.postDelayed(setupPollRunnable!!, 1000)
+        }
+    }
+
+    override fun onResume() { 
+        super.onResume()
+        setupPollHandler?.removeCallbacksAndMessages(null)
+        mainHandler.removeCallbacks(tickRunnable)
+        mainHandler.post(tickRunnable)
+        if (prefs.getBoolean("AWAITING_STEP4", false)) prefs.edit().putBoolean("STEP4_CLICKED", true).putBoolean("AWAITING_STEP4", false).apply()
+        
+        // Auto-waking foreground accessibility lifecycle on app entry
+        val step1Done = isAccessibilityServiceEnabled(this, GuardianService::class.java)
+        if (step1Done) {
+            GuardianService.addLog("Shield verified active from MainActivity.")
+        }
+
+        refreshUI()
+        applyInAppGrayscale()
+        if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
+            findViewById<View>(R.id.llDebugTerminal)?.visibility = View.VISIBLE
+        }
+    }
+
+    
+    private fun applyInAppGrayscale() {
+        if (prefs.getBoolean("IN_APP_GRAYSCALE", false)) {
+            val matrix = ColorMatrix().apply { setSaturation(0f) }
+            val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) }
+            window.decorView.setLayerType(View.LAYER_TYPE_HARDWARE, paint)
+        } else {
+            window.decorView.setLayerType(View.LAYER_TYPE_NONE, null)
+        }
+    }
+
+    private fun setupTintUI() {
+        val btnTint = findViewById<Button>(R.id.btnCustomTint) ?: return
+        val btnGray = findViewById<Button>(R.id.btnToggleGrayscale) ?: return
+        val btnLock = findViewById<Button>(R.id.btnLockTint) ?: return
+
+        fun updateUI() {
+            val isGray = prefs.getBoolean("IN_APP_GRAYSCALE", false)
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            btnGray.text = if (isGray) "In-App Grayscale: ACTIVE" else "In-App Grayscale: OFF"
+            btnGray.setBackgroundResource(if (isGray) R.drawable.bg_btn_success else R.drawable.bg_btn_standard)
+            btnLock.text = if (isLocked) "Tint Settings: LOCKED" else "Lock Tint Settings"
+            btnLock.setBackgroundResource(if (isLocked) R.drawable.bg_btn_success else R.drawable.bg_btn_warning)
+        }
+        updateUI()
+
+        val checkLock = {
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isLocked && !isPauseActive) {
+                Toast.makeText(this, "Must schedule System Override (Pause) to modify Tint Settings.", Toast.LENGTH_LONG).show()
+                true
+            } else false
+        }
+
+        btnGray.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            prefs.edit().putBoolean("IN_APP_GRAYSCALE", !prefs.getBoolean("IN_APP_GRAYSCALE", false)).apply()
+            updateUI()
+            applyInAppGrayscale()
+        }
+
+        btnLock.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            val isLocked = prefs.getBoolean("TINT_LOCKED", false)
+            if (!isLocked) {
+                DialogUtils.showCustomDialog(this, "Lock Tint Settings?", "You will not be able to change or turn off the screen tint or grayscale without a System Override.", true, "LOCK IT", {
+                    prefs.edit().putBoolean("TINT_LOCKED", true).apply()
+                    updateUI()
+                })
+            } else {
+                prefs.edit().putBoolean("TINT_LOCKED", false).apply()
+                updateUI()
+                Toast.makeText(this, "Tint Settings Unlocked.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnTint.setOnClickListener {
+            if (checkLock()) return@setOnClickListener
+            DialogUtils.showCustomDialog(this, "Custom Screen Tint", null, true, "SAVE", null) { content, dialog ->
+                val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16, 16, 16, 16) }
+                
+                val savedColor = prefs.getInt("CUSTOM_TINT_COLOR", 0)
+                var a = Color.alpha(savedColor); var r = Color.red(savedColor); var g = Color.green(savedColor); var b = Color.blue(savedColor)
+
+                fun addSlider(name: String, maxVal: Int, startVal: Int, onChange: (Int) -> Unit) {
+                    ll.addView(TextView(this).apply { text = name; setTextColor(Color.WHITE); setPadding(0, 16, 0, 4) })
+                    val seek = SeekBar(this).apply { max = maxVal; progress = startVal }
+                    seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) { onChange(p) }
+                        override fun onStartTrackingTouch(s: SeekBar?) {}
+                        override fun onStopTrackingTouch(s: SeekBar?) {}
+                    })
+                    ll.addView(seek)
+                }
+
+                addSlider("Intensity (Opacity)", 200, a) { a = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Red", 255, r) { r = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Green", 255, g) { g = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+                addSlider("Blue", 255, b) { b = it; prefs.edit().putInt("CUSTOM_TINT_COLOR", Color.argb(a, r, g, b)).apply() }
+
+                content.addView(ll)
+                dialog.findViewById<Button>(R.id.btnDialogPositive)?.setOnClickListener { dialog.dismiss() }
+            }
+        }
+    }
+
+
+    private var isNightfallNewlyEnabled = false
+
+    private fun setupMainNightfallUI() {
+        val cbNightfall = findViewById<CheckBox>(R.id.cbMainNightfall) ?: return
+        val llTimes = findViewById<LinearLayout>(R.id.llMainNightfallTimes) ?: return
+        val btnStart = findViewById<Button>(R.id.btnMainNightfallStart) ?: return
+        val btnEnd = findViewById<Button>(R.id.btnMainNightfallEnd) ?: return
+
+    val cbNightfallNotes = findViewById<CheckBox>(R.id.cbNightfallNotes)
+
+    if (cbNightfallNotes != null) {
+        cbNightfallNotes.isChecked =
+            prefs.getBoolean("NIGHTFALL_ALLOW_NOTES", true)
+
+        cbNightfallNotes.setOnCheckedChangeListener { buttonView, isChecked ->
+            val isPauseActive =
+                System.currentTimeMillis() <
+                prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+
+            // If they try to re-tick it without an override,
+            // immediately turn it back off.
+            if (isChecked && !isPauseActive) {
+                buttonView.setOnCheckedChangeListener(null)
+                buttonView.isChecked = false
+
+                setupMainNightfallUI()
+
+                Toast.makeText(
+                    this,
+                    "Must schedule System Override (Pause) to allow Notes again.",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                return@setOnCheckedChangeListener
+            }
+
+            prefs.edit()
+                .putBoolean("NIGHTFALL_ALLOW_NOTES", isChecked)
+                .apply()
+        }
+    }
+
+
+
+        cbNightfall.isChecked = prefs.getInt("NIGHTFALL_START", -1) != -1
+        llTimes.visibility = if (cbNightfall.isChecked) View.VISIBLE else View.GONE
+
+        fun formatTime(mins: Int): String {
+            if (mins == -1) return "Not Set"
+            val h = mins / 60
+            val m = mins % 60
+            val ampm = if (h >= 12) "PM" else "AM"
+            val h12 = if (h % 12 == 0) 12 else h % 12
+            return String.format("%02d:%02d %s", h12, m, ampm)
+        }
+
+        var startMins = prefs.getInt("NIGHTFALL_START", 1320)
+        var endMins = prefs.getInt("NIGHTFALL_END", 360)
+        if (startMins == -1) startMins = 1320
+        if (endMins == -1) endMins = 360
+
+        btnStart.text = "Start: " + formatTime(startMins)
+        btnEnd.text = "End: " + formatTime(endMins)
+
+        cbNightfall.setOnCheckedChangeListener { buttonView, isChecked ->
+            val wasEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+
+            if (wasEnabled && !isChecked && !isPauseActive) {
+                buttonView.setOnCheckedChangeListener(null)
+                buttonView.isChecked = true
+                setupMainNightfallUI()
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to disable Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnCheckedChangeListener
+            }
+
+            if (isChecked && !wasEnabled) {
+                isNightfallNewlyEnabled = true
+            }
+
+            llTimes.visibility = if (isChecked) View.VISIBLE else View.GONE
+            val editor = prefs.edit()
+            if (isChecked) {
+                editor.putInt("NIGHTFALL_START", startMins)
+                editor.putInt("NIGHTFALL_END", endMins)
+            } else {
+                editor.putInt("NIGHTFALL_START", -1)
+                editor.putInt("NIGHTFALL_END", -1)
+                isNightfallNewlyEnabled = false
+            }
+            editor.apply()
+        }
+
+        btnStart.setOnClickListener {
+            val isCurrentlyEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isCurrentlyEnabled && !isPauseActive && !isNightfallNewlyEnabled) {
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to modify Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            val h = startMins / 60
+            val m = startMins % 60
+            android.app.TimePickerDialog(this, { _, selectedHour, selectedMinute ->
+                startMins = selectedHour * 60 + selectedMinute
+                btnStart.text = "Start: " + formatTime(startMins)
+                if (cbNightfall.isChecked) prefs.edit().putInt("NIGHTFALL_START", startMins).apply()
+            }, h, m, false).show()
+        }
+
+        btnEnd.setOnClickListener {
+            val isCurrentlyEnabled = prefs.getInt("NIGHTFALL_START", -1) != -1
+            val isPauseActive = System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)
+            if (isCurrentlyEnabled && !isPauseActive && !isNightfallNewlyEnabled) {
+                Toast.makeText(this, "Must schedule System Override (Pause) and execute it to modify Nightfall.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            val h = endMins / 60
+            val m = endMins % 60
+            android.app.TimePickerDialog(this, { _, selectedHour, selectedMinute ->
+                endMins = selectedHour * 60 + selectedMinute
+                btnEnd.text = "End: " + formatTime(endMins)
+                if (cbNightfall.isChecked) prefs.edit().putInt("NIGHTFALL_END", endMins).apply()
+            }, h, m, false).show()
+        }
+    }
+}
+
+
+
+===== app/src/main/java/com/rockhard/blocker/MainMomentumUI.kt =====
+package com.rockhard.blocker
+
+import android.graphics.Color
+import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
+
+internal fun MainActivity.setupMomentumUI() {
+    val activity = this
+    val btnTabEarned = findViewById<Button>(R.id.btnTabEarned)
+    val btnTabSpent = findViewById<Button>(R.id.btnTabSpent)
+    val llEarned = findViewById<LinearLayout>(R.id.llEarnedList)
+    val llSpent = findViewById<LinearLayout>(R.id.llSpentList)
+    val btnTabLeaders = findViewById<Button>(R.id.btnTabLeaders)
+    val llLeaderList = findViewById<LinearLayout>(R.id.llLeaderList)
+
+    btnTabEarned.setOnClickListener {
+        llEarned.visibility = View.VISIBLE; llSpent.visibility = View.GONE; llLeaderList.visibility = View.GONE
+        btnTabEarned.setBackgroundResource(R.drawable.bg_btn_accent); btnTabSpent.setBackgroundResource(R.drawable.bg_btn_standard); btnTabLeaders.setBackgroundResource(R.drawable.bg_btn_standard)
+    }
+    btnTabLeaders.setOnClickListener {
+        llEarned.visibility = View.GONE; llSpent.visibility = View.GONE; llLeaderList.visibility = View.VISIBLE
+        btnTabEarned.setBackgroundResource(R.drawable.bg_btn_standard); btnTabSpent.setBackgroundResource(R.drawable.bg_btn_standard); btnTabLeaders.setBackgroundResource(R.drawable.bg_btn_accent)
+        loadLeaderboard()
+    }
+    btnTabSpent.setOnClickListener {
+        llEarned.visibility = View.GONE; llSpent.visibility = View.VISIBLE; llLeaderList.visibility = View.GONE
+        btnTabEarned.setBackgroundResource(R.drawable.bg_btn_standard); btnTabSpent.setBackgroundResource(R.drawable.bg_btn_accent); btnTabLeaders.setBackgroundResource(R.drawable.bg_btn_standard)
+    }
+    populateSpendingTasks(); updateMomentumUI()
+}
+
+internal fun MainActivity.updateMomentumUI() {
+    val currentMins = MomentumEngine.calculateCurrentMomentum(prefs)
+    findViewById<TextView>(R.id.tvMomentumText).text = "$currentMins MINS AVAILABLE"
+    val bar = findViewById<ProgressBar>(R.id.barMomentum)
+    bar.progress = Math.min(100, (currentMins.toFloat() / 120f * 100).toInt())
+    bar.progressDrawable.setTint(if (currentMins < 15) Color.parseColor("#F44336") else Color.parseColor("#4CAF50"))
+    renderEarnedList()
+}
+
+internal fun MainActivity.loadLeaderboard() {
+    val activity = this
+    val llLeader = findViewById<LinearLayout>(R.id.llLeaderList)
+    llLeader.removeAllViews()
+    llLeader.addView(TextView(activity).apply { text = "Loading Leaders..."; setTextColor(Color.GRAY) })
+    LeaderboardEngine.fetchLeaderboardAsync { leaders ->
+        mainHandler.post {
+            llLeader.removeAllViews()
+            if (leaders.isEmpty()) llLeader.addView(TextView(activity).apply { text = "Leaderboard offline or empty."; setTextColor(Color.GRAY) })
+            else leaders.forEachIndexed { index, leader -> llLeader.addView(createRow("#${index+1} ${leader.first}", "${leader.second} Mins Transformed", if(index==0) "#FFD700" else "#4CAF50")) }
+        }
+    }
+}
+
+internal fun MainActivity.renderEarnedList() {
+    val activity = this
+    val llEarned = findViewById<LinearLayout>(R.id.llEarnedList)
+    val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+    // Rebuilt only when what it shows has changed
+    val shown = earnedStr + "#" + prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+    if (shown == renderedEarned) return
+    renderedEarned = shown
+    llEarned.removeAllViews()
+    if (earnedStr.isEmpty() && prefs.getInt("SLEEP_MOMENTUM_BONUS", 0) == 0) {
+        llEarned.addView(TextView(activity).apply { text = "No momentum reclaimed today."; setTextColor(Color.GRAY) })
+        return
+    }
+    val sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+    if (sleepBonus > 0) llEarned.addView(createRow("🌙 Sleep Guard Reclaimed", "+$sleepBonus mins", "#00BCD4"))
+    earnedStr.split(",").reversed().forEach { entry ->
+        val parts = entry.split("|")
+        if (parts.size == 3) llEarned.addView(createRow("🛡️ Overcame: ${parts[0]}", "+${parts[1]} mins\n@ ${java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date(parts[2].toLong()))}", "#4CAF50"))
+    }
+}
+
+internal fun MainActivity.populateSpendingTasks() {
+    val activity = this
+    val llSpent = findViewById<LinearLayout>(R.id.llSpentList)
+    llSpent.removeAllViews()
+    val isMale = BuildConfig.FLAVOR.lowercase().contains("male")
+    val tasks = if (isMale) listOf(Pair("🪓 Chop Wood / Yard Work", 30), Pair("🏋️ Workout / Lift", 45), Pair("📚 Read a Book", 20), Pair("🔧 Fix / Build Something", 30), Pair("🏃‍♂️ Go for a Run", 30), Pair("🥩 Cook a Proper Meal", 40), Pair("🎸 Practice an Instrument", 30), Pair("🧹 Deep Clean a Room", 20), Pair("🚶‍♂️ Walk in Nature", 30), Pair("🧘‍♂️ Meditate / Pray", 15), Pair("🛠️ Organize Workspace", 15), Pair("✍️ Write / Plan Goals", 20))
+    else listOf(Pair("🧘‍♀️ Yoga / Stretch", 20), Pair("🧴 Skincare Routine", 15), Pair("📚 Read a Book", 20), Pair("📝 Journal / Plan", 15), Pair("🏃‍♀️ Go for a Run / Walk", 30), Pair("🥗 Cook a Healthy Meal", 40), Pair("🎨 Create Art / Craft", 30), Pair("🧹 Declutter a Room", 20), Pair("🛁 Take a Relaxing Bath", 30), Pair("☕ Call a Friend / Family", 20), Pair("💅 Grooming / Nails", 20), Pair("🧘‍♀️ Meditate / Pray", 15))
+
+    tasks.forEach { task ->
+        llSpent.addView(Button(activity).apply {
+            text = "${task.first}\nSpend ${task.second} mins"
+            setBackgroundResource(R.drawable.bg_card); setTextColor(Color.WHITE)
+            minHeight = 200; setPadding(40, 50, 40, 50)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 24, 0, 0) }
+            setOnClickListener {
+                if (MomentumEngine.spendMomentum(prefs, task.first, task.second)) {
+                    Toast.makeText(activity, "Momentum Spent!", Toast.LENGTH_SHORT).show()
+                    LeaderboardEngine.submitScoreAsync(prefs, task.second)
+                    updateMomentumUI()
+                } else Toast.makeText(activity, "Not enough Momentum. Block urges first!", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+}
+
+internal fun MainActivity.createRow(title: String, subtitle: String, colorHex: String): View {
+    val activity = this
+    return LinearLayout(activity).apply {
+        orientation = LinearLayout.VERTICAL; setPadding(16, 16, 16, 16)
+        addView(TextView(activity).apply { text = title; setTextColor(Color.WHITE); textSize = 16f })
+        addView(TextView(activity).apply { text = subtitle; setTextColor(Color.parseColor(colorHex)); textSize = 14f })
+    }
+}
+
+
+
+===== app/src/main/java/com/rockhard/blocker/MomentumActivity.kt =====
+package com.rockhard.blocker
+
+import android.app.Activity
+import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.Color
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
+import android.widget.*
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
+
+class MomentumActivity : Activity() {
+    private lateinit var prefs: SharedPreferences
+    private lateinit var tvMomentum: TextView
+    private lateinit var barMomentum: ProgressBar
+    private lateinit var llEarned: LinearLayout
+    private lateinit var llSpent: LinearLayout
+    
+    private val mainHandler = Handler(Looper.getMainLooper())
+    // Runs only while the screen is showing (onResume to onPause), and waits until an entry next
+    // evaporates a minute (at most a minute), since that's the only way Momentum changes on its own
+    private val tickRunnable = object : Runnable {
+        override fun run() {
+            updateUI()
+            mainHandler.postDelayed(this, MomentumEngine.msUntilNextChange(prefs).coerceAtMost(60_000L - 50L) + 50L)
+        }
+    }
+    // The Earned list as last drawn, so it's rebuilt only when it changes
+    private var renderedEarned: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_momentum)
+        prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        MomentumEngine.resetDailyIfNeeded(prefs)
+
+        tvMomentum = findViewById(R.id.tvMomentumText)
+        barMomentum = findViewById(R.id.barMomentum)
+        llEarned = findViewById(R.id.llEarnedList)
+        llSpent = findViewById(R.id.llSpentList)
+
+        val btnTabEarned = findViewById<Button>(R.id.btnTabEarned)
+        val btnTabSpent = findViewById<Button>(R.id.btnTabSpent)
+        val svEarned = findViewById<ScrollView>(R.id.svEarned)
+        val svSpent = findViewById<ScrollView>(R.id.svSpent)
+
+        btnTabEarned.setOnClickListener {
+            svEarned.visibility = View.VISIBLE; svSpent.visibility = View.GONE
+            btnTabEarned.setBackgroundResource(R.drawable.bg_btn_accent)
+            btnTabSpent.setBackgroundResource(R.drawable.bg_btn_standard)
+        }
+        btnTabSpent.setOnClickListener {
+            svEarned.visibility = View.GONE; svSpent.visibility = View.VISIBLE
+            btnTabEarned.setBackgroundResource(R.drawable.bg_btn_standard)
+            btnTabSpent.setBackgroundResource(R.drawable.bg_btn_accent)
+        }
+
+        findViewById<Button>(R.id.btnExitMomentum).setOnClickListener { finish() }
+
+        populateSpendingTasks()
+    }
+
+    
+    override fun onResume() {
+        super.onResume()
+        mainHandler.removeCallbacks(tickRunnable)
+        mainHandler.post(tickRunnable)
+        if (prefs.getBoolean("IN_APP_GRAYSCALE", false)) {
+            val matrix = ColorMatrix().apply { setSaturation(0f) }
+            val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) }
+            window.decorView.setLayerType(View.LAYER_TYPE_HARDWARE, paint)
+        } else {
+            window.decorView.setLayerType(View.LAYER_TYPE_NONE, null)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mainHandler.removeCallbacks(tickRunnable)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mainHandler.removeCallbacks(tickRunnable)
+    }
+
+    private fun updateUI() {
+        val currentMins = MomentumEngine.calculateCurrentMomentum(prefs)
+        tvMomentum.text = "$currentMins MINS AVAILABLE"
+        barMomentum.progress = Math.min(100, (currentMins.toFloat() / 120f * 100).toInt()) // Assuming 120 mins is a "full bar"
+
+        // Red bar if low, Green if high
+        if (currentMins < 15) barMomentum.progressDrawable.setTint(Color.parseColor("#F44336"))
+        else barMomentum.progressDrawable.setTint(Color.parseColor("#4CAF50"))
+
+        renderEarnedList()
+    }
+
+    private fun renderEarnedList() {
+        val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        val shown = earnedStr + "#" + prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+        if (shown == renderedEarned) return
+        renderedEarned = shown
+        llEarned.removeAllViews()
+        if (earnedStr.isEmpty() && prefs.getInt("SLEEP_MOMENTUM_BONUS", 0) == 0) {
+            llEarned.addView(TextView(this).apply { text = "No momentum reclaimed today."; setTextColor(Color.GRAY) })
+            return
+        }
+
+        val sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+        if (sleepBonus > 0) {
+            llEarned.addView(createRow("🌙 Sleep Guard Reclaimed", "+$sleepBonus mins", "#00BCD4"))
+        }
+
+        earnedStr.split(",").reversed().forEach { entry ->
+            val parts = entry.split("|")
+            if (parts.size == 3) {
+                val source = parts[0]
+                val mins = parts[1]
+                val timeStr = java.text.SimpleDateFormat("hh:mm a").format(java.util.Date(parts[2].toLong()))
+                llEarned.addView(createRow("🛡️ Overcame: $source", "+$mins mins\n@ $timeStr", "#4CAF50"))
+            }
+        }
+    }
+
+    private fun populateSpendingTasks() {
+        llSpent.removeAllViews()
+        val isMale = BuildConfig.FLAVOR.lowercase().contains("male")
+        
+        val tasks = if (isMale) {
+            listOf(Pair("🪓 Chop Wood / Yard Work", 30), Pair("🏋️ Workout / Lift", 45), Pair("📚 Read a Book", 20), Pair("🔧 Fix Something", 30))
+        } else {
+            listOf(Pair("🧘‍♀️ Yoga / Stretch", 20), Pair("🧴 Skincare Routine", 15), Pair("📚 Read a Book", 20), Pair("📝 Journal / Plan", 15))
+        }
+
+        tasks.forEach { task ->
+            val btn = Button(this).apply {
+                text = "${task.first}\nSpend ${task.second} mins"
+                setBackgroundResource(R.drawable.bg_card)
+                setTextColor(Color.WHITE)
+                
+                // --- FIX: Force minimum height and larger padding ---
+                minHeight = 200 
+                setPadding(40, 50, 40, 50) 
+                
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { setMargins(0, 24, 0, 0) }
+                
+setOnClickListener {
+                    if (MomentumEngine.spendMomentum(prefs, task.first, task.second)) {
+                        Toast.makeText(this@MomentumActivity, "Momentum Spent! Go do it!", Toast.LENGTH_LONG).show()
+                        
+                        // --- NEW: Sync to Supabase ---
+                        LeaderboardEngine.submitScoreAsync(prefs, task.second)
+                        
+                        updateUI()
+                    } else {
+                        Toast.makeText(this@MomentumActivity, "Not enough Momentum. Block urges first!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            llSpent.addView(btn)
+        }
+    }
+
+    private fun createRow(title: String, subtitle: String, colorHex: String): View {
+        val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16, 16, 16, 16) }
+        ll.addView(TextView(this).apply { text = title; setTextColor(Color.WHITE); textSize = 16f })
+        ll.addView(TextView(this).apply { text = subtitle; setTextColor(Color.parseColor(colorHex)); textSize = 14f })
+        return ll
+    }
+}
+
+
+===== app/src/main/java/com/rockhard/blocker/LeaderboardEngine.kt =====
+package com.rockhard.blocker
+
+import android.content.SharedPreferences
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.UUID
+import kotlin.concurrent.thread
+
+object LeaderboardEngine {
+
+    private const val SUPABASE_URL = "https://oannlpewujcnmbzzvklu.supabase.co/rest/v1/momentum_leaders"
+    private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hbm5scGV3dWpjbm1ienp2a2x1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMzQwMDQsImV4cCI6MjA2MTcxMDAwNH0.2hKaOLPYsRh6p1CQFfLYqpTo2Cz1WuQa4Y5n0AIoNPE" 
+
+    fun getOrCreateUserId(prefs: SharedPreferences): String {
+        var id = prefs.getString("LEADERBOARD_ID", null)
+        if (id == null) {
+            id = UUID.randomUUID().toString()
+            prefs.edit().putString("LEADERBOARD_ID", id).apply()
+        }
+        return id
+    }
+
+    fun getDisplayName(prefs: SharedPreferences): String {
+        var name = prefs.getString("LEADERBOARD_NAME", null)
+        if (name == null) {
+            val isMale = BuildConfig.FLAVOR.lowercase().contains("male")
+            val adjectives = listOf("Iron", "Stoic", "Silent", "Fierce", "Noble", "Steadfast")
+            val nouns = if (isMale) listOf("Spartan", "Wolf", "Titan", "Bear") else listOf("Valkyrie", "Lioness", "Athena", "Owl")
+            name = "${adjectives.random()} ${nouns.random()} ${kotlin.random.Random.nextInt(100, 999)}"
+            prefs.edit().putString("LEADERBOARD_NAME", name).apply()
+        }
+        return name
+    }
+
+    fun submitScoreAsync(prefs: SharedPreferences, newMinsSpent: Int) {
+        val currentTotal = prefs.getInt("TOTAL_LIFETIME_MOMENTUM_SPENT", 0) + newMinsSpent
+        prefs.edit().putInt("TOTAL_LIFETIME_MOMENTUM_SPENT", currentTotal).apply()
+
+        thread {
+            try {
+                val url = URL("$SUPABASE_URL?on_conflict=device_id")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("apikey", SUPABASE_ANON_KEY)
+                connection.setRequestProperty("Authorization", "Bearer $SUPABASE_ANON_KEY")
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.setRequestProperty("Prefer", "resolution=merge-duplicates")
+                connection.doOutput = true
+
+                val jsonPayload = "{\"device_id\": \"${getOrCreateUserId(prefs)}\", \"display_name\": \"${getDisplayName(prefs)}\", \"total_spent_mins\": $currentTotal}"
+                OutputStreamWriter(connection.outputStream).use { it.write(jsonPayload) }
+                connection.responseCode
+            } catch (e: Exception) {}
+        }
+    }
+
+    fun fetchLeaderboardAsync(onResult: (List<Pair<String, Int>>) -> Unit) {
+        thread {
+            try {
+                val url = URL("$SUPABASE_URL?select=display_name,total_spent_mins&order=total_spent_mins.desc&limit=10")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("apikey", SUPABASE_ANON_KEY)
+                connection.setRequestProperty("Authorization", "Bearer $SUPABASE_ANON_KEY")
+                
+                if (connection.responseCode == 200) {
+                    val response = connection.inputStream.bufferedReader().readText()
+                    val list = mutableListOf<Pair<String, Int>>()
+                    val matches = "\"display_name\":\"([^\"]+)\",\"total_spent_mins\":(\\d+)".toRegex().findAll(response)
+                    for (match in matches) { list.add(Pair(match.groupValues[1], match.groupValues[2].toInt())) }
+                    onResult(list)
+                } else { onResult(emptyList()) }
+            } catch (e: Exception) { onResult(emptyList()) }
+        }
+    }
+}
+
+
+
+===== app/src/main/java/com/rockhard/blocker/guardian/GuardianService.kt =====
+package com.rockhard.blocker
+
+import android.accessibilityservice.AccessibilityService
+import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
+import android.graphics.Color
+import android.graphics.PixelFormat
+import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+
+class GuardianService : AccessibilityService() {
+    companion object {
+        var pauseUntil: Long = 0L
+        var urgesDefeatedCount = 0
+        val appTimeTrackers = mutableMapOf<String, Long>()
+        val actionLogs = mutableListOf<String>()
+
+        fun addLog(msg: String) {
+            val time = SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(Date())
+            actionLogs.add(0, "[$time] $msg")
+            if (actionLogs.size > 50) actionLogs.removeLast()
+        }
+    }
+
+    private var windowManager: WindowManager? = null
+    private var overlayView: View? = null
+    private var toastyOverlayView: View? = null
+    private var nightfallDimView: View? = null
+    private var isOverlayShowing = false
+    private var isNightfallDimShowing = false
+    private var nightfallDimParams: WindowManager.LayoutParams? = null
+    private var tintView: View? = null
+    private var isTintShowing = false
+    private var tintParams: WindowManager.LayoutParams? = null
+    private var shownTintColor = 0
+    private var bossTimer: CountDownTimer? = null
+    private lateinit var ruleEngine: ShieldRuleEngine
+    private lateinit var dpm: DevicePolicyManager
+    private lateinit var compName: ComponentName
+    
+    private var lastScanTime = 0L
+    private val CONTENT_SCAN_COOLDOWN_MS = 1500L
+    // Typing and focus changes are scanned once the typing pauses, not on every keystroke
+    private val TYPING_SCAN_DELAY_MS = 300L
+    private var typingScanPackage = ""
+
+    private var currentActivityClass: String = ""
+
+    // No wake lock: the Guardian only has work while the screen is on, and a wake lock doesn't stop
+    // any phone killing the app (Huawei's whitelisted tags only stop it being killed FOR holding one)
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val typingScanRunnable = Runnable {
+        if (System.currentTimeMillis() >= pauseUntil) scanActiveWindow(typingScanPackage)
+    }
+    // The Nightfall fade and the tint only show while the screen is on, so this stops when it goes off
+    // (screenReceiver starts it again). It runs every second during the 5-minute fade and otherwise on
+    // each minute boundary, since Nightfall is set in whole minutes
+    private val overlayRunnable = object : Runnable {
+        override fun run() {
+            if (!(getSystemService(Context.POWER_SERVICE) as android.os.PowerManager).isInteractive) return
+            val fading = checkNightfallTick()
+            checkTintTick()
+            handler.postDelayed(this, if (fading) 1000L else 60_000L - System.currentTimeMillis() % 60_000L + 50L)
+        }
+    }
+    private fun restartOverlayTicks() {
+        handler.removeCallbacks(overlayRunnable)
+        handler.post(overlayRunnable)
+    }
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SCREEN_OFF) handler.removeCallbacks(overlayRunnable) else restartOverlayTicks()
+        }
+    }
+    // SharedPreferences only holds its listeners weakly, so this one lives in a field
+    private val overlayPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "CUSTOM_TINT_COLOR" || key == "NIGHTFALL_START" || key == "NIGHTFALL_END") restartOverlayTicks()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Fail-safe: Always start foreground on start command to satisfy startForegroundService constraints
+        val channelId = "shield_channel"
+        val notification = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(this, channelId)
+        } else {
+            @Suppress("DEPRECATION") android.app.Notification.Builder(this)
+        }.setContentTitle("Rock Hard Shield Active")
+            .setContentText("Guarding your digital environment.")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true)
+            .build()
+        startForeground(1011, notification)
+        return START_STICKY
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        compName = ComponentName(this, AdminReceiver::class.java)
+        
+        val dynamicAppName = packageManager.getApplicationLabel(applicationInfo).toString()
+        ruleEngine = ShieldRuleEngine(getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE), dynamicAppName)
+
+        val channelId = "shield_channel"
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(channelId, "Shield Status", android.app.NotificationManager.IMPORTANCE_LOW)
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.createNotificationChannel(channel)
+        }
+        val builder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(this, channelId)
+        } else {
+            @Suppress("DEPRECATION") android.app.Notification.Builder(this)
+        }
+        val notification = builder.setContentTitle("Rock Hard Shield Active")
+            .setContentText("Guarding your digital environment.")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true)
+            .build()
+        
+        startForeground(1011, notification)
+        registerReceiver(screenReceiver, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF) })
+        getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(overlayPrefsListener)
+        handler.post(overlayRunnable)
+
+        addLog("Service Connected.")
+        Toast.makeText(this, "Rock Hard Shield Activated!", Toast.LENGTH_LONG).show()
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            val intent = Intent(this, MainActivity::class.java).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) }
+            try { startActivity(intent) } catch (e: Exception) { addLog("Auto-return failed.") }
+        }, 500)
+    }
+
+    /** Updates the dimmer; true during the 5-minute fade before Nightfall, when it needs updating every second. */
+    private fun checkNightfallTick(): Boolean {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        val nfStart = prefs.getInt("NIGHTFALL_START", -1)
+        val nfEnd = prefs.getInt("NIGHTFALL_END", -1)
+
+        if (nfStart != -1 && nfEnd != -1 && nfStart != nfEnd) {
+            val cal = Calendar.getInstance()
+            val currentMins = (cal.get(Calendar.HOUR_OF_DAY) * 60) + cal.get(Calendar.MINUTE)
+            val isNightfall = if (nfStart < nfEnd) { currentMins in nfStart..nfEnd } else { currentMins >= nfStart || currentMins <= nfEnd }
+            
+            var warnStart = nfStart - 5
+            if (warnStart < 0) warnStart += 1440
+            val isWarn = if (warnStart < nfStart) { currentMins in warnStart until nfStart } else { currentMins >= warnStart || currentMins < nfStart }
+
+            if (isNightfall) {
+                updateNightfallDimmer(0f) 
+                // Removed device locks so ShieldRuleEngine soft-blocks non-calls instead
+            } else if (isWarn) {
+                val currSecs = currentMins * 60 + cal.get(Calendar.SECOND)
+                val wStartSecs = warnStart * 60
+                var diff = currSecs - wStartSecs
+                if (diff < 0) diff += 86400
+                var alpha = diff / 300f
+                if (alpha > 0.95f) alpha = 0.95f
+                updateNightfallDimmer(alpha)
+                return true
+            } else {
+                updateNightfallDimmer(0f)
+            }
+        } else {
+            updateNightfallDimmer(0f)
+        }
+        return false
+    }
+
+    
+    private fun checkTintTick() {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        val tintColor = prefs.getInt("CUSTOM_TINT_COLOR", 0)
+        val alpha = Color.alpha(tintColor)
+
+        if (alpha > 0) {
+            if (!isTintShowing) {
+                val params = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or 
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or 
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    PixelFormat.TRANSLUCENT
+                ).apply { gravity = Gravity.CENTER
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES } }
+                tintParams = params
+                tintView = View(this).apply { setBackgroundColor(tintColor) }
+                try { windowManager?.addView(tintView, params); isTintShowing = true; shownTintColor = tintColor } catch (e: Exception) {}
+            } else if (tintColor != shownTintColor) {
+                // Redraw the full-screen tint only when its colour changes
+                tintView?.setBackgroundColor(tintColor)
+                shownTintColor = tintColor
+            }
+        } else {
+            if (isTintShowing && tintView != null) {
+                windowManager?.removeView(tintView)
+                tintView = null
+                tintParams = null
+                isTintShowing = false
+            }
+        }
+    }
+
+    private fun updateNightfallDimmer(alpha: Float) {
+        if (alpha <= 0f) {
+            if (isNightfallDimShowing && nightfallDimView != null) {
+                windowManager?.removeView(nightfallDimView)
+                nightfallDimView = null
+                nightfallDimParams = null
+                isNightfallDimShowing = false
+            }
+            return
+        }
+
+        if (!isNightfallDimShowing) {
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or 
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or 
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSLUCENT
+            ).apply { 
+                gravity = Gravity.CENTER
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) { layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES }
+                this.alpha = alpha
+            }
+            nightfallDimParams = params
+            nightfallDimView = View(this).apply { setBackgroundColor(Color.BLACK) }
+            try { 
+                windowManager?.addView(nightfallDimView, params)
+                isNightfallDimShowing = true 
+            } catch (e: Exception) {}
+        } else {
+            val view = nightfallDimView
+            val params = nightfallDimParams
+            if (view != null && params != null) {
+                params.alpha = alpha
+                try {
+                    windowManager?.updateViewLayout(view, params)
+                } catch (e: Exception) {}
+            }
+        }
+    }
+
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event == null || System.currentTimeMillis() < pauseUntil) return
+
+        val packageName = event.packageName?.toString() ?: ""
+        val className = event.className?.toString() ?: ""
+        val now = System.currentTimeMillis()
+        val isWindowStateChange = event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+
+        if (isWindowStateChange) {
+            val time = appTimeTrackers[packageName] ?: 0L
+            appTimeTrackers[packageName] = time + 1000L
+            currentActivityClass = className
+        }
+
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+        if (prefs.getBoolean("DEBUG_UI_TOASTS", false)) {
+            if (packageName.contains("tencent.mm")) {
+                if (isWindowStateChange) {
+                    addLog("[WND] $className") 
+                }
+                if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+                    val node = event.source
+                    val resId = node?.viewIdResourceName?.substringAfterLast("/") ?: "null"
+                    val txt = node?.text ?: node?.contentDescription ?: "null"
+                    addLog("[CLICK] ID=$resId | TXT=$txt") 
+                    node?.recycle()
+                }
+            }
+        }
+
+        val isUrlTextChange = event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || 
+                              event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED
+
+        if (isUrlTextChange) {
+            typingScanPackage = packageName
+            handler.removeCallbacks(typingScanRunnable)
+            handler.postDelayed(typingScanRunnable, TYPING_SCAN_DELAY_MS)
+            return
+        }
+        // Checked before fetching the window, which is a call into the other app
+        if (!isWindowStateChange && now - lastScanTime < CONTENT_SCAN_COOLDOWN_MS) return
+
+        scanActiveWindow(packageName)
+    }
+
+    private fun scanActiveWindow(packageName: String) {
+        lastScanTime = System.currentTimeMillis()
+        val rootNode = rootInActiveWindow
+        val action = ruleEngine.evaluate(packageName, currentActivityClass, rootNode) { dpm.isAdminActive(compName) }
+
+        when (action) {
+            is ShieldAction.Block -> {
+                if (rootNode != null && !rootNode.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) performGlobalAction(GLOBAL_ACTION_BACK)
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                
+                if (action.redirectTarget != null) {
+                    handleRedirect(action.redirectTarget)
+                } else {
+                    triggerBossInvasion(action.reason, action.canDefend)
+                }
+            }
+            is ShieldAction.RewardApp -> handleReward(action.triggerWord, "BLOCKLIST_APP")
+            is ShieldAction.RewardWeb -> handleReward(action.triggerWord, "BLOCKLIST_WEB")
+            is ShieldAction.WeatherBuff -> handleWeatherBuff(action.element)
+            ShieldAction.Allow -> { /* Do nothing */ }
+        }
+        rootNode?.recycle()
+    }
+
+    private fun handleRedirect(target: String) {
+        pauseUntil = System.currentTimeMillis() + 4000L
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(this, "⚡ Urge Defeated! Energy Redirected!", Toast.LENGTH_LONG).show()
+            try {
+                if (target.startsWith("package:")) {
+                    val pkg = target.removePrefix("package:")
+                    val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(launchIntent)
+                    } else {
+                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                } else {
+                    var url = target
+                    if (!url.startsWith("http")) url = "https://$url"
+                    val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(browserIntent)
+                }
+            } catch (e: Exception) {
+                addLog("Redirect failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun handleReward(triggerWord: String, listKey: String) {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        performGlobalAction(GLOBAL_ACTION_HOME)
+        
+        if (listKey == "BLOCKLIST_APP") prefs.edit().putBoolean("FIRST_OVERCOME_APP_$triggerWord", true).apply()
+        else prefs.edit().putBoolean("FIRST_OVERCOME_WEB_$triggerWord", true).apply()
+
+        val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+        pauseUntil = System.currentTimeMillis() + 3000L
+
+        if (isGamers) {
+            val bName = GoodBeastEngine.generateName(triggerWord)
+            val (m1, m2, m3) = SkillEngine.generateMoves("Reclaimed", 1)
+            val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
+            val newBeast = "$bName,Reclaimed,150,150,$m1,$m2,$m3,0,0,0,0,true,None,0,0,0,0,None,0"
+            prefs.edit().putString("PARTY_DATA", if (partyStr.isEmpty()) newBeast else "$partyStr;$newBeast").apply()
+            
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(this, "You found an orphaned $bName!", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            val now = System.currentTimeMillis()
+            val mins = kotlin.random.Random.nextInt(10, 20)
+            val current = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+            val newEntry = "$triggerWord|$mins|$now"
+            prefs.edit().putString("MOMENTUM_EARNED_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(this, "First time overcoming $triggerWord! Momentum Gained!", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun handleWeatherBuff(element: String) {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+        val today = SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(Date())
+        prefs.edit().putBoolean("LAST_BUFF_${element}_$today", true).apply()
+        
+        val activePetIndex = prefs.getInt("ACTIVE_PET_INDEX", 0)
+        val partyData = prefs.getString("PARTY_DATA", "") ?: ""
+        if (partyData.isEmpty()) return
+        
+        val party = partyData.split(";").toMutableList()
+        if (activePetIndex >= party.size) return
+        
+        val activePet = party[activePetIndex].split(",")
+        if (activePet.size < 13) return
+        
+        val newStacks = activePet[12].toInt() + 1
+        val newPetData = "${activePet[0]},${activePet[1]},${activePet[2]},${activePet[3]},${activePet[4]},${activePet[5]},${activePet[6]},${activePet[7]},${activePet[8]},${activePet[9]},${activePet[10]},${activePet[11]},$newStacks,${activePet.getOrElse(13){"0"}}"
+        party[activePetIndex] = newPetData
+        prefs.edit().putString("PARTY_DATA", party.joinToString(";")).apply()
+
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(this, "🌟 ${activePet[0]} absorbed $element energy! (+1 Stack)", Toast.LENGTH_LONG).show()
+        }
+        addLog("Scavenged URL for $element.")
+    }
+
+    private fun triggerBossInvasion(debugReason: String, canDefend: Boolean) {
+        val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
+
+        val currentFlavor = BuildConfig.FLAVOR.lowercase()
+        val isGamers = currentFlavor.contains("gamers")
+        val isGameDefault = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false)
+
+        val lockoutUntil = prefs.getLong("FLEE_LOCKOUT_UNTIL", 0L)
+        val now = System.currentTimeMillis()
+        val isLockedOut = isGamers && now < lockoutUntil
+
+        val triggerWord = debugReason.substringAfter(": ").substringBefore(" (").trim()
+        val bossName = if (isGamers) {
+            BossNameEngine.generateBossName(triggerWord)
+        } else {
+            "The Dark One"
+        }
+
+        val isAdult = debugReason.contains("Content Guard")
+        val isTamper = debugReason.contains("Guard") && !isAdult
+        val isNightfall = debugReason.contains("Nightfall")
+        val isDrastic = debugReason.contains("Dumb Phone") ||
+                debugReason.contains("Nuclear") ||
+                debugReason.contains("No Internet") ||
+                debugReason.contains("No Videos")
+        val minsSaved = if (isAdult) {
+            kotlin.random.Random.nextInt(15, 28)
+        } else {
+            kotlin.random.Random.nextInt(10, 20)
+        }
+
+        addLog("RED WALL DROPPED. Reason: $debugReason")
+
+        // --- INSTANT PRODUCTIVITY REDIRECT ---
+        val destIntent = if (!isGamers) {
+            Intent(this, MomentumActivity::class.java)
+        } else if (isGameDefault && AetherEngine.closedReason(prefs) == null) { // not in Nightfall hours or once Aether is spent
+            Intent(this, GameActivity::class.java)
+        } else {
+            Intent(this, MainActivity::class.java)
+        }
+        destIntent.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+        )
+        try {
+            startActivity(destIntent)
+        } catch (e: Exception) {}
+
+        Handler(Looper.getMainLooper()).post {
+            if (isOverlayShowing) return@post
+            urgesDefeatedCount++
+
+            // --- POSITIVE TOASTY SLIDE-IN OVERLAY ---
+            val toastyParams = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.BOTTOM
+                windowAnimations = android.R.style.Animation_Toast
+            }
+
+            val toastyView = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                val bgColor = if (isGamers) "#E53935" else "#4CAF50"
+                val subColor = if (isGamers) "#FFCDD2" else "#C8E6C9"
+
+                setBackgroundColor(Color.parseColor(bgColor))
+                setPadding(48, 48, 48, 48)
+
+                val toastyTitle = if (isGamers) {
+                    "⚔️ INVASION: $bossName"
+                } else if (isTamper || isNightfall || isDrastic || !canDefend) {
+                    "🛡️ MOMENTUM ENHANCED: OVERCOME ${triggerWord.uppercase()}"
+                } else {
+                    "⚡ MOMENTUM GAINED: +$minsSaved MINS"
+                }
+
+                val toastySubtitle = if (isGamers) {
+                    "Tap to defend your Netbeasts..."
+                } else {
+                    "Tap to claim and view details..."
+                }
+
+                addView(TextView(this@GuardianService).apply {
+                    text = toastyTitle
+                    setTextColor(Color.WHITE)
+                    textSize = 16f
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                })
+
+                addView(TextView(this@GuardianService).apply {
+                    text = toastySubtitle
+                    setTextColor(Color.parseColor(subColor))
+                    textSize = 12f
+                    setPadding(0, 8, 0, 0)
+                })
+            }
+
+            // --- FULL SCREEN DETAILS (ONLY SHOWN IF TOASTY IS TAPPED) ---
+            val fullParams = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.CENTER
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                }
+            }
+
+            overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_guard, null)
+
+            val tvReason = overlayView?.findViewById<TextView>(R.id.tvDebugReason)
+            tvReason?.text = if (isGamers) {
+                "Attracted by:\n\"$triggerWord\""
+            } else {
+                "Urge Overcome:\n\"$triggerWord\""
+            }
+
+            val tvMsg = overlayView?.findViewById<TextView>(R.id.tvOverlayMessage)
+            val tvTitle = overlayView?.findViewById<TextView>(R.id.tvOverlayTitle)
+            val btnDefend = overlayView?.findViewById<Button>(R.id.btnPauseBlocker)
+            val btnYield = overlayView?.findViewById<Button>(R.id.btnYield)
+
+            val fleeLogic: () -> Unit = {
+                removeOverlay()
+                if (isGamers) {
+                    val lockoutTime = System.currentTimeMillis() + (15 * 60 * 1000)
+                    prefs.edit()
+                        .putBoolean("FLED_BATTLE", true)
+                        .putString("FLED_BOSS", bossName)
+                        .putLong("FLEE_LOCKOUT_UNTIL", lockoutTime)
+                        .apply()
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                } else {
+                    if (!performGlobalAction(GLOBAL_ACTION_BACK)) {
+                        performGlobalAction(GLOBAL_ACTION_HOME)
+                    }
+                }
+            }
+
+            if (isLockedOut) {
+                val remain = (lockoutUntil - now) / 1000
+                tvTitle?.text = "💀 SYSTEM LOCKED 💀"
+                tvMsg?.text =
+                    "You recently abandoned your Netbeasts.\n\nLocked out for ${remain / 60}m ${remain % 60}s."
+                btnDefend?.visibility = View.GONE
+                btnYield?.text = "Retreat"
+                btnYield?.setOnClickListener {
+                    removeOverlay()
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                }
+            } else if (!canDefend) {
+                tvTitle?.text = if (isGamers) {
+                    "🛑 SYSTEM LOCKED 🛑"
+                } else {
+                    "🛡️ SYSTEM SECURED 🛡️"
+                }
+
+                tvMsg?.text = if (isGamers) {
+                    "$debugReason\n\nThis action cannot be bypassed without a System Override."
+                } else {
+                    "Overcame: $triggerWord\n\nThis system action is secured and cannot be bypassed without a System Override."
+                }
+
+                btnDefend?.visibility = View.GONE
+                btnYield?.text = if (isGamers) "Retreat" else "Maintain Momentum"
+                btnYield?.setOnClickListener { fleeLogic() }
+            } else {
+                if (isGamers) {
+                    btnDefend?.text = "Defend Netbeasts"
+                    btnYield?.text = "Flee - leave the netbeasts to die"
+                    tvTitle?.text = "⚠️ INVASION DETECTED ⚠️"
+
+                    bossTimer = object : CountDownTimer(180000, 1000) {
+                        override fun onTick(millisUntilFinished: Long) {
+                            val secLeft = millisUntilFinished / 1000
+                            tvMsg?.text =
+                                "$bossName is attacking!\n\nTime remaining:\n" +
+                                        "${String.format("%02d:%02d", secLeft / 60, secLeft % 60)}\n\n" +
+                                        "(If you ignore this, some Netbeasts might die.)"
+                        }
+
+                        override fun onFinish() {
+                            fleeLogic()
+                        }
+                    }.start()
+                } else {
+                    btnDefend?.text = "Claim Momentum"
+                    btnYield?.text = "Dismiss"
+                    tvTitle?.text = "⚡ MOMENTUM GAINED ⚡"
+
+                    if (isTamper) {
+                        tvMsg?.text =
+                            "System modification blocked.\nStay focused on your goals."
+                    } else if (isDrastic || isNightfall) {
+                        tvMsg?.text =
+                            "Action Overcome.\n\nStay focused on your goals."
+                    } else {
+                        tvMsg?.text =
+                            "You successfully overcame an urge.\n" +
+                                    "Estimated time saved: $minsSaved minutes.\n\n" +
+                                    "(This action has been tracked)."
+                    }
+                }
+
+                btnYield?.setOnClickListener { fleeLogic() }
+
+                btnDefend?.setOnClickListener {
+                    removeOverlay()
+
+                    if (isGamers) {
+                        startActivity(Intent(this, GameActivity::class.java).apply {
+                            addFlags(
+                                Intent.FLAG_ACTIVITY_NEW_TASK or
+                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            )
+                            putExtra("UNDER_ATTACK", true)
+                            putExtra("TRIGGER_REASON", triggerWord)
+                            putExtra("BOSS_NAME", bossName)
+                        })
+                    } else {
+                        if (!isTamper && !isNightfall && !isDrastic) {
+                            MomentumEngine.addEarnedMomentum(
+                                prefs,
+                                triggerWord,
+                                isAdult
+                            )
+                        }
+
+                        Toast.makeText(
+                            this@GuardianService,
+                            "Urge Defeated! Momentum Claimed!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        startActivity(Intent(this@GuardianService, MainActivity::class.java).apply {
+                            addFlags(
+                                Intent.FLAG_ACTIVITY_NEW_TASK or
+                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            )
+                        })
+                    }
+                }
+            }
+
+            toastyView.setOnClickListener {
+                try {
+                    windowManager?.removeView(toastyView)
+                } catch (e: Exception) {}
+
+                try {
+                    windowManager?.addView(overlayView, fullParams)
+                } catch (e: Exception) {}
+            }
+
+            try {
+                windowManager?.addView(toastyView, toastyParams)
+                toastyOverlayView = toastyView
+                isOverlayShowing = true
+
+                // Auto-yield after 6 seconds if the user ignores the notification.
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (isOverlayShowing && toastyOverlayView?.windowToken != null) {
+                        fleeLogic()
+                    }
+                }, 6000)
+            } catch (e: Exception) {}
+        }
+    }
+
+    private fun removeOverlay() {
+        if (isOverlayShowing) {
+            bossTimer?.cancel()
+            try { if (overlayView != null) windowManager?.removeView(overlayView) } catch (e: Exception) {}
+            try { if (toastyOverlayView != null) windowManager?.removeView(toastyOverlayView) } catch (e: Exception) {}
+            overlayView = null
+            toastyOverlayView = null
+            isOverlayShowing = false
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(overlayRunnable)
+        handler.removeCallbacks(typingScanRunnable)
+        try { unregisterReceiver(screenReceiver) } catch (e: Exception) {} // never registered if it didn't connect
+        getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(overlayPrefsListener)
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        WatchdogReceiver.fireAlert(this)
+        return super.onUnbind(intent)
+    }
+    override fun onInterrupt() {}
+}
+
+
+
+===== app/src/main/java/com/rockhard/blocker/MomentumEngine.kt =====
+package com.rockhard.blocker
+
+import android.content.SharedPreferences
+
+object MomentumEngine {
+    private val timeEstimates = mapOf(
+        "tiktok" to 45, "youtube" to 40, "instagram" to 30, "facebook" to 20,
+        "reddit" to 25, "twitter" to 20, "x" to 20, "snapchat" to 15, "tinder" to 15, 
+        "twitch" to 30, "discord" to 20
+    )
+
+    fun calculateCurrentMomentum(prefs: SharedPreferences): Int {
+        val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        val spentStr = prefs.getString("MOMENTUM_SPENT_TODAY", "") ?: ""
+        val now = System.currentTimeMillis()
+
+        var totalEarned = 0
+        var totalEvaporated = 0
+
+        if (earnedStr.isNotEmpty()) {
+            earnedStr.split(",").forEach { entry ->
+                val parts = entry.split("|")
+                if (parts.size == 3) {
+                    val mins = parts[1].toInt()
+                    val time = parts[2].toLong()
+                    totalEarned += mins
+
+                    val hoursPassed = (now - time) / (1000 * 60 * 60.0)
+                    if (hoursPassed > 2) {
+                        val decayMins = ((hoursPassed - 2) * 60 / 5).toInt()
+                        totalEvaporated += Math.min(decayMins, mins)
+                    }
+                }
+            }
+        }
+
+        var totalSpent = 0
+        if (spentStr.isNotEmpty()) {
+            spentStr.split(",").forEach { entry ->
+                val parts = entry.split("|")
+                if (parts.size >= 2) totalSpent += parts[1].toInt()
+            }
+        }
+
+        val sleepBonus = prefs.getInt("SLEEP_MOMENTUM_BONUS", 0)
+        return Math.max(0, (totalEarned + sleepBonus) - totalSpent - totalEvaporated)
+    }
+
+    /**
+     * Milliseconds until evaporation next changes [calculateCurrentMomentum] (a minute goes every 5 minutes
+     * once an entry is 2 hours old), so a screen can refresh then instead of polling. Long.MAX_VALUE if never.
+     * Screen timing only: follow any change to the decay above.
+     */
+    fun msUntilNextChange(prefs: SharedPreferences): Long {
+        val earnedStr = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        if (earnedStr.isEmpty()) return Long.MAX_VALUE
+        val now = System.currentTimeMillis()
+        val decayStart = 2 * 60 * 60 * 1000L
+        val step = 5 * 60 * 1000L
+        var next = Long.MAX_VALUE
+        earnedStr.split(",").forEach { entry ->
+            val parts = entry.split("|")
+            if (parts.size == 3) {
+                val mins = parts[1].toInt()
+                val elapsed = now - parts[2].toLong()
+                val stepsDone = if (elapsed < decayStart) 0L else (elapsed - decayStart) / step
+                if (stepsDone < mins) next = Math.min(next, decayStart + (stepsDone + 1) * step - elapsed)
+            }
+        }
+        return next
+    }
+
+    fun addEarnedMomentum(prefs: SharedPreferences, source: String, isAdultContent: Boolean) {
+        val now = System.currentTimeMillis()
+        val mins = if (isAdultContent) kotlin.random.Random.nextInt(15, 28) else kotlin.random.Random.nextInt(10, 20)
+        val current = prefs.getString("MOMENTUM_EARNED_TODAY", "") ?: ""
+        val newEntry = "$source|$mins|$now"
+        prefs.edit().putString("MOMENTUM_EARNED_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
+    }
+
+    fun spendMomentum(prefs: SharedPreferences, taskName: String, cost: Int): Boolean {
+        if (calculateCurrentMomentum(prefs) < cost) return false
+        val now = System.currentTimeMillis()
+        val current = prefs.getString("MOMENTUM_SPENT_TODAY", "") ?: ""
+        val newEntry = "$taskName|$cost|$now"
+        prefs.edit().putString("MOMENTUM_SPENT_TODAY", if (current.isEmpty()) newEntry else "$current,$newEntry").apply()
+        return true
+    }
+
+    fun resetDailyIfNeeded(prefs: SharedPreferences) {
+        val today = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault()).format(java.util.Date())
+        val lastDay = prefs.getString("MOMENTUM_LAST_DAY", "")
+        if (today != lastDay) {
+            var dailyYieldMins = 0
+            
+            val apps = prefs.getString("BLOCKLIST_APP", "")?.split(",")?.filter{it.isNotEmpty()} ?: emptyList()
+            val webs = prefs.getString("BLOCKLIST_WEB", "")?.split(",")?.filter{it.isNotEmpty()} ?: emptyList()
+            
+            (apps + webs).forEach { item ->
+                val name = item.split("|")[0].lowercase()
+                var found = false
+                for ((key, value) in timeEstimates) {
+                    if (name.contains(key)) { dailyYieldMins += value; found = true; break }
+                }
+                if (!found) dailyYieldMins += 15 // Fallback generic time
+            }
+
+            val newEarned = if (dailyYieldMins > 0) "Daily Overcome Yield|$dailyYieldMins|${System.currentTimeMillis()}" else ""
+            prefs.edit().putString("MOMENTUM_EARNED_TODAY", newEarned).putString("MOMENTUM_SPENT_TODAY", "").putString("MOMENTUM_LAST_DAY", today).apply()
+        }
+    }
+}
+
+
+
+===== app/src/main/java/com/rockhard/blocker/engines/AetherEngine.kt =====
+package com.rockhard.blocker
+
+import android.content.SharedPreferences
+import java.util.concurrent.TimeUnit
+
+object AetherEngine {
+    fun calculateStartingAether(prefs: SharedPreferences): Int {
+        val installTime = prefs.getLong("INSTALL_TIME", System.currentTimeMillis())
+        val now = System.currentTimeMillis()
+
+        val daysInstalled = TimeUnit.MILLISECONDS.toDays(now - installTime).toInt()
+        val baseMinutes = Math.max(10, 20 - daysInstalled) // Decreases from 20 to 10
+
+        val lastPlayed = prefs.getLong("LAST_PLAYED_TIME", now)
+        val daysMissed = TimeUnit.MILLISECONDS.toDays(now - lastPlayed).toInt()
+        val remnantMinutes = Math.min(5, daysMissed) // Max 5 mins of remnants
+
+        // Save the remnant value so we can display the Toast
+        prefs.edit().putInt("CURRENT_REMNANTS", remnantMinutes).putLong("LAST_PLAYED_TIME", now).apply()
+
+        return (baseMinutes + remnantMinutes) * 60 // Return in seconds
+    }
+
+    fun today(): String = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US).format(java.util.Date())
+
+    /**
+     * Seconds of Aether left today. The day's budget is set the first time the game
+     * opens that day (CURRENT_REMNANTS says how much of it was remnants); after that
+     * what's left is saved, so closing and reopening the game doesn't refill it.
+     */
+    fun loadToday(prefs: SharedPreferences): Int {
+        val today = today()
+        if (prefs.getString("AETHER_DAY", "") == today) {
+            prefs.edit().putInt("CURRENT_REMNANTS", 0).apply()
+            return prefs.getInt("AETHER_LEFT", 0).coerceAtLeast(0)
+        }
+        val seconds = calculateStartingAether(prefs)
+        save(prefs, today, seconds)
+        return seconds
+    }
+
+    /** What's left of the day [day] (the day it was loaded on, so a session past midnight doesn't spend the next day's). */
+    fun save(prefs: SharedPreferences, day: String, seconds: Int) {
+        prefs.edit().putString("AETHER_DAY", day).putInt("AETHER_LEFT", seconds.coerceAtLeast(0)).apply()
+    }
+
+    /** Why Nightfall shuts the game right now, or null. A shield Pause (System Override) lifts it, as it lifts the rest of Nightfall. */
+    fun nightfallReason(prefs: SharedPreferences): String? {
+        if (System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)) return null
+        if (!ShieldRuleEngine.isNightfall(prefs)) return null
+        val end = prefs.getInt("NIGHTFALL_END", 0)
+        return "🌙 Nightfall. The Wilds are closed until ${String.format("%d:%02d", end / 60, end % 60)}."
+    }
+
+    /** Why the game can't be played right now (Nightfall, or today's Aether spent), or null if it can. */
+    fun closedReason(prefs: SharedPreferences): String? {
+        nightfallReason(prefs)?.let { return it }
+        if (prefs.getString("AETHER_DAY", "") == today() && prefs.getInt("AETHER_LEFT", 1) <= 0) {
+            return "Aether depleted. Return tomorrow."
+        }
+        return null
+    }
+}
+
+
+
+===== world-core/build.gradle.kts =====
+import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+
+// The 3D Wilds sim + renderer, shared by the Android app (jvm) and the web
+// client (wasmJs). commonMain must stay pure Kotlin: no java.*, no android.*.
+plugins {
+    id("org.jetbrains.kotlin.multiplatform")
+}
+
+kotlin {
+    jvm {
+        compilations.all { kotlinOptions.jvmTarget = "17" }
+    }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        nodejs() // runs commonTest under the local Node (no browser in the Codespace)
+    }
+    sourceSets {
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+    }
+}
+
+
+

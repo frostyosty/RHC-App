@@ -81,7 +81,7 @@ internal fun MainActivity.populateSpendingTasks() {
     val activity = this
     val llSpent = findViewById<LinearLayout>(R.id.llSpentList)
     llSpent.removeAllViews()
-    val isMale = BuildConfig.FLAVOR.lowercase().contains("male")
+    val isMale = !Flavor.isFemale
     val tasks = if (isMale) listOf(Pair("🪓 Chop Wood / Yard Work", 30), Pair("🏋️ Workout / Lift", 45), Pair("📚 Read a Book", 20), Pair("🔧 Fix / Build Something", 30), Pair("🏃‍♂️ Go for a Run", 30), Pair("🥩 Cook a Proper Meal", 40), Pair("🎸 Practice an Instrument", 30), Pair("🧹 Deep Clean a Room", 20), Pair("🚶‍♂️ Walk in Nature", 30), Pair("🧘‍♂️ Meditate / Pray", 15), Pair("🛠️ Organize Workspace", 15), Pair("✍️ Write / Plan Goals", 20))
     else listOf(Pair("🧘‍♀️ Yoga / Stretch", 20), Pair("🧴 Skincare Routine", 15), Pair("📚 Read a Book", 20), Pair("📝 Journal / Plan", 15), Pair("🏃‍♀️ Go for a Run / Walk", 30), Pair("🥗 Cook a Healthy Meal", 40), Pair("🎨 Create Art / Craft", 30), Pair("🧹 Declutter a Room", 20), Pair("🛁 Take a Relaxing Bath", 30), Pair("☕ Call a Friend / Family", 20), Pair("💅 Grooming / Nails", 20), Pair("🧘‍♀️ Meditate / Pray", 15))
 

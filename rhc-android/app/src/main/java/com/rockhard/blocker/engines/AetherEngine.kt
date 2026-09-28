@@ -49,14 +49,14 @@ object AetherEngine {
         if (System.currentTimeMillis() < prefs.getLong("SYSTEM_PAUSE_UNTIL", 0L)) return null
         if (!ShieldRuleEngine.isNightfall(prefs)) return null
         val end = prefs.getInt("NIGHTFALL_END", 0)
-        return "🌙 Nightfall. The Wilds are closed until ${String.format("%d:%02d", end / 60, end % 60)}."
+        return if (Flavor.homevisits()) "🌙 Visiting hours start again at ${String.format("%d:%02d", end / 60, end % 60)}." else "🌙 Nightfall. The Wilds are closed until ${String.format("%d:%02d", end / 60, end % 60)}."
     }
 
     /** Why the game can't be played right now (Nightfall, or today's Aether spent), or null if it can. */
     fun closedReason(prefs: SharedPreferences): String? {
         nightfallReason(prefs)?.let { return it }
         if (prefs.getString("AETHER_DAY", "") == today() && prefs.getInt("AETHER_LEFT", 1) <= 0) {
-            return "Aether depleted. Return tomorrow."
+            return if (Flavor.homevisits()) "No more visiting hours today." else "Aether depleted. Return tomorrow."
         }
         return null
     }

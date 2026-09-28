@@ -129,7 +129,7 @@ class MomentumActivity : Activity() {
 
     private fun populateSpendingTasks() {
         llSpent.removeAllViews()
-        val isMale = BuildConfig.FLAVOR.lowercase().contains("male")
+        val isMale = !Flavor.isFemale
         
         val tasks = if (isMale) {
             listOf(Pair("🪓 Chop Wood / Yard Work", 30), Pair("🏋️ Workout / Lift", 45), Pair("📚 Read a Book", 20), Pair("🔧 Fix Something", 30))

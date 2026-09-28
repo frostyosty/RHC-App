@@ -24,7 +24,7 @@ object LeaderboardEngine {
     fun getDisplayName(prefs: SharedPreferences): String {
         var name = prefs.getString("LEADERBOARD_NAME", null)
         if (name == null) {
-            val isMale = BuildConfig.FLAVOR.lowercase().contains("male")
+            val isMale = !Flavor.isFemale
             val adjectives = listOf("Iron", "Stoic", "Silent", "Fierce", "Noble", "Steadfast")
             val nouns = if (isMale) listOf("Spartan", "Wolf", "Titan", "Bear") else listOf("Valkyrie", "Lioness", "Athena", "Owl")
             name = "${adjectives.random()} ${nouns.random()} ${kotlin.random.Random.nextInt(100, 999)}"

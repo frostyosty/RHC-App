@@ -84,7 +84,15 @@ class GameActivity : Activity() {
                 tickCounter++
                 
                 // 1-Second Smooth Aether Decay Engine
-                if (!isUnderAttack) {
+                if (isUnderAttack) {
+                    // Defending against an invasion has nothing to do with Aether: it shows 0:00 and none is spent
+                    tvAether.setTextColor(android.graphics.Color.parseColor("#F44336"))
+                    tvAether.text = "Aether: 00:00"
+                } else if (!aetherDraining()) {
+                    // on the Party tab, or the app is in the background: Aether holds
+                    tvAether.setTextColor(android.graphics.Color.GRAY)
+                    tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
+                } else {
                     if (isFightAetherActive && activeExpeditions.isEmpty()) {
                         // Slow down velocity to 1 drop every 5 seconds!
                         if (tickCounter % 5 == 0 && aetherSeconds > 0) aetherSeconds--
@@ -120,6 +128,15 @@ class GameActivity : Activity() {
                 mainHandler.postDelayed(this, 1000)
             }
         }
+    private var isResumed = false
+
+    /** Aether only runs down while the game is on screen and you're in the Wilds, the explore screen or the Bag/Shop (never the Party tab). */
+    private fun aetherDraining(): Boolean {
+        if (!isResumed) return false
+        if (inWorld) return true
+        return findViewById<View>(R.id.viewParty)?.visibility != View.VISIBLE
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
@@ -332,12 +349,14 @@ class GameActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
+        isResumed = false
         AetherEngine.save(prefs, aetherDay, aetherSeconds)
         findViewById<com.rockhard.blocker.world.WorldView>(R.id.worldView)?.stop()
     }
 
     override fun onResume() {
         super.onResume()
+        isResumed = true
         // only if the Wilds are actually on screen (not hidden behind a battle)
         if (inWorld && findViewById<android.view.View>(R.id.worldOverlay)?.visibility == android.view.View.VISIBLE) {
             findViewById<com.rockhard.blocker.world.WorldView>(R.id.worldView)?.start()

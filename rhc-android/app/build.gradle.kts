@@ -45,7 +45,8 @@ android {
             dimension = "version"
             applicationIdSuffix = ".netbeasts"
             resValue("string", "app_name", "Momentum")
-            resValue("string", "flavor_id", "rhc") 
+            resValue("string", "flavor_id", "rhc")
+            resValue("string", "game_launcher_label", "Netbeasts") 
             resValue("string", "overlay_title", "NOT TODAY.")
             resValue("string", "brick_message", "Stay strong. Defend your Netbeasts.")
             resValue("string", "essay_prompt", "GAME_MODE")
@@ -55,6 +56,7 @@ android {
             applicationIdSuffix = ".homevisits"
             resValue("string", "app_name", "Momentum")
             resValue("string", "flavor_id", "female_gamers")
+            resValue("string", "game_launcher_label", "Homevisits")
             resValue("string", "overlay_title", "AVERT YOUR EYES.")
             resValue("string", "brick_message", "Take a deep breath and step away.")
             resValue("string", "essay_prompt", "GAME_MODE")
@@ -64,6 +66,7 @@ android {
             applicationIdSuffix = ".momentum_m"
             resValue("string", "app_name", "Momentum")
             resValue("string", "flavor_id", "momentum_male")
+            resValue("string", "game_launcher_label", "Momentum")
             resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
             resValue("string", "brick_message", "Your time is valuable. Protect it.")
             resValue("string", "essay_prompt", "MOMENTUM_MODE")
@@ -73,6 +76,7 @@ android {
             applicationIdSuffix = ".momentum_f"
             resValue("string", "app_name", "Momentum")
             resValue("string", "flavor_id", "momentum_female")
+            resValue("string", "game_launcher_label", "Momentum")
             resValue("string", "overlay_title", "MAINTAIN MOMENTUM.")
             resValue("string", "brick_message", "Your time is valuable. Protect it.")
             resValue("string", "essay_prompt", "MOMENTUM_MODE")
@@ -80,5 +84,7 @@ android {
     }
 }
 dependencies {
+    gamersFemaleHomevisitsImplementation("com.google.ar:core:1.41.0")
     implementation(project(":world-core"))
+    gamersFemaleHomevisitsImplementation(project(":homevisits-core"))
 }

@@ -31,7 +31,7 @@ class MainActivity : Activity() {
     internal val tickRunnable = object : Runnable {
         override fun run() {
             var next = 60_000L
-            if (!BuildConfig.FLAVOR.lowercase().contains("gamers")) {
+            if (!Flavor.isGamers) {
                 updateMomentumUI()
                 next = MomentumEngine.msUntilNextChange(prefs).coerceAtMost(next - 50L) + 50L
             }
@@ -98,14 +98,14 @@ class MainActivity : Activity() {
         try { prefs.getString("PARTY_DATA", "") } catch (e: Exception) { prefs.edit().clear().apply() }
         if (!prefs.contains("INSTALL_TIME")) prefs.edit().putLong("INSTALL_TIME", System.currentTimeMillis()).apply()
 
-        val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+        val isGamers = Flavor.isGamers
         CloakEngine.uncloak(this, prefs.getBoolean("LAUNCH_GAME_DEFAULT", false))
 
         if (prefs.getBoolean("LAUNCH_GAME_DEFAULT", false) && !intent.getBooleanExtra("FROM_GAME", false)) {
             // Nightfall or no Aether left: stay here and say why
             val closed = if (isGamers) AetherEngine.closedReason(prefs) else null
             if (closed != null) Toast.makeText(this, closed, Toast.LENGTH_LONG).show()
-            else if (isGamers) { startActivity(Intent(this, GameActivity::class.java)); finish(); return }
+            else if (isGamers) { if (Flavor.homevisits()) startActivity(Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)) else if (Flavor.homevisits()) startActivity(Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)) else startActivity(Intent(this, GameActivity::class.java)); finish(); return }
         }
         setContentView(R.layout.activity_main)
         
@@ -114,10 +114,10 @@ class MainActivity : Activity() {
         dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         compName = ComponentName(this, AdminReceiver::class.java)
 
-        if (!isGamers) { MomentumEngine.resetDailyIfNeeded(prefs); setupMomentumUI() }
+        if (Flavor.usesMomentum()) { MomentumEngine.resetDailyIfNeeded(prefs); setupMomentumUI() }
 
-        findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers) View.GONE else View.VISIBLE
-        findViewById<View>(R.id.llSafariCard).visibility = if (isGamers) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers && !Flavor.homevisits()) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.llSafariCard).visibility = if (isGamers && !Flavor.homevisits()) View.VISIBLE else View.GONE
 
         refreshWeather()
 
@@ -165,7 +165,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btnGame).setOnClickListener {
             val closed = AetherEngine.closedReason(prefs)
             if (closed != null) Toast.makeText(this, closed, Toast.LENGTH_LONG).show()
-            else startActivity(Intent(this, GameActivity::class.java))
+            else if (Flavor.homevisits()) startActivity(Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)) else startActivity(Intent(this, GameActivity::class.java))
         }
         
         // --- NEW: Attach Uninstaller listener to the main layout button ---
@@ -183,7 +183,7 @@ class MainActivity : Activity() {
             val isPremium = prefs.getBoolean("REWARD_PREMIUM", false)
             if (done && !isPremium) {
                 prefs.edit().putBoolean("REWARD_PREMIUM", true).apply()
-                if (BuildConfig.FLAVOR.lowercase().contains("gamers")) {
+                if (Flavor.isGamers) {
                     val legendary = if (kotlin.random.Random.nextBoolean()) "Aegis,Legendary,250,250,Light Pulse,Nova Shield,Orbital Cannon,0,0,0,0,true,None,0,0,0,0,None,0" else "Titan,Legendary,280,280,Feral Strike,Parry,Apex Predator,0,0,0,0,true,None,0,0,0,0,None,0"
                     val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
                     prefs.edit().putString("PARTY_DATA", if(partyStr.isEmpty()) legendary else "$partyStr;$legendary").apply()
@@ -578,7 +578,7 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
 
     private fun openSettingsMenu() {
         DialogUtils.showCustomDialog(this, "Settings", null, true, "SAVE", null) { content, dialog ->
-            val isGamers = BuildConfig.FLAVOR.lowercase().contains("gamers")
+            val isGamers = Flavor.isGamers
             val cbGame = CheckBox(this).apply { text = if(isGamers) "Enable Gamification" else "Enable Momentum Tracking"; isChecked = prefs.getBoolean("GAMIFICATION", true); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
             val cbDefault = CheckBox(this).apply { text = if(isGamers) "Set Netbeasts as Default Home App" else "Set Momentum as Default Home App"; isChecked = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
             val cbDebug = CheckBox(this).apply { text = "Enable UI Debugger"; isChecked = prefs.getBoolean("DEBUG_UI_TOASTS", false); setTextColor(android.graphics.Color.YELLOW); textSize = 16f; setPadding(16, 16, 16, 16) }

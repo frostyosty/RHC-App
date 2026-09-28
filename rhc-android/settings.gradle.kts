@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "RockHardBlocker"
-include(":app", ":world-core")
+include(":app", ":world-core", ":homevisits-core")
