@@ -504,7 +504,7 @@ class GuardianService : AccessibilityService() {
                     "⚡ MOMENTUM GAINED: +$minsSaved MINS"
                 }
 
-                val toastySubtitle = if (isGamers) {
+                val toastySubtitle = if (isGamers && !isNightfall && !isTamper && !isDrastic && canDefend) {
                     "Tap to defend your Netbeasts..."
                 } else {
                     "Tap to claim and view details..."

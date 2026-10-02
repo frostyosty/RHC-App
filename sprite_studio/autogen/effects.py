@@ -13,6 +13,7 @@ GameSetup.kt). Change the art here, the linking there.
 import math
 import random
 
+import looks
 import pixelkit as pk
 
 G = 64
@@ -764,7 +765,11 @@ def slug(move):
 
 
 def _register(move, family, col, kw):
-    EFFECTS[slug(move)] = lambda: FAMILIES[family](col, **kw)
+    name = slug(move)
+    if 'seed' in kw:  # its look re-rolls the random parts (see looks.py)
+        EFFECTS[name] = lambda: FAMILIES[family](col, **dict(kw, seed=kw['seed'] + looks.reseed(name)))
+    else:
+        EFFECTS[name] = lambda: FAMILIES[family](col, **kw)
 
 
 for _m, (_fam, _col, _kw) in MOVES.items():
@@ -773,6 +778,8 @@ for _m, (_fam, _col, _kw) in MOVES.items():
 # The Studio's Attacks tab: move effects in table order (laser/bite/net are
 # the shared base effects the families were built from).
 MOVE_EFFECTS = [slug(m) for m in MOVES]
+# The moves with random parts, which have looks. The rest are drawn one way.
+HAS_LOOKS = {slug(m) for m, (_, _, kw) in MOVES.items() if 'seed' in kw}
 
 
 BLADE, EDGE, HILT, GRIP = '#C8D2E0', '#FFFFFF', '#FFC940', '#6A4A08'

@@ -48,9 +48,13 @@ class Painter:
 
     mirror=True draws every primitive twice, reflected about the centre
     column, which is how the front-facing views stay symmetric.
+
+    recolor, if given, maps every colour before it is drawn (a row's look,
+    see looks.py).
     """
 
-    def __init__(self, mirror=False, size=SIZE):
+    def __init__(self, mirror=False, size=SIZE, recolor=None):
+        self.recolor = recolor
         self.size = size
         self.ground = size - 3   # feet rest on this row
         self.img = Image.new('RGBA', (size, size), CLEAR)
@@ -66,6 +70,8 @@ class Painter:
         return m
 
     def part(self, color, fn, shade=True, sep=True):
+        if self.recolor:
+            color = self.recolor(color)
         m = self._mask(fn)
         px = self.img.load()
         mp = m.load()
@@ -108,7 +114,7 @@ class Painter:
 
     def px(self, color, pts):
         """Flat pixels, no shading or separation (eyes, markings, glints)."""
-        c = rgb(color) + (255,)
+        c = rgb(self.recolor(color) if self.recolor else color) + (255,)
         p = self.img.load()
         for x, y in pts:
             for xx in ((x, self.size - 1 - x) if self.mirror else (x,)):

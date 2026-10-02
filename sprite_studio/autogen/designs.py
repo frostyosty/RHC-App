@@ -3088,13 +3088,18 @@ def fern(p, s):
 
 @prop('cage')
 def cage(p, s):
-    """The netbeast cage the player throws in the 3D Wilds."""
-    p.rect('#5E6F82', (6, 8, 25, 10))
-    p.rect('#5E6F82', (6, 28, 25, 30))
-    for x in (7, 11, 15, 19, 23):
-        p.rect('#9AA4B2', (x, 10, x + 1, 27), shade=False)
-    p.line('#5E6F82', [(12, 8), (15, 3), (19, 8)])
-    p.px('#F2C84B', [(15, 17), (16, 17), (15, 18), (16, 18)])
+    """The netbeast cage the player throws in the 3D Wilds. It is also laid over
+    each netbeast in the cage column (WorldFight.cageIcon), so the bars are thin
+    and wide apart: the outline takes a pixel each side of a bar, and closer
+    bars would close up into a solid block that hides the beast."""
+    p.rect('#5E6F82', (3, 7, 28, 9))
+    p.rect('#5E6F82', (3, 28, 28, 30))
+    for x in (3, 27):
+        p.rect('#9AA4B2', (x, 9, x + 1, 28), shade=False)
+    for x in (10, 21):
+        p.rect('#9AA4B2', (x, 10, x, 27), shade=False)
+    p.line('#5E6F82', [(12, 7), (15, 2), (19, 7)])
+    p.px('#F2C84B', [(15, 8), (16, 8)])
 
 
 @prop('coin', frames=6, ms=110)

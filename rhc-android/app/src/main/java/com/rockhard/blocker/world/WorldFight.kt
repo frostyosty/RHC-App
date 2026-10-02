@@ -388,7 +388,8 @@ internal fun GameActivity.cageIcon(p: Netbeast): FrameLayout {
 
 internal fun GameActivity.cageBackground(): GradientDrawable {
     val d = resources.displayMetrics.density
-    return GradientDrawable().apply { cornerRadius = 8 * d; setColor(Color.argb(170, 16, 20, 24)); setStroke(d.toInt().coerceAtLeast(1), Color.argb(120, 255, 214, 102)) }
+    // slate, not near-black: the beasts are dark, and they need to show as a shape between the bars
+    return GradientDrawable().apply { cornerRadius = 8 * d; setColor(Color.argb(200, 64, 74, 88)); setStroke(d.toInt().coerceAtLeast(1), Color.argb(120, 255, 214, 102)) }
 }
 
 /** A cage to tap in a fight; the full size adds its name, level and health. */

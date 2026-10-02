@@ -10,6 +10,7 @@ so every animation of a beast is guaranteed to be the same creature.
   python3 sprite_studio/autogen/autogen.py --anims idle,attack
   python3 sprite_studio/autogen/autogen.py --skip-existing
   python3 sprite_studio/autogen/autogen.py --force        # also redraw hand edits
+  python3 sprite_studio/autogen/autogen.py --only cacheon --look next   # a new look (looks.py)
   python3 sprite_studio/autogen/autogen.py --scenery      # world scenery only: props, every tree kind x 10 levels, far-off houses
   python3 sprite_studio/autogen/autogen.py --scenery --only oak,pine
   python3 sprite_studio/autogen/autogen.py --trees sheet.png   # tree review sheet
@@ -37,6 +38,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pixelkit as pk  # noqa: E402
+import looks  # noqa: E402
 from designs import DESIGNS, PROPS, PROP_TIMING, Pose  # noqa: E402
 import scenery  # noqa: E402
 import effects  # noqa: E402
@@ -50,6 +52,18 @@ HAND_EDITS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hand_edit
 HOLD_FOREVER = 60000  # GifView loops by time, so a terminal pose just holds a long frame
 
 
+def has_looks(name):
+    """Rows REGENERATE can vary: creatures (people keep their skin and clothes) and moves with random parts."""
+    if name in DESIGNS:
+        return DESIGNS[name].category not in looks.PLAIN_CATEGORIES
+    return name in effects.HAS_LOOKS
+
+
+def look_of(name):
+    """This row's recolouring in its current look (None on look 0, see looks.py)."""
+    return looks.recolor(name, looks.current(name), DESIGNS[name].color) if has_looks(name) else None
+
+
 def draw(name, pose):
     """One pose on a padded square canvas: 5/32 of the design grid spare on
     each side and 10/32 above, none below so feet stay on the bottom edge
@@ -57,7 +71,7 @@ def draw(name, pose):
     move into that room, so no frame of any animation is clipped; autogen
     warns if one still touches the edge."""
     d = DESIGNS[name]
-    p = pk.Painter(mirror=pose.symmetric, size=d.size)
+    p = pk.Painter(mirror=pose.symmetric, size=d.size, recolor=look_of(name))
     d.fn(p, pose)
     art = p.done() if d.outline else p.img
     side = d.size * 5 // 32
@@ -253,7 +267,7 @@ def a_attack_front(d, n):
 
 # ---------------------------------------------------------------- fx
 def a_fx(d, n):
-    col = d.color
+    col = (look_of(n) or pk.rgb)(d.color)
     frames = []
     for i in range(8):
         img = Image.new('RGBA', (32, 32), pk.CLEAR)
@@ -520,6 +534,8 @@ def main():
     ap.add_argument('--anims', help='comma-separated animations (default: all)')
     ap.add_argument('--skip-existing', action='store_true', help="don't overwrite GIFs already on disk (keeps hand edits)")
     ap.add_argument('--force', action='store_true', help='also overwrite GIFs listed in hand_edits.txt')
+    ap.add_argument('--look', choices=['next', 'prev', 'original'],
+                    help='with --only: move those rows to another look first (looks.py), then draw them')
     ap.add_argument('--preview', metavar='PNG', help='write a contact sheet instead of GIFs')
     ap.add_argument('--turnaround', metavar='PNG', help='write a sheet of the 5 drawn views instead of GIFs')
     ap.add_argument('--scenery', action='store_true', help='write only the world scenery: props, trees, houses (--only picks tree kinds)')
@@ -546,6 +562,10 @@ def main():
         if unknown:
             print(f"⚠️  Unknown rows/trees: {', '.join(unknown)}")
     anims = [a.strip() for a in args.anims.split(',')] if args.anims else ANIMATIONS + list(VIEW_ANIMS)
+    if args.look:
+        if not args.only:
+            ap.error('--look needs --only (which rows to change)')
+        looks.step([r for r in rows + fx if has_looks(r)], args.look)
 
     if args.houses:
         scenery.house_sheet(args.houses)
