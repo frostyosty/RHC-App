@@ -55,7 +55,7 @@ HOLD_FOREVER = 60000  # GifView loops by time, so a terminal pose just holds a l
 def has_looks(name):
     """Rows REGENERATE can vary: creatures (people keep their skin and clothes) and moves with random parts."""
     if name in DESIGNS:
-        return DESIGNS[name].category not in looks.PLAIN_CATEGORIES
+        return name not in looks.PLAIN_ROWS
     return name in effects.HAS_LOOKS
 
 

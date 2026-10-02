@@ -5,6 +5,7 @@ from PIL import Image, ImageSequence
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'autogen'))
 import pixelkit  # noqa: E402  (same GIF writer as autogen: shared palette, index 0 transparent)
 import effects  # noqa: E402  (attack effects: the Attacks tab lists effects.MOVES)
+import looks  # noqa: E402  (which look each row is on: what REGENERATE steps through)
 
 PORT = int(os.environ.get("STUDIO_PORT", 8080))
 SAVE_DIR = "../rhc-android/app/src/main/res/drawable-nodpi/"
@@ -71,6 +72,13 @@ def row_files(beast, effect=False):
     return {f"fx_{beast}.gif" if anim == 'fx' else f"spr_{beast}_{anim}.gif" for anim in ANIMATIONS}
 
 
+def look_info(row, has_looks, current):
+    """What the dashboard shows of a row's look: its number, and the armour tone for a creature."""
+    n = current.get(row, 0) if has_looks else 0
+    tone = looks.describe(row, n)[0] if n and row not in effects.EFFECTS else ''
+    return {'has_looks': has_looks, 'look': n, 'look_name': tone}
+
+
 def attack_rows():
     """The Attacks tab: one fx GIF per move (effects.MOVES), then the base effects.
     Re-imports effects.py so a new move added there shows up without a restart."""
@@ -79,16 +87,19 @@ def attack_rows():
     painted = hand_edits()
     rows = [{'beast': effects.slug(m), 'move': m, 'family': fam, 'line': col} for m, (fam, col, _) in effects.MOVES.items()]
     rows += [{'beast': b, 'move': f'({b})', 'family': 'base', 'line': ''} for b in BASE_EFFECTS]
+    current = looks.load()
     for r in rows:
         f = f"fx_{r['beast']}.gif"
         r.update(file=f, exists=os.path.exists(os.path.join(SAVE_DIR, f)), hand_edited=[f] if f in painted else [])
+        r.update(look_info(r['beast'], r['beast'] in effects.HAS_LOOKS, current))
     return rows
 
 
-def regenerate(beast, force):
-    """Redraw one row (or a comma list of rows) with autogen.py. A fresh process, so edits to designs.py are picked up."""
-    cmd = [sys.executable, AUTOGEN, '--only', beast] + (['--force'] if force else [])
-    print(f"🔄 Regenerating {beast}{' (--force)' if force else ''}...", flush=True)
+def regenerate(beast, force, look=None):
+    """Redraw one row (or a comma list of rows) with autogen.py. A fresh process, so edits to designs.py are picked up.
+    look ('next', 'prev' or 'original') moves the rows to another look first (autogen/looks.py); None redraws them as they are."""
+    cmd = [sys.executable, AUTOGEN, '--only', beast] + (['--force'] if force else []) + (['--look', look] if look else [])
+    print(f"🔄 Regenerating {beast}{' (--force)' if force else ''}{f' (--look {look})' if look else ''}...", flush=True)
     with regen_lock:
         run = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', timeout=600,
                              env=dict(os.environ, PYTHONIOENCODING='utf-8'))
@@ -116,8 +127,10 @@ class SpriteHandler(http.server.SimpleHTTPRequestHandler):
                 with open(MODELS_FILE, 'r') as f: beasts.extend([b.lower().replace(" ", "_") for b in re.findall(r'BeastDef\("([^"]+)"', f.read())])
             matrix =[]
             painted = hand_edits()
+            current = looks.load()
             for beast in sorted(list(set(beasts))):
                 row = {'beast': beast, 'anims': {}, 'hand_edited': sorted(row_files(beast) & painted)}
+                row.update(look_info(beast, beast not in looks.PLAIN_ROWS, current))
                 for anim in ANIMATIONS:
                     filename = f"spr_{beast}_{anim}.gif"
                     if anim == 'fx': filename = f"fx_{beast}.gif"
@@ -200,8 +213,11 @@ class SpriteHandler(http.server.SimpleHTTPRequestHandler):
             beast = str(data.get('beast', '')).lower()
             if not re.fullmatch(r'[a-z0-9_]+(,[a-z0-9_]+)*', beast):
                 self.send_json({'status': 'error', 'error': f'bad row name {beast!r}'}, 400); return
+            look = data.get('look') or None
+            if look not in (None, 'next', 'prev', 'original'):
+                self.send_json({'status': 'error', 'error': f'bad look {look!r}'}, 400); return
             try:
-                result = regenerate(beast, bool(data.get('force')))
+                result = regenerate(beast, bool(data.get('force')), look)
             except subprocess.TimeoutExpired:
                 result = {'status': 'error', 'error': 'autogen took over 10 minutes'}
             self.send_json(result, 200 if result['status'] == 'success' else 500)

@@ -317,7 +317,7 @@
         </div>
         <div id="tab-attacks" style="display:none">
             <p style="font-size:12px; color:#aaa; margin-top:0;">One effect per move, drawn by <code>autogen/effects.py</code> (change a move's look in its <code>MOVES</code> table), played over the defender when the move lands.
-                <button class="btn-regen" onclick="regenerate(attackNames(), this)">🔄 REGENERATE ALL</button><span class="regen-note"></span></p>
+                <button class="btn-regen" title="A new look for every move that has random parts; the rest are redrawn as they are. Shift-click: redraw them all as they are." onclick="regenerate(attackNames(), this, event.shiftKey ? '' : 'next')">🔄 REGENERATE ALL</button><span class="regen-note"></span></p>
             <table>
                 <thead>
                     <tr><th>Move</th><th>Effect</th><th>Family</th><th>Colour</th><th>File</th></tr>
@@ -472,7 +472,7 @@
         function attackCells(row) {
             const img = row.exists ? `<img class="preview-img" src="/drawable/${row.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${row.file}', 'fx_${row.beast}')">✏️ EDIT</button>`
                 : `<div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('fx_${row.beast}')">➕ CREATE</button>`;
-            return `<td class="beast-name">${row.move}${row.hand_edited.length ? ' <span style="color:#FFC107" title="painted in the Studio">✋</span>' : ''}<button class="btn-regen" onclick="regenerate('${row.beast}', this)">🔄 REGENERATE</button><div class="regen-note"></div></td>`
+            return `<td class="beast-name">${row.move}${row.hand_edited.length ? ' <span style="color:#FFC107" title="painted in the Studio">✋</span>' : ''}${regenButtons(row)}</td>`
                 + `<td>${img}</td><td>${row.family}</td><td>${row.line}</td><td style="color:#888">${row.file}</td>`;
         }
         function renderAttacks(attacks) {
@@ -481,17 +481,30 @@
             document.getElementById('attacksBody').innerHTML = attackRows.map(row => `<tr id="row-${row.beast}">${attackCells(row)}</tr>`).join('');
         }
         let rowsByBeast = {};  // the last /dashboard_data rows, for regenerate's hand-edit check
-        function rowCells(row, animations) { let tr = `<td class="beast-name">${row.beast}${row.effect ? ' <span style="color:#888">(effect)</span>' : ''}<button class="btn-regen" onclick="regenerate('${row.beast}', this)">🔄 REGENERATE</button><div class="regen-note"></div></td>`; animations.forEach(anim => { const cell = row.anims[anim]; if (!cell) { tr += '<td></td>'; return; } const bareName = (anim === 'fx' ? 'fx_' : 'spr_') + (anim === 'fx' ? row.beast : row.beast + '_' + anim); if (cell.exists) { tr += `<td><img class="preview-img" src="/drawable/${cell.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${cell.file}', '${bareName}')">✏️ EDIT</button></td>`; } else { tr += `<td><div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('${bareName}')">➕ CREATE</button></td>`; } }); return tr; }
+        function rowCells(row, animations) { let tr = `<td class="beast-name">${row.beast}${row.effect ? ' <span style="color:#888">(effect)</span>' : ''}${regenButtons(row)}</td>`; animations.forEach(anim => { const cell = row.anims[anim]; if (!cell) { tr += '<td></td>'; return; } const bareName = (anim === 'fx' ? 'fx_' : 'spr_') + (anim === 'fx' ? row.beast : row.beast + '_' + anim); if (cell.exists) { tr += `<td><img class="preview-img" src="/drawable/${cell.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${cell.file}', '${bareName}')">✏️ EDIT</button></td>`; } else { tr += `<td><div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('${bareName}')">➕ CREATE</button></td>`; } }); return tr; }
         function loadDashboard() { fetch('/dashboard_data').then(res => res.json()).then(data => { const header = document.getElementById('matrixHeader'); header.innerHTML = '<th>Beast</th>'; data.animations.forEach(anim => { header.innerHTML += `<th>${anim}</th>`; }); rowsByBeast = {}; data.matrix.forEach(row => { rowsByBeast[row.beast] = row; }); document.getElementById('matrixBody').innerHTML = data.matrix.map(row => `<tr id="row-${row.beast}">${rowCells(row, data.animations)}</tr>`).join(''); renderAttacks(data.attacks); }); }
+
+        // A row's buttons. REGENERATE moves the row to its next look (autogen/looks.py: new colours for a
+        // creature, re-rolled random parts for a move) and redraws it; shift-click redraws it in the look it
+        // has, to pick up an edit to designs.py. Rows drawn only one way (people, moves with no random parts)
+        // get a plain REDRAW.
+        function regenButtons(row) {
+            if (!row.has_looks) return `<button class="btn-regen" title="This row is drawn one way, so it comes out the same every time. Its drawing is in autogen/designs.py or effects.py." onclick="regenerate('${row.beast}', this, '')">🔄 REDRAW</button><div class="regen-note"></div>`;
+            let html = `<button class="btn-regen" title="Draw this row in a new look. Shift-click: redraw it in the look it has." onclick="regenerate('${row.beast}', this, event.shiftKey ? '' : 'next')">🔄 REGENERATE</button>`;
+            if (row.look > 0) html += `<div style="font-size:10px; color:#aaa; margin-top:3px;">look ${row.look}${row.look_name ? ' · ' + row.look_name : ''}</div>`
+                + `<button class="btn-regen" title="Back to the look before this one" onclick="regenerate('${row.beast}', this, 'prev')">◀ BACK</button> `
+                + `<button class="btn-regen" title="Back to the design as written" onclick="regenerate('${row.beast}', this, 'original')">↩ ORIGINAL</button>`;
+            return html + '<div class="regen-note"></div>';
+        }
 
         // Redraw one row from designs.py/effects.py (autogen.py --only <row>), then reload just that row.
         // GIFs painted here are kept unless you say to redraw them too.
-        function regenerate(beast, btn) {
+        function regenerate(beast, btn, look) {
             const painted = beast.split(',').flatMap(b => (rowsByBeast[b] && rowsByBeast[b].hand_edited) || []);
             const force = painted.length > 0 && confirm(`${painted.length} GIF${painted.length === 1 ? ' in ' + beast + ' was' : 's in ' + beast + ' were'} painted in the Studio:\n\n${painted.join('\n')}\n\nOK: redraw those too (the painting is lost).\nCancel: keep them and redraw the rest.`);
             const note = btn.parentElement.querySelector('.regen-note');
-            btn.disabled = true; btn.innerText = '⏳ REDRAWING'; note.style.color = '#FF9800'; note.innerText = ''; note.title = '';
-            fetch('/regenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ beast: beast, force: force }) })
+            const label = btn.innerText; btn.disabled = true; btn.innerText = '⏳ REDRAWING'; note.style.color = '#FF9800'; note.innerText = ''; note.title = '';
+            fetch('/regenerate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ beast: beast, force: force, look: look || '' }) })
                 .then(res => res.json()).then(data => {
                     if (data.log) console.log(data.log);
                     if (data.status !== 'success') throw new Error(data.error || 'autogen failed');
@@ -499,7 +512,7 @@
                     if (data.kept.length) msg += `, ${data.kept.length} painted kept`;
                     if (data.warnings.length) { msg += `, ⚠️ ${data.warnings.length} warning${data.warnings.length === 1 ? '' : 's'} (hover)`; color = '#FFC107'; }
                     refreshRow(beast, msg, color, data.warnings.join('\n'));
-                }).catch(err => { btn.disabled = false; btn.innerText = '🔄 REGENERATE'; note.style.color = '#D32F2F'; note.innerText = '❌ ' + err.message; });
+                }).catch(err => { btn.disabled = false; btn.innerText = label; note.style.color = '#D32F2F'; note.innerText = '❌ ' + err.message; });
         }
         function refreshRow(beast, msg, color, title) {
             fetch('/dashboard_data').then(res => res.json()).then(data => {

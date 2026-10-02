@@ -14,6 +14,8 @@ interface WorldSession {
     fun throwCage(species: String)
     /** Put the netbeast that's out back in its cage. */
     fun recall()
+    /** While walking: toss this netbeast's cage down. It roams for the rest of the walk, after coins if [forage]. */
+    fun letOut(species: String, forage: Boolean)
     /** Advance by real elapsed time; returns events that happened this frame. */
     fun update(elapsedSeconds: Double): List<WorldEvent>
     fun resolveEncounter(beastId: Int, outcome: EncounterOutcome)
@@ -34,6 +36,7 @@ class LocalWorldSession(override val world: World, ownerId: String, companion: S
     private var pendingLook = 0.0
     private var pendingCage: String? = null
     private var pendingRecall = false
+    private val pendingOut = ArrayDeque<Pair<String, Boolean>>() // cages to toss down, one a tick
     private var accumulator = 0.0
 
     /** Swipes add up until the next tick applies them. */
@@ -43,12 +46,15 @@ class LocalWorldSession(override val world: World, ownerId: String, companion: S
 
     override fun recall() { pendingRecall = true; pendingCage = null }
 
+    override fun letOut(species: String, forage: Boolean) { pendingOut.addLast(species to forage) }
+
     override fun update(elapsedSeconds: Double): List<WorldEvent> {
         accumulator += elapsedSeconds.coerceAtMost(0.25) // don't spiral after a pause
         val events = mutableListOf<WorldEvent>()
         while (accumulator >= World.DT) {
             accumulator -= World.DT
-            events += world.step(mapOf(localPlayerId to PlayerInput(pendingLook, pendingCage, pendingRecall)))
+            val out = pendingOut.removeFirstOrNull()
+            events += world.step(mapOf(localPlayerId to PlayerInput(pendingLook, pendingCage, pendingRecall, out?.first, out?.second == true)))
             pendingLook = 0.0; pendingCage = null; pendingRecall = false
         }
         return events

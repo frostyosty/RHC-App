@@ -14,7 +14,7 @@ import kotlin.random.Random
 
 enum class EntityKind { PLAYER, BEAST, CAGE, COMPANION, RIVAL }
 
-enum class EntityState { WALKING, PATROL, PAUSE, SHY, RETURN, ENGAGED, THROWN, LANDED, GONE, DONE, WAIT, LEAVE }
+enum class EntityState { WALKING, PATROL, PAUSE, SHY, RETURN, ENGAGED, THROWN, LANDED, GONE, DONE, WAIT, LEAVE, ROAM }
 
 /**
  * A one-off pose the host asks for when the battle rules resolve something
@@ -34,7 +34,9 @@ enum class Role { PLAYER, BEAST, COMPANION }
  * cage in flight or on the ground; a COMPANION is the player's netbeast that
  * came out of it. A RIVAL is a person with netbeasts of their own (a poacher);
  * a rival's netbeasts, and a boss, are beasts with no zone (-1). Those are
- * visitors: see [World.summon].
+ * visitors: see [World.summon]. A cage tossed down on a walk, and the netbeast
+ * that comes out of it to ROAM, are in nobody's fight: they have no [link] and
+ * are found by [ownerId].
  */
 class Entity(
     val id: Int,
@@ -55,7 +57,10 @@ class Entity(
     var timer = 0               // ticks left in the current state
     var link = -1               // chased player / engaged beast / owning player
     var foe = -1                // who it squares up to in a fight
-    var companion: String? = null   // player: the netbeast that's out (or the lead, before a fight)
+    var companion: String? = null   // player: the netbeast that's out (or the lead, before a fight); a cage tossed down on a walk: who's in it
+    var forage = false          // a roaming netbeast (and its cage before it): it goes after coins
+    var heelF = 0.0             // a roaming netbeast: the spot it's heading for, this far ahead of its owner
+    var heelS = 0.0             // ...and this far to their right
     var exploreTicks = 0        // player: auto-walk time left
     var grace = 0               // player: ticks before beasts can engage again
     var cloak = 0               // player: beasts that will still let you walk past (Cloak of Christ)
@@ -88,9 +93,14 @@ class Entity(
  * radians). In a fight, steering picks which way you circle, and
  * [throwCage] names the netbeast whose cage you throw (a new throw
  * recalls the one that's out). [recall] puts it back with nothing
- * thrown in its place.
+ * thrown in its place. While walking, [letOut] names a netbeast whose cage
+ * you toss down: it comes out and roams for the rest of the walk, going
+ * after coins if [forage] is set.
  */
-data class PlayerInput(val lookDelta: Double = 0.0, val throwCage: String? = null, val recall: Boolean = false)
+data class PlayerInput(
+    val lookDelta: Double = 0.0, val throwCage: String? = null, val recall: Boolean = false,
+    val letOut: String? = null, val forage: Boolean = false,
+)
 
 sealed class WorldEvent {
     /** A beast squared up to a player. You circle each other until a cage is thrown. */
@@ -99,8 +109,11 @@ sealed class WorldEvent {
     data class CompanionOut(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
     /** The rival's netbeast [beastId] is out of its cage: it's the one the player fights now. */
     data class RivalOut(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
-    /** The player walked into coin [coin] (an index into WorldMap.coins): it's worth one coin. */
-    data class CoinPicked(val playerId: Int, val coin: Int) : WorldEvent()
+    /**
+     * Coin [coin] (an index into WorldMap.coins) was picked up for the player: it's worth one
+     * coin. [finderId] is the player, who walked into it, or their roaming netbeast that found it.
+     */
+    data class CoinPicked(val playerId: Int, val coin: Int, val finderId: Int = playerId) : WorldEvent()
     /** A beast would have squared up to a cloaked player, but never noticed them. */
     data class SlippedPast(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
     /** The player's exploration timer ran out. */
@@ -179,6 +192,24 @@ class World(val map: WorldMap) {
 
         const val COIN_REACH = 0.5          // walk within this (tiles) of a coin and it's yours
         const val COIN_RESPAWN_TICKS = 300 * TICK_HZ  // longer than a walk: a coin is only yours once per walk
+
+        // A netbeast let out on a walk: its cage lands ahead and off to one side, far enough that
+        // you're still coming up to it when it opens. It trots to a spot near you, stops for a
+        // look around while you walk past, and trots on to the next
+        const val LET_OUT_AHEAD = 5.0
+        const val LET_OUT_SIDE = 1.0
+        const val ROAM_SPEED = 2.9        // tiles/s: a little over your best pace, so it gets ahead of you
+        const val ROAM_RUN = 3.6          // ...and catching up from further back than ROAM_NEAR, or after a coin
+        const val ROAM_NEAR = 2.5
+        const val ROAM_AHEAD_MIN = 1.5    // the spots it picks: this far ahead of you
+        const val ROAM_AHEAD_MAX = 5.0
+        const val ROAM_SIDE = 3.0         // ...and up to this far to either side
+        const val ROAM_LOOK_MIN = 20      // ticks it stands looking around
+        const val ROAM_LOOK_MAX = 60
+        const val ROAM_MILL = 2.0         // while you're not walking it potters about within this of where it is
+        const val ROAM_CLEAR = 4.0        // ...and this far from the middle of your fight
+        const val FORAGE_RANGE = 7.0      // a forager goes for a coin this close to it
+        const val FORAGE_LEASH = 10.0     // ...unless that coin is further than this from you
 
         // The sidestep: the auto-walk leans around trunks instead of walking into them
         const val PROBE = 1.2             // a trunk this far ahead (tiles) is in the way
@@ -271,7 +302,11 @@ class World(val map: WorldMap) {
                 EntityKind.BEAST -> if (e.zoneId < 0) stepVisitor(e, events) else stepBeast(e, players, events)
                 EntityKind.RIVAL -> stepVisitor(e, events)
                 EntityKind.CAGE -> stepCage(e, events)
-                EntityKind.COMPANION -> if (e.state == EntityState.GONE) { stepBody(e); continue }
+                EntityKind.COMPANION -> when (e.state) {
+                    EntityState.GONE -> { stepBody(e); continue }
+                    EntityState.ROAM -> stepRoamer(e, events)
+                    else -> {}
+                }
                 else -> {}
             }
             if (e.actionTicks > 0 && e.action != Action.FAINT && --e.actionTicks == 0) e.action = Action.NONE
@@ -289,6 +324,7 @@ class World(val map: WorldMap) {
         when (p.state) {
             EntityState.WALKING -> {
                 p.angle += input.lookDelta
+                if (input.letOut != null) letOut(p, input.letOut, input.forage)
                 if (p.downTicks > 0) {
                     // knocked flat: you pick yourself up before walking on (you can look round meanwhile)
                     p.downTicks--; p.moving = false
@@ -348,6 +384,81 @@ class World(val map: WorldMap) {
             coinGone[i] = COIN_RESPAWN_TICKS
             events += WorldEvent.CoinPicked(p.id, i)
         }
+    }
+
+    /**
+     * On a walk: tosses [species]' cage down ahead of you and off to one side. The netbeast
+     * that comes out is in nobody's fight: it roams near you for the rest of the walk
+     * ([stepRoamer]). Uses no RNG; the cage's id picks the side.
+     */
+    private fun letOut(p: Entity, species: String, forage: Boolean) {
+        val hx = cos(p.angle); val hy = sin(p.angle)
+        val side = if (nextId % 2 == 0) LET_OUT_SIDE else -LET_OUT_SIDE
+        val cage = Entity(nextId++, EntityKind.CAGE, p.x, p.y, p.angle, "cage", 0.4, ownerId = p.ownerId)
+        cage.state = EntityState.THROWN; cage.timer = CAGE_FLIGHT_TICKS; cage.z = 0.6
+        cage.targetX = map.wrap(p.x + hx * LET_OUT_AHEAD - hy * side); cage.targetY = map.wrap(p.y + hy * LET_OUT_AHEAD + hx * side)
+        cage.companion = species; cage.forage = forage
+        entities[cage.id] = cage
+    }
+
+    private fun ownerOf(e: Entity) = entities.values.firstOrNull { it.kind == EntityKind.PLAYER && it.ownerId == e.ownerId }
+
+    /**
+     * A netbeast let out on a walk. It never fights and nothing notices it. While you walk it
+     * trots to a spot ahead of you and to one side, stands there looking around while you go
+     * past, then trots on to another. While you're not walking (a fight, or flat on your back)
+     * it potters about where it is, clear of the fight. A forager goes for the nearest coin it
+     * can reach instead, and that coin is yours.
+     */
+    private fun stepRoamer(c: Entity, events: MutableList<WorldEvent>) {
+        val p = ownerOf(c) ?: run { entities.remove(c.id); return }
+        if (p.state == EntityState.DONE) { c.moving = false; return }
+        if (c.forage) {
+            val i = coinFor(c, p)
+            if (i >= 0) {
+                val k = map.coins[i]
+                if (map.distance(c.x, c.y, k.x, k.y) < COIN_REACH) {
+                    coinGone[i] = COIN_RESPAWN_TICKS
+                    events += WorldEvent.CoinPicked(p.id, i, c.id)
+                } else moveToward(c, k.x, k.y, ROAM_RUN)
+                c.timer = 0; c.targetX = c.x; c.targetY = c.y
+                return
+            }
+        }
+        val walking = p.state == EntityState.WALKING && p.downTicks <= 0
+        if (c.timer > 0) {
+            c.moving = false
+            if (--c.timer > 0) return
+            // a new spot: one that moves along with you, and one that stays put for when you're not walking
+            c.heelF = rng.nextDouble(ROAM_AHEAD_MIN, ROAM_AHEAD_MAX); c.heelS = rng.nextDouble(-ROAM_SIDE, ROAM_SIDE)
+            var ax = c.x; var ay = c.y
+            if (p.state == EntityState.ENGAGED) {
+                // out from the middle of the fight, on the side it's already on
+                val dx = map.delta(p.orbitX, c.x); val dy = map.delta(p.orbitY, c.y); val d = hypot(dx, dy)
+                val ux = if (d > 1e-6) dx / d else cos(p.orbitA); val uy = if (d > 1e-6) dy / d else sin(p.orbitA)
+                ax = map.wrap(p.orbitX + ux * ROAM_CLEAR); ay = map.wrap(p.orbitY + uy * ROAM_CLEAR)
+            }
+            c.targetX = map.wrap(ax + rng.nextDouble(-ROAM_MILL, ROAM_MILL)); c.targetY = map.wrap(ay + rng.nextDouble(-ROAM_MILL, ROAM_MILL))
+        }
+        val arrived = if (walking) {
+            val hx = cos(p.angle); val hy = sin(p.angle)
+            val tx = map.wrap(p.x + hx * c.heelF - hy * c.heelS); val ty = map.wrap(p.y + hy * c.heelF + hx * c.heelS)
+            moveToward(c, tx, ty, if (map.distance(c.x, c.y, tx, ty) > ROAM_NEAR) ROAM_RUN else ROAM_SPEED)
+        } else moveToward(c, c.targetX, c.targetY, PATROL_SPEED)
+        if (arrived) c.timer = rng.nextInt(ROAM_LOOK_MIN, ROAM_LOOK_MAX + 1)
+    }
+
+    /** The nearest coin a forager will go for (an index into WorldMap.coins), or -1. */
+    private fun coinFor(c: Entity, p: Entity): Int {
+        var best = -1; var bestD = FORAGE_RANGE
+        val coins = map.coins
+        for (i in coins.indices) {
+            if (coinGone[i] > 0) continue
+            val k = coins[i]
+            val d = map.distance(c.x, c.y, k.x, k.y)
+            if (d < bestD && map.distance(p.x, p.y, k.x, k.y) < FORAGE_LEASH) { best = i; bestD = d }
+        }
+        return best
     }
 
     /** Your pace after a fight: [RECOVER_PACE] at first, easing back up to 1. */
@@ -718,13 +829,14 @@ class World(val map: WorldMap) {
     }
 
     private fun stepBody(c: Entity) {
-        val owner = entities.values.firstOrNull { it.kind == EntityKind.PLAYER && it.ownerId == c.ownerId }
-        if (owner?.state == EntityState.ENGAGED) return // the fight goes on around it
+        if (ownerOf(c)?.state == EntityState.ENGAGED) return // the fight goes on around it
         if (--c.actionTicks <= 0) entities.remove(c.id)
     }
 
     private fun stepCage(c: Entity, events: MutableList<WorldEvent>) {
-        val p = entities[c.link] ?: run { entities.remove(c.id); return }
+        val p = entities[c.link]
+        val loose = c.link < 0 && c.companion != null // tossed down on a walk: nobody's fight
+        if (p == null && !loose) { entities.remove(c.id); return }
         when (c.state) {
             EntityState.THROWN -> {
                 val t = 1.0 - c.timer.toDouble() / CAGE_FLIGHT_TICKS
@@ -735,6 +847,14 @@ class World(val map: WorldMap) {
                 if (--c.timer <= 0) { c.z = 0.0; c.state = EntityState.LANDED; c.timer = CAGE_OPEN_TICKS }
             }
             EntityState.LANDED -> if (--c.timer <= 0) {
+                if (p == null) {
+                    // it comes out, has a look around, and roams
+                    val out = Entity(nextId++, EntityKind.COMPANION, c.x, c.y, c.angle, c.companion ?: "player", NETBEAST_SIZE, ownerId = c.ownerId)
+                    out.state = EntityState.ROAM; out.forage = c.forage; out.timer = ROAM_LOOK_MIN
+                    entities.remove(c.id)
+                    entities[out.id] = out
+                    return
+                }
                 if (p.kind == EntityKind.RIVAL) { rivalBeastOut(p, c, events); return }
                 val b = entities[p.link]
                 val out = Entity(nextId++, EntityKind.COMPANION, c.x, c.y, c.angle, p.companion ?: "player", NETBEAST_SIZE, ownerId = p.ownerId)

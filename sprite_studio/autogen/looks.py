@@ -41,7 +41,7 @@ ARMOURS = [
 # How far the accent moves round the colour wheel (a full turn is 1.0).
 ACCENT_SHIFTS = [-0.09, -0.06, -0.035, 0.035, 0.06, 0.09]
 # Rows that are people, not creatures: skin and clothes keep their colours.
-PLAIN_CATEGORIES = {'Hero', 'Villain'}
+PLAIN_ROWS = {'player', 'poacher'}
 
 
 def load():
@@ -53,8 +53,13 @@ def load():
 
 
 def save(looks):
+    looks = {k: v for k, v in sorted(looks.items()) if v}
+    if not looks:  # everything is back on look 0
+        if os.path.exists(LOOKS_FILE):
+            os.remove(LOOKS_FILE)
+        return
     with open(LOOKS_FILE, 'w') as f:
-        json.dump({k: v for k, v in sorted(looks.items()) if v}, f, indent=1)
+        json.dump(looks, f, indent=1)
         f.write('\n')
 
 

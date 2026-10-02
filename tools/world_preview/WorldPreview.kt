@@ -479,7 +479,7 @@ fun main(args: Array<String>) {
             is WorldEvent.CoinPicked -> {
                 coins++
                 val c = m.coins[e.coin]
-                check(m.distance(me2.x, me2.y, c.x, c.y) <= World.COIN_REACH + 1e-9) { "picked up a coin from afar" }
+                check(e.finderId == me2.id && m.distance(me2.x, me2.y, c.x, c.y) <= World.COIN_REACH + 1e-9) { "picked up a coin from afar" }
             }
             is WorldEvent.SlippedPast -> {}
             is WorldEvent.ExplorationOver -> over = true
@@ -492,6 +492,63 @@ fun main(args: Array<String>) {
         "coins" -> check(coins >= 15) { "heading for coins should pick plenty up: $coins" }
         else -> check(enc <= 1) { "a wanderer got into $enc fights" }
     }
+    }
+    // A netbeast let out on a walk (tap its cage): the cage lands ahead of you, it comes out and
+    // roams near you until the walk ends. It's in nobody's fight. A forager (the Looter trait)
+    // brings you the coins it finds; any other picks none up.
+    for ((name, m) in maps) for (forage in listOf(false, true)) {
+        val rng = kotlin.random.Random(2)
+        val rw = World(m); val rs = LocalWorldSession(rw, "roam", "Cacheon", 180); val rme = rw.entities[rs.localPlayerId]!!
+        var ticks = 0; var over = false; var fightTicks = -1; var beastId = -1; var fights = 0
+        var found = 0; var mine = 0; var outAt = -1; var far = 0.0; var near = 0; var walked = 0; var ahead = 0
+        fun roamer() = rw.entities.values.firstOrNull { it.kind == EntityKind.COMPANION && it.state == EntityState.ROAM }
+        while (!over && ticks < 30 * 400) {
+            ticks++
+            if (ticks == 30) rs.letOut("Bytelet", forage)
+            if (ticks % 60 == 0) rs.steer(rng.nextDouble(-0.6, 0.6))
+            if (fightTicks >= 0 && ++fightTicks == 150) { rs.resolveEncounter(beastId, EncounterOutcome.PLAYER_FLED); fightTicks = -1 }
+            for (e in rs.update(World.DT)) when (e) {
+                is WorldEvent.Encounter -> { fights++; fightTicks = 0; beastId = e.beastId }
+                is WorldEvent.CoinPicked -> if (e.finderId == rme.id) mine++ else {
+                    found++
+                    val c = m.coins[e.coin]; val r = rw.entities[e.finderId]!!
+                    check(forage && e.playerId == rme.id && m.distance(r.x, r.y, c.x, c.y) <= World.COIN_REACH + 1e-9) { "a roamer's coin from afar" }
+                }
+                is WorldEvent.ExplorationOver -> over = true
+                else -> {}
+            }
+            val r = roamer()
+            if (r == null) { check(outAt < 0) { "the roamer left at tick $ticks" }; continue }
+            if (outAt < 0) {
+                outAt = ticks
+                // it comes out in front of you, close enough to see
+                val d = m.distance(rme.x, rme.y, r.x, r.y)
+                val front = m.delta(rme.x, r.x) * kotlin.math.cos(rme.angle) + m.delta(rme.y, r.y) * kotlin.math.sin(rme.angle)
+                check(front > 0 && d < 3) { "the cage opened $d tiles off, $front ahead" }
+            }
+            check(r.link == -1 && r.foe == -1 && rw.roleEntity(rme.id, Role.COMPANION) == null) { "a roamer was drawn into a fight" }
+            check(rw.entities.values.none { it.foe == r.id || it.link == r.id }) { "something took notice of the roamer" }
+            if (rme.state == EntityState.WALKING) {
+                walked++
+                val d = m.distance(rme.x, rme.y, r.x, r.y); far = maxOf(far, d); if (d < 8) near++
+                if (m.delta(rme.x, r.x) * kotlin.math.cos(rme.angle) + m.delta(rme.y, r.y) * kotlin.math.sin(rme.angle) > 0) ahead++
+            }
+        }
+        println("[$name] roamer${if (forage) " (forager)" else ""}: out after ${"%.1f".format((outAt - 30) / 30.0)}s, within 8 tiles ${near * 100 / walked}% of the walk (furthest ${"%.1f".format(far)}), " +
+            "in front of you ${ahead * 100 / walked}%, it found $found coins (you $mine), fights=$fights")
+        check(over && roamer() != null) { "it should roam until the walk ends" }
+        check(near * 100 / walked >= if (forage) 70 else 90) { "the roamer didn't keep up" }
+        check(if (forage) found >= 3 else found == 0) { "coins found by the roamer: $found" }
+    }
+    // ...and what you see: the cage coming down, and the netbeast trotting ahead a few seconds on
+    run {
+        val rw = World(map); rw.entities.values.removeAll { it.kind == EntityKind.BEAST }
+        val rs = LocalWorldSession(rw, "roam", "Cacheon", 180); val rme = rw.entities[rs.localPlayerId]!!
+        val rr = TerrainRenderer(200, 300, map)
+        var rt = 0
+        fun go(ticks: Int, file: String) { repeat(ticks) { rs.update(World.DT); rr.render(rw, rme, 0, Palette.DAY, src, rt++ * 33L) }; save(rr, "$out/$file.png") }
+        rs.letOut("Cacheon", false)
+        go(12, "roamer_cage"); go(40, "roamer_out"); go(90, "roamer_1"); go(60, "roamer_2")
     }
     println("soaks: sim ${(System.nanoTime() - t0) / 1_000_000}ms")
     for ((name, m) in maps) {
