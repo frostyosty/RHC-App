@@ -66,6 +66,7 @@ class GameActivity : Activity() {
     internal var preparingWalk = false
     internal var walkCoins = 0                    // coins picked up on this walk
     internal val worldVisitors = mutableMapOf<Int, WorldVisitor>() // this walk's boss and poachers, by entity id (WorldVisitors.kt)
+    internal val worldRoaming = mutableListOf<Netbeast>()          // netbeasts let out of their cages on this walk: they roam, and don't fight (WorldCages.kt)
     internal val announcedVisitors = mutableSetOf<String>()       // ...and those mentioned since the game opened
     internal var weatherIcon = "☀️"
     internal var currentCity = "Local Sanctuary"

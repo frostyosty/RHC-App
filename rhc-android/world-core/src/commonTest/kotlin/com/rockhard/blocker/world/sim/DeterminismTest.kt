@@ -115,6 +115,6 @@ class DeterminismTest {
         const val MAP_PRINT = 1753128500768626353L
         const val COAST_PRINT = 6737657199655346600L
         const val WALK_PRINT = -8272280016561550702L
-        const val POACHER_PRINT = 0L
+        const val POACHER_PRINT = -2272195723785925189L
     }
 }

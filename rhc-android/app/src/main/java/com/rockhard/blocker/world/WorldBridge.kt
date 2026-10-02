@@ -120,6 +120,7 @@ internal fun GameActivity.enterWorld() {
         ?: LocalWorldSession(World(WorldMap.generate(todaysSeed(), beastSpecies, region)), playerId, leadCompanion(), EXPLORE_SECONDS)
     worldSession?.setCloak(if (Relics.cloakOn(prefs)) Relics.CLOAK_BEASTS else 0)
     walkCoins = 0
+    worldRoaming.clear()
     worldVisitors.clear() // a new world: the boss and poachers due are put in its path as you walk (WorldVisitors.kt)
     inWorld = true
     val cages = if (party.isEmpty()) "You have no netbeasts. You'll have to fight yourself." else "${party.size} netbeast${if (party.size == 1) "" else "s"} rattle in their cages."
@@ -143,7 +144,7 @@ internal fun GameActivity.showWorld() {
         override fun onEncounter(e: WorldEvent.Encounter) = onWorldEncounter(e)
         override fun onCompanionOut(e: WorldEvent.CompanionOut) = onWorldCompanionOut(e)
         override fun onRivalOut(e: WorldEvent.RivalOut) = onWorldRivalOut(e)
-        override fun onCoinPicked(e: WorldEvent.CoinPicked) = onWorldCoin()
+        override fun onCoinPicked(e: WorldEvent.CoinPicked) = onWorldCoin(e)
         override fun onExplorationOver() = finishExploration()
         override fun onSlippedPast(e: WorldEvent.SlippedPast) = printLog("> 🕊️ A wild ${e.species} looks straight through you. The Cloak of Christ hides you.")
     }
@@ -183,9 +184,13 @@ internal fun GameActivity.syncWorldWithUIState(state: String) {
     showWorld()
 }
 
-/** You walked into a coin: it's yours straight away (the counter over the world ticks up). */
-private fun GameActivity.onWorldCoin() {
+/**
+ * You walked into a coin, or your roaming [Looter] found one: it's yours straight away (the
+ * counter over the world ticks up).
+ */
+private fun GameActivity.onWorldCoin(e: WorldEvent.CoinPicked) {
     focusCoins++; walkCoins++
+    if (e.finderId != e.playerId) worldSession?.world?.entities?.get(e.finderId)?.let { worldCaption("💰 ${it.species} sniffed out a coin!") }
     AudioEngine.playSfx(this, "sfx_coin") // plays once a sfx_coin sound is added to res/raw
     vibratePhone(12)
     saveItems()
@@ -195,6 +200,7 @@ internal fun GameActivity.finishExploration() {
     if (!inWorld) return
     endWorldFight()
     inWorld = false
+    worldRoaming.clear() // back in their cages
     hideWorld()
     totalExpeds++
     focusCoins += WALK_PURSE

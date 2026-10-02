@@ -207,7 +207,7 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         hud.textSize = 12 * density; hud.textAlign = Paint.Align.LEFT
         if (!fighting) {
             hud.color = Color.rgb(255, 214, 102)
-            canvas.drawText("🔒 ${me.companion ?: "no netbeasts: you fight"}", 12 * density, 64 * density, hud)
+            canvas.drawText("🔒 ${me.companion ?: "no cages: you fight"}", 12 * density, 64 * density, hud)
         }
         // what's underfoot, when it changes your pace
         when (s.world.map.terrainAt(me.x, me.y)) {
@@ -314,7 +314,7 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         }
     }
 
-    /** Top-right overview: terrain, dots for beasts (gold for a visitor waiting for you), arrow for you. */
+    /** Top-right overview: terrain, dots for beasts (gold for a visitor waiting for you, green for yours out roaming), arrow for you. */
     private fun drawMinimap(canvas: Canvas, s: WorldSession) {
         val map = s.world.map
         val mm = minimap ?: Bitmap.createBitmap(map.size, map.size, Bitmap.Config.ARGB_8888).also { b ->
@@ -348,6 +348,8 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
                 e.state == EntityState.WAIT -> { hud.color = Color.rgb(255, 196, 64); canvas.drawCircle(x, y, 2.8f * density, hud) }
                 e.kind == EntityKind.BEAST && e.state != EntityState.GONE -> { hud.color = Color.rgb(255, 80, 80); canvas.drawCircle(x, y, 1.8f * density, hud) }
                 e.kind == EntityKind.PLAYER -> { hud.color = Color.CYAN; canvas.drawCircle(x, y, 2f * density, hud) }
+                // a netbeast of yours, let out to roam
+                e.state == EntityState.ROAM -> { hud.color = Color.rgb(102, 187, 106); canvas.drawCircle(x, y, 1.8f * density, hud) }
             }
         }
     }

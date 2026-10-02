@@ -78,7 +78,7 @@ internal fun GameActivity.triggerEnemyCounterAttack() {
                 // in the Wilds the next cage is the next in walk order (the party's lead comes back after)
                 activePetIndex = if (worldFight != null) walkLeadIndex() else 0
                 if (worldFight == null) prefs.edit().putInt("ACTIVE_PET_INDEX", 0).apply()
-                if (party.isEmpty()) { playerLastStand = true; updateBattleUI(); printLog("\n> ⚠️ ALL NETBEASTS HAVE FALLEN!\n> ${currentEnemy?.name} turns its gaze slowly toward YOU.") } 
+                if (noCages()) { playerLastStand = true; updateBattleUI(); printLog("\n> ⚠️ ALL NETBEASTS HAVE FALLEN!\n> ${currentEnemy?.name} turns its gaze slowly toward YOU.") } 
                 else { updateBattleUI(); printLog("> You send out ${party[activePetIndex].name} in desperation!"); showBattleArena(party[activePetIndex].name, currentEnemy!!.name) }
             }
         }

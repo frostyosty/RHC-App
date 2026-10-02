@@ -58,6 +58,24 @@ the red angry eyes still read), `FlyingKit` ice blue, Shopping green and
 `fangs` and `sq`. The battle-only rows (aegis, titan, net) draw only the front
 and side views. Redraw a new row the same way.
 
+## Looks: what REGENERATE changes
+
+The Studio's REGENERATE button steps a row through numbered looks
+(`autogen/looks.py`, `autogen.py --only <row> --look next|prev|original`). A
+creature's look recolours the drawing through the Painter's `recolor` hook:
+dull colours become one of the `ARMOURS` tones, saturated ones (the accent)
+shift a little in hue, and `#FF4D5E` never changes. A move effect's look adds
+to its `seed` in `MOVES`. Look 0 is the design as written, and the current
+looks are in `autogen/looks.json`.
+
+- Draw a design for look 0 and pass colours to the Painter as usual. Don't
+  bake a look's colours into `designs.py`.
+- A colour that must survive every look goes in `looks.FIXED`.
+- When checking a design against the cacheon style, check it on look 0
+  (`--look original`).
+- Looks only recolour. When the user wants a creature to look different in
+  shape, that is a redraw of its design, following the loop above.
+
 ## Battle effects are not creatures
 
 Every move has its own one-shot effect, and `laser` and `net` are shared

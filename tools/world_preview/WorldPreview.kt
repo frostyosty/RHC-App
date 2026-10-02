@@ -524,7 +524,7 @@ fun main(args: Array<String>) {
                 // it comes out in front of you, close enough to see
                 val d = m.distance(rme.x, rme.y, r.x, r.y)
                 val front = m.delta(rme.x, r.x) * kotlin.math.cos(rme.angle) + m.delta(rme.y, r.y) * kotlin.math.sin(rme.angle)
-                check(front > 0 && d < 3) { "the cage opened $d tiles off, $front ahead" }
+                check(front > 1 && d < 4) { "the cage opened $d tiles off, $front ahead" }
             }
             check(r.link == -1 && r.foe == -1 && rw.roleEntity(rme.id, Role.COMPANION) == null) { "a roamer was drawn into a fight" }
             check(rw.entities.values.none { it.foe == r.id || it.link == r.id }) { "something took notice of the roamer" }
@@ -548,7 +548,7 @@ fun main(args: Array<String>) {
         var rt = 0
         fun go(ticks: Int, file: String) { repeat(ticks) { rs.update(World.DT); rr.render(rw, rme, 0, Palette.DAY, src, rt++ * 33L) }; save(rr, "$out/$file.png") }
         rs.letOut("Cacheon", false)
-        go(12, "roamer_cage"); go(40, "roamer_out"); go(90, "roamer_1"); go(60, "roamer_2")
+        go(12, "roamer_cage"); go(38, "roamer_out"); go(90, "roamer_1"); go(60, "roamer_2")
     }
     println("soaks: sim ${(System.nanoTime() - t0) / 1_000_000}ms")
     for ((name, m) in maps) {

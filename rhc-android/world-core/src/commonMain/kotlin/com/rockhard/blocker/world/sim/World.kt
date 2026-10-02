@@ -196,7 +196,7 @@ class World(val map: WorldMap) {
         // A netbeast let out on a walk: its cage lands ahead and off to one side, far enough that
         // you're still coming up to it when it opens. It trots to a spot near you, stops for a
         // look around while you walk past, and trots on to the next
-        const val LET_OUT_AHEAD = 5.0
+        const val LET_OUT_AHEAD = 6.5
         const val LET_OUT_SIDE = 1.0
         const val ROAM_SPEED = 2.9        // tiles/s: a little over your best pace, so it gets ahead of you
         const val ROAM_RUN = 3.6          // ...and catching up from further back than ROAM_NEAR, or after a coin
@@ -208,8 +208,8 @@ class World(val map: WorldMap) {
         const val ROAM_LOOK_MAX = 60
         const val ROAM_MILL = 2.0         // while you're not walking it potters about within this of where it is
         const val ROAM_CLEAR = 4.0        // ...and this far from the middle of your fight
-        const val FORAGE_RANGE = 7.0      // a forager goes for a coin this close to it
-        const val FORAGE_LEASH = 10.0     // ...unless that coin is further than this from you
+        const val FORAGE_RANGE = 3.0      // a forager goes for a coin this close to it
+        const val FORAGE_LEASH = 6.0     // ...unless that coin is further than this from you
 
         // The sidestep: the auto-walk leans around trunks instead of walking into them
         const val PROBE = 1.2             // a trunk this far ahead (tiles) is in the way

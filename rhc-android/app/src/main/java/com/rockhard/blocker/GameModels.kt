@@ -40,7 +40,7 @@ object GameData {
         TraitDef("Thick-Skinned", 10, "Combat Mutation", 1.2, "Takes 15% less damage."),
         TraitDef("Frenzy", 10, "Combat Mutation", 0.9, "+15% Critical Hit Chance."),
         TraitDef("Swift", 15, "Combat Mutation", 0.8, "+10% Evasion."),
-        TraitDef("Looter", 15, "Combat Mutation", 1.0, "Finds coins after victories."),
+        TraitDef("Looter", 15, "Combat Mutation", 1.0, "Finds coins after victories. Let out on a walk, it sniffs out coins for you."),
         TraitDef("Obscure", 10, "Wild Mutation", 1.0, "Hides all other traits from being identified."), TraitDef("Wary", 0, "Trauma", 1.0, "-10% Attack Damage."), TraitDef("Worried", 0, "Trauma", 1.0, "-20% Attack Damage."), TraitDef("Petrified", 0, "Trauma", 1.0, "-50% Attack Damage."),
         TraitDef("Ephemeral", 0, "Boss", 1.0, "Killing this entity yields no XP or Levels."),
         TraitDef("Elusive", 0, "Boss", 1.0, "+30% flat Evasion rate."),

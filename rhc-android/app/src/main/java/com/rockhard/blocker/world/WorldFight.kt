@@ -62,7 +62,7 @@ internal class WorldFight(val beastId: Int) {
 internal fun GameActivity.onWorldEncounter(e: WorldEvent.Encounter) {
     val visitor = worldVisitors[e.beastId]
     val partyLead = party.getOrNull(activePetIndex)
-    val lead = if (party.isEmpty()) -1 else walkLeadIndex() // the top cage in the walk's column
+    val lead = if (noCages()) -1 else walkLeadIndex() // the top cage in the walk's column
     if (visitor != null) setUpVisitorBattle(visitor) else {
         val def = GameData.beasts.find { it.name == e.species } ?: GameData.beasts.random()
         val refHp = if (lead == -1) 20 else party[lead].maxHp
@@ -73,13 +73,13 @@ internal fun GameActivity.onWorldEncounter(e: WorldEvent.Encounter) {
         isWildBattle = true; isTrainerBattle = false; battleOver = false
     }
     val enemy = currentEnemy ?: return
-    playerLastStand = party.isEmpty(); participatingPets.clear()
+    playerLastStand = noCages(); participatingPets.clear()
     if (lead >= 0) activePetIndex = lead
     resetArenaRules()
     val f = WorldFight(e.beastId).also { it.partyLead = partyLead }
     worldFight = f
     qteContainer.visibility = View.GONE // nothing else starts a battle mid-fight
-    val cagesOrFists = if (party.isEmpty()) "> You have no netbeasts. Get your fists up!" else "> Quick! Pick a cage to throw!"
+    val cagesOrFists = if (noCages()) noCagesLine() else "> Quick! Pick a cage to throw!"
     when (visitor?.kind) {
         VisitorKind.POACHER -> {
             printLog("\n> 🦹 POACHER: 'Come and take it!'\n> He throws a cage...")
@@ -120,7 +120,7 @@ internal fun GameActivity.onWorldRivalOut(e: WorldEvent.RivalOut) {
     f.patienceMs = if (f.lastStand) LAST_STAND_MS else PATIENCE_MS
     if (f.foesOut++ == 0) {
         printLog("> The poacher's ${currentEnemy?.name} bursts out of its cage!")
-        printLog(if (party.isEmpty()) "> You have no netbeasts. Get your fists up!" else "> Quick! Pick a cage to throw!")
+        printLog(if (noCages()) noCagesLine() else "> Quick! Pick a cage to throw!")
     }
     refreshWorldFightPanel()
 }
@@ -445,9 +445,9 @@ private fun GameActivity.startPatience() {
 private fun GameActivity.beastLosesPatience(f: WorldFight) {
     val enemy = currentEnemy ?: return
     when {
-        f.outName == null && party.isNotEmpty() -> {
+        f.outName == null && !noCages() -> {
             // it lunges at you and knocks a cage loose: that netbeast has to fight, and takes the first hit
-            val i = Random.nextInt(party.size)
+            val i = walkOrder().random().let { c -> party.indexOfFirst { it === c } }
             printLog("\n> ⏳ You hesitated! ${foeLabel().replaceFirstChar { it.uppercase() }} lunges at you!\n> ${party[i].name}'s cage is knocked from your hands and bursts open!")
             playSpriteAnim(false, enemy.name, "attack")
             vibratePhone(200)
