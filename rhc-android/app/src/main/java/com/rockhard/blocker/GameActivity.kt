@@ -28,7 +28,6 @@ class GameActivity : Activity() {
     internal var exploreDifficulty = 50
     internal var totalExpeds = 0
     internal var graveyard = mutableListOf<Netbeast>()
-    internal var isFightAetherActive = false
 
     internal var playerId = ""
     internal var playerName = ""
@@ -93,15 +92,8 @@ class GameActivity : Activity() {
                     tvAether.setTextColor(android.graphics.Color.GRAY)
                     tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
                 } else {
-                    if (isFightAetherActive && activeExpeditions.isEmpty()) {
-                        // Slow down velocity to 1 drop every 5 seconds!
-                        if (tickCounter % 5 == 0 && aetherSeconds > 0) aetherSeconds--
-                        tvAether.setTextColor(android.graphics.Color.parseColor("#E040FB"))
-                    } else {
-                        // Normal 1-second velocity
-                        if (aetherSeconds > 0) aetherSeconds--
-                        tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4"))
-                    }
+                    if (aetherSeconds > 0) aetherSeconds--
+                    tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4"))
                     tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}"
                     if (tickCounter % 5 == 0) AetherEngine.save(prefs, aetherDay, aetherSeconds)
 
@@ -162,6 +154,7 @@ class GameActivity : Activity() {
         tvAether.text = "Aether: ${String.format("%02d:%02d", aetherSeconds / 60, aetherSeconds % 60)}" // not the layout's 10:00 until the first tick
         val rems = prefs.getInt("CURRENT_REMNANTS", 0)
         if (rems > 0) runOnUiThread { Toast.makeText(this, "$rems:00 unused aether remnants added!", Toast.LENGTH_LONG).show() }
+        tvAether.setOnClickListener { showAetherLimit() }
 
         generateMarket()
         setupTabs()

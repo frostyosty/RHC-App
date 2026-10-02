@@ -127,13 +127,4 @@ internal fun GameActivity.setupDispatchControl() {
         for (idx in availablePets) { activeExpeditions[idx] = System.currentTimeMillis() + EXPEDITION_MS; printLog("\n> Dispatched ${party[idx].name} to explore..."); dispatched++ }
         if (dispatched > 0) { SaveManager.saveExpeditions(prefs, activeExpeditions); updateDispatchButton() }
     }
-
-    val btnFightAether = findViewById<Button>(R.id.btnFightAether)
-    btnFightAether.setOnTouchListener { _, event ->
-        when (event.action) {
-            android.view.MotionEvent.ACTION_DOWN -> { if (activeExpeditions.isEmpty()) { isFightAetherActive = true } }
-            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { isFightAetherActive = false; tvAether.setTextColor(android.graphics.Color.parseColor("#00BCD4")) }
-        }
-        false
-    }
 }

@@ -4,12 +4,29 @@ import android.content.SharedPreferences
 import java.util.concurrent.TimeUnit
 
 object AetherEngine {
-    fun calculateStartingAether(prefs: SharedPreferences): Int {
-        val installTime = prefs.getLong("INSTALL_TIME", System.currentTimeMillis())
-        val now = System.currentTimeMillis()
+    const val MIN_DAILY_MINUTES = 4
+    const val MAX_DAILY_MINUTES = 20
 
-        val daysInstalled = TimeUnit.MILLISECONDS.toDays(now - installTime).toInt()
-        val baseMinutes = Math.max(10, 20 - daysInstalled) // Decreases from 20 to 10
+    /**
+     * The day's Aether in minutes, before remnants: 20 on install day, one less each day
+     * down to 10, or the lower amount the player chose for themselves (AETHER_DAILY_LIMIT).
+     */
+    fun dailyMinutes(prefs: SharedPreferences): Int {
+        val installTime = prefs.getLong("INSTALL_TIME", System.currentTimeMillis())
+        val daysInstalled = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - installTime).toInt()
+        val natural = Math.max(10, MAX_DAILY_MINUTES - daysInstalled)
+        return Math.min(natural, prefs.getInt("AETHER_DAILY_LIMIT", MAX_DAILY_MINUTES)).coerceAtLeast(MIN_DAILY_MINUTES)
+    }
+
+    /** The player's own daily limit. It only ever goes down, and never below [MIN_DAILY_MINUTES]. */
+    fun lowerDailyMinutes(prefs: SharedPreferences, minutes: Int) {
+        val limit = minutes.coerceAtLeast(MIN_DAILY_MINUTES)
+        if (limit < dailyMinutes(prefs)) prefs.edit().putInt("AETHER_DAILY_LIMIT", limit).apply()
+    }
+
+    fun calculateStartingAether(prefs: SharedPreferences): Int {
+        val now = System.currentTimeMillis()
+        val baseMinutes = dailyMinutes(prefs)
 
         val lastPlayed = prefs.getLong("LAST_PLAYED_TIME", now)
         val daysMissed = TimeUnit.MILLISECONDS.toDays(now - lastPlayed).toInt()

@@ -124,20 +124,17 @@ internal fun GameActivity.updateDispatchButton() {
         if (idle == 0) { btn.text = "ALL NETBEASTS DEPLOYED"; btn.isEnabled = false } 
         else { btn.text = "DISPATCH ALL ($idle idle)"; btn.isEnabled = true }
     }
-    val isExploring = activeExpeditions.isNotEmpty()
-    findViewById<Button>(R.id.btnFightAether)?.apply { isEnabled = !isExploring; alpha = if (isExploring) 0.5f else 1.0f }
 }
 
 internal fun GameActivity.setUIState(state: String) {
     val nav = findViewById<View>(R.id.navTabs); val peace = findViewById<View>(R.id.peaceControls); val battle = findViewById<View>(R.id.battleControls)
-    val btnExit = findViewById<View>(R.id.btnExit); val btnFightAether = findViewById<View>(R.id.btnFightAether)
+    val btnExit = findViewById<View>(R.id.btnExit)
 
     nav?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
     peace?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
     battle?.visibility = if (state == "BATTLE") View.VISIBLE else View.GONE
     qteContainer?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
     btnExit?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
-    btnFightAether?.visibility = if (state == "BATTLE") View.GONE else View.VISIBLE
     
     updateDispatchButton()
 
