@@ -3,8 +3,10 @@
 Homevisits is the game in the female Gamers APK (flavor `gamersFemaleHomevisits`,
 released as `rhc_homevisits.apk`). It takes the place that Netbeasts has in the
 male APK. None of it is built yet: the steps table below says what's done. This
-folder is kept apart from `PLAN.md` at the repo root, which covers Netbeasts, the
-web client and multiplayer.
+folder is kept apart from `NETBEASTS_PLAN.md` at the repo root, which covers Netbeasts, the
+web client and multiplayer, and from `NETBEASTS_GO_PLAN/`, the outdoor game, which
+shares this plan's camera code (see step 02). `ROADMAP.md` says where these steps
+come among the other plans' steps.
 
 **How to read this folder.** Everyone reads this file. Then read your step's file,
 plus only what its **Read first** line lists. When a step needs something an
@@ -234,7 +236,7 @@ write the answer where the Ask is, with "(agreed with the user <date>)".
   file to a short note of what was built.
 - When the user answers an Ask, write the answer where the Ask is.
 - New ideas the user agrees to go into the step they belong to, or into a new
-  numbered step. Nothing about Homevisits goes in `PLAN.md`.
+  numbered step. Nothing about Homevisits goes in `NETBEASTS_PLAN.md`.
 
 ## Not planned
 

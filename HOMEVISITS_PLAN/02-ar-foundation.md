@@ -4,6 +4,12 @@
 **Read first:** [README](README.md); `CLAUDE.md` → Conventions (how to ask for an
 Android permission past the Guardian). Nothing else.
 
+**Shared with Netbeasts Go.** The camera and ARCore code this step builds is
+also used by the outdoor game. `NETBEASTS_GO_PLAN/05-ar-kit.md` moves what's
+already built from `homevisits/ar/` to `app/src/ar/` (package
+`com.rockhard.blocker.ar`) and says what stays Homevisits' own. If that has
+landed, build the rest of this step there. `ROADMAP.md` puts it first.
+
 ## Goal
 
 In the Homevisits APK, a hidden AR test screen:

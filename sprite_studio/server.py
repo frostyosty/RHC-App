@@ -5,7 +5,7 @@ from PIL import Image, ImageSequence
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'autogen'))
 import pixelkit  # noqa: E402  (same GIF writer as autogen: shared palette, index 0 transparent)
 import effects  # noqa: E402  (attack effects: the Attacks tab lists effects.MOVES)
-import looks  # noqa: E402  (which look each row is on: what REGENERATE steps through)
+import looks  # noqa: E402  (which look each row is on: what RECOLOUR steps through)
 
 PORT = int(os.environ.get("STUDIO_PORT", 8080))
 SAVE_DIR = "../rhc-android/app/src/main/res/drawable-nodpi/"

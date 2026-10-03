@@ -13,19 +13,30 @@ class DeterminismTest {
 
     private fun fnv(h: Long, v: Long) = (h xor v) * 0x100000001b3L
 
+    /** The tile you start in and two further off (one of them at negative coordinates), and the ground across their edges. */
     private fun mapPrint(map: WorldMap): Long {
         var h = -0x340d631b7bdddcdbL
-        map.terrain.forEach { h = fnv(h, it.toLong()) }
-        map.props.forEach { h = fnv(fnv(fnv(h, it.x.toRawBits()), it.y.toRawBits()), it.kind.ordinal.toLong()) }
-        map.zones.forEach { h = fnv(fnv(fnv(h, it.x.toRawBits()), it.y.toRawBits()), it.radius.toRawBits()) }
-        map.coins.forEach { h = fnv(fnv(h, it.x.toRawBits()), it.y.toRawBits()) }
-        for (i in 0 until 64) h = fnv(h, map.groundAt(i * 1.37, i * 2.11).toRawBits())
+        for (t in listOf(map.home, map.tile(1, 0), map.tile(-2, -1))) {
+            t.terrain.forEach { h = fnv(h, it.toLong()) }
+            t.props.forEach { h = fnv(fnv(fnv(h, it.x.toRawBits()), it.y.toRawBits()), it.kind.ordinal.toLong()) }
+            t.zones.forEach { h = fnv(fnv(fnv(fnv(h, it.id.toLong()), it.x.toRawBits()), it.y.toRawBits()), it.radius.toRawBits()) }
+            t.coins.forEach { h = fnv(fnv(h, it.x.toRawBits()), it.y.toRawBits()) }
+        }
+        for (i in -64 until 64) h = fnv(h, map.groundAt(i * 2.37, i * 3.11).toRawBits())
         return h
     }
 
     @Test
     fun mapIsIdenticalOnEveryPlatform() {
         assertEquals(MAP_PRINT, mapPrint(WorldMap.generate(seed, species)))
+    }
+
+    /** A tile is the same whichever tiles were made before it, so it doesn't matter which way anyone walked. */
+    @Test
+    fun tilesDontDependOnTheOrderTheyreMadeIn() {
+        val far = WorldMap.generate(seed, species)
+        for (t in listOf(5 to -3, -2 to -1, 1 to 0, 1 to 1)) far.tile(t.first, t.second)
+        assertEquals(MAP_PRINT, mapPrint(far))
     }
 
     /** A coastal NZ region (Tauranga) takes the sea-band, forest and NZ-flora paths. */
@@ -48,7 +59,7 @@ class DeterminismTest {
             val events = world.step(mapOf(me to PlayerInput(look, cage)))
             if (fightAt < 0 && events.any { it is WorldEvent.Encounter }) fightAt = t
             world.snapshot().entities.forEach { e -> h = fnv(fnv(fnv(h, e.id.toLong()), e.x.toRawBits()), e.y.toRawBits()) }
-            world.coinGone.forEach { h = fnv(h, it.toLong()) }
+            world.coinGone.forEach { h = fnv(fnv(h, it.key.toLong()), it.value.toLong()) }
         }
         assertEquals(true, fightAt >= 0, "the scripted walk should meet a beast")
         assertEquals(WALK_PRINT, h)
@@ -105,16 +116,16 @@ class DeterminismTest {
     private fun huntSteer(world: World, me: Entity): Double {
         val b = world.entities.values.filter { it.kind == EntityKind.BEAST }
             .minByOrNull { world.map.distance(me.x, me.y, it.x, it.y) } ?: return 0.0
-        var diff = DetMath.atan2(world.map.delta(me.y, b.y), world.map.delta(me.x, b.x)) - me.angle
+        var diff = DetMath.atan2(b.y - me.y, b.x - me.x) - me.angle
         while (diff > kotlin.math.PI) diff -= 2 * kotlin.math.PI
         while (diff < -kotlin.math.PI) diff += 2 * kotlin.math.PI
         return diff.coerceIn(-0.08, 0.08)
     }
 
     companion object {
-        const val MAP_PRINT = 1753128500768626353L
-        const val COAST_PRINT = 6737657199655346600L
-        const val WALK_PRINT = -8272280016561550702L
-        const val POACHER_PRINT = -2272195723785925189L
+        const val MAP_PRINT = -1623294530827492555L
+        const val COAST_PRINT = 2848793715271895972L
+        const val WALK_PRINT = -92461070399209451L
+        const val POACHER_PRINT = -1094121879164635876L
     }
 }

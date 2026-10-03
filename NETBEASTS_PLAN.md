@@ -1,6 +1,8 @@
-# RHC plan
+# Netbeasts plan
 
-Work that isn't built yet, in the order it'll be built. What is built is
+Netbeasts work that isn't built yet, in the order it'll be built. Homevisits
+is in `HOMEVISITS_PLAN/`, the outdoor game is in `NETBEASTS_GO_PLAN/`, and
+`ROADMAP.md` says where this plan's steps come among theirs. What is built is
 described in `CLAUDE.md` and `rhc-android/README.md`. When something here
 lands, move anything that should last (new rules, constants that must match,
 test commands) into `CLAUDE.md` or README §5.1 in the same change, then
@@ -38,17 +40,7 @@ from phase 2:
 - There's no coin sound yet: `onWorldCoin` plays `sfx_coin` once that sound
   exists in `res/raw`.
 
-## 1. Wilds phase 3: size
-
-2. **Bigger when it outlevels you.** The wild beast's size scales with its
-   level against the reference level, not by much: roughly
-   `sqrt(wild / yours)`, clamped to 0.85-1.3x its stage size. Measure against
-   the reference level, not the netbeast that's out, so the size doesn't
-   change when you swap. The host rolls the level at `Encounter`, so the
-   beast grows as it squares up (eased over about 0.5 s, so it looks like it
-   rears up). Do it through a host call like `perform` (`World.scaleBeast`)
-   that sets `Entity.size`, which is already in the snapshot. The renderer
-   doesn't change.
+## 1. done - ignore
 
 ## 2. Move the battle rules into `world-core`
 
@@ -272,9 +264,10 @@ fast mount (stamina and no encounters), then the dragon.
   normal fight: you circle each other, in the air. Agreed with the user:
   in the sky **the dragon fights for you** (you just sit on its back), so
   there are no cages up there. You can still throw a net at a sky beast, and
-  a netted one falls to the ground. The map wraps every 96 tiles, so from
-  high up you'd see it repeat: cap the altitude or thicken the fog with
-  height.
+  a netted one falls to the ground. The land is endless but made a big tile
+  (96 cells) at a time as you near it, so from high up you'd see past the
+  tiles that have been made: make them further ahead (`makeTilesAhead`), cap
+  the altitude or thicken the fog with height.
 - **Tests.** Soak a ride (never stuck, stamina runs out, no encounters on the
   fast mount) and a flight (frame time at altitude, and a sky fight that
   circles).

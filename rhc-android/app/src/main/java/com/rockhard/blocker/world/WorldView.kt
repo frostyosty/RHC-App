@@ -16,13 +16,18 @@ import com.rockhard.blocker.world.render.Palette
 import com.rockhard.blocker.world.render.TerrainRenderer
 import com.rockhard.blocker.world.sim.EntityKind
 import com.rockhard.blocker.world.sim.EntityState
+import com.rockhard.blocker.world.sim.MapTile
 import com.rockhard.blocker.world.sim.Role
 import com.rockhard.blocker.world.sim.Terrain
 import com.rockhard.blocker.world.sim.World
 import com.rockhard.blocker.world.sim.WorldEvent
+import com.rockhard.blocker.world.sim.WorldMap
 import com.rockhard.blocker.world.sim.WorldSession
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.sin
 
 /**
@@ -70,7 +75,7 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
     }
 
     var session: WorldSession? = null
-        set(value) { if (field !== value) { field = value; renderer = null; minimap = null } }
+        set(value) { if (field !== value) { field = value; renderer = null; minimaps.clear(); making.clear() } }
     var palette: Palette = Palette.DAY
     var listener: Listener? = null
     var fightHud: FightHud? = null
@@ -79,7 +84,12 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
     private val sprites = SpriteBank(context)
     private var renderer: TerrainRenderer? = null
     private var frame: Bitmap? = null
-    private var minimap: Bitmap? = null
+    private val minimaps = HashMap<Long, Bitmap>() // one per big tile of the land, by WorldMap.key
+
+    // The land's big tiles are made off the main thread a little before the walk reaches
+    // them, so making one never stalls a frame. [making] is the ones on their way.
+    private var tileMaker: ExecutorService? = null
+    private val making = HashSet<Long>()
     private var rw = PORTRAIT_W
     private var rh = 300
     private val dst = Rect()
@@ -129,7 +139,31 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         invalidate()
     }
 
-    override fun onDetachedFromWindow() { stop(); super.onDetachedFromWindow() }
+    override fun onDetachedFromWindow() {
+        stop()
+        tileMaker?.shutdown(); tileMaker = null
+        super.onDetachedFromWindow()
+    }
+
+    /**
+     * Has every tile within half a tile of (x, y) made in the background: that's the
+     * minimap's window, and further than the sim (World.WAKE_RANGE) or the renderer look,
+     * so they find the tile ready. If one isn't, they make it themselves and get the same tile.
+     */
+    private fun makeTilesAhead(map: WorldMap, x: Double, y: Double) {
+        val reach = map.size / 2.0
+        for (ty in tileOf(y - reach, map)..tileOf(y + reach, map)) for (tx in tileOf(x - reach, map)..tileOf(x + reach, map)) {
+            val key = WorldMap.key(tx, ty)
+            if (map.tileIfMade(tx, ty) != null || !making.add(key)) continue
+            val maker = tileMaker ?: Executors.newSingleThreadExecutor().also { tileMaker = it }
+            maker.execute {
+                val tile = map.make(tx, ty)
+                post { if (session?.world?.map === map) { making.remove(key); map.adopt(tile) } }
+            }
+        }
+    }
+
+    private fun tileOf(v: Double, map: WorldMap) = floor(v / map.size).toInt()
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         if (w <= 0 || h <= 0) return
@@ -148,6 +182,7 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
             val dt = if (lastNanos == 0L) 0.0 else (frameTimeNanos - lastNanos) / 1e9
             lastNanos = frameTimeNanos
             if (touchId == -1) pitch *= 0.94 // drift back to level
+            s.world.entities[s.localPlayerId]?.let { makeTilesAhead(s.world.map, it.x, it.y) }
             val events = s.update(dt)
             s.world.entities[s.localPlayerId]?.let { me ->
                 r.render(s.world, me, pitch.toInt(), palette, sprites, SystemClock.uptimeMillis())
@@ -314,30 +349,31 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         }
     }
 
-    /** Top-right overview: terrain, dots for beasts (gold for a visitor waiting for you, green for yours out roaming), arrow for you. */
+    /**
+     * Top-right overview, with you in the middle: the land for half a big tile each way scrolls
+     * under your arrow. Dots for beasts (gold for a visitor waiting for you, green for yours out
+     * roaming). A tile that hasn't been made yet is blank until it has.
+     */
     private fun drawMinimap(canvas: Canvas, s: WorldSession) {
         val map = s.world.map
-        val mm = minimap ?: Bitmap.createBitmap(map.size, map.size, Bitmap.Config.ARGB_8888).also { b ->
-            val px = IntArray(map.size * map.size) { i ->
-                when (map.terrain[i]) {
-                    Terrain.WATER -> Color.argb(190, 60, 110, 160)
-                    Terrain.SAND -> Color.argb(170, 205, 187, 142)
-                    Terrain.TALL_GRASS -> Color.argb(170, 74, 111, 46)
-                    Terrain.FOREST -> Color.argb(185, 44, 58, 30)
-                    Terrain.MUD -> Color.argb(185, 82, 66, 48)
-                    Terrain.PATH -> Color.argb(210, 176, 150, 110)
-                    else -> Color.argb(150, 94, 138, 60)
-                }
-            }
-            b.setPixels(px, 0, map.size, 0, 0, map.size, map.size)
-            minimap = b
-        }
+        val me = s.world.entities[s.localPlayerId] ?: return
         val size = 88 * density; val pad = 8 * density
         val left = width - size - pad; val top = pad
         val cell = size / map.size
-        canvas.drawBitmap(mm, null, RectF(left, top, left + size, top + size), pixelPaint)
+        // world -> screen: the window's top-left corner is half a tile up and left of you
+        val ox = left - (me.x - map.size / 2.0).toFloat() * cell; val oy = top - (me.y - map.size / 2.0).toFloat() * cell
+        canvas.save()
+        canvas.clipRect(left, top, left + size, top + size)
+        val reach = map.size / 2.0
+        for (ty in tileOf(me.y - reach, map)..tileOf(me.y + reach, map)) for (tx in tileOf(me.x - reach, map)..tileOf(me.x + reach, map)) {
+            val tile = map.tileIfMade(tx, ty) ?: continue
+            val bmp = minimaps.getOrPut(WorldMap.key(tx, ty)) { minimapOf(tile, map.size) }
+            val x = ox + tile.x0 * cell; val y = oy + tile.y0 * cell
+            canvas.drawBitmap(bmp, null, RectF(x, y, x + size, y + size), pixelPaint)
+        }
         for (e in s.world.entities.values) {
-            val x = left + e.x.toFloat() * cell; val y = top + e.y.toFloat() * cell
+            val x = ox + e.x.toFloat() * cell; val y = oy + e.y.toFloat() * cell
+            if (x < left || x > left + size || y < top || y > top + size) continue
             when {
                 e.id == s.localPlayerId -> {
                     hud.color = Color.WHITE; hud.strokeWidth = 1.5f * density
@@ -352,6 +388,23 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
                 e.state == EntityState.ROAM -> { hud.color = Color.rgb(102, 187, 106); canvas.drawCircle(x, y, 1.8f * density, hud) }
             }
         }
+        canvas.restore()
+    }
+
+    /** One big tile's terrain, a pixel a cell. */
+    private fun minimapOf(tile: MapTile, size: Int): Bitmap {
+        val px = IntArray(size * size) { i ->
+            when (tile.terrain[i]) {
+                Terrain.WATER -> Color.argb(190, 60, 110, 160)
+                Terrain.SAND -> Color.argb(170, 205, 187, 142)
+                Terrain.TALL_GRASS -> Color.argb(170, 74, 111, 46)
+                Terrain.FOREST -> Color.argb(185, 44, 58, 30)
+                Terrain.MUD -> Color.argb(185, 82, 66, 48)
+                Terrain.PATH -> Color.argb(210, 176, 150, 110)
+                else -> Color.argb(150, 94, 138, 60)
+            }
+        }
+        return Bitmap.createBitmap(px, size, size, Bitmap.Config.ARGB_8888)
     }
 }
 

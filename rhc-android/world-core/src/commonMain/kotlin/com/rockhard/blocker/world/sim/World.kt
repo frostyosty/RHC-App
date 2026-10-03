@@ -110,7 +110,7 @@ sealed class WorldEvent {
     /** The rival's netbeast [beastId] is out of its cage: it's the one the player fights now. */
     data class RivalOut(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
     /**
-     * Coin [coin] (an index into WorldMap.coins) was picked up for the player: it's worth one
+     * Coin [coin] (its id: MapTile.coinId, WorldMap.coin) was picked up for the player: it's worth one
      * coin. [finderId] is the player, who walked into it, or their roaming netbeast that found it.
      */
     data class CoinPicked(val playerId: Int, val coin: Int, val finderId: Int = playerId) : WorldEvent()
@@ -132,11 +132,16 @@ data class EntitySnapshot(
     val downTicks: Int = 0, val recoverTicks: Int = 0,
 )
 
-/** A picked-up coin (index into WorldMap.coins) and the ticks until it's back. */
+/** A picked-up coin (its id: MapTile.coinId) and the ticks until it's back. */
 data class CoinGone(val coin: Int, val ticks: Int)
 
-/** Everything a remote client needs besides the seed and region: small enough to send often. */
-data class WorldSnapshot(val tick: Long, val entities: List<EntitySnapshot>, val coinsGone: List<CoinGone> = emptyList())
+/**
+ * Everything a remote client needs besides the seed and region: small enough to send often.
+ * [awake] is the tiles whose beasts are out (WorldMap.key), in the order they woke.
+ */
+data class WorldSnapshot(
+    val tick: Long, val entities: List<EntitySnapshot>, val coinsGone: List<CoinGone> = emptyList(), val awake: List<Long> = emptyList(),
+)
 
 /**
  * The authoritative simulation. Advances in fixed ticks ([TICK_HZ]) from
@@ -193,6 +198,14 @@ class World(val map: WorldMap) {
         const val COIN_REACH = 0.5          // walk within this (tiles) of a coin and it's yours
         const val COIN_RESPAWN_TICKS = 300 * TICK_HZ  // longer than a walk: a coin is only yours once per walk
 
+        // A tile's beasts come out when a player gets this close to it: further than anyone can
+        // see (the renderer draws 30 tiles), and under half a tile, so at the start only the
+        // tile you're in is awake
+        const val WAKE_RANGE = 40.0
+        // ...and go back in once every player is this far from it, so a long walk doesn't
+        // leave a trail of beasts patrolling tiles nobody is near. Come back and it wakes afresh
+        const val SLEEP_RANGE = 72.0
+
         // A netbeast let out on a walk: its cage lands ahead and off to one side, far enough that
         // you're still coming up to it when it opens. It trots to a spot near you, stops for a
         // look around while you walk past, and trots on to the next
@@ -230,11 +243,38 @@ class World(val map: WorldMap) {
     private var nextId = 1
     val entities = LinkedHashMap<Int, Entity>()
 
-    /** Per coin in [WorldMap.coins]: ticks until it's back after being picked up (0 = lying there). */
-    val coinGone = IntArray(map.coins.size)
+    /** The coins that have been picked up, by id: ticks until each is back. One that isn't here is lying there. */
+    val coinGone = LinkedHashMap<Int, Int>()
+
+    /** The tiles whose beasts are out (WorldMap.key), in the order they woke. */
+    private val awake = LinkedHashSet<Long>()
 
     init {
-        for (z in map.zones) repeat(if (z.stage >= 3) 1 else 2) { spawnBeast(z) }
+        wake(map.spawnX, map.spawnY)
+    }
+
+    /**
+     * Brings out the beasts of every tile within [WAKE_RANGE] of (x, y) that
+     * hasn't had them yet. It goes by where the players are and nothing else
+     * (not by which tiles happen to have been made or drawn), so every
+     * machine wakes the same tiles on the same tick, in the same order.
+     */
+    private fun wake(x: Double, y: Double) {
+        map.tilesNear(x, y, WAKE_RANGE) { t ->
+            if (awake.add(WorldMap.key(t.tx, t.ty))) for (z in t.zones) repeat(if (z.stage >= 3) 1 else 2) { spawnBeast(z) }
+        }
+    }
+
+    /** Puts away the beasts of every woken tile that all [players] are [SLEEP_RANGE] or more from (not one in a fight). */
+    private fun sleep(players: List<Entity>) {
+        val keys = awake.iterator()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val x0 = (key shr 32).toInt() * map.size; val y0 = key.toInt() * map.size
+            if (players.any { it.x > x0 - SLEEP_RANGE && it.x < x0 + map.size + SLEEP_RANGE && it.y > y0 - SLEEP_RANGE && it.y < y0 + map.size + SLEEP_RANGE }) continue
+            entities.values.removeAll { it.kind == EntityKind.BEAST && it.zoneId >= 0 && it.state != EntityState.ENGAGED && zoneOf(it).let { z -> z.x >= x0 && z.x < x0 + map.size && z.y >= y0 && z.y < y0 + map.size } }
+            keys.remove()
+        }
     }
 
     /** [companion] is the species in the player's lead cage, or null to explore alone. */
@@ -258,17 +298,17 @@ class World(val map: WorldMap) {
     private fun spawnBeast(z: Zone): Entity {
         val a = rng.nextDouble(0.0, PI * 2); val r = rng.nextDouble(0.0, z.radius)
         val size = when (z.stage) { 1 -> 0.55; 2 -> 0.75; else -> 1.0 }
-        val e = Entity(nextId++, EntityKind.BEAST, map.wrap(z.x + cos(a) * r), map.wrap(z.y + sin(a) * r), rng.nextDouble(0.0, PI * 2), z.species, size, zoneId = z.id)
+        val e = Entity(nextId++, EntityKind.BEAST, z.x + cos(a) * r, z.y + sin(a) * r, rng.nextDouble(0.0, PI * 2), z.species, size, zoneId = z.id)
         pickWaypoint(e, z)
         entities[e.id] = e
         return e
     }
 
-    private fun zoneOf(e: Entity) = map.zones[e.zoneId]
+    private fun zoneOf(e: Entity) = map.zone(e.zoneId)
 
     private fun pickWaypoint(e: Entity, z: Zone) {
         val a = rng.nextDouble(0.0, PI * 2); val r = rng.nextDouble(0.0, z.radius)
-        e.targetX = map.wrap(z.x + cos(a) * r); e.targetY = map.wrap(z.y + sin(a) * r)
+        e.targetX = z.x + cos(a) * r; e.targetY = z.y + sin(a) * r
         e.state = EntityState.PATROL
     }
 
@@ -283,7 +323,7 @@ class World(val map: WorldMap) {
     fun summon(playerId: Int, kind: EntityKind, species: String, size: Double, ahead: Double = SUMMON_AHEAD): Int {
         require(kind == EntityKind.RIVAL || kind == EntityKind.BEAST)
         val p = entities[playerId] ?: return -1
-        val v = Entity(nextId++, kind, map.wrap(p.x + cos(p.angle) * ahead), map.wrap(p.y + sin(p.angle) * ahead), p.angle + PI, species, size)
+        val v = Entity(nextId++, kind, p.x + cos(p.angle) * ahead, p.y + sin(p.angle) * ahead, p.angle + PI, species, size)
         v.state = EntityState.WAIT; v.link = p.id
         entities[v.id] = v
         return v.id
@@ -293,8 +333,11 @@ class World(val map: WorldMap) {
     fun step(inputs: Map<Int, PlayerInput>): List<WorldEvent> {
         tick++
         val events = mutableListOf<WorldEvent>()
-        for (i in coinGone.indices) if (coinGone[i] > 0) coinGone[i]--
+        val gone = coinGone.entries.iterator()
+        while (gone.hasNext()) { val g = gone.next(); if (g.value <= 1) gone.remove() else g.setValue(g.value - 1) }
         val players = entities.values.filter { it.kind == EntityKind.PLAYER }
+        for (p in players) wake(p.x, p.y)
+        if (tick % TICK_HZ == 0L && players.isNotEmpty()) sleep(players)
 
         for (p in players) stepPlayer(p, inputs[p.id] ?: PlayerInput(), events)
         for (e in entities.values.toList()) {
@@ -333,8 +376,8 @@ class World(val map: WorldMap) {
                     val rx = -hy; val ry = hx // your right (y points down the map)
                     val strafe = sidestep(p, hx, hy, rx, ry)
                     val forward = WALK_SPEED * speedFactor(map.terrainAt(p.x, p.y)) * (1 - (1 - MIN_FORWARD) * dodgeCloseness) * recoveryPace(p)
-                    p.x = map.wrap(p.x + (hx * forward + rx * strafe) * DT)
-                    p.y = map.wrap(p.y + (hy * forward + ry * strafe) * DT)
+                    p.x += (hx * forward + rx * strafe) * DT
+                    p.y += (hy * forward + ry * strafe) * DT
                     p.moving = true
                     if (p.recoverTicks > 0) p.recoverTicks--
                     pickUpCoins(p, events)
@@ -362,8 +405,8 @@ class World(val map: WorldMap) {
                 val inFight = entities.values.any { (it.kind == EntityKind.COMPANION || it.kind == EntityKind.CAGE) && it.link == p.id }
                 if (inFight) {
                     // the fight moved to between the cage and the beast: drift your circle there
-                    p.orbitX = map.wrap(p.orbitX + map.delta(p.orbitX, p.targetX) * 0.06)
-                    p.orbitY = map.wrap(p.orbitY + map.delta(p.orbitY, p.targetY) * 0.06)
+                    p.orbitX += (p.targetX - p.orbitX) * 0.06
+                    p.orbitY += (p.targetY - p.orbitY) * 0.06
                 }
                 orbit(p, if (inFight) WATCH_R else STANDOFF_R, if (inFight) WATCH_SPEED else STANDOFF_SPEED, true)
                 face(p, p.orbitX, p.orbitY)
@@ -374,15 +417,16 @@ class World(val map: WorldMap) {
 
     /** Any coin within [COIN_REACH] is picked up: you only have to walk into it. */
     private fun pickUpCoins(p: Entity, events: MutableList<WorldEvent>) {
-        val coins = map.coins
-        for (i in coins.indices) {
-            if (coinGone[i] > 0) continue
-            val c = coins[i]
-            val dx = map.delta(p.x, c.x); if (dx > COIN_REACH || dx < -COIN_REACH) continue
-            val dy = map.delta(p.y, c.y); if (dy > COIN_REACH || dy < -COIN_REACH) continue
-            if (dx * dx + dy * dy > COIN_REACH * COIN_REACH) continue
-            coinGone[i] = COIN_RESPAWN_TICKS
-            events += WorldEvent.CoinPicked(p.id, i)
+        map.tilesNear(p.x, p.y, COIN_REACH) { t ->
+            val coins = t.coins
+            for (i in coins.indices) {
+                val c = coins[i]
+                val dx = c.x - p.x; if (dx > COIN_REACH || dx < -COIN_REACH) continue
+                val dy = c.y - p.y; if (dy > COIN_REACH || dy < -COIN_REACH) continue
+                if (dx * dx + dy * dy > COIN_REACH * COIN_REACH || t.coinId(i) in coinGone) continue
+                coinGone[t.coinId(i)] = COIN_RESPAWN_TICKS
+                events += WorldEvent.CoinPicked(p.id, t.coinId(i))
+            }
         }
     }
 
@@ -396,7 +440,7 @@ class World(val map: WorldMap) {
         val side = if (nextId % 2 == 0) LET_OUT_SIDE else -LET_OUT_SIDE
         val cage = Entity(nextId++, EntityKind.CAGE, p.x, p.y, p.angle, "cage", 0.4, ownerId = p.ownerId)
         cage.state = EntityState.THROWN; cage.timer = CAGE_FLIGHT_TICKS; cage.z = 0.6
-        cage.targetX = map.wrap(p.x + hx * LET_OUT_AHEAD - hy * side); cage.targetY = map.wrap(p.y + hy * LET_OUT_AHEAD + hx * side)
+        cage.targetX = p.x + hx * LET_OUT_AHEAD - hy * side; cage.targetY = p.y + hy * LET_OUT_AHEAD + hx * side
         cage.companion = species; cage.forage = forage
         entities[cage.id] = cage
     }
@@ -416,7 +460,7 @@ class World(val map: WorldMap) {
         if (c.forage) {
             val i = coinFor(c, p)
             if (i >= 0) {
-                val k = map.coins[i]
+                val k = map.coin(i)
                 if (map.distance(c.x, c.y, k.x, k.y) < COIN_REACH) {
                     coinGone[i] = COIN_RESPAWN_TICKS
                     events += WorldEvent.CoinPicked(p.id, i, c.id)
@@ -434,29 +478,30 @@ class World(val map: WorldMap) {
             var ax = c.x; var ay = c.y
             if (p.state == EntityState.ENGAGED) {
                 // out from the middle of the fight, on the side it's already on
-                val dx = map.delta(p.orbitX, c.x); val dy = map.delta(p.orbitY, c.y); val d = hypot(dx, dy)
+                val dx = c.x - p.orbitX; val dy = c.y - p.orbitY; val d = hypot(dx, dy)
                 val ux = if (d > 1e-6) dx / d else cos(p.orbitA); val uy = if (d > 1e-6) dy / d else sin(p.orbitA)
-                ax = map.wrap(p.orbitX + ux * ROAM_CLEAR); ay = map.wrap(p.orbitY + uy * ROAM_CLEAR)
+                ax = p.orbitX + ux * ROAM_CLEAR; ay = p.orbitY + uy * ROAM_CLEAR
             }
-            c.targetX = map.wrap(ax + rng.nextDouble(-ROAM_MILL, ROAM_MILL)); c.targetY = map.wrap(ay + rng.nextDouble(-ROAM_MILL, ROAM_MILL))
+            c.targetX = ax + rng.nextDouble(-ROAM_MILL, ROAM_MILL); c.targetY = ay + rng.nextDouble(-ROAM_MILL, ROAM_MILL)
         }
         val arrived = if (walking) {
             val hx = cos(p.angle); val hy = sin(p.angle)
-            val tx = map.wrap(p.x + hx * c.heelF - hy * c.heelS); val ty = map.wrap(p.y + hy * c.heelF + hx * c.heelS)
+            val tx = p.x + hx * c.heelF - hy * c.heelS; val ty = p.y + hy * c.heelF + hx * c.heelS
             moveToward(c, tx, ty, if (map.distance(c.x, c.y, tx, ty) > ROAM_NEAR) ROAM_RUN else ROAM_SPEED)
         } else moveToward(c, c.targetX, c.targetY, PATROL_SPEED)
         if (arrived) c.timer = rng.nextInt(ROAM_LOOK_MIN, ROAM_LOOK_MAX + 1)
     }
 
-    /** The nearest coin a forager will go for (an index into WorldMap.coins), or -1. */
+    /** The nearest coin a forager will go for (its id), or -1. */
     private fun coinFor(c: Entity, p: Entity): Int {
         var best = -1; var bestD = FORAGE_RANGE
-        val coins = map.coins
-        for (i in coins.indices) {
-            if (coinGone[i] > 0) continue
-            val k = coins[i]
-            val d = map.distance(c.x, c.y, k.x, k.y)
-            if (d < bestD && map.distance(p.x, p.y, k.x, k.y) < FORAGE_LEASH) { best = i; bestD = d }
+        map.tilesNear(c.x, c.y, FORAGE_RANGE) { t ->
+            val coins = t.coins
+            for (i in coins.indices) {
+                val k = coins[i]
+                val d = map.distance(c.x, c.y, k.x, k.y)
+                if (d < bestD && map.distance(p.x, p.y, k.x, k.y) < FORAGE_LEASH && t.coinId(i) !in coinGone) { best = t.coinId(i); bestD = d }
+            }
         }
         return best
     }
@@ -476,7 +521,7 @@ class World(val map: WorldMap) {
     /**
      * Players only (beasts walk straight through): finds the trunks in the
      * corridor ahead, 0 < forward < [PROBE] and sideways closer than their
-     * radius + [CLEARANCE], from the 3x3 tile buckets around the corridor's
+     * radius + [CLEARANCE], from the 3x3 cells around the corridor's
      * middle. Returns your sideways speed (tiles/s, + = right) and sets
      * [dodgeCloseness], which slows you down to [MIN_FORWARD] at most. Your
      * heading never changes, so steering and the route aren't disturbed: the
@@ -492,17 +537,15 @@ class World(val map: WorldMap) {
         var nearF = PROBE
         var left = Double.MAX_VALUE; var right = Double.MAX_VALUE // how far out the innermost trunk on each side is
         for (dy in -1..1) for (dx in -1..1) {
-            val t = map.tile(mx + dx, my + dy)
-            for (k in map.treeStart[t] until map.treeStart[t + 1]) {
-                val id = map.treeIds[k]; val tree = map.props[id]
-                val ox = map.delta(p.x, tree.x); val oy = map.delta(p.y, tree.y)
+            map.treesAt(mx + dx, my + dy) { tree, id ->
+                val ox = tree.x - p.x; val oy = tree.y - p.y
                 val f = ox * hx + oy * hy
-                if (f <= 0 || f >= PROBE) continue
                 val lat = ox * rx + oy * ry
-                if (abs(lat) >= tree.kind.radius + CLEARANCE) continue
-                // dead ahead: the tree's index picks its side, so every machine agrees
-                if (lat > 0 || (lat == 0.0 && id % 2 == 0)) right = minOf(right, abs(lat)) else left = minOf(left, abs(lat))
-                if (f < nearF) nearF = f
+                if (f > 0 && f < PROBE && abs(lat) < tree.kind.radius + CLEARANCE) {
+                    // dead ahead: the tree's index picks its side, so every machine agrees
+                    if (lat > 0 || (lat == 0.0 && id % 2 == 0)) right = minOf(right, abs(lat)) else left = minOf(left, abs(lat))
+                    if (f < nearF) nearF = f
+                }
             }
         }
         if (nearF >= PROBE) return 0.0
@@ -532,11 +575,11 @@ class World(val map: WorldMap) {
     }
 
     private fun place(e: Entity) {
-        e.x = map.wrap(e.orbitX + cos(e.orbitA) * e.orbitR)
-        e.y = map.wrap(e.orbitY + sin(e.orbitA) * e.orbitR)
+        e.x = e.orbitX + cos(e.orbitA) * e.orbitR
+        e.y = e.orbitY + sin(e.orbitA) * e.orbitR
     }
 
-    private fun face(e: Entity, x: Double, y: Double) { e.angle = atan2(map.delta(e.y, y), map.delta(e.x, x)) }
+    private fun face(e: Entity, x: Double, y: Double) { e.angle = atan2(y - e.y, x - e.x) }
 
     private fun companionOf(p: Entity) = entities.values.firstOrNull { it.kind == EntityKind.COMPANION && it.link == p.id }
     private fun cageOf(p: Entity) = entities.values.firstOrNull { it.kind == EntityKind.CAGE && it.link == p.id }
@@ -561,7 +604,7 @@ class World(val map: WorldMap) {
             if (d < nearD) { near = p; nearD = d }
         }
         if (near != null) {
-            val ahead = (map.delta(near.x, b.x) * cos(near.angle) + map.delta(near.y, b.y) * sin(near.angle)) / nearD.coerceAtLeast(1e-6)
+            val ahead = ((b.x - near.x) * cos(near.angle) + (b.y - near.y) * sin(near.angle)) / nearD.coerceAtLeast(1e-6)
             if (nearD < ENGAGE_RANGE && ahead > ENGAGE_CONE && near.grace <= 0) {
                 if (near.cloak <= 0) { engage(near, b, events); return }
                 // cloaked: it never notices you, and you walk straight past
@@ -579,7 +622,7 @@ class World(val map: WorldMap) {
             EntityState.SHY -> {
                 val p = entities[b.link] ?: run { b.state = EntityState.RETURN; return }
                 val (dx, dy) = shyAway(b, p)
-                moveToward(b, map.wrap(b.x + dx * 2), map.wrap(b.y + dy * 2), SHY_SPEED)
+                moveToward(b, b.x + dx * 2, b.y + dy * 2, SHY_SPEED)
             }
             else -> {}
         }
@@ -592,7 +635,7 @@ class World(val map: WorldMap) {
      * it's behind them. Dead ahead, its id picks the side.
      */
     private fun shyAway(b: Entity, p: Entity): Pair<Double, Double> {
-        val vx = map.delta(p.x, b.x); val vy = map.delta(p.y, b.y)
+        val vx = b.x - p.x; val vy = b.y - p.y
         val d = hypot(vx, vy).coerceAtLeast(1e-6)
         val hx = cos(p.angle); val hy = sin(p.angle)
         if (vx * hx + vy * hy <= 0) return vx / d to vy / d
@@ -618,13 +661,13 @@ class World(val map: WorldMap) {
                 face(v, p!!.x, p.y)
                 if (p.state != EntityState.WALKING || p.grace > 0) return
                 val d = map.distance(v.x, v.y, p.x, p.y)
-                val ahead = (map.delta(p.x, v.x) * cos(p.angle) + map.delta(p.y, v.y) * sin(p.angle)) / d.coerceAtLeast(1e-6)
+                val ahead = ((v.x - p.x) * cos(p.angle) + (v.y - p.y) * sin(p.angle)) / d.coerceAtLeast(1e-6)
                 if (d < ENGAGE_RANGE && ahead > ENGAGE_CONE) engage(p, v, events)
             }
             EntityState.ENGAGED -> if (v.kind == EntityKind.RIVAL) stepEngagedRival(v, p!!) else stepEngagedBeast(v)
             EntityState.LEAVE -> {
-                val dx = map.delta(p!!.x, v.x); val dy = map.delta(p.y, v.y); val d = hypot(dx, dy).coerceAtLeast(1e-6)
-                moveToward(v, map.wrap(v.x + dx / d * 2), map.wrap(v.y + dy / d * 2), LEAVE_SPEED)
+                val dx = v.x - p!!.x; val dy = v.y - p.y; val d = hypot(dx, dy).coerceAtLeast(1e-6)
+                moveToward(v, v.x + dx / d * 2, v.y + dy / d * 2, LEAVE_SPEED)
                 if (--v.timer <= 0) entities.remove(v.id)
             }
             EntityState.GONE -> {
@@ -651,9 +694,9 @@ class World(val map: WorldMap) {
                 place(r); face(r, p.x, p.y); r.moving = p.moving
             }
             else -> {
-                val tx = map.wrap(p.orbitX - cos(p.orbitA) * WATCH_R); val ty = map.wrap(p.orbitY - sin(p.orbitA) * WATCH_R)
-                val sx = map.delta(r.x, tx) * 0.08; val sy = map.delta(r.y, ty) * 0.08
-                r.x = map.wrap(r.x + sx); r.y = map.wrap(r.y + sy)
+                val tx = p.orbitX - cos(p.orbitA) * WATCH_R; val ty = p.orbitY - sin(p.orbitA) * WATCH_R
+                val sx = (tx - r.x) * 0.08; val sy = (ty - r.y) * 0.08
+                r.x += sx; r.y += sy
                 r.moving = sx * sx + sy * sy > 1e-5
                 face(r, beast.x, beast.y)
             }
@@ -689,13 +732,13 @@ class World(val map: WorldMap) {
 
     /** The beast stops a little way off and you start circling each other around the point between you. */
     private fun engage(p: Entity, b: Entity, events: MutableList<WorldEvent>) {
-        val dx = map.delta(p.x, b.x); val dy = map.delta(p.y, b.y)
-        val cx = map.wrap(p.x + dx / 2); val cy = map.wrap(p.y + dy / 2)
+        val dx = b.x - p.x; val dy = b.y - p.y
+        val cx = p.x + dx / 2; val cy = p.y + dy / 2
         val dir = if (rng.nextBoolean()) 1 else -1
         for (e in listOf(p, b)) {
             e.state = EntityState.ENGAGED
             e.orbitX = cx; e.orbitY = cy; e.orbitR = hypot(dx, dy) / 2; e.orbitDir = dir; e.orbitSpin = 0.0
-            e.orbitA = atan2(map.delta(cy, e.y), map.delta(cx, e.x))
+            e.orbitA = atan2(e.y - cy, e.x - cx)
         }
         p.swapTicks = nextSwap(); p.downTicks = 0; p.recoverTicks = 0
         p.link = b.id; b.link = p.id; p.foe = b.id; b.foe = p.id
@@ -716,19 +759,19 @@ class World(val map: WorldMap) {
         p.companion = species
         val (lx, ly) = if (old != null) old.x to old.y else {
             val f = 0.55
-            map.wrap(p.x + map.delta(p.x, b.x) * f) to map.wrap(p.y + map.delta(p.y, b.y) * f)
+            p.x + (b.x - p.x) * f to p.y + (b.y - p.y) * f
         }
-        val cage = Entity(nextId++, EntityKind.CAGE, p.x, p.y, atan2(map.delta(p.y, ly), map.delta(p.x, lx)), "cage", 0.4, zoneId = -1)
+        val cage = Entity(nextId++, EntityKind.CAGE, p.x, p.y, atan2(ly - p.y, lx - p.x), "cage", 0.4, zoneId = -1)
         cage.state = EntityState.THROWN; cage.link = p.id; cage.timer = CAGE_FLIGHT_TICKS
         cage.targetX = lx; cage.targetY = ly; cage.z = 0.6
         entities[cage.id] = cage
         if (b.action == Action.FAINT) return
-        p.targetX = map.wrap(lx + map.delta(lx, b.x) / 2); p.targetY = map.wrap(ly + map.delta(ly, b.y) / 2)
+        p.targetX = lx + (b.x - lx) / 2; p.targetY = ly + (b.y - ly) / 2
         if (old == null) {
             // the beast now circles the fight's centre instead of the player
             b.orbitX = p.targetX; b.orbitY = p.targetY
             b.orbitR = map.distance(b.x, b.y, b.orbitX, b.orbitY)
-            b.orbitA = atan2(map.delta(b.orbitY, b.y), map.delta(b.orbitX, b.x))
+            b.orbitA = atan2(b.y - b.orbitY, b.x - b.orbitX)
         }
     }
 
@@ -738,10 +781,10 @@ class World(val map: WorldMap) {
         entities.values.removeAll { (it.kind == EntityKind.COMPANION || it.kind == EntityKind.CAGE) && it.link == p.id }
         p.companion = null
         // circle each other again around the point between you
-        val cx = map.wrap(p.x + map.delta(p.x, b.x) / 2); val cy = map.wrap(p.y + map.delta(p.y, b.y) / 2)
+        val cx = p.x + (b.x - p.x) / 2; val cy = p.y + (b.y - p.y) / 2
         p.orbitX = cx; p.orbitY = cy; p.targetX = cx; p.targetY = cy
         p.orbitR = map.distance(p.x, p.y, cx, cy)
-        p.orbitA = atan2(map.delta(cy, p.y), map.delta(cx, p.x))
+        p.orbitA = atan2(p.y - cy, p.x - cx)
         if (b.action != Action.FAINT) { b.action = Action.NONE; b.actionTicks = 0 }
     }
 
@@ -769,14 +812,14 @@ class World(val map: WorldMap) {
         val r = rivalOf(p) ?: return
         entities.values.removeAll { it.kind == EntityKind.CAGE && it.link == r.id }
         val old = entities[p.link]?.takeIf { it.kind == EntityKind.BEAST }
-        val (lx, ly) = if (old != null) map.wrap(old.x + map.delta(old.x, r.x) * 0.3) to map.wrap(old.y + map.delta(old.y, r.y) * 0.3)
-            else map.wrap(r.x + map.delta(r.x, p.x) * RIVAL_LAND) to map.wrap(r.y + map.delta(r.y, p.y) * RIVAL_LAND)
+        val (lx, ly) = if (old != null) old.x + (r.x - old.x) * 0.3 to old.y + (r.y - old.y) * 0.3
+            else r.x + (p.x - r.x) * RIVAL_LAND to r.y + (p.y - r.y) * RIVAL_LAND
         if (old != null) {
             if (old.action == Action.FAINT) fadeBody(old) else entities.remove(old.id)
             p.link = r.id
         }
         r.companion = species
-        val cage = Entity(nextId++, EntityKind.CAGE, r.x, r.y, atan2(map.delta(r.y, ly), map.delta(r.x, lx)), "cage", 0.4)
+        val cage = Entity(nextId++, EntityKind.CAGE, r.x, r.y, atan2(ly - r.y, lx - r.x), "cage", 0.4)
         cage.state = EntityState.THROWN; cage.link = r.id; cage.timer = CAGE_FLIGHT_TICKS
         cage.targetX = lx; cage.targetY = ly; cage.z = 0.6
         entities[cage.id] = cage
@@ -800,20 +843,20 @@ class World(val map: WorldMap) {
         val mine = cageOf(p)
         when {
             comp != null -> {
-                val mx = map.wrap(b.x + map.delta(b.x, comp.x) / 2); val my = map.wrap(b.y + map.delta(b.y, comp.y) / 2)
+                val mx = b.x + (comp.x - b.x) / 2; val my = b.y + (comp.y - b.y) / 2
                 b.orbitX = mx; b.orbitY = my
                 b.orbitR = map.distance(b.x, b.y, mx, my)
-                b.orbitA = atan2(map.delta(my, b.y), map.delta(mx, b.x))
+                b.orbitA = atan2(b.y - my, b.x - mx)
                 b.orbitDir = -p.orbitDir; b.orbitSpin = 0.0
                 p.targetX = mx; p.targetY = my
                 face(b, comp.x, comp.y); b.foe = comp.id; comp.foe = b.id
             }
             mine != null -> { face(b, mine.x, mine.y); b.foe = p.id }
             else -> {
-                val cx = map.wrap(p.x + map.delta(p.x, b.x) / 2); val cy = map.wrap(p.y + map.delta(p.y, b.y) / 2)
+                val cx = p.x + (b.x - p.x) / 2; val cy = p.y + (b.y - p.y) / 2
                 p.orbitX = cx; p.orbitY = cy; p.targetX = cx; p.targetY = cy
                 p.orbitR = map.distance(p.x, p.y, cx, cy)
-                p.orbitA = atan2(map.delta(cy, p.y), map.delta(cx, p.x))
+                p.orbitA = atan2(p.y - cy, p.x - cx)
                 b.orbitX = cx; b.orbitY = cy; b.orbitR = p.orbitR; b.orbitA = p.orbitA + PI
                 face(b, p.x, p.y); b.foe = p.id; p.foe = b.id
             }
@@ -841,8 +884,8 @@ class World(val map: WorldMap) {
             EntityState.THROWN -> {
                 val t = 1.0 - c.timer.toDouble() / CAGE_FLIGHT_TICKS
                 val sx = c.x; val sy = c.y
-                c.x = map.wrap(sx + map.delta(sx, c.targetX) / c.timer.coerceAtLeast(1))
-                c.y = map.wrap(sy + map.delta(sy, c.targetY) / c.timer.coerceAtLeast(1))
+                c.x = sx + (c.targetX - sx) / c.timer.coerceAtLeast(1)
+                c.y = sy + (c.targetY - sy) / c.timer.coerceAtLeast(1)
                 c.z = 0.6 * (1 - t) + 1.2 * t * (1 - t) // lob
                 if (--c.timer <= 0) { c.z = 0.0; c.state = EntityState.LANDED; c.timer = CAGE_OPEN_TICKS }
             }
@@ -865,10 +908,10 @@ class World(val map: WorldMap) {
                     face(out, b.x, b.y)
                     out.foe = b.id; b.foe = out.id
                     // the two beasts circle the point between them
-                    val mx = map.wrap(out.x + map.delta(out.x, b.x) / 2); val my = map.wrap(out.y + map.delta(out.y, b.y) / 2)
+                    val mx = out.x + (b.x - out.x) / 2; val my = out.y + (b.y - out.y) / 2
                     b.orbitX = mx; b.orbitY = my
                     b.orbitR = map.distance(b.x, b.y, mx, my)
-                    b.orbitA = atan2(map.delta(my, b.y), map.delta(mx, b.x))
+                    b.orbitA = atan2(b.y - my, b.x - mx)
                     b.orbitDir = -p.orbitDir; b.orbitSpin = 0.0 // against your circle, so they sweep across your view
                     p.targetX = mx; p.targetY = my
                     events += WorldEvent.CompanionOut(p.id, b.id, out.species)
@@ -880,12 +923,12 @@ class World(val map: WorldMap) {
 
     /** Returns true when arrived. */
     private fun moveToward(e: Entity, tx: Double, ty: Double, speed: Double): Boolean {
-        val dx = map.delta(e.x, tx); val dy = map.delta(e.y, ty)
+        val dx = tx - e.x; val dy = ty - e.y
         val d = hypot(dx, dy)
         if (d < 0.15) { e.moving = false; return true }
         e.angle = atan2(dy, dx)
         val step = minOf(d, speed * speedFactor(map.terrainAt(e.x, e.y)) * DT)
-        e.x = map.wrap(e.x + dx / d * step); e.y = map.wrap(e.y + dy / d * step)
+        e.x += dx / d * step; e.y += dy / d * step
         e.moving = true
         return false
     }
@@ -982,14 +1025,15 @@ class World(val map: WorldMap) {
     fun snapshot() = WorldSnapshot(tick, entities.values.map {
         EntitySnapshot(it.id, it.kind, it.x, it.y, it.z, it.angle, it.species, it.size, it.ownerId, it.zoneId, it.moving, it.state, it.link,
             it.foe, it.action, it.actionTicks, it.fx, it.fxAge, it.orbitX, it.orbitY, it.orbitR, it.downTicks, it.recoverTicks)
-    }, coinGone.indices.filter { coinGone[it] > 0 }.map { CoinGone(it, coinGone[it]) })
+    }, coinGone.map { CoinGone(it.key, it.value) }, awake.toList())
 
     /** For clients: replace local entities with the host's view. */
     fun applySnapshot(s: WorldSnapshot) {
         tick = s.tick
         entities.clear()
-        coinGone.fill(0)
-        for (g in s.coinsGone) if (g.coin in coinGone.indices) coinGone[g.coin] = g.ticks
+        coinGone.clear()
+        for (g in s.coinsGone) coinGone[g.coin] = g.ticks
+        awake.clear(); awake += s.awake
         for (st in s.entities) {
             val e = Entity(st.id, st.kind, st.x, st.y, st.angle, st.species, st.size, st.ownerId, st.zoneId)
             e.z = st.z; e.moving = st.moving; e.state = st.state; e.link = st.link

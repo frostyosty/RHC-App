@@ -14,14 +14,18 @@ share logic:
 Feature-level detail (blocking, cooldown, Momentum, Netbeasts) lives in
 `rhc-android/README.md`. Read it before changing behaviour.
 
-Three more docs, read only when the work calls for them:
-- `PLAN.md`: everything not built yet outside Homevisits, and the agreed order
-  to build it in (Wilds phase 3, moving the battle rules into `world-core`, the
-  web client, multiplayer, then Wilds phases 4-6). Read it before starting
-  planned work.
-- `homevisits-plan/`: the plan for Homevisits, the game in the female Gamers
+More docs, read only when the work calls for them:
+- `ROADMAP.md`: which step of which plan comes next, across the three plans
+  below, and the code they share. Read it before starting planned work.
+- `NETBEASTS_PLAN.md`: what isn't built yet for Netbeasts and the Wilds, and
+  the agreed order to build it in (moving the battle rules into `world-core`,
+  the web client, multiplayer, then Wilds phases 4-6).
+- `HOMEVISITS_PLAN/`: the plan for Homevisits, the game in the female Gamers
   APK (walking your home with the camera, visitors, the emotions engine). It
   has one file per step: read its `README.md`, then only your step's file.
+- `NETBEASTS_GO_PLAN/`: the plan for Netbeasts outdoors on foot (beasts at
+  real places, the step bank, fights through the camera). Laid out the same
+  way: its `README.md`, then only your step's file.
 - `sprite_studio/CLAUDE.md`: how creatures, props and battle effects are
   drawn (the cacheon style). Read it before drawing or adding any art.
 
@@ -100,6 +104,15 @@ exploring. Rules that keep the design working:
 - The map is `WorldMap.generate(seed, species, region)`. The `Region` (from
   `RegionProbe`: sea side, hills, flora, house style) is part of the map's
   identity, so keep it small whole numbers and enums.
+- **The land is endless, made a big tile at a time.** `WorldMap.tile(tx, ty)`
+  makes a 96 × 96 `MapTile` when it's first needed; you start in the middle of
+  tile (0, 0). A tile must come from the seed, the region and its own
+  coordinates only, never from its neighbours or the order tiles were made in:
+  the sim, the renderer, the minimap and the app's background tile-maker all
+  ask at different times. Whatever crosses a join (ground, woods, tracks)
+  comes from noise or nodes hashed from world coordinates. Sim state that
+  depends on tiles goes by where the players are (`World.wake`), not by which
+  tiles exist.
 - **Grounded, not fantastical.** The user wants the Wilds to feel like their
   real surroundings (they're in Tauranga, NZ), so no giant fantasy props.
   Creatures are the only strange thing out there.

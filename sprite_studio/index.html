@@ -207,6 +207,41 @@
             cursor: wait;
         }
 
+        #redrawPanel {
+            display: none;
+            background: #221a29;
+            border: 1px solid #7B1FA2;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+
+        #redrawPanel p {
+            color: #bbb;
+            margin: 6px 0;
+            line-height: 1.5;
+        }
+
+        #redrawPanel input,
+        #redrawPanel textarea {
+            width: 100%;
+            box-sizing: border-box;
+            background: #121212;
+            border: 1px solid #444;
+            color: white;
+            padding: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        #redrawPanel .btn-regen {
+            display: inline-block;
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+
         .regen-note {
             font-size: 9px;
             font-weight: normal;
@@ -306,6 +341,17 @@
         <div class="tabs">
             <button id="tabBtn-creatures" class="tab-btn active" onclick="showTab('creatures')">📊 Creatures</button>
             <button id="tabBtn-attacks" class="tab-btn" onclick="showTab('attacks')">💥 Attacks</button>
+        </div>
+        <div id="redrawPanel">
+            <b id="redrawTitle"></b>
+            <p>Every creature is drawn by code in <code>autogen/designs.py</code>, and Claude Code wrote that code. No image generator is involved, so redrawing gives the same GIFs every time.
+                A new drawing means asking Claude to rewrite the creature's code: copy this prompt into the Claude Code chat in VS Code. It takes about 5 to 15 minutes.</p>
+            <input type="text" id="redrawWish" placeholder="What should be different? (optional, e.g. longer beak, bigger wings, meaner)" oninput="fillRedrawPrompt()">
+            <textarea id="redrawPrompt" rows="14" spellcheck="false"></textarea>
+            <button class="btn-regen" onclick="copyRedrawPrompt()">📋 COPY PROMPT</button>
+            <button class="btn-regen" title="Reload this row's GIFs once Claude says it has finished" onclick="refreshRow(redrawBeast, '✅ reloaded', '#4CAF50', '')">🔁 CLAUDE IS DONE: RELOAD ROW</button>
+            <button class="btn-regen" onclick="document.getElementById('redrawPanel').style.display = 'none'">✖ CLOSE</button>
+            <span id="redrawNote" style="margin-left:8px;"></span>
         </div>
         <div id="tab-creatures">
             <table>
@@ -484,17 +530,56 @@
         function rowCells(row, animations) { let tr = `<td class="beast-name">${row.beast}${row.effect ? ' <span style="color:#888">(effect)</span>' : ''}${regenButtons(row)}</td>`; animations.forEach(anim => { const cell = row.anims[anim]; if (!cell) { tr += '<td></td>'; return; } const bareName = (anim === 'fx' ? 'fx_' : 'spr_') + (anim === 'fx' ? row.beast : row.beast + '_' + anim); if (cell.exists) { tr += `<td><img class="preview-img" src="/drawable/${cell.file}?t=${Date.now()}"><br><button class="btn-edit" onclick="loadFromMatrix('${cell.file}', '${bareName}')">✏️ EDIT</button></td>`; } else { tr += `<td><div class="preview-img" style="opacity:0.1"></div><button class="btn-create" onclick="prepareCreate('${bareName}')">➕ CREATE</button></td>`; } }); return tr; }
         function loadDashboard() { fetch('/dashboard_data').then(res => res.json()).then(data => { const header = document.getElementById('matrixHeader'); header.innerHTML = '<th>Beast</th>'; data.animations.forEach(anim => { header.innerHTML += `<th>${anim}</th>`; }); rowsByBeast = {}; data.matrix.forEach(row => { rowsByBeast[row.beast] = row; }); document.getElementById('matrixBody').innerHTML = data.matrix.map(row => `<tr id="row-${row.beast}">${rowCells(row, data.animations)}</tr>`).join(''); renderAttacks(data.attacks); }); }
 
-        // A row's buttons. REGENERATE moves the row to its next look (autogen/looks.py: new colours for a
-        // creature, re-rolled random parts for a move) and redraws it; shift-click redraws it in the look it
-        // has, to pick up an edit to designs.py. Rows drawn only one way (people, moves with no random parts)
-        // get a plain REDRAW.
+        // A row's buttons. A creature's REGENERATE opens the redraw panel: a new drawing is new code in
+        // designs.py, so it shows the prompt to give Claude Code. Its RECOLOUR, and a move's REGENERATE, move
+        // the row to its next look (autogen/looks.py: new colours for a creature, re-rolled random parts for
+        // a move) and redraw it; shift-click redraws it in the look it has, to pick up an edit to designs.py.
+        // Rows drawn only one way (people, moves with no random parts) get a plain REDRAW.
         function regenButtons(row) {
-            if (!row.has_looks) return `<button class="btn-regen" title="This row is drawn one way, so it comes out the same every time. Its drawing is in autogen/designs.py or effects.py." onclick="regenerate('${row.beast}', this, '')">🔄 REDRAW</button><div class="regen-note"></div>`;
-            let html = `<button class="btn-regen" title="Draw this row in a new look. Shift-click: redraw it in the look it has." onclick="regenerate('${row.beast}', this, event.shiftKey ? '' : 'next')">🔄 REGENERATE</button>`;
+            const redraw = row.move ? '' : `<button class="btn-regen" title="A new drawing of this creature. Shows the prompt to give Claude Code, which rewrites its design." onclick="openRedraw('${row.beast}')">🔄 REGENERATE</button>`;
+            if (!row.has_looks) return redraw + `<button class="btn-regen" title="This row is drawn one way, so it comes out the same every time. Its drawing is in autogen/designs.py or effects.py." onclick="regenerate('${row.beast}', this, '')">🔁 REDRAW</button><div class="regen-note"></div>`;
+            let html = redraw + `<button class="btn-regen" title="${row.move ? 'Draw this move in a new look' : 'The same drawing in new colours'}. Shift-click: redraw it in the look it has." onclick="regenerate('${row.beast}', this, event.shiftKey ? '' : 'next')">${row.move ? '🔄 REGENERATE' : '🎨 RECOLOUR'}</button>`;
             if (row.look > 0) html += `<div style="font-size:10px; color:#aaa; margin-top:3px;">look ${row.look}${row.look_name ? ' · ' + row.look_name : ''}</div>`
                 + `<button class="btn-regen" title="Back to the look before this one" onclick="regenerate('${row.beast}', this, 'prev')">◀ BACK</button> `
                 + `<button class="btn-regen" title="Back to the design as written" onclick="regenerate('${row.beast}', this, 'original')">↩ ORIGINAL</button>`;
             return html + '<div class="regen-note"></div>';
+        }
+
+        // The prompt REGENERATE shows for a creature row. It is how the designs were made: Claude Code
+        // rewrites the row's code in designs.py following the loop in sprite_studio/CLAUDE.md.
+        let redrawBeast = '';
+        function redrawPrompt(beast, wish) {
+            return `Redraw the Netbeast creature \`${beast}\` so it looks clearly different from how it looks now.
+
+I pressed REGENERATE on its row in the Sprite Studio. I want a new take on this creature, not the same drawing again and not just new colours.
+${wish ? `\nWhat I want this time: ${wish}\n` : ''}
+How to do it:
+- Read sprite_studio/CLAUDE.md first and follow it. It describes the cacheon style every creature is drawn in and the render, look, fix loop to use.
+- The drawing is the \`${beast}\` design in sprite_studio/autogen/designs.py: the line \`design('${beast}', ...)\` and the view functions and Kit class it names. Change only this creature's code. The shared parts (dleg, bird_leg, bat_wing and so on) are used by other rows, so if you need one to behave differently, add a new helper instead of changing it.
+- Keep what makes it this creature: the idea behind its name, its line's accent colour, its grid size, its views and the way it faces. Change its shape: silhouette, proportions, head, limbs, crest, tail, wings, plating. Comparing the old and new GIFs at thumbnail size, I should see the difference straight away.
+- Start by putting the row back on its original colours and rendering the design as it is now, so you know what you are moving away from: \`python3 sprite_studio/autogen/autogen.py --only ${beast} --look original\`, then the same command with \`--turnaround\` and a PNG path outside the repo. Look at the image.
+- After each change render the turnaround again and look at it. Check the open mouth and angry eyes too. Keep going until every view reads as the same creature.
+- Put every scratch image and script outside the repo, which is committed automatically.
+- When it reads well, write the GIFs with \`python3 sprite_studio/autogen/autogen.py --only ${beast}\`. It must print no ⚠️ edge warnings.
+- Skip the world preview (step 5 of the loop). I'll look at the result in the Studio.
+
+Finish by telling me in two or three plain sentences what you changed about the creature.
+`;
+        }
+        function fillRedrawPrompt() { document.getElementById('redrawPrompt').value = redrawPrompt(redrawBeast, document.getElementById('redrawWish').value.trim()); }
+        function openRedraw(beast) {
+            redrawBeast = beast;
+            document.getElementById('redrawTitle').innerText = `🔄 Regenerate ${beast}: ask Claude for a new drawing`;
+            document.getElementById('redrawWish').value = ''; document.getElementById('redrawNote').innerText = '';
+            fillRedrawPrompt();
+            const panel = document.getElementById('redrawPanel'); panel.style.display = 'block'; panel.scrollIntoView({ block: 'start' });
+            document.getElementById('redrawWish').focus();
+        }
+        function copyRedrawPrompt() {
+            const box = document.getElementById('redrawPrompt'), note = document.getElementById('redrawNote');
+            const done = () => { note.style.color = '#4CAF50'; note.innerText = '✅ Copied. Paste it into the Claude Code chat.'; };
+            const byHand = () => { box.focus(); box.select(); if (document.execCommand('copy')) done(); else { note.style.color = '#FFC107'; note.innerText = 'Select the prompt and copy it by hand.'; } };
+            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(box.value).then(done, byHand); else byHand();
         }
 
         // Redraw one row from designs.py/effects.py (autogen.py --only <row>), then reload just that row.

@@ -3,7 +3,7 @@
 How Netbeast creatures, props and battle effects are drawn. Read this before
 touching `sprite_studio/autogen` or adding art the game loads. The Studio
 itself and autogen's flags are described in `rhc-android/README.md` §7. The
-list of moves still waiting for an effect is in `PLAN.md` at the repo root.
+list of moves still waiting for an effect is in `NETBEASTS_PLAN.md` at the repo root.
 
 ## Netbeast sprite art: the cacheon style
 
@@ -58,9 +58,15 @@ the red angry eyes still read), `FlyingKit` ice blue, Shopping green and
 `fangs` and `sq`. The battle-only rows (aegis, titan, net) draw only the front
 and side views. Redraw a new row the same way.
 
-## Looks: what REGENERATE changes
+## REGENERATE and looks
 
-The Studio's REGENERATE button steps a row through numbered looks
+A creature row in the Studio has two buttons. 🔄 REGENERATE is for a new
+drawing: it opens a panel with a prompt (`redrawPrompt` in `index.html`) that
+the user copies into Claude Code, asking for that creature's design to be
+rewritten with the loop above. The Studio never runs Claude itself. If the
+loop or the rules for a redraw change, change that prompt too.
+
+🎨 RECOLOUR (REGENERATE on the Attacks tab) steps a row through numbered looks
 (`autogen/looks.py`, `autogen.py --only <row> --look next|prev|original`). A
 creature's look recolours the drawing through the Painter's `recolor` hook:
 dull colours become one of the `ARMOURS` tones, saturated ones (the accent)
@@ -102,4 +108,4 @@ matrix rows. Only real creatures (and player/poacher/aegis/titan) are rows.
   shared effect is an `@effect` plus a `playFx` call, and its name in
   `BASE_EFFECTS` in `sprite_studio/server.py`. Render it and
   look at it frame by frame, in the dark creature style, the way laser, bite
-  and net were built. Then update the effect lists in `PLAN.md`.
+  and net were built. Then update the effect lists in `NETBEASTS_PLAN.md`.

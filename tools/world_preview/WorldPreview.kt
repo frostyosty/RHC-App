@@ -23,35 +23,43 @@ fun save(rc: TerrainRenderer, name: String) {
     ImageIO.write(big, "png", File(name))
 }
 
-/** Top-down overview (4px per tile): terrain colours, trees as dark dots, the spawn in white. */
+/** Top-down overview (3px per cell) of the tile you start in and the eight around it: terrain colours, trees as dark dots, coins, the spawn in white. */
 fun overview(map: WorldMap, name: String) {
-    val s = 4; val img = BufferedImage(map.size * s, map.size * s, BufferedImage.TYPE_INT_RGB)
-    for (y in 0 until map.size) for (x in 0 until map.size) {
-        val c = when (map.terrain[y * map.size + x]) {
-            Terrain.WATER -> 0x3C6E9A; Terrain.SAND -> 0xCDBB8E; Terrain.TALL_GRASS -> 0x4A6F2E; Terrain.FOREST -> 0x3E4A2A
-            Terrain.MUD -> 0x524230; Terrain.PATH -> 0xB09A78; else -> 0x5E8A3C
+    val s = 3; val t = map.size; val img = BufferedImage(3 * t * s, 3 * t * s, BufferedImage.TYPE_INT_RGB)
+    fun put(x: Double, y: Double, c: Int) = img.setRGB(((x + t) * s).toInt().coerceIn(0, img.width - 1), ((y + t) * s).toInt().coerceIn(0, img.height - 1), c)
+    for (ty in -1..1) for (tx in -1..1) {
+        val tile = map.tile(tx, ty)
+        for (y in 0 until t) for (x in 0 until t) {
+            val c = when (tile.terrain[y * t + x]) {
+                Terrain.WATER -> 0x3C6E9A; Terrain.SAND -> 0xCDBB8E; Terrain.TALL_GRASS -> 0x4A6F2E; Terrain.FOREST -> 0x3E4A2A
+                Terrain.MUD -> 0x524230; Terrain.PATH -> 0xB09A78; else -> 0x5E8A3C
+            }
+            for (dy in 0 until s) for (dx in 0 until s) img.setRGB((x + (tx + 1) * t) * s + dx, (y + (ty + 1) * t) * s + dy, c)
         }
-        for (dy in 0 until s) for (dx in 0 until s) img.setRGB(x * s + dx, y * s + dy, c)
-    }
-    for (p in map.props) {
-        val c = when {
-            p.kind.isTree -> 0x14200F
-            p.kind == PropKind.FLOWERS -> 0xE8C84A
-            p.kind == PropKind.MUSHROOMS -> 0xB08A5E
-            else -> continue
+        for (p in tile.props) {
+            val c = when {
+                p.kind.isTree -> 0x14200F
+                p.kind == PropKind.FLOWERS -> 0xE8C84A
+                p.kind == PropKind.MUSHROOMS -> 0xB08A5E
+                else -> continue
+            }
+            put(p.x, p.y, c)
         }
-        img.setRGB((p.x * s).toInt().coerceIn(0, map.size * s - 1), (p.y * s).toInt().coerceIn(0, map.size * s - 1), c)
+        for (c in tile.coins) for (d in 0 until 4) put(c.x + (d % 2) / s.toDouble(), c.y + (d / 2) / s.toDouble(), 0xFFD700)
+        // territories: a ring, redder the wilder
+        for (z in tile.zones) for (a in 0 until 64) put(z.x + kotlin.math.cos(a * PI / 32) * z.radius, z.y + kotlin.math.sin(a * PI / 32) * z.radius, intArrayOf(0xFFFFFF, 0xFFB060, 0xFF4040)[z.stage - 1])
     }
-    for (c in map.coins) for (d in 0 until 4) img.setRGB(((c.x * s).toInt() + d % 2).coerceIn(0, map.size * s - 1), ((c.y * s).toInt() + d / 2).coerceIn(0, map.size * s - 1), 0xFFD700)
-    for (dy in -3..3) for (dx in -3..3) img.setRGB((map.spawnX * s).toInt() + dx, (map.spawnY * s).toInt() + dy, 0xFFFFFF)
+    for (dy in -2..2) for (dx in -2..2) put(map.spawnX + dx / s.toDouble(), map.spawnY + dy / s.toDouble(), 0xFFFFFF)
     ImageIO.write(img, "png", File(name))
 }
 
 /** Steering that heads for the nearest coin still lying there: a player out for coins. */
 fun coinSteer(w: World, me: Entity): Double {
     val m = w.map
-    val i = m.coins.indices.filter { w.coinGone[it] == 0 }.minByOrNull { m.distance(me.x, me.y, m.coins[it].x, m.coins[it].y) } ?: return 0.0
-    var diff = atan2(m.delta(me.y, m.coins[i].y), m.delta(me.x, m.coins[i].x)) - me.angle
+    val near = mutableListOf<Coin>()
+    m.tilesNear(me.x, me.y, 48.0) { t -> t.coins.forEachIndexed { i, c -> if (t.coinId(i) !in w.coinGone) near += c } }
+    val c = near.minByOrNull { m.distance(me.x, me.y, it.x, it.y) } ?: return 0.0
+    var diff = atan2(c.y - me.y, c.x - me.x) - me.angle
     while (diff > PI) diff -= 2 * PI
     while (diff < -PI) diff += 2 * PI
     return diff.coerceIn(-0.08, 0.08)
@@ -61,7 +69,7 @@ fun coinSteer(w: World, me: Entity): Double {
 fun huntSteer(w: World, me: Entity): Double {
     val b = w.entities.values.filter { it.kind == EntityKind.BEAST && it.state != EntityState.GONE }
         .minByOrNull { w.map.distance(me.x, me.y, it.x, it.y) } ?: return 0.0
-    var diff = atan2(w.map.delta(me.y, b.y), w.map.delta(me.x, b.x)) - me.angle
+    var diff = atan2(b.y - me.y, b.x - me.x) - me.angle
     while (diff > PI) diff -= 2 * PI
     while (diff < -PI) diff += 2 * PI
     return diff.coerceIn(-0.08, 0.08)
@@ -100,28 +108,59 @@ fun main(args: Array<String>) {
 
     val maps = listOf("temperate" to WorldMap.generate(seed, species), "tauranga" to WorldMap.generate(seed, species, tauranga))
     for ((name, map) in maps) {
-        val counts = map.terrain.groupBy { it }.mapValues { it.value.size * 100 / map.terrain.size }
-        println("[$name] terrain % (0 grass,1 tall,2 sand,3 water,4 forest): $counts zones=${map.zones.size} props=${map.props.size}")
-        check(WorldMap.generate(map.seed, species, map.region).terrain.contentEquals(map.terrain))
-        check(WorldMap.generate(map.seed, species, map.region).props == map.props)
-        check(WorldMap.generate(map.seed, species, map.region).coins == map.coins)
-        val onTrack = map.coins.count { map.terrainAt(it.x, it.y) == Terrain.PATH }
-        println("[$name] coins ${map.coins.size} ($onTrack on tracks), none in water: ${map.coins.none { map.terrainAt(it.x, it.y) == Terrain.WATER }}")
-        check(map.coins.size in 30..80 && map.coins.none { map.terrainAt(it.x, it.y) == Terrain.WATER })
-        check(map.props.none { it.kind.sprite.contains("mushroom") && it.kind.isTree }) { "no giant mushrooms" }
-        // trees: kinds, spacing (there must always be a way through), levels
-        val trees = map.props.filter { it.kind.isTree }
-        println("[$name] trees ${trees.size}: " + trees.groupingBy { it.kind.name.lowercase() }.eachCount())
-        println("[$name] small: " + map.props.filter { !it.kind.isTree }.groupingBy { it.kind.name.lowercase() }.eachCount())
-        val grid = HashMap<Int, MutableList<Prop>>()
-        for (t in trees) grid.getOrPut(t.y.toInt() * map.size + t.x.toInt()) { mutableListOf() } += t
+        val home = map.home
+        val counts = home.terrain.groupBy { it }.mapValues { it.value.size * 100 / home.terrain.size }
+        println("[$name] terrain % (0 grass,1 tall,2 sand,3 water,4 forest): $counts zones=${home.zones.size} props=${home.props.size}")
+        // A tile comes from the seed, the region and its own coordinates, whatever was made before it:
+        // a second map asked for the far tiles first builds the same land
+        val again = WorldMap.generate(map.seed, species, map.region)
+        for ((tx, ty) in listOf(-3 to 5, 1 to 0, 0 to 0, -1 to -1, 0 to 1)) {
+            val a = map.tile(tx, ty); val b = again.tile(tx, ty)
+            check(a.terrain.contentEquals(b.terrain) && a.props == b.props && a.coins == b.coins && a.zones == b.zones) { "tile $tx,$ty differs" }
+            check(map.make(tx, ty).props == a.props) { "make($tx, $ty) differs from the tile in use" }
+            val inside = { x: Double, y: Double -> x >= a.x0 && x < a.x0 + map.size && y >= a.y0 && y < a.y0 + map.size }
+            check(a.props.all { inside(it.x, it.y) } && a.coins.all { inside(it.x, it.y) } && a.zones.all { inside(it.x, it.y) }) { "tile $tx,$ty holds something outside itself" }
+            check(a.zones.all { map.zone(it.id) === it } && a.coins.indices.all { map.coin(a.coinId(it)) === a.coins[it] }) { "ids of tile $tx,$ty" }
+        }
+        val onTrack = home.coins.count { map.terrainAt(it.x, it.y) == Terrain.PATH }
+        println("[$name] coins ${home.coins.size} ($onTrack on tracks), none in water: ${home.coins.none { map.terrainAt(it.x, it.y) == Terrain.WATER }}")
+        check(home.coins.size in 30..80 && home.coins.none { map.terrainAt(it.x, it.y) == Terrain.WATER })
+        // the land around: the nine tiles of the overview
+        val around = (-1..1).flatMap { ty -> (-1..1).map { tx -> map.tile(tx, ty) } }
+        check(around.none { t -> t.props.any { it.kind.sprite.contains("mushroom") && it.kind.isTree } }) { "no giant mushrooms" }
+        // trees: kinds, spacing (there must always be a way through, across the joins too), levels
+        val trees = around.flatMap { t -> t.props.filter { it.kind.isTree } }
+        println("[$name] trees ${home.props.count { it.kind.isTree }} (${trees.size} in the 9 tiles): " + trees.groupingBy { it.kind.name.lowercase() }.eachCount())
+        println("[$name] small: " + home.props.filter { !it.kind.isTree }.groupingBy { it.kind.name.lowercase() }.eachCount())
+        fun cell(x: Double, y: Double) = kotlin.math.floor(x).toInt() to kotlin.math.floor(y).toInt()
+        val grid = HashMap<Pair<Int, Int>, MutableList<Prop>>()
+        for (t in trees) grid.getOrPut(cell(t.x, t.y)) { mutableListOf() } += t
         var closest = Double.MAX_VALUE
         for (t in trees) for (dy in -1..1) for (dx in -1..1) {
-            val near = grid[(t.y.toInt() + dy).mod(map.size) * map.size + (t.x.toInt() + dx).mod(map.size)] ?: continue
+            val (cx, cy) = cell(t.x, t.y)
+            val near = grid[cx + dx to cy + dy] ?: continue
             for (o in near) if (o !== t) closest = minOf(closest, map.distance(t.x, t.y, o.x, o.y))
         }
-        check(closest >= WorldMap.MIN_TRUNK_GAP) { "trunks $closest apart" }
+        check(closest >= WorldMap.MIN_TRUNK_GAP - 1e-9) { "trunks $closest apart" }
         println("[$name] closest trunks ${"%.2f".format(closest)} tiles (min ${WorldMap.MIN_TRUNK_GAP})")
+        // the joins don't show: the ground is the same from either side of an edge, and doesn't step across it;
+        // a track that reaches an edge carries on in the next tile
+        var step = 0.0; var ends = 0; var crossings = 0
+        for (i in 0 until map.size * 3) {
+            val v = i - map.size + 0.37
+            for ((ax, ay, bx, by) in listOf(listOf(map.size - 1e-9, v, map.size + 1e-9, v), listOf(v, -1e-9, v, 1e-9))) {
+                step = maxOf(step, kotlin.math.abs(map.groundAt(ax, ay) - map.groundAt(bx, by)))
+                check(map.tileAt(ax, ay).groundAt(bx, by) == map.tileAt(bx, by).groundAt(bx, by)) { "the ground differs across the join at $bx,$by" }
+                // (a track on a beach stays sand and a ford stays water, so only count plain ends)
+                if (map.terrainAt(ax, ay) == Terrain.PATH) { crossings++; if ((-1..1).none { d -> map.terrainAt(if (ax == bx) bx + d else bx, if (ax == bx) by else by + d).let { it == Terrain.PATH || it == Terrain.SAND || it == Terrain.WATER } }) ends++ }
+            }
+        }
+        println("[$name] joins: ground steps at most ${"%.6f".format(step)} across an edge; $crossings track cells at an edge, $ends of them dead ends")
+        check(step < 1e-6 && ends == 0) { "a join shows" }
+        // territories: tame round the start, and every stage somewhere in the land around
+        val stages = around.flatMap { it.zones }.groupingBy { it.stage }.eachCount().toSortedMap()
+        println("[$name] territories by stage in the 9 tiles: $stages (home: ${home.zones.groupingBy { it.stage }.eachCount().toSortedMap()})")
+        check(home.zones.filter { map.distance(it.x, it.y, map.spawnX, map.spawnY) < map.size * 0.3 }.all { it.stage == 1 })
         overview(map, "$out/map_$name.png")
     }
     check(World.speedFactor(Terrain.SAND) == 0.9 && World.speedFactor(Terrain.MUD) == 0.8 && World.speedFactor(Terrain.PATH) == 1.1)
@@ -135,28 +174,29 @@ fun main(args: Array<String>) {
         val rc = TerrainRenderer(200, 300, map)
         fun shot(file: String, pal: Palette = Palette.DAY, t: Long = 0) { repeat(20) { rc.render(world, me, 0, pal, src, t) }; save(rc, "$out/$file.png") }
         for (i in 0 until 3) { me.angle = -PI / 2 + i * 2.1; shot("${name}_v$i") }
+        val home = map.home
         fun tileNear(pred: (Int) -> Boolean): Int? = (0 until map.size * map.size).filter { pred(it) }
             .minByOrNull { map.distance(map.spawnX, map.spawnY, it % map.size + 0.5, it / map.size + 0.5) }
         fun lookAt(i: Int, back: Double) {
             val tx = i % map.size + 0.5; val ty = i / map.size + 0.5
-            val a = atan2(map.delta(map.spawnY, ty), map.delta(map.spawnX, tx))
-            me.x = map.wrap(tx - kotlin.math.cos(a) * back); me.y = map.wrap(ty - kotlin.math.sin(a) * back); me.angle = a
+            val a = atan2(ty - map.spawnY, tx - map.spawnX)
+            me.x = tx - kotlin.math.cos(a) * back; me.y = ty - kotlin.math.sin(a) * back; me.angle = a
         }
         // a forest tile with forest all around it, seen from outside and from inside
-        tileNear { i -> (-2..2).all { d -> map.terrain[(i / map.size) * map.size + (i % map.size + d).mod(map.size)] == Terrain.FOREST } }?.let {
+        tileNear { i -> (-2..2).all { d -> home.terrain[(i / map.size) * map.size + (i % map.size + d).coerceIn(0, map.size - 1)] == Terrain.FOREST } }?.let {
             lookAt(it, 7.0); shot("${name}_forest_edge")
             lookAt(it, 0.3); shot("${name}_forest_inside")
         }
-        tileNear { i -> map.props.any { p -> p.kind == PropKind.FLOWERS && p.x.toInt() + p.y.toInt() * map.size == i } }?.let { lookAt(it, 3.0); shot("${name}_meadow") }
+        tileNear { i -> home.props.any { p -> p.kind == PropKind.FLOWERS && p.x.toInt() + p.y.toInt() * map.size == i } }?.let { lookAt(it, 3.0); shot("${name}_meadow") }
         // along a track 6+ tiles from the start, and at a patch of mud
-        tileNear { i -> map.terrain[i] == Terrain.PATH && map.distance(map.spawnX, map.spawnY, i % map.size + 0.5, i / map.size + 0.5) > 6 }?.let { i ->
-            val next = (1..4).map { d -> i to d }.let { _ -> (0 until map.size * map.size).filter { j -> map.terrain[j] == Terrain.PATH &&
+        tileNear { i -> home.terrain[i] == Terrain.PATH && map.distance(map.spawnX, map.spawnY, i % map.size + 0.5, i / map.size + 0.5) > 6 }?.let { i ->
+            val next = (1..4).map { d -> i to d }.let { _ -> (0 until map.size * map.size).filter { j -> home.terrain[j] == Terrain.PATH &&
                 map.distance(i % map.size + 0.5, i / map.size + 0.5, j % map.size + 0.5, j / map.size + 0.5) in 3.0..4.0 }.firstOrNull() }
             me.x = i % map.size + 0.5; me.y = i / map.size + 0.5
-            if (next != null) me.angle = atan2(map.delta(me.y, next / map.size + 0.5), map.delta(me.x, next % map.size + 0.5))
+            if (next != null) me.angle = atan2(next / map.size + 0.5 - me.y, next % map.size + 0.5 - me.x)
             shot("${name}_track")
         }
-        tileNear { i -> map.terrain[i] == Terrain.MUD }?.let { lookAt(it, 2.5); shot("${name}_mud") }
+        tileNear { i -> home.terrain[i] == Terrain.MUD }?.let { lookAt(it, 2.5); shot("${name}_mud") }
         if (map.region.coastal) {
             me.x = map.spawnX; me.y = map.spawnY; me.angle = -PI / 2 // north, to the sea
             shot("${name}_sea"); shot("${name}_sea_rain", Palette.forWeather("Rain", 12), 1234); shot("${name}_night", Palette.forWeather("Clear", 22))
@@ -173,10 +213,10 @@ fun main(args: Array<String>) {
     val me = world.entities[s.localPlayerId]!!
     val rc = TerrainRenderer(200, 300, map)
     // the most open zone, so the previews show the fight rather than trunks
-    val z = map.zones.maxBy { zz -> -map.props.count { it.kind.isTree && map.distance(it.x, it.y, zz.x, zz.y) < 5 } }
-    for (o in world.entities.values.filter { it.kind == EntityKind.BEAST && it.zoneId == z.id }) { o.x = map.wrap(z.x + 3); o.y = map.wrap(z.y + 3); o.state = EntityState.PAUSE; o.timer = 9999 }
+    val z = map.home.zones.maxBy { zz -> -map.home.props.count { it.kind.isTree && map.distance(it.x, it.y, zz.x, zz.y) < 5 } }
+    for (o in world.entities.values.filter { it.kind == EntityKind.BEAST && it.zoneId == z.id }) { o.x = z.x + 3; o.y = z.y + 3; o.state = EntityState.PAUSE; o.timer = 9999 }
     val b = world.entities.values.first { it.kind == EntityKind.BEAST && it.zoneId == z.id }
-    b.x = z.x; b.y = z.y; b.state = EntityState.PATROL; me.x = map.wrap(z.x - 4.5); me.y = map.wrap(z.y + 0.3); me.angle = 0.0; me.grace = 0
+    b.x = z.x; b.y = z.y; b.state = EntityState.PATROL; me.x = z.x - 4.5; me.y = z.y + 0.3; me.angle = 0.0; me.grace = 0
     val log = mutableListOf<String>()
     var t = 0
     fun run(ticks: Int, each: (Int) -> Unit = {}) = repeat(ticks) {
@@ -233,7 +273,7 @@ fun main(args: Array<String>) {
 
     // clobbered (a last stand lost): you're knocked flat, lie there, get up, then walk on slowly
     val b2 = world.entities.values.first { it.kind == EntityKind.BEAST && it.state != EntityState.GONE && it !== b }
-    b2.x = map.wrap(me.x + kotlin.math.cos(me.angle) * 2); b2.y = map.wrap(me.y + kotlin.math.sin(me.angle) * 2)
+    b2.x = me.x + kotlin.math.cos(me.angle) * 2; b2.y = me.y + kotlin.math.sin(me.angle) * 2
     b2.state = EntityState.PAUSE; b2.timer = 9999; me.grace = 0
     run(30)
     check(me.state == EntityState.ENGAGED) { "no second encounter: $log" }
@@ -264,10 +304,10 @@ fun main(args: Array<String>) {
     run {
         val cw = World(map); val cs = LocalWorldSession(cw, "c", null, 180); val cme = cw.entities[cs.localPlayerId]!!
         cw.entities.values.removeAll { it.kind == EntityKind.BEAST }
-        val a = map.coins[0]; val b = map.coins[1]
+        val a = map.home.coins[0]; val b = map.home.coins[1]
         val len = map.distance(a.x, a.y, b.x, b.y)
-        val dx = map.delta(a.x, b.x) / len; val dy = map.delta(a.y, b.y) / len
-        cme.x = map.wrap(a.x - dx * 2.5); cme.y = map.wrap(a.y - dy * 2.5); cme.angle = atan2(dy, dx); cme.grace = 999
+        val dx = (b.x - a.x) / len; val dy = (b.y - a.y) / len
+        cme.x = a.x - dx * 2.5; cme.y = a.y - dy * 2.5; cme.angle = atan2(dy, dx); cme.grace = 999
         val crc = TerrainRenderer(200, 300, map)
         repeat(10) { crc.render(cw, cme, 0, Palette.DAY, src, it * 33L) }
         save(crc, "$out/coins.png")
@@ -284,7 +324,7 @@ fun main(args: Array<String>) {
     run {
         val vw = World(map); vw.entities.values.removeAll { it.kind == EntityKind.BEAST } // just the visitors
         val vs = LocalWorldSession(vw, "v", "Cacheon", 180); val vme = vw.entities[vs.localPlayerId]!!
-        vme.x = map.wrap(z.x - 14); vme.y = z.y; vme.angle = 0.0; vme.grace = 0
+        vme.x = z.x - 14; vme.y = z.y; vme.angle = 0.0; vme.grace = 0
         val vr = TerrainRenderer(200, 300, map)
         val vlog = mutableListOf<String>()
         var vt = 0
@@ -341,7 +381,7 @@ fun main(args: Array<String>) {
     val pano = BufferedImage(8 * 120, 2 * 160, BufferedImage.TYPE_INT_ARGB)
     val pr = TerrainRenderer(120, 160, map)
     val pw = World(map); pw.entities.clear()
-    val eye = Entity(1, EntityKind.PLAYER, map.wrap(z.x), map.wrap(z.y), 0.0, "", 1.0); pw.entities[1] = eye
+    val eye = Entity(1, EntityKind.PLAYER, z.x, z.y, 0.0, "", 1.0); pw.entities[1] = eye
     for (row in 0..1) for (i in 0 until 8) {
         eye.angle = -PI / 2 + i * PI / 4
         repeat(10) { pr.render(pw, eye, 0, if (row == 0) Palette.DAY else Palette.forWeather("Clear", 22), src, 0) }
@@ -352,33 +392,31 @@ fun main(args: Array<String>) {
     // The sidestep: straight walks through the densest forests on both maps. Nothing blocks you,
     // you barely ever stand inside a trunk, and you never drop below 70% of the walking pace.
     for ((name, m) in maps) {
-        val forest = (0 until m.size * m.size).filter { m.terrain[it] == Terrain.FOREST }
+        val forest = (0 until m.size * m.size).filter { m.home.terrain[it] == Terrain.FOREST }
         val rnd = kotlin.random.Random(3)
         var walking = 0; var inside = 0; var dodging = 0; var minTick = 9.0; var minWindow = 9.0
         repeat(40) {
             val w = World(m); w.entities.values.removeAll { it.kind == EntityKind.BEAST } // no fights, just trees
-            val p = w.addPlayer("t", null, 60)
+            val p = w.addPlayer("t", null, 60); p.grace = 9999 // the tiles next door wake as you near them: nothing squares up to you
             val start = forest[rnd.nextInt(forest.size)]
             p.x = start % m.size + 0.5; p.y = start / m.size + 0.5; p.angle = rnd.nextDouble(0.0, 2 * PI)
             // back up 4 tiles so you walk in from outside
-            p.x = m.wrap(p.x - kotlin.math.cos(p.angle) * 4); p.y = m.wrap(p.y - kotlin.math.sin(p.angle) * 4)
+            p.x = p.x - kotlin.math.cos(p.angle) * 4; p.y = p.y - kotlin.math.sin(p.angle) * 4
             val window = ArrayDeque<Double>()
             repeat(World.TICK_HZ * 8) {
                 val x0 = p.x; val y0 = p.y
                 val pace = World.WALK_SPEED * World.speedFactor(m.terrainAt(x0, y0)) * World.DT
                 w.step(emptyMap())
                 val hx = kotlin.math.cos(p.angle); val hy = kotlin.math.sin(p.angle)
-                val fwd = (m.delta(x0, p.x) * hx + m.delta(y0, p.y) * hy) / pace
-                val side = kotlin.math.abs(-m.delta(x0, p.x) * hy + m.delta(y0, p.y) * hx)
+                val fwd = ((p.x - x0) * hx + (p.y - y0) * hy) / pace
+                val side = kotlin.math.abs(-(p.x - x0) * hy + (p.y - y0) * hx)
                 walking++; if (side > 1e-9) dodging++
                 minTick = minOf(minTick, fwd)
                 window.addLast(fwd); if (window.size > World.TICK_HZ) window.removeFirst()
                 if (window.size == World.TICK_HZ) minWindow = minOf(minWindow, window.average())
                 val cx = kotlin.math.floor(p.x).toInt(); val cy = kotlin.math.floor(p.y).toInt()
                 var hit = false
-                for (dy in -1..1) for (dx in -1..1) { val t = m.tile(cx + dx, cy + dy)
-                    for (k in m.treeStart[t] until m.treeStart[t + 1]) { val tr = m.props[m.treeIds[k]]
-                        if (m.distance(p.x, p.y, tr.x, tr.y) < tr.kind.radius) hit = true } }
+                for (dy in -1..1) for (dx in -1..1) m.treesAt(cx + dx, cy + dy) { tr, _ -> if (m.distance(p.x, p.y, tr.x, tr.y) < tr.kind.radius) hit = true }
                 if (hit) inside++
             }
         }
@@ -390,12 +428,12 @@ fun main(args: Array<String>) {
     // walking straight at a grove: frames from the walk, and the path seen from above
     run {
         val m = maps[1].second
-        val forest = (0 until m.size * m.size).filter { i -> m.terrain[i] == Terrain.FOREST &&
-            (-1..1).all { d -> m.terrain[m.tile(i % m.size + d, i / m.size)] == Terrain.FOREST } }
-        val target = forest.maxBy { i -> m.treeStart[i + 1] - m.treeStart[i] + (m.treeStart[m.tile(i % m.size + 1, i / m.size) + 1] - m.treeStart[m.tile(i % m.size + 1, i / m.size)]) }
+        val h = m.home
+        val forest = (0 until m.size * m.size).filter { i -> i % m.size in 6 until m.size - 2 && (-1..1).all { d -> h.terrain[i + d] == Terrain.FOREST } }
+        val target = forest.maxBy { i -> h.treeStart[i + 2] - h.treeStart[i] }
         val w = World(m); w.entities.values.removeAll { it.kind == EntityKind.BEAST }
-        val p = w.addPlayer("g", null, 60)
-        p.x = m.wrap(target % m.size + 0.5 - 5); p.y = target / m.size + 0.5; p.angle = 0.0
+        val p = w.addPlayer("g", null, 60); p.grace = 9999
+        p.x = target % m.size + 0.5 - 5; p.y = target / m.size + 0.5; p.angle = 0.0
         val r = TerrainRenderer(200, 300, m)
         val strip = BufferedImage(6 * 204, 300, BufferedImage.TYPE_INT_ARGB)
         val path = mutableListOf<Pair<Double, Double>>()
@@ -414,24 +452,24 @@ fun main(args: Array<String>) {
             g.color = java.awt.Color(if (m.terrainAt(ox + tx, oy + ty) == Terrain.FOREST) 0x3E4A2A else 0x5E8A3C)
             g.fillRect(tx * s, ty * s, s, s)
         }
-        for (tr in m.props.filter { it.kind.isTree }) {
-            val px = m.delta(ox, tr.x) * s; val py = m.delta(oy, tr.y) * s
+        for (tr in h.props.filter { it.kind.isTree }) {
+            val px = (tr.x - ox) * s; val py = (tr.y - oy) * s
             if (px < -s || py < -s || px > span * s + s || py > span * s + s) continue
             val cr = (tr.kind.radius + World.CLEARANCE) * s; val rr = tr.kind.radius * s
             g.color = java.awt.Color(0x6A7A4A); g.drawOval((px - cr).toInt(), (py - cr).toInt(), (2 * cr).toInt(), (2 * cr).toInt())
             g.color = java.awt.Color(0x1A1410); g.fillOval((px - rr).toInt(), (py - rr).toInt(), (2 * rr).toInt().coerceAtLeast(2), (2 * rr).toInt().coerceAtLeast(2))
         }
         g.color = java.awt.Color.WHITE
-        for ((a, b) in path.zipWithNext()) g.drawLine((m.delta(ox, a.first) * s).toInt(), (m.delta(oy, a.second) * s).toInt(), (m.delta(ox, b.first) * s).toInt(), (m.delta(oy, b.second) * s).toInt())
+        for ((a, b) in path.zipWithNext()) g.drawLine(((a.first - ox) * s).toInt(), ((a.second - oy) * s).toInt(), ((b.first - ox) * s).toInt(), ((b.second - oy) * s).toInt())
         ImageIO.write(img, "png", File("$out/sidestep_path.png"))
-        println("grove walk: drifted ${"%.2f".format(m.delta(y0, p.y))} tiles sideways over ${"%.1f".format(m.delta(x0, p.x))} tiles")
+        println("grove walk: drifted ${"%.2f".format(p.y - y0)} tiles sideways over ${"%.1f".format(p.x - x0)} tiles")
     }
 
     // turnaround: a lone Cacheon 1.6 tiles ahead in an empty world, turned
     // through the 8 headings (walking on the top row, standing on the bottom)
     val tw = World(map); tw.entities.clear()
     val cam = Entity(1, EntityKind.PLAYER, me.x, me.y, 0.0, "", 1.0)
-    val beast = Entity(2, EntityKind.BEAST, map.wrap(me.x + 1.6), me.y, 0.0, "Cacheon", 0.75)
+    val beast = Entity(2, EntityKind.BEAST, me.x + 1.6, me.y, 0.0, "Cacheon", 0.75)
     tw.entities[1] = cam; tw.entities[2] = beast
     val turn = BufferedImage(8 * 90, 2 * 110, BufferedImage.TYPE_INT_ARGB)
     val tr = TerrainRenderer(90, 110, map)
@@ -472,13 +510,13 @@ fun main(args: Array<String>) {
                 enc++; fightTicks = 0; beastId = e.beastId
                 // it must have been in front of you: you walked into it, it didn't jump you
                 val b = sw.entities[e.beastId]!!
-                if (m.delta(me2.x, b.x) * hx + m.delta(me2.y, b.y) * hy <= 0) behind++
+                if ((b.x - me2.x) * hx + (b.y - me2.y) * hy <= 0) behind++
             }
             is WorldEvent.CompanionOut -> outs++
             is WorldEvent.RivalOut -> {}
             is WorldEvent.CoinPicked -> {
                 coins++
-                val c = m.coins[e.coin]
+                val c = m.coin(e.coin)
                 check(e.finderId == me2.id && m.distance(me2.x, me2.y, c.x, c.y) <= World.COIN_REACH + 1e-9) { "picked up a coin from afar" }
             }
             is WorldEvent.SlippedPast -> {}
@@ -511,7 +549,7 @@ fun main(args: Array<String>) {
                 is WorldEvent.Encounter -> { fights++; fightTicks = 0; beastId = e.beastId }
                 is WorldEvent.CoinPicked -> if (e.finderId == rme.id) mine++ else {
                     found++
-                    val c = m.coins[e.coin]; val r = rw.entities[e.finderId]!!
+                    val c = m.coin(e.coin); val r = rw.entities[e.finderId]!!
                     check(forage && e.playerId == rme.id && m.distance(r.x, r.y, c.x, c.y) <= World.COIN_REACH + 1e-9) { "a roamer's coin from afar" }
                 }
                 is WorldEvent.ExplorationOver -> over = true
@@ -523,7 +561,7 @@ fun main(args: Array<String>) {
                 outAt = ticks
                 // it comes out in front of you, close enough to see
                 val d = m.distance(rme.x, rme.y, r.x, r.y)
-                val front = m.delta(rme.x, r.x) * kotlin.math.cos(rme.angle) + m.delta(rme.y, r.y) * kotlin.math.sin(rme.angle)
+                val front = (r.x - rme.x) * kotlin.math.cos(rme.angle) + (r.y - rme.y) * kotlin.math.sin(rme.angle)
                 check(front > 1 && d < 4) { "the cage opened $d tiles off, $front ahead" }
             }
             check(r.link == -1 && r.foe == -1 && rw.roleEntity(rme.id, Role.COMPANION) == null) { "a roamer was drawn into a fight" }
@@ -531,7 +569,7 @@ fun main(args: Array<String>) {
             if (rme.state == EntityState.WALKING) {
                 walked++
                 val d = m.distance(rme.x, rme.y, r.x, r.y); far = maxOf(far, d); if (d < 8) near++
-                if (m.delta(rme.x, r.x) * kotlin.math.cos(rme.angle) + m.delta(rme.y, r.y) * kotlin.math.sin(rme.angle) > 0) ahead++
+                if ((r.x - rme.x) * kotlin.math.cos(rme.angle) + (r.y - rme.y) * kotlin.math.sin(rme.angle) > 0) ahead++
             }
         }
         println("[$name] roamer${if (forage) " (forager)" else ""}: out after ${"%.1f".format((outAt - 30) / 30.0)}s, within 8 tiles ${near * 100 / walked}% of the walk (furthest ${"%.1f".format(far)}), " +
@@ -551,6 +589,51 @@ fun main(args: Array<String>) {
         go(12, "roamer_cage"); go(38, "roamer_out"); go(90, "roamer_1"); go(60, "roamer_2")
     }
     println("soaks: sim ${(System.nanoTime() - t0) / 1_000_000}ms")
+
+    // The land is endless: a walk straight out from the start crosses into new tiles, and their beasts
+    // come out as you near them. Which tiles happen to have been made already (by the renderer, the
+    // minimap or the app's background tile-maker) must not change the sim, and nothing ever stops you.
+    for ((name, m) in maps) for (heading in listOf(0.6, -PI / 2)) {
+        val warm = WorldMap.generate(m.seed, species, m.region)
+        for (ty in -6..6) for (tx in -6..6) warm.adopt(warm.make(tx, ty))
+        val runs = listOf(WorldMap.generate(m.seed, species, m.region), warm).map { mm ->
+            val w = World(mm); val p = w.addPlayer("far", null, 180); p.angle = heading
+            var slowest = Double.MAX_VALUE
+            while (p.state != EntityState.DONE) {
+                val x0 = p.x; val y0 = p.y
+                for (e in w.step(emptyMap())) if (e is WorldEvent.Encounter) w.resolveEncounter(p.id, e.beastId, EncounterOutcome.PLAYER_FLED)
+                if (p.state == EntityState.WALKING) slowest = minOf(slowest, mm.distance(x0, y0, p.x, p.y) / World.DT)
+            }
+            Triple(w, p, slowest)
+        }
+        val (w, p, slowest) = runs[0]
+        check(w.snapshot() == runs[1].first.snapshot()) { "the walk depends on which tiles were already made" }
+        val far = m.distance(m.spawnX, m.spawnY, p.x, p.y)
+        val snap = w.snapshot()
+        println("[$name] straight walk (heading ${"%.1f".format(heading)}): ended ${"%.0f".format(far)} cells from the start in tile ${m.tileAt(p.x, p.y).let { "${it.tx},${it.ty}" }}, " +
+            "${snap.awake.size} tiles awake, ${snap.entities.count { it.kind == EntityKind.BEAST }} beasts, slowest ${"%.2f".format(slowest)} cells/s")
+        check(far > 150 && m.tileAt(p.x, p.y) !== m.home && slowest > 0.5) { "the walk should carry on across the tiles" }
+        // the tiles left far behind go back to sleep, so the beasts don't pile up
+        check(snap.awake.size <= 6 && WorldMap.key(0, 0) !in snap.awake) { "tiles left behind should sleep: ${snap.awake.size} awake" }
+    }
+    // how long a new tile takes to make, and a frame at a corner where four tiles meet
+    run {
+        val m = WorldMap.generate(seed + 1, species, tauranga)
+        m.home
+        val t1 = System.nanoTime(); var n = 0
+        for (ty in -2..2) for (tx in 1..2) { m.make(tx, ty); n++ }
+        println("a new tile: ${"%.1f".format((System.nanoTime() - t1) / 1e6 / n)}ms to make (JVM, warm)")
+    }
+    for ((name, m) in maps) {
+        val w = World(m); val p = w.addPlayer("c", null, 180); p.x = m.size.toDouble(); p.y = m.size.toDouble()
+        val r = TerrainRenderer(200, 300, m)
+        repeat(40) { p.angle += 0.16; w.step(emptyMap()); r.render(w, p, 0, Palette.DAY, src, it * 16L) }
+        val t1 = System.nanoTime(); repeat(60) { p.angle += 0.1; r.render(w, p, 0, Palette.forWeather("Rain", 12), src, it * 16L) }
+        println("[$name] render at a four-tile corner ${"%.2f".format((System.nanoTime() - t1) / 1e6 / 60)}ms/frame (rain)")
+        // looking across a join from a few cells back: east out of the first tile, and south
+        p.x = m.size - 6.0; p.y = m.spawnY; p.angle = 0.0; repeat(3) { r.render(w, p, 0, Palette.DAY, src, 0) }; save(r, "$out/${name}_join_east.png")
+        p.x = m.spawnX; p.y = m.size - 6.0; p.angle = PI / 2; repeat(3) { r.render(w, p, 0, Palette.DAY, src, 0) }; save(r, "$out/${name}_join_south.png")
+    }
     for ((name, m) in maps) {
         val w = World(m); val ls = LocalWorldSession(w, "r", null, 180); val p = w.entities[ls.localPlayerId]!!
         val r = TerrainRenderer(200, 300, m)
@@ -558,6 +641,7 @@ fun main(args: Array<String>) {
         val t1 = System.nanoTime(); repeat(60) { p.angle += 0.1; r.render(w, p, 0, Palette.forWeather("Rain", 12), src, it * 16L) }
         println("[$name] render ${"%.2f".format((System.nanoTime() - t1) / 1e6 / 60)}ms/frame (rain)")
     }
-    world.coinGone[0] = 99 // so the round trip carries a picked-up coin too
-    val snap = world.snapshot(); val w2 = World(map); w2.applySnapshot(snap); check(w2.snapshot() == snap && w2.coinGone[0] == 99); println("snapshot ok")
+    val aCoin = map.home.coinId(0)
+    world.coinGone[aCoin] = 99 // so the round trip carries a picked-up coin too
+    val snap = world.snapshot(); val w2 = World(map); w2.applySnapshot(snap); check(w2.snapshot() == snap && w2.coinGone[aCoin] == 99); println("snapshot ok")
 }

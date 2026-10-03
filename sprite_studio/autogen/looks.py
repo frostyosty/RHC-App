@@ -1,5 +1,5 @@
 """Looks: numbered variants of a row, stepped through by the Studio's
-REGENERATE button (`autogen.py --only <row> --look next`).
+RECOLOUR button (REGENERATE on the Attacks tab), `autogen.py --only <row> --look next`.
 
 designs.py draws each creature one way, so redrawing a row always gives the
 same GIFs. A look keeps that drawing and changes its colours: the armour

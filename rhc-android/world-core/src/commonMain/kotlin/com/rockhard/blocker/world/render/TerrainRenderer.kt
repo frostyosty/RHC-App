@@ -118,28 +118,48 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
     private val fxRng = Random(7)
 
     // Ground colour texture: 4 texels per world unit, pre-shaded by slope,
-    // with a slow light/dark drift so big fields don't look tiled.
+    // with a slow light/dark drift so big fields don't look tiled. The land is
+    // endless, so it's baked a page (PAGE x PAGE cells) at a time as pages come
+    // into view, and kept in PAGES x PAGES slots picked by the low bits of the
+    // page's coordinates. The view is under PAGES pages across, so the pages
+    // on screen never share a slot.
     private val tpu = 4
-    private val texSize = map.size * tpu
-    private val ground = IntArray(texSize * texSize) { i ->
-        val tx = i % texSize; val ty = i / texSize
-        val wx = (tx + 0.5) / tpu; val wy = (ty + 0.5) / tpu
-        val n = hash(tx, ty) and 0xFF
-        val base = when (map.terrainAt(wx, wy)) {
-            Terrain.WATER -> 0 // animated at draw time
-            Terrain.SAND -> if (n < 40) 0xFFBFA97C.toInt() else if (n > 220) 0xFFD9C89C.toInt() else 0xFFCDBB8E.toInt()
-            Terrain.TALL_GRASS -> if (n < 60) 0xFF3F6428.toInt() else if (n > 225) 0xFF66793A.toInt() else if (n > 170) 0xFF557A32.toInt() else 0xFF4A6F2E.toInt()
-            Terrain.FOREST -> if (n < 70) 0xFF3B3826.toInt() else if (n > 230) 0xFF6A5A34.toInt() else if (n > 180) 0xFF46592C.toInt() else 0xFF4A4530.toInt()
-            // wet brown mud with the odd puddle catching the sky
-            Terrain.MUD -> if (n < 60) 0xFF46382A.toInt() else if (n > 238) 0xFF7A8A92.toInt() else if (n > 200) 0xFF5E4C38.toInt() else 0xFF524230.toInt()
-            // a packed dirt track with pebbles
-            Terrain.PATH -> if (n < 50) 0xFF7A6448.toInt() else if (n > 232) 0xFFB09A78.toInt() else if (n > 190) 0xFF947C5C.toInt() else 0xFF8A7254.toInt()
-            else -> if (n < 22) 0xFF6E9448.toInt() else if (n < 80) 0xFF4E7732.toInt() else 0xFF587F38.toInt()
-        }
-        if (base == 0) 0 else {
-            val slope = map.groundAt(wx - 0.5, wy - 0.5) - map.groundAt(wx + 0.5, wy + 0.5)
-            val drift = 0.93 + 0.14 * smoothHash(wx / 5.0, wy / 5.0)
-            shade(base, ((1.0 + slope * 0.9) * drift).coerceIn(0.62, 1.3))
+    private val pageTex = PAGE * tpu
+    private val pages = Array(PAGES * PAGES) { IntArray(pageTex * pageTex) }
+    private val pageX = IntArray(PAGES * PAGES) { Int.MIN_VALUE }
+    private val pageY = IntArray(PAGES * PAGES)
+
+    /** The texture page holding texel (tx, ty) (world texels: 4 a cell), baked if it isn't in its slot. */
+    private fun page(tx: Int, ty: Int): IntArray {
+        val px = tx shr PAGE_SHIFT; val py = ty shr PAGE_SHIFT
+        val slot = (py and PAGES - 1) * PAGES + (px and PAGES - 1)
+        if (pageX[slot] != px || pageY[slot] != py) { bake(pages[slot], px, py); pageX[slot] = px; pageY[slot] = py }
+        return pages[slot]
+    }
+
+    private fun bake(out: IntArray, pgx: Int, pgy: Int) {
+        // a page lies inside one tile (PAGE divides WorldMap.TILE), and its slopes read that tile's apron
+        val tile = map.tileAt(pgx * PAGE + 0.5, pgy * PAGE + 0.5)
+        for (i in out.indices) {
+            val tx = pgx * pageTex + i % pageTex; val ty = pgy * pageTex + i / pageTex
+            val wx = (tx + 0.5) / tpu; val wy = (ty + 0.5) / tpu
+            val n = hash(tx, ty) and 0xFF
+            val base = when (tile.terrainAt(wx, wy)) {
+                Terrain.WATER -> 0 // animated at draw time
+                Terrain.SAND -> if (n < 40) 0xFFBFA97C.toInt() else if (n > 220) 0xFFD9C89C.toInt() else 0xFFCDBB8E.toInt()
+                Terrain.TALL_GRASS -> if (n < 60) 0xFF3F6428.toInt() else if (n > 225) 0xFF66793A.toInt() else if (n > 170) 0xFF557A32.toInt() else 0xFF4A6F2E.toInt()
+                Terrain.FOREST -> if (n < 70) 0xFF3B3826.toInt() else if (n > 230) 0xFF6A5A34.toInt() else if (n > 180) 0xFF46592C.toInt() else 0xFF4A4530.toInt()
+                // wet brown mud with the odd puddle catching the sky
+                Terrain.MUD -> if (n < 60) 0xFF46382A.toInt() else if (n > 238) 0xFF7A8A92.toInt() else if (n > 200) 0xFF5E4C38.toInt() else 0xFF524230.toInt()
+                // a packed dirt track with pebbles
+                Terrain.PATH -> if (n < 50) 0xFF7A6448.toInt() else if (n > 232) 0xFFB09A78.toInt() else if (n > 190) 0xFF947C5C.toInt() else 0xFF8A7254.toInt()
+                else -> if (n < 22) 0xFF6E9448.toInt() else if (n < 80) 0xFF4E7732.toInt() else 0xFF587F38.toInt()
+            }
+            out[i] = if (base == 0) 0 else {
+                val slope = tile.groundAt(wx - 0.5, wy - 0.5) - tile.groundAt(wx + 0.5, wy + 0.5)
+                val drift = 0.93 + 0.14 * smoothHash(wx / 5.0, wy / 5.0)
+                shade(base, ((1.0 + slope * 0.9) * drift).coerceIn(0.62, 1.3))
+            }
         }
     }
 
@@ -151,7 +171,7 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
         val (camX, camY) = when (cam.action) {
             Action.ATTACK -> {
                 val k = sin(PI * (1 - cam.actionTicks.toDouble() / Action.ATTACK.ticks)) * 0.4
-                map.wrap(cam.x + cos(cam.angle) * k) to map.wrap(cam.y + sin(cam.angle) * k)
+                cam.x + cos(cam.angle) * k to cam.y + sin(cam.angle) * k
             }
             Action.HIT -> { shake = if (cam.actionTicks % 4 < 2) 3 else -3; cam.x to cam.y }
             else -> cam.x to cam.y
@@ -204,7 +224,7 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
         var target = 0.0
         if (cam.downTicks > 0) target = DOWN_ROLL * (1 - getUp(cam))
         else if (cam.state == EntityState.WALKING && !lastCamX.isNaN() && dt in 1..250) {
-            val side = (map.delta(lastCamX, cam.x) * rightX + map.delta(lastCamY, cam.y) * rightY) / (dt / 1000.0)
+            val side = ((cam.x - lastCamX) * rightX + (cam.y - lastCamY) * rightY) / (dt / 1000.0)
             target = (side / World.STRAFE_MAX).coerceIn(-1.0, 1.0) * LEAN
         }
         if (dt > 0) roll += (target - roll) * 0.12
@@ -266,9 +286,9 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
             for (i in 0 until w) {
                 val top = (horizon + tilt[i] + (eye - map.surfaceAt(px, py)) * scale).toInt()
                 if (top < yBuf[i]) {
-                    val tx = floor(px * tpu).toInt().mod(texSize)
-                    val ty = floor(py * tpu).toInt().mod(texSize)
-                    var c = ground[ty * texSize + tx]
+                    val tx = floor(px * tpu).toInt()
+                    val ty = floor(py * tpu).toInt()
+                    var c = page(tx, ty)[(ty and pageTex - 1) * pageTex + (tx and pageTex - 1)]
                     if (c == 0) c = water(tx, ty, WorldMap.WATER_LEVEL - map.groundAt(px, py), shimmer, rain)
                     c = lerp(shade(c, pal.light), pal.fog, fog)
                     val from = top.coerceAtLeast(0)
@@ -298,7 +318,7 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
         val fight = cam.state == EntityState.ENGAGED && cam.orbitR > 0
         fun draw(x: Double, y: Double, lift: Double, size: Double, key: String, mirror: Boolean, t: Long, fallback: String? = null,
                  tree: Boolean = false, nearer: Double = 0.0, prop: Boolean = false): OnScreen? {
-            val rx = map.delta(camX, x); val ry = map.delta(camY, y)
+            val rx = x - camX; val ry = y - camY
             val depthZ = rx * dirX + ry * dirY
             if (depthZ < 0.2 || depthZ > maxZ) return null
             val lateral = rx * rightX + ry * rightY
@@ -334,15 +354,18 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
             return OnScreen(sx.toFloat(), top.toFloat(), sh.toFloat(), depthZ)
         }
 
-        for (p in map.props) {
-            if (p.kind.isTree) draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, timeMs + (p.x * 7919 + p.y * 104729).toLong(), "prop_tree", tree = true, prop = true)
-            else draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, timeMs, prop = true)
-        }
-        // coins spin and bob a little above the ground
-        for (i in map.coins.indices) {
-            if (world.coinGone[i] > 0) continue
-            val c = map.coins[i]
-            draw(c.x, c.y, COIN_LIFT + 0.04 * sin(timeMs / 280.0 + i), COIN_SIZE, "prop_coin", false, timeMs + i * 97L)
+        // the scenery and coins of every tile in sight (the far corners of the view are maxZ / cos(fov / 2) off)
+        map.tilesNear(camX, camY, maxZ * 1.25) { tile ->
+            for (p in tile.props) {
+                if (p.kind.isTree) draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, timeMs + (p.x * 7919 + p.y * 104729).toLong(), "prop_tree", tree = true, prop = true)
+                else draw(p.x, p.y, 0.0, p.kind.size, p.kind.sprite, false, timeMs, prop = true)
+            }
+            // coins spin and bob a little above the ground
+            for (i in tile.coins.indices) {
+                if (tile.coinId(i) in world.coinGone) continue
+                val c = tile.coins[i]
+                draw(c.x, c.y, COIN_LIFT + 0.04 * sin(timeMs / 280.0 + i), COIN_SIZE, "prop_coin", false, timeMs + i * 97L)
+            }
         }
         for (e in world.entities.values) {
             if (e.id == cam.id) continue
@@ -355,8 +378,8 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
             if (foe != null && (e.action == Action.ATTACK || e.action == Action.HIT)) {
                 val p = 1 - e.actionTicks.toDouble() / e.action.ticks
                 val k = if (e.action == Action.ATTACK) sin(PI * p) * lungeReach(e, foe, foe.id == cam.id) else -sin(PI * p) * 0.18
-                val a = atan2(map.delta(e.y, foe.y), map.delta(e.x, foe.x))
-                ex = map.wrap(ex + cos(a) * k); ey = map.wrap(ey + sin(a) * k)
+                val a = atan2(foe.y - e.y, foe.x - e.x)
+                ex += cos(a) * k; ey += sin(a) * k
             }
             val t = if (e.action != Action.NONE) actionTime(e, v.key, sprites) else timeMs + e.id * 137L
             draw(ex, ey, e.z, size, v.key, v.mirror, t, v.fallback)?.let { onScreen[e.id] = it }
@@ -367,8 +390,8 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
             val dur = sprites.durationMs(key).takeIf { it > 0 } ?: 700
             if (ms >= dur) continue
             val from = world.entities[e.foe]
-            val fromLeft = from == null || map.delta(camX, from.x) * rightX + map.delta(camY, from.y) * rightY <
-                map.delta(camX, ex) * rightX + map.delta(camY, ey) * rightY
+            val fromLeft = from == null || (from.x - camX) * rightX + (from.y - camY) * rightY <
+                (ex - camX) * rightX + (ey - camY) * rightY
             draw(ex, ey, e.z, e.size * CREATURE_CANVAS * 1.1, key, !fromLeft, ms, nearer = 0.05)
         }
     }
@@ -382,11 +405,7 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
             val cx = floor(cam.x).toInt(); val cy = floor(cam.y).toInt()
             var under: PropKind? = null
             for (dy in -1..1) for (dx in -1..1) {
-                val t = map.tile(cx + dx, cy + dy)
-                for (k in map.treeStart[t] until map.treeStart[t + 1]) {
-                    val tree = map.props[map.treeIds[k]]
-                    if (map.distance(cam.x, cam.y, tree.x, tree.y) < tree.kind.size * 0.28) under = tree.kind
-                }
+                map.treesAt(cx + dx, cy + dy) { tree, _ -> if (map.distance(cam.x, cam.y, tree.x, tree.y) < tree.kind.size * 0.28) under = tree.kind }
             }
             val c = under?.let { leafColour(it) } ?: 0
             val slot = leafMs.indices.firstOrNull { timeMs - leafMs[it] > LEAF_MS || leafMs[it] > timeMs }
@@ -479,7 +498,7 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
         if (e.kind == EntityKind.CAGE) return SpriteView("prop_cage", null, false)
         val base = "spr_" + e.species.lowercase().replace(" ", "_")
         val mirror = cos(e.angle) * rightX + sin(e.angle) * rightY < 0
-        var diff = e.angle - atan2(map.delta(e.y, cam.y), map.delta(e.x, cam.x))
+        var diff = e.angle - atan2(cam.y - e.y, cam.x - e.x)
         while (diff > PI) diff -= 2 * PI
         while (diff < -PI) diff += 2 * PI
         val sector = (abs(diff) / (PI / 4)).roundToInt() // 0 front .. 4 back
@@ -526,6 +545,11 @@ class TerrainRenderer(val w: Int, val h: Int, private val map: WorldMap, fovDeg:
         const val LUNGE_CONTACT = 0.3
         /** ...or this far (tiles) short of your face. */
         const val LUNGE_FACE = 0.9
+
+        // Ground texture pages: PAGE cells square (a power of two that divides WorldMap.TILE), PAGES x PAGES of them kept
+        private const val PAGE = 16
+        private const val PAGE_SHIFT = 6 // log2(PAGE * 4 texels)
+        private const val PAGES = 8
 
         private const val LEAVES = 16
         private const val LEAF_MS = 900L
