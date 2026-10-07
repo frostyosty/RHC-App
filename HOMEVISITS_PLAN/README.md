@@ -137,8 +137,8 @@ core decides can be tested without a phone.
 
 | # | Step | What it gives | Needs | Size | Status |
 |---|---|---|---|---|---|
-| 01 | [Groundwork](01-groundwork.md) | The APK opens its own home screen and runs on Momentum; the core module exists; the female/male bug is fixed | — | S | not started |
-| 02 | [AR foundation](02-ar-foundation.md) | Camera and ARCore working past the Guardian; floors, benches and walls; sprites that stay put; tested on real phones | 01 | M | not started |
+| 01 | [Groundwork](01-groundwork.md) | The APK opens its own home screen and runs on Momentum; the core module exists; the female/male bug is fixed | — | S | not started (wait i think this is done?) |
+| 02 | [AR foundation](02-ar-foundation.md) | Camera and ARCore working past the Guardian; floors, benches and walls; sprites that stay put; tested on real phones | 01 | M | not started (wait i think this part way through?)  |
 | 03 | [House map](03-house-map.md) | The home as data, and the walked-routes rule proved on generated floor plans | 01 | M | not started |
 | 04 | [First visit](04-first-visit.md) | The parcel, bench, painting, knock and tour: the errands that map the home | 02, 03 | L | not started |
 | 05 | [Coming back](05-coming-back.md) | The next day the painting is still on the wall, because the game finds known places again | 04 | L | not started |
