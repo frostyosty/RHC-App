@@ -91,6 +91,9 @@ above. Pick them up whenever the main line is waiting on a test.
 - **Battle effects and Wilds art** (`NETBEASTS_PLAN.md`, "Any time"), and
   Homevisits' art and cast.
 
+
+- also the desktop side of things is mostly separate so should be able to work on this independently. please see /workspaces/RHC-App/DESKTOP_PLAN.md for where we are at with that.
+
 ## The judgement calls in this order
 
 These are the places where the user might reasonably want it the other way:
@@ -117,6 +120,13 @@ Soonest first. Each is an **Ask** in its plan, with a default there.
 | 7 | A mode in the Netbeasts APK or its own APK ANSWER a mode inside Netbeasts; beside the Wilds or instead ANSWER beside; shared Aether ANSWER shared; the name ANSWER netbeasts go is fine | `NETBEASTS_GO_PLAN/README.md` |
 | 10 | Where the save and identity live; host or server | `NETBEASTS_PLAN.md` §3, §4 |
 | 12 | Whether to use OpenStreetMap data | `NETBEASTS_GO_PLAN/07-streets-and-caches.md` |
+
+
+
+
+
+
+
 
 ## Keeping this current
 
