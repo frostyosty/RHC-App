@@ -1,0 +1,85 @@
+{
+  "_note": "Recipes for wardrobe.mjs. bodies: a pack file (relative to packs/, used when it's there) and the stand-in build to use otherwise. garments: shapes, measured on the body (sleeve and leg: 0 at the shoulder or hip, 1 at the elbow or knee, 2 at the wrist or ankle; hem, waist and bib: 0 at the hips, 1 at the neck; layer: which goes over which; thick: a multiplier). cast: who wears what (brows: eyebrow colour, else the hair's); colours are hex, and what a pattern does with each is in lib/patterns.mjs. test: the cast member the AR test screen shows.",
+  "bodies": {
+    "female": { "pack": "Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Female_FullBody.gltf", "standin": "female" },
+    "male": { "pack": "Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Male_FullBody.gltf", "standin": "male" },
+    "older": { "standin": "older" },
+    "solid": { "standin": "solid" }
+  },
+  "garments": {
+    "tee": { "kind": "top", "sleeve": 0.45 },
+    "polo": { "kind": "top", "sleeve": 0.38, "hem": -0.05 },
+    "singlet": { "kind": "top", "sleeve": 0, "neck": "scoop" },
+    "longsleeve": { "kind": "top", "sleeve": 1.9 },
+    "shirt": { "kind": "top", "sleeve": 1.9, "hem": -0.12, "neck": "vee" },
+    "scoop-top": { "kind": "top", "sleeve": 1.55, "neck": "scoop" },
+    "jersey": { "kind": "top", "sleeve": 1.93, "hem": -0.05, "layer": 2, "thick": 1.3 },
+    "cardigan": { "kind": "top", "sleeve": 1.93, "hem": -0.32, "neck": "vee", "open": 0.028, "layer": 2, "thick": 1.3 },
+    "jeans": { "kind": "bottom", "leg": 1.93, "waist": 0.15 },
+    "trousers": { "kind": "bottom", "leg": 1.95, "waist": 0.2 },
+    "shorts": { "kind": "bottom", "leg": 0.62, "waist": 0.15 },
+    "trackies": { "kind": "bottom", "leg": 1.97, "waist": 0.18, "thick": 1.3 },
+    "overalls": { "kind": "bottom", "leg": 1.93, "waist": 0.15, "bib": 0.62, "layer": 2 },
+    "sneakers": { "kind": "shoes", "top": 1.9 },
+    "boots": { "kind": "shoes", "top": 1.75 },
+    "gumboots": { "kind": "shoes", "top": 1.4, "thick": 1.4 },
+    "gloves": { "kind": "gloves", "cuff": 1.85 },
+    "hair-short": { "kind": "hair", "style": "short" },
+    "hair-buzz": { "kind": "hair", "style": "buzz", "thick": 0.4 },
+    "hair-bob": { "kind": "hair", "style": "bob" },
+    "flatcap": { "kind": "hair", "style": "cap", "thick": 1.5 }
+  },
+  "cast": {
+    "rachel": { "body": "female", "height": 1.66, "skin": "#e8b996", "wear": [
+      { "garment": "tee", "pattern": "solid", "colours": ["#e9c46a"] },
+      { "garment": "overalls", "pattern": "flecks", "colours": ["#4a6fa5", "#e63946", "#f1faee", "#2a9d8f", "#f4a261"] },
+      { "garment": "sneakers", "pattern": "solid", "colours": ["#f1f1ee"] },
+      { "garment": "hair-short", "pattern": "solid", "colours": ["#2a1a12"] }
+    ] },
+    "alfred": { "body": "older", "height": 1.75, "skin": "#efc2a0", "brows": "#9a948c", "wear": [
+      { "garment": "jersey", "pattern": "knit", "colours": ["#4b5a3a"] },
+      { "garment": "trousers", "pattern": "solid", "colours": ["#5b4a3a"] },
+      { "garment": "boots", "pattern": "solid", "colours": ["#3a2a1e"] },
+      { "garment": "flatcap", "pattern": "tweed", "colours": ["#7a6a55", "#4a3f33"] }
+    ] },
+    "maya": { "body": "female", "height": 1.62, "skin": "#c99a72", "wear": [
+      { "garment": "tee", "pattern": "solid", "colours": ["#f4f1ea"] },
+      { "garment": "cardigan", "pattern": "knit", "colours": ["#c9a27e"] },
+      { "garment": "jeans", "pattern": "denim", "colours": ["#2c4a6e"] },
+      { "garment": "sneakers", "pattern": "solid", "colours": ["#2b2b2b"] },
+      { "garment": "hair-bob", "pattern": "solid", "colours": ["#1b1310"] }
+    ] },
+    "ruth": { "body": "older", "height": 1.6, "skin": "#f3d0b5", "wear": [
+      { "garment": "scoop-top", "pattern": "solid", "colours": ["#e8e4f0"] },
+      { "garment": "cardigan", "pattern": "knit", "colours": ["#8e7cc3"] },
+      { "garment": "trousers", "pattern": "solid", "colours": ["#2e3a59"] },
+      { "garment": "sneakers", "pattern": "solid", "colours": ["#d8d2c8"] },
+      { "garment": "hair-short", "pattern": "solid", "colours": ["#b9b6b0"] }
+    ] },
+    "sione": { "body": "solid", "height": 1.85, "skin": "#8d5a3b", "wear": [
+      { "garment": "polo", "pattern": "solid", "colours": ["#1d3557"] },
+      { "garment": "shorts", "pattern": "solid", "colours": ["#3a3a3a"] },
+      { "garment": "sneakers", "pattern": "solid", "colours": ["#151515"] },
+      { "garment": "hair-buzz", "pattern": "solid", "colours": ["#120d0b"] }
+    ] },
+    "aroha": { "body": "female", "height": 1.68, "skin": "#a86f4c", "wear": [
+      { "garment": "shirt", "pattern": "tartan", "colours": ["#3f6b3a", "#1f3320", "#e9c46a"] },
+      { "garment": "trousers", "pattern": "solid", "colours": ["#59603f"] },
+      { "garment": "gumboots", "pattern": "solid", "colours": ["#1a1a1a"] },
+      { "garment": "gloves", "pattern": "solid", "colours": ["#6a994e"] },
+      { "garment": "hair-bob", "pattern": "solid", "colours": ["#16100d"] }
+    ] }
+  },
+  "test": "rachel",
+  "random": {
+    "tops": ["tee", "polo", "singlet", "longsleeve", "shirt", "jersey"],
+    "bottoms": ["jeans", "trousers", "shorts", "trackies"],
+    "shoes": ["sneakers", "boots", "gumboots"],
+    "hair": ["hair-short", "hair-buzz", "hair-bob", "flatcap"],
+    "patterns": { "top": ["solid", "solid", "stripes", "check", "tartan", "marle", "knit"], "bottom": ["denim", "denim", "solid", "marle"] },
+    "colours": ["#2e4057", "#c8553d", "#f2d0a4", "#588b8b", "#28536b", "#7d8491", "#f4f4f4", "#1f1f1f", "#8c2f39", "#e9c46a", "#2a9d8f", "#6a994e", "#bc6c25", "#d62828"],
+    "denim": ["#2c4a6e", "#3d5a80", "#1d2d44", "#5c7aa0"],
+    "skins": ["#f1c7a5", "#e0ac87", "#c68c5e", "#a86f4c", "#8d5a3b", "#6b4129"],
+    "hairColours": ["#1b1310", "#3b2618", "#6b4a2b", "#a87b4f", "#d9c2a0", "#9a9a9a", "#c45a2a"]
+  }
+}

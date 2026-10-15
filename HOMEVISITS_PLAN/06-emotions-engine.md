@@ -1,6 +1,9 @@
 # 06. The emotions engine
 
 **Needs:** 01 · **Size:** L · **Track:** people (pure code; no phone needed)
+**Status:** built 2026-10-16 in `homevisits-core/mind/`; `./gradlew :homevisits-core:jvmTest` passes
+(the rule, scenario and 90-day soak tests). Still to do: `tools/homevisits_sim` drawing the soak's
+charts and writing its log from `MindSoak.run`. The three Asks below use their defaults until the user answers.
 **Read first:** [README](README.md); [cast](cast.md), but only skim one character
 sheet to see what the engine is fed. Nothing else.
 

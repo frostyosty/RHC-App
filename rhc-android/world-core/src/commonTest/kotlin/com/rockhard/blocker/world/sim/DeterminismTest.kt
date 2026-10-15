@@ -112,6 +112,51 @@ class DeterminismTest {
         assertEquals(POACHER_PRINT, h)
     }
 
+    /**
+     * The invasion boss put in your path (a summoned beast, not one from a territory): you walk
+     * straight into it, your cage goes in, the two trade blows, it beats you, and it waits there
+     * again without squaring up to you for the next 6 seconds.
+     */
+    @Test
+    fun scriptedBossFightIsIdenticalOnEveryPlatform() {
+        val world = World(WorldMap.generate(seed, species))
+        world.entities.values.removeAll { it.kind == EntityKind.BEAST } // just the boss
+        val me = world.addPlayer("test", "Zephyrlet", 180).id
+        var boss = -1
+        var stage = 0 // walking, met it, yours out, lost
+        var since = 0
+        var lostAt = -1
+        var metAgain = false
+        var h = 0L
+        repeat(World.TICK_HZ * 40) { t ->
+            if (t == 30) boss = world.summon(me, EntityKind.BEAST, "Stratolord", 1.5)
+            since++
+            var cage: String? = null
+            when {
+                stage == 1 && since == 30 -> cage = "Zephyrlet"
+                stage == 2 && since == 30 -> world.perform(me, Role.COMPANION, Action.ATTACK)
+                stage == 2 && since == 34 -> world.perform(me, Role.BEAST, Action.HIT)
+                stage == 2 && since == 60 -> world.perform(me, Role.BEAST, Action.ATTACK)
+                stage == 2 && since == 64 -> world.perform(me, Role.COMPANION, Action.HIT)
+                stage == 2 && since == 90 -> { world.resolveEncounter(me, boss, EncounterOutcome.PLAYER_BEATEN); stage = 3; lostAt = t }
+            }
+            val look = if (stage !in 1..2) 0.0 else if (t % 90 < 45) 0.02 else -0.015
+            for (e in world.step(mapOf(me to PlayerInput(look, cage)))) {
+                when (e) {
+                    is WorldEvent.Encounter -> if (e.beastId == boss) { if (stage < 3) stage = 1 else if (t - lostAt < World.TICK_HZ * 6) metAgain = true }
+                    is WorldEvent.CompanionOut -> stage = 2
+                    else -> continue
+                }
+                since = 0
+            }
+            if (lostAt >= 0 && t == lostAt + World.TICK_HZ * 6) assertEquals(EntityState.WAIT, world.entities[boss]?.state, "a boss you lose to waits there again")
+            world.snapshot().entities.forEach { e -> h = fnv(fnv(fnv(fnv(h, e.id.toLong()), e.x.toRawBits()), e.y.toRawBits()), e.state.ordinal.toLong()) }
+        }
+        assertEquals(3, stage, "the scripted boss fight should play out")
+        assertEquals(false, metAgain, "the boss squared up again straight after")
+        assertEquals(BOSS_PRINT, h)
+    }
+
     /** Turn toward the nearest beast, at most 0.08 rad a tick (DetMath, so it's the same everywhere). */
     private fun huntSteer(world: World, me: Entity): Double {
         val b = world.entities.values.filter { it.kind == EntityKind.BEAST }
@@ -127,5 +172,6 @@ class DeterminismTest {
         const val COAST_PRINT = 2848793715271895972L
         const val WALK_PRINT = -92461070399209451L
         const val POACHER_PRINT = -1094121879164635876L
+        const val BOSS_PRINT = 0L // not pinned yet: run jvmTest and paste the "actual" value here
     }
 }

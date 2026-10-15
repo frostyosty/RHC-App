@@ -22,9 +22,9 @@ other.
 
 | Shared thing | Where it is today | Who needs it | Planned in |
 |---|---|---|---|
-| The camera and ARCore code | Homevisits' own source set (`homevisits/ar/`, about 320 lines) | Homevisits, Netbeasts Go | Go 05 moves it to where both build it |
+| The camera and ARCore code | The AR kit, `app/src/ar/` (package `com.rockhard.blocker.ar`), built by both Gamers APKs | Homevisits, Netbeasts Go | Built (Go 05, 2026-10-16) |
 | Drawing sprites over the camera | Not built | Homevisits, Netbeasts Go | Homevisits 02, built in the shared kit |
-| Asking for an Android permission past the Guardian | `LocationEngine`, and a copy in `CameraPermission` | Location, camera, step counter | Go 05 (`PermissionGate`) |
+| Asking for an Android permission past the Guardian | `PermissionGate` in `main`; `LocationEngine` and `CameraPermission` both use it | Location, camera, step counter | Built (Go 05, 2026-10-16) |
 | Decoding the autogen GIFs | `world/SpriteBank.kt` | The Wilds, both camera games | Built; the kit reuses it |
 | The fight rules | `engines/combat/`, Android only | The battle screen, the Wilds, Netbeasts Go, the web, multiplayer | Netbeasts §2 moves them to `world-core` |
 | Where you are | `LocationEngine`, one fix at a time | Weather, the Wilds' region, Netbeasts Go | Go 01 adds following |
@@ -40,17 +40,19 @@ the female APK has no game until Homevisits 04, so that comes before the new
 outdoor game.
 
 1. **Sign off what's half-built.** Small.
-   - Homevisits 01: the code is there (`Flavor.kt`, the placeholder screen,
-     `homevisits-core`). Go through its "Done when", finish what's missing
-     (`GuardianService` still reads `BuildConfig.FLAVOR` in one place; the
-     docs in its part 5), and mark the table.
-   - The second loose note in `NETBEASTS_PLAN.md`: are the poacher and the
-     boss right in the 3D Wilds, and pinned? They're both in
-     `WorldVisitors.kt`. `DeterminismTest` pins a poacher fight
-     (`POACHER_PRINT`). It has no test for a boss, which is a summoned beast.
-     Check both in the game and add that pin.
-2. **The shared AR kit** (Go 05). Small. Now, while there's little to move
-   and before Homevisits 02 adds to it.
+   - Homevisits 01: built 2026-10-16 (the gaps are filled and the docs are
+     written). Left: run its "Done when" checks in the Codespace, then mark it
+     done in the plan's table.
+   - ~~The second loose note in `NETBEASTS_PLAN.md`: are the poacher and the
+     boss right in the 3D Wilds, and pinned?~~ Done 2026-10-16: both in
+     `WorldVisitors.kt`, written up in `rhc-android/README.md` 5.1, and
+     `DeterminismTest` has a poacher fight (`POACHER_PRINT`) and a boss fight
+     (`BOSS_PRINT`).
+2. **The shared AR kit** (Go 05). Small. Built 2026-10-16: the kit is in
+   `app/src/ar/` and `PermissionGate` in `main`. Left: its "Done when" checks
+   in the Codespace (all four flavors compile, the Homevisits AR test screen
+   still opens, no camera in the Timesavers manifests, the location prompt
+   past the Guardian).
 3. **Homevisits 02, finished on the kit, then one test outing by the user.**
    The at-home checklist in that step, plus ten minutes in the yard: does the
    ground get found on grass, and does a sprite stay put in sunlight? How
@@ -61,8 +63,9 @@ outdoor game.
 5. **The net thrown while you walk** (the first loose note in
    `NETBEASTS_PLAN.md`). Small. It's a Wilds feature, and it's also how you
    catch things outdoors, so it comes before Go 04.
-6. **Go 02: the step bank.** Small, needs nothing else, and pays out in the
-   Netbeasts that exists today.
+6. **Go 02: the step bank.** Built 2026-10-16: coins and healing from steps.
+   Left: its "Done when" checks (the tests and four-flavor compile in the
+   Codespace, then a walk round the block by the user).
 7. **Go 01, 03, 04: outdoors without the camera.** The first playable outdoor
    game. Each ends with a short walk by the user.
 8. **Go 06: AR encounters.** By now the kit has had Homevisits 02 and 04 on
@@ -106,7 +109,8 @@ These are the places where the user might reasonably want it the other way:
   outdoor game is single-player and reuses what's built, while the web client
   starts with moving all the fight rules.
 - **Go 07 last.** Real streets are what most makes it look like Pokémon Go,
-  but they bring an outside service, and the game works without them.
+  but they bring an outside service, and the game works without them. no we need the streets I think. Certain netbeasts in the park, certain netbeasts in the jungle, certain netbeasts by the beach.
+  Can we get bus stops? those could periodically give nets and potions. things like that 
 
 ## Decisions waiting on the user
 
@@ -120,9 +124,6 @@ Soonest first. Each is an **Ask** in its plan, with a default there.
 | 7 | A mode in the Netbeasts APK or its own APK ANSWER a mode inside Netbeasts; beside the Wilds or instead ANSWER beside; shared Aether ANSWER shared; the name ANSWER netbeasts go is fine | `NETBEASTS_GO_PLAN/README.md` | dont know if i updated that file yet directly but ive answered here
 | 10 | Where the save and identity live; host or server | `NETBEASTS_PLAN.md` §3, §4 | answered
 | 12 | Whether to use OpenStreetMap data | `NETBEASTS_GO_PLAN/07-streets-and-caches.md` | the default answers here are fine
-
-
-
 
 
 

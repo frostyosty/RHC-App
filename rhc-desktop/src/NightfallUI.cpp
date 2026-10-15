@@ -2,6 +2,8 @@
 #include "ui/CustomModal.h"
 #include "include/DatabaseManager.h"
 #include <cstdio>
+#include "ui/Dpi.h"
+using RHC::UI::Dpi;
 
 namespace RHC {
     namespace NightfallUI {
@@ -31,8 +33,8 @@ namespace RHC {
                             int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN); int vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
                             
                             HRGN hRgn = CreateRectRgn(vx, vy, vx + vw, vy + vh);
-                            // Flashlight Hole Radius = 75px
-                            HRGN hHole = CreateEllipticRgn(pt.x - 75, pt.y - 75, pt.x + 75, pt.y + 75);
+                            // Flashlight Hole Radius = 75px at 100% scale
+                            HRGN hHole = CreateEllipticRgn(pt.x - Dpi::Scale(75), pt.y - Dpi::Scale(75), pt.x + Dpi::Scale(75), pt.y + Dpi::Scale(75));
                             CombineRgn(hRgn, hRgn, hHole, RGN_DIFF);
                             SetWindowRgn(hwnd, hRgn, TRUE);
                             DeleteObject(hHole); // hRgn is now owned by the system
@@ -74,13 +76,13 @@ namespace RHC {
         LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch (uMsg) {
                 case WM_CREATE: {
-                    HFONT hFont = CreateFontA(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, "Segoe UI");
-                    CreateWindowExA(0, "STATIC", "NIGHTFALL PROTOCOL", WS_CHILD | WS_VISIBLE | SS_CENTER, 0, 20, 300, 30, hwnd, NULL, NULL, NULL);
-                    CreateWindowExA(0, "STATIC", "Sleep Time (HH:MM 24h):", WS_CHILD | WS_VISIBLE, 30, 60, 240, 20, hwnd, NULL, NULL, NULL);
-                    hSleepEdit = CreateWindowExA(WS_EX_CLIENTEDGE, "EDIT", "22:30", WS_CHILD | WS_VISIBLE, 30, 80, 220, 30, hwnd, NULL, NULL, NULL);
-                    CreateWindowExA(0, "STATIC", "Wake Time (HH:MM 24h):", WS_CHILD | WS_VISIBLE, 30, 120, 240, 20, hwnd, NULL, NULL, NULL);
-                    hWakeEdit = CreateWindowExA(WS_EX_CLIENTEDGE, "EDIT", "06:00", WS_CHILD | WS_VISIBLE, 30, 140, 220, 30, hwnd, NULL, NULL, NULL);
-                    HWND hBtn = CreateWindowExA(0, "BUTTON", "Lock Schedule", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 30, 190, 220, 40, hwnd, (HMENU)1, NULL, NULL);
+                    HFONT hFont = CreateFontA(Dpi::Scale(16), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, "Segoe UI");
+                    CreateWindowExA(0, "STATIC", "NIGHTFALL PROTOCOL", WS_CHILD | WS_VISIBLE | SS_CENTER, 0, Dpi::Scale(20), Dpi::Scale(300), Dpi::Scale(30), hwnd, NULL, NULL, NULL);
+                    CreateWindowExA(0, "STATIC", "Sleep Time (HH:MM 24h):", WS_CHILD | WS_VISIBLE, Dpi::Scale(30), Dpi::Scale(60), Dpi::Scale(240), Dpi::Scale(20), hwnd, NULL, NULL, NULL);
+                    hSleepEdit = CreateWindowExA(WS_EX_CLIENTEDGE, "EDIT", "22:30", WS_CHILD | WS_VISIBLE, Dpi::Scale(30), Dpi::Scale(80), Dpi::Scale(220), Dpi::Scale(30), hwnd, NULL, NULL, NULL);
+                    CreateWindowExA(0, "STATIC", "Wake Time (HH:MM 24h):", WS_CHILD | WS_VISIBLE, Dpi::Scale(30), Dpi::Scale(120), Dpi::Scale(240), Dpi::Scale(20), hwnd, NULL, NULL, NULL);
+                    hWakeEdit = CreateWindowExA(WS_EX_CLIENTEDGE, "EDIT", "06:00", WS_CHILD | WS_VISIBLE, Dpi::Scale(30), Dpi::Scale(140), Dpi::Scale(220), Dpi::Scale(30), hwnd, NULL, NULL, NULL);
+                    HWND hBtn = CreateWindowExA(0, "BUTTON", "Lock Schedule", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, Dpi::Scale(30), Dpi::Scale(190), Dpi::Scale(220), Dpi::Scale(40), hwnd, (HMENU)1, NULL, NULL);
                     
                     EnumChildWindows(hwnd,[](HWND child, LPARAM font) { SendMessage(child, WM_SETFONT, font, TRUE); return TRUE; }, (LPARAM)hFont);
                     
@@ -99,7 +101,7 @@ namespace RHC {
                             RHC::UI::CustomModal::Show(hwnd, L"Success", L"Nightfall Schedule Locked!"); ShowWindow(hwnd, SW_HIDE);
                         } else RHC::UI::CustomModal::Show(hwnd, L"Error", L"Invalid Format! Please use HH:MM (e.g. 22:30)");
                     } return 0;
-                case WM_CTLCOLORSTATIC: SetTextColor((HDC)wParam, RGB(255, 255, 255)); SetBkColor((HDC)wParam, RGB(18, 18, 18)); return (LRESULT)CreateSolidBrush(RGB(18, 18, 18));
+                case WM_CTLCOLORSTATIC: { SetTextColor((HDC)wParam, RGB(255, 255, 255)); SetBkColor((HDC)wParam, RGB(18, 18, 18)); static HBRUSH br = CreateSolidBrush(RGB(18, 18, 18)); return (LRESULT)br; } // made once: a brush per message leaks GDI handles
                 case WM_CLOSE: ShowWindow(hwnd, SW_HIDE); return 0;
             }
             return DefWindowProcA(hwnd, uMsg, wParam, lParam);
@@ -107,7 +109,7 @@ namespace RHC {
 
         void Initialize(HINSTANCE hInstance) {
             WNDCLASSA wc = {0}; wc.lpfnWndProc = WndProc; wc.hInstance = hInstance; wc.lpszClassName = "RHC_Nightfall"; wc.hbrBackground = CreateSolidBrush(RGB(18, 18, 18)); RegisterClassA(&wc);
-            hwnd = CreateWindowExA(0, "RHC_Nightfall", "Nightfall Schedule", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 300, 300, NULL, NULL, hInstance, NULL);
+            hwnd = CreateWindowExA(0, "RHC_Nightfall", "Nightfall Schedule", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, Dpi::Scale(300), Dpi::Scale(300), NULL, NULL, hInstance, NULL);
 
             WNDCLASSA owc = {0}; owc.lpfnWndProc = OverlayProc; owc.hInstance = hInstance; owc.lpszClassName = "RHC_Overlay"; RegisterClassA(&owc);
             g_hOverlay = CreateWindowExA(WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED, "RHC_Overlay", "", WS_POPUP, 0, 0, 10, 10, NULL, NULL, hInstance, NULL);

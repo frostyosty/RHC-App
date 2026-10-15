@@ -1,0 +1,19 @@
+{
+  "name": "rhc-figure-tools",
+  "private": true,
+  "type": "module",
+  "description": "Rigged 3D people for the AR games: trims Quaternius' CC0 packs, makes clothes for them, and shows them in a browser.",
+  "scripts": {
+    "standin": "node standin.mjs",
+    "wardrobe": "node wardrobe.mjs",
+    "check": "node check.mjs",
+    "view": "node viewer/serve.mjs"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
+    "gltf-validator": "^2.0.0-dev.3.10",
+    "three": "^0.180.0"
+  }
+}

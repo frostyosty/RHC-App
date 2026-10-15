@@ -141,6 +141,7 @@ class GuardianService : AccessibilityService() {
         registerReceiver(screenReceiver, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF) })
         getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(overlayPrefsListener)
         handler.post(overlayRunnable)
+        StepCounter.start(this) // the step bank: the sensor only counts while something listens
 
         addLog("Service Connected.")
         Toast.makeText(this, "Rock Hard Shield Activated!", Toast.LENGTH_LONG).show()
@@ -424,7 +425,6 @@ class GuardianService : AccessibilityService() {
     private fun triggerBossInvasion(debugReason: String, canDefend: Boolean) {
         val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
 
-        val currentFlavor = BuildConfig.FLAVOR.lowercase()
         val isGamers = Flavor.isGamers && !Flavor.homevisits()
         val isGameDefault = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false)
 
@@ -455,7 +455,10 @@ class GuardianService : AccessibilityService() {
         addLog("RED WALL DROPPED. Reason: $debugReason")
 
         // --- INSTANT PRODUCTIVITY REDIRECT ---
-        val destIntent = if (!isGamers) {
+        // Homevisits gets the Momentum wall (step 12 gives it its own), but opens its game when that's the home app
+        val destIntent = if (Flavor.homevisits() && isGameDefault && AetherEngine.closedReason(prefs) == null) {
+            Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)
+        } else if (!isGamers) {
             Intent(this, MomentumActivity::class.java)
         } else if (isGameDefault && AetherEngine.closedReason(prefs) == null) { // not in Nightfall hours or once Aether is spent
             Intent(this, GameActivity::class.java)
@@ -721,6 +724,7 @@ class GuardianService : AccessibilityService() {
         super.onDestroy()
         handler.removeCallbacks(overlayRunnable)
         handler.removeCallbacks(typingScanRunnable)
+        StepCounter.stop()
         try { unregisterReceiver(screenReceiver) } catch (e: Exception) {} // never registered if it didn't connect
         getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(overlayPrefsListener)
     }

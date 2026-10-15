@@ -229,7 +229,7 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
             return ShieldAction.Allow
         }
 
-        // Android's permission prompt while the app is asking for one (LocationEngine.requestPermission).
+        // Android's permission prompt while the app is asking for one (PermissionGate.request).
         // Only the prompt's own package: Settings stays locked
         if ((lowerPkg.contains("permissioncontroller") || lowerPkg.contains("packageinstaller")) &&
             System.currentTimeMillis() < prefs.getLong("ALLOW_PERMISSION_PROMPT_UNTIL", 0L)) {

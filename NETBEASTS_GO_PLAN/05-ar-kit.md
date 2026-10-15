@@ -14,18 +14,23 @@ screen works as it did.
 Do this before Homevisits 02 goes any further. Today the kit is about 320
 lines, so moving it is cheap. After 02, 04 and 05 of that plan it won't be.
 
-## What exists today
+## Built (2026-10-16)
 
-In `app/src/gamersFemaleHomevisits/java/com/rockhard/blocker/homevisits/ar/`:
+Items 1-4 and 6 below are built; 5 comes with Homevisits 02. What the kit is
+now, in `app/src/ar/java/com/rockhard/blocker/ar/`:
 
 | File | What it does now | Still to come (Homevisits 02) |
 |---|---|---|
 | `ArTier.kt` | Says whether the phone has ARCore | — |
-| `CameraPermission.kt` | Asks for the camera past the Guardian | The "Android denied it without asking" check that `LocationEngine` has |
+| `CameraPermission.kt` | Asks for the camera through `PermissionGate` (so it has the "Android denied it without asking" toast too) | — |
 | `ArSession.kt` | Makes and configures the session (planes, depth, 30 fps) | The per-frame callback |
 | `BackgroundRenderer.kt`, `ArRenderer.kt` | Draws the camera image; counts planes | Sprites: billboards, wall quads, floor decals |
-| `Surfaces.kt` | A tap to a plane hit | Telling a floor from a bench, table, seat |
-| `Tracking.kt` | Turns ARCore's trouble into a hint | The stairs warning |
+| `Surfaces.kt` | A tap to a plane hit: which way it faces (`Facing`), its height | The pose. Floor/bench/table/seat is Homevisits' own |
+| `Tracking.kt` | Turns ARCore's trouble into a hint, in the words the game passes (`TrackingPhrases`) | The stairs warning |
+
+The Homevisits wording lives in `HomevisitsActivity` now. Netbeasts builds the
+kit and carries ARCore (optional) and the camera permission, but nothing in it
+uses the kit yet ([06](06-ar-encounters.md) will).
 
 ## Build
 
@@ -47,7 +52,8 @@ In `app/src/gamersFemaleHomevisits/java/com/rockhard/blocker/homevisits/ar/`:
    "set `ALLOW_PERMISSION_PROMPT_UNTIL`, ask, clear it on the answer", and the
    step counter would be a third. Put it in one place:
    `PermissionGate.request(activity, permissions, code)` and
-   `PermissionGate.onResult(activity, permissions): Boolean`, with
+   `PermissionGate.onResult(activity, permissions, what): Boolean` (`what`
+   names it in the toast), with
    `LocationEngine`'s under-500 ms check and its toast. `LocationEngine` and
    `CameraPermission` then call it. `ShieldRuleEngine` doesn't change.
 4. **What stays out of the kit.** The kit knows nothing about either game.
@@ -74,7 +80,9 @@ Interfaces section stays the full description.
 - `ar.ArRenderer`: the camera background now; sprites at world poses when
   Homevisits 02 adds them.
 - `ar.Surfaces.hit(frame, x, y)`; `ar.Tracking.getHint(camera, phrases)`.
-- `PermissionGate.request / onResult` (in `main`, for every flavor).
+- `ar.Surfaces.hit` returns `SurfaceHit(facing: Facing, y, isDepth)`; `Facing` is `UP`, `DOWN` or `WALL`.
+- `PermissionGate.has(context, permissions)`, `request(activity, permissions, code)`,
+  `onResult(activity, permissions, what)` (package `com.rockhard.blocker`, in `main`, for every flavor).
 
 ## Done when
 

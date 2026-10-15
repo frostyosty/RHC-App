@@ -143,6 +143,11 @@ Section "Uninstall"
     !insertmacro StopGuardianAndWait
     ExecWait 'sc.exe delete ${SVCNAME}'
 
+    ; 2b. Remove the GUI relaunch scheduled task (logon/unlock/wake). The app
+    ;     normally removes this itself from the in-app System Override exit;
+    ;     this covers an Add/Remove Programs uninstall that bypasses it.
+    nsExec::Exec 'schtasks /delete /tn "RHCGuardianAgent" /f'
+
     ; 3. Delete files
     Delete "$INSTDIR\${APPEXE}"
     Delete "$INSTDIR\${SVCEXE}"

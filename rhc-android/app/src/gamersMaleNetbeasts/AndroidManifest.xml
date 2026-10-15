@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- For the AR kit (src/ar): the camera, with ARCore optional so phones without it still install -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- The step bank (go/StepCounter.kt): the step counter needs it from Android 10 -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
+    <application>
+        <meta-data android:name="com.google.ar.core" android:value="optional" />
+    </application>
+</manifest>

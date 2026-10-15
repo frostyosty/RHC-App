@@ -19,6 +19,7 @@ namespace RHC {
 
         struct UIStyle {
             COLORREF backgroundColor = RGB(18, 18, 18);
+            bool hasBackground = false;  // false = transparent, like CSS; set by background/background-color
             Gradient backgroundGradient;
             COLORREF borderColor = RGB(70, 70, 70);
             int borderWidth = 0;

@@ -1,0 +1,17 @@
+{
+  "_note": "Sources are relative to tools/figures/packs/ (unzipped there by import.sh, gitignored). Clip names on the left are what the pack calls them: check with `bash tools/figures/import.sh list <file.glb>` and fix them here. Names on the right are what the game asks for. Output goes to `out`, relative to the repo root.",
+  "out": "rhc-android/app/src/gamersFemaleHomevisits/assets/figures",
+  "moves": {
+    "from": "UAL1_Standard/glTF/UAL1_Standard.glb",
+    "clips": {
+      "Idle_Loop": "Idle",
+      "Walk_Loop": "Walk",
+      "Idle_Talking_Loop": "Talk",
+      "Sitting_Idle_Loop": "Sit",
+      "Interact": "Wave"
+    }
+  },
+  "figures": {
+    "test": "Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Female_FullBody.gltf"
+  }
+}

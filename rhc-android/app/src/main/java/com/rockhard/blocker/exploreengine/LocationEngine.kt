@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationListener
@@ -13,7 +12,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.os.SystemClock
-import android.widget.Toast
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -31,15 +29,13 @@ object LocationEngine {
     private const val FRESH_MS = 30 * 60_000L       // a fix this recent is good enough for the weather
     private const val FIX_WAIT_MS = 8_000L          // how long the weather waits for a new fix
     private const val PLACES_MS = 2 * 60_000L       // how often the suburb lookups run again
-    private const val PROMPT_UNTIL = "ALLOW_PERMISSION_PROMPT_UNTIL" // read by ShieldRuleEngine
-    private const val PROMPT_MS = 60_000L           // how long the Guardian lets Android's prompt through at most
 
     private val PERMISSIONS = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
 
     private fun prefs(context: Context) = context.getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
 
     /** Precise or approximate: an approximate fix is plenty for the weather and the suburb. */
-    fun hasPermission(context: Context) = PERMISSIONS.any { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+    fun hasPermission(context: Context) = PermissionGate.has(context, PERMISSIONS)
 
     // --- Asking -----------------------------------------------------------------
 
@@ -61,30 +57,11 @@ object LocationEngine {
         ) { _, dialog -> dialog.setOnDismissListener { if (!sharing) onDeclined() } }
     }
 
-    private var askedAt = 0L
-
-    /**
-     * Shows Android's location prompt. It comes from the permission controller, which
-     * the Guardian blocks as anti-tamper, so ShieldRuleEngine lets that package (and
-     * only that one) through until the prompt is answered. The activity's
-     * onRequestPermissionsResult must call [onPermissionResult].
-     */
-    fun requestPermission(activity: Activity) {
-        prefs(activity).edit().putLong(PROMPT_UNTIL, System.currentTimeMillis() + PROMPT_MS).apply()
-        askedAt = SystemClock.elapsedRealtime()
-        activity.requestPermissions(PERMISSIONS, REQUEST_CODE)
-    }
+    /** Shows Android's location prompt past the Guardian (PermissionGate). The activity's onRequestPermissionsResult must call [onPermissionResult]. */
+    fun requestPermission(activity: Activity) = PermissionGate.request(activity, PERMISSIONS, REQUEST_CODE)
 
     /** Blocks the permission controller again and says whether location is allowed now. */
-    fun onPermissionResult(activity: Activity): Boolean {
-        prefs(activity).edit().putLong(PROMPT_UNTIL, 0L).apply()
-        val granted = hasPermission(activity)
-        // After two "Don't allow"s Android answers at once without showing anything
-        if (!granted && SystemClock.elapsedRealtime() - askedAt < 500) {
-            Toast.makeText(activity, "Android won't show the location prompt again. You can allow it for this app in Android Settings.", Toast.LENGTH_LONG).show()
-        }
-        return granted
-    }
+    fun onPermissionResult(activity: Activity) = PermissionGate.onResult(activity, PERMISSIONS, "location")
 
     // --- Finding --------------------------------------------------------------------
 

@@ -1,0 +1,48 @@
+Agent A: build and test what's been written (the most useful one right now)
+You're in the RHC-App Codespace (/workspaces/RHC-App). Read CLAUDE.md first. There are large
+uncommitted changes from another session: Homevisits 01, the shared AR kit (rhc-android/app/src/ar/),
+and a new pure-Kotlin module rhc-android/figure-core (glTF loading, skinning, moves) plus
+tools/figures/. None of it has been compiled. Your job is to make it compile and pass, changing
+as little as possible.
+
+1. cd rhc-android && ./gradlew :figure-core:jvmTest :homevisits-core:jvmTest
+   compileGamersMaleNetbeastsReleaseKotlin compileGamersFemaleHomevisitsReleaseKotlin
+   compileTimesaversMaleMomentumReleaseKotlin compileTimesaversFemaleMomentumReleaseKotlin
+2. Fix compile errors and failing tests. If a test fails, find out whether the test or the
+   code is wrong before changing either; don't weaken a test to make it pass.
+3. bash tools/figures/preview/run.sh (no arguments: it draws the built-in mannequin). Open
+   the PNGs in tools/figures/preview/out/ and check: the figure stands upright, its feet are at
+   the bottom, the front view (first column) shows the nose, and "Wave" raises the right arm.
+4. shellcheck tools/figures/import.sh tools/figures/preview/run.sh, aiming for zero warnings.
+5. Also check that the Timesavers merged manifests have no CAMERA permission
+   (app/build/intermediates/merged_manifests/...).
+Don't commit, push, or run release.sh or zz_quicksave.txt. Don't touch rhc-desktop/. Don't
+edit any .md file. Report what you changed, file by file, and anything you couldn't fix.
+
+Agent B: Homevisits 06, the emotions engine (pure code, with no phone needed)
+You're in the RHC-App Codespace (/workspaces/RHC-App). Read CLAUDE.md, then
+HOMEVISITS_PLAN/README.md, then only HOMEVISITS_PLAN/06-emotions-engine.md, and build that
+step. It belongs in rhc-android/homevisits-core (pure Kotlin: no android.*, no java.*, no
+libraries). Tests go in its commonTest and run with
+`cd rhc-android && ./gradlew :homevisits-core:jvmTest`. Use the existing Rng.stream(name, n)
+for randomness. If the step file has an Ask with a default, take the default and list it
+in your report. Only touch rhc-android/homevisits-core/ and that step's row/status in
+HOMEVISITS_PLAN/ files. There are uncommitted changes from other sessions in the tree: don't
+revert, reformat or commit anything, and don't run release.sh or zz_quicksave.txt.
+Finish with the tests passing and a short report.
+
+Agent C: Netbeasts Go 02, the step bank (a phone is only needed for its final walk)
+You're in the RHC-App Codespace (/workspaces/RHC-App). Read CLAUDE.md, ROADMAP.md,
+NETBEASTS_GO_PLAN/README.md, then only NETBEASTS_GO_PLAN/02-step-bank.md, and build that step.
+The user's answers are written inline in that file: 1 coin per 200 steps, a 15,000-step daily
+cap, and steps also heal netbeasts, with flying and higher-level ones healing more slowly.
+Design the healing part, keep it pure and tested, and describe it in your report.
+StepBank is pure Kotlin in world-core (world/go/); keep world-core's rules (no android.*,
+deterministic, DeterminismTest pins must not move). Ask for the permission only through
+PermissionGate (app/src/main/.../PermissionGate.kt). The permission goes in
+app/src/gamersMaleNetbeasts/AndroidManifest.xml.
+Run ./gradlew :world-core:jvmTest :world-core:wasmJsNodeTest and compile all four flavors.
+There are uncommitted changes from other sessions: don't touch rhc-android/app/src/ar/,
+figure-core/, homevisits-core/ or the Homevisits flavor, and keep your GuardianService edit
+small and self-contained. Don't commit, and don't run release.sh or zz_quicksave.txt. Update
+02-step-bank.md and the ROADMAP line when done, and report the on-phone walk check for the user.

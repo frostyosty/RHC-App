@@ -31,8 +31,8 @@ class MainActivity : Activity() {
     internal val tickRunnable = object : Runnable {
         override fun run() {
             var next = 60_000L
-            if (!Flavor.isGamers) {
-                updateMomentumUI()
+            if (Flavor.usesMomentum()) {
+                if (Flavor.homevisits()) updateHomevisitsCard() else updateMomentumUI()
                 next = MomentumEngine.msUntilNextChange(prefs).coerceAtMost(next - 50L) + 50L
             }
 
@@ -105,7 +105,7 @@ class MainActivity : Activity() {
             // Nightfall or no Aether left: stay here and say why
             val closed = if (isGamers) AetherEngine.closedReason(prefs) else null
             if (closed != null) Toast.makeText(this, closed, Toast.LENGTH_LONG).show()
-            else if (isGamers) { if (Flavor.homevisits()) startActivity(Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)) else if (Flavor.homevisits()) startActivity(Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)) else startActivity(Intent(this, GameActivity::class.java)); finish(); return }
+            else if (isGamers) { if (Flavor.homevisits()) startActivity(Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)) else startActivity(Intent(this, GameActivity::class.java)); finish(); return }
         }
         setContentView(R.layout.activity_main)
         
@@ -116,8 +116,10 @@ class MainActivity : Activity() {
 
         if (Flavor.usesMomentum()) { MomentumEngine.resetDailyIfNeeded(prefs); setupMomentumUI() }
 
-        findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers && !Flavor.homevisits()) View.GONE else View.VISIBLE
-        findViewById<View>(R.id.llSafariCard).visibility = if (isGamers && !Flavor.homevisits()) View.VISIBLE else View.GONE
+        // Homevisits spends Momentum in its own catalogue, so it gets the game card (with today's Momentum on it), not the task list
+        findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.llSafariCard).visibility = if (isGamers) View.VISIBLE else View.GONE
+        if (Flavor.homevisits()) updateHomevisitsCard()
 
         refreshWeather()
 
@@ -183,7 +185,7 @@ class MainActivity : Activity() {
             val isPremium = prefs.getBoolean("REWARD_PREMIUM", false)
             if (done && !isPremium) {
                 prefs.edit().putBoolean("REWARD_PREMIUM", true).apply()
-                if (Flavor.isGamers) {
+                if (Flavor.isGamers && !Flavor.homevisits()) {
                     val legendary = if (kotlin.random.Random.nextBoolean()) "Aegis,Legendary,250,250,Light Pulse,Nova Shield,Orbital Cannon,0,0,0,0,true,None,0,0,0,0,None,0" else "Titan,Legendary,280,280,Feral Strike,Parry,Apex Predator,0,0,0,0,true,None,0,0,0,0,None,0"
                     val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
                     prefs.edit().putString("PARTY_DATA", if(partyStr.isEmpty()) legendary else "$partyStr;$legendary").apply()
@@ -579,8 +581,9 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
     private fun openSettingsMenu() {
         DialogUtils.showCustomDialog(this, "Settings", null, true, "SAVE", null) { content, dialog ->
             val isGamers = Flavor.isGamers
+            val isNetbeasts = isGamers && !Flavor.homevisits() // the 3D switch and the weather location are Netbeasts' only
             val cbGame = CheckBox(this).apply { text = if(isGamers) "Enable Gamification" else "Enable Momentum Tracking"; isChecked = prefs.getBoolean("GAMIFICATION", true); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
-            val cbDefault = CheckBox(this).apply { text = if(isGamers) "Set Netbeasts as Default Home App" else "Set Momentum as Default Home App"; isChecked = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
+            val cbDefault = CheckBox(this).apply { text = if (Flavor.homevisits()) "Set Homevisits as Default Home App" else if(isGamers) "Set Netbeasts as Default Home App" else "Set Momentum as Default Home App";isChecked = prefs.getBoolean("LAUNCH_GAME_DEFAULT", false); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
             val cbDebug = CheckBox(this).apply { text = "Enable UI Debugger"; isChecked = prefs.getBoolean("DEBUG_UI_TOASTS", false); setTextColor(android.graphics.Color.YELLOW); textSize = 16f; setPadding(16, 16, 16, 16) }
             
             val cbWorld3d = CheckBox(this).apply { text = "Explore Netbeasts in 3D (off = text log)"; isChecked = prefs.getBoolean("WORLD_3D", true); setTextColor(android.graphics.Color.WHITE); textSize = 16f; setPadding(16, 16, 16, 16) }
@@ -588,7 +591,7 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
             content.addView(cbDebug)
             content.addView(cbGame)
             content.addView(cbDefault)
-            if (isGamers) content.addView(cbWorld3d)
+            if (isNetbeasts) content.addView(cbWorld3d)
             
             // --- FIX: The Safe App Manager button was removed from here ---
             
@@ -602,7 +605,7 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
                 setOnClickListener { setupPollUntil = System.currentTimeMillis() + SETUP_POLL_MS; startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") }); dialog.dismiss() }
             })
             // The game offers this once; here you can say yes later (Android's own Settings are behind the Guardian)
-            if (isGamers) {
+            if (isNetbeasts) {
                 val hasLocation = LocationEngine.hasPermission(this)
                 content.addView(Button(this).apply {
                     text = if (hasLocation) "Weather From Your Location ✔️" else "📍 Use My Location for the Weather"
@@ -618,6 +621,11 @@ setupRedirectUI() // Repopulate redirect dropdowns with fresh blocklists
                 dialog.dismiss() 
             }
         }
+    }
+
+    /** Homevisits' game card, with today's Momentum on it (it changes as entries evaporate, so the tick redraws it). */
+    private fun updateHomevisitsCard() {
+        findViewById<Button>(R.id.btnGame)?.text = "OPEN HOMEVISITS · ${MomentumEngine.calculateCurrentMomentum(prefs)} min Momentum"
     }
 
     private fun refreshWeather() {

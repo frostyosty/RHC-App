@@ -1,0 +1,237 @@
+
+● Write(homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\house\HouseMapTest.kt)
+Wrote 188 lines to homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\house\HouseMapTest.kt
+package com.rockhard.blocker.homevisits.house
+
+import com.rockhard.blocker.homevisits.HomeClock
+import kotlin.math.PI
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+… +195 lines
+
+  Ran 1 shell command
+
+No Python here; I'll use edits instead.
+
+● Update(homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\house\HouseMapTest.kt)
+Added 4 lines
+    private fun walk(map: HouseMap, a: SpotId, b: SpotId, len: Float = 4f, gaps: List<
+IntRange> = emptyList(), at: HomeClock = day, secs: Int = 10) =
+        map.recordWalk(Walk(a, b, at, secs, line(Vec3(0f, 0f, 0f), Vec3(0f, 0f, len)),
+ gaps, 0f, Pose4(0f, 0f, len, 0f)))
+
+    /** The same walk the other way: from b, a is 4 m behind. */
+    private fun walkBack(map: HouseMap, b: SpotId, a: SpotId, len: Float = 4f, at: Hom
+eClock = day) =
+        map.recordWalk(Walk(b, a, at, 10, line(Vec3(0f, 0f, 0f), Vec3(0f, 0f, -len)),
+emptyList(), 0f, Pose4(0f, 0f, -len, 0f)))
+
+    private fun threeSpots(): Triple<HouseMap, Spot, Pair<Spot, Spot>> {
+        val m = HouseMap()
+        val a = m.addSpot(SpotKind.FRONT_DOOR, day)
+
+● Update(homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\house\HouseMapTest.kt)
+Added 1 line, removed 1 line
+    fun backwardsIsTheSameLink() {
+        val (m, a, bc) = threeSpots()
+        walk(m, a.id, bc.first.id)
+        walk(m, bc.first.id, a.id)
+        walkBack(m, bc.first.id, a.id)
+        assertEquals(1, m.links.size)
+        assertEquals(2, m.links[0].walks)
+        val back = m.route(bc.first.id, a.id, day)!!
+
+● Update(homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\house\HouseMapTest.kt)
+Added 1 line, removed 1 line
+        walk(m, a.id, bc.first.id, gaps = listOf(2..4))
+        assertTrue(m.links[0].rough)
+        assertTrue(m.route(a.id, bc.first.id, day)!!.legs[0].rough)
+        walk(m, bc.first.id, a.id)
+        walkBack(m, bc.first.id, a.id)
+        assertFalse(m.links[0].rough)
+    }
+
+
+● Update(homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\house\HouseMapTest.kt)
+Added 1 line, removed 1 line
+        assertNotNull(m.route(a.id, b, HomeClock(11, 0)))
+        m.block(a.id, b, 14); m.block(a.id, b, 20)
+        assertNull(m.route(a.id, b, HomeClock(40, 0)), "three times in two weeks: blo
+cked till walked")
+        walk(m, b, a.id, at = HomeClock(40, 1))
+        walkBack(m, b, a.id, at = HomeClock(40, 1))
+        assertNotNull(m.route(a.id, b, HomeClock(40, 2)))
+        // Three blocks spread over more than two weeks don't stick.
+        m.block(a.id, b, 50); m.block(a.id, b, 60); m.block(a.id, b, 70)
+
+● Write(homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\save\SaveTest.kt)
+Wrote 102 lines to homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\save\SaveTest.kt
+package com.rockhard.blocker.homevisits.save
+
+import com.rockhard.blocker.homevisits.HomeClock
+import com.rockhard.blocker.homevisits.house.HouseMap
+import com.rockhard.blocker.homevisits.house.Pose4
+import com.rockhard.blocker.homevisits.house.RoomKind
+import com.rockhard.blocker.homevisits.house.SpotKind
+import com.rockhard.blocker.homevisits.house.Surface
+import com.rockhard.blocker.homevisits.house.SurfaceKind
+import com.rockhard.blocker.homevisits.house.Vec3
+… +102 lines
+
+● Write(homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\story\SessionLogTest.kt)
+Wrote 105 lines to homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\story\SessionLogTest.kt
+package com.rockhard.blocker.homevisits.story
+
+import com.rockhard.blocker.homevisits.HomeClock
+import com.rockhard.blocker.homevisits.house.HouseMap
+import com.rockhard.blocker.homevisits.house.Pose4
+import com.rockhard.blocker.homevisits.house.SpotKind
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+… +97 lines
+
+● Write(homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\story\FirstVisitTest.kt)
+Wrote 96 lines to homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\story\FirstVisitTest.kt
+package com.rockhard.blocker.homevisits.story
+
+import com.rockhard.blocker.homevisits.house.FakeHouse
+import com.rockhard.blocker.homevisits.house.PlanGen
+import com.rockhard.blocker.homevisits.house.SpotKind
+import com.rockhard.blocker.homevisits.house.RoomKind
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+… +97 lines
+
+  Ran 2 shell commands
+
+● Bash(cd "C:/Users/austen.tweed/AppData/Roaming/com.codespace.apptauribrowser/lcode/workspaces/RHC-App/rhc-android/homevisits-core/src/commonMain/kotlin/com/rockhard/…)
+100:            Placement(o["item"].str(), o["spot"].str(), pose(o["pose"]), enumOf(o["on"].s
+tr(), SurfaceKind.FLOOR))
+110:        Surface(enumOf(o["kind"].str(), SurfaceKind.FLOOR), pose(o["centre"]), o["hw"].fl
+… +2 lines
+Updated homevisits-core\src\commonMain\kotlin\com\rockhard\blocker\homevisits\save\HomeCodec.kt (+4 -4)
+            val o = l.obj()
+            Link(
+                a = o["a"].str(), b = o["b"].str(), walks = o["walks"].int(), lastWalk
+ed = clock(o["lastWalked"].obj()),
+                path = path(o["path"]), bInA = (o["bInA"] as? Json.Obj)?.let { pose(it
+) }, length = o["length"].float(),
+                path = path(o["path"]), bInA = (o["bInA"] as? Json.Arr)?.let { pose(it
+) }, length = o["length"].float(),
+                rough = o["rough"].bool(), blockedUntil = (o["blockedUntil"] as? Json.
+Obj)?.let { clock(it) },
+                climb = o["climb"].float(), blockedTillWalked = o["blockedTillWalked"]
+.bool(),
+                blocks = o["blocks"].list().map { it.int() },
+
+        }
+        val placements = j["placements"].list().map { p ->
+            val o = p.obj()
+            Placement(o["item"].str(), o["spot"].str(), pose(o["pose"].obj()), enumOf
+(o["on"].str(), SurfaceKind.FLOOR))
+            Placement(o["item"].str(), o["spot"].str(), pose(o["pose"]), enumOf(o["on
+"].str(), SurfaceKind.FLOOR))
+        }
+        return HouseMap(spots, rooms, links, placements, j["nextId"].int())
+    }
+
+    )
+
+    private fun surface(o: Json.Obj) =
+        Surface(enumOf(o["kind"].str(), SurfaceKind.FLOOR), pose(o["centre"].obj()),
+o["hw"].float(), o["hd"].float())
+        Surface(enumOf(o["kind"].str(), SurfaceKind.FLOOR), pose(o["centre"]), o["hw"
+].float(), o["hd"].float())
+
+    private fun pose(p: Pose4) = arr(listOf(p.x, p.y, p.z, p.yaw).map { num(it)!! })
+    private fun pose(o: Json): Pose4 {
+    private fun pose(o: Json?): Pose4 {
+        val n = o.list().map { it.float() }
+        if (n.size != 4) throw JsonError("a pose needs 4 numbers")
+        return Pose4(n[0], n[1], n[2], n[3])
+
+● Update(homevisits-core\src\commonMain\kotlin\com\rockhard\blocker\homevisits\story\SessionLog.kt)
+Added 11 lines, removed 2 lines
+            if (w.gapStart < 0) w.gapStart = w.path.size - 1
+            return
+        }
+        if (local.flat(w.path.last()) >= POINT_SPACING || w.gapStart >= 0) {
+        if (w.gapStart >= 0) {
+            // Back from a gap: jump straight to here, and mark the stretch as rough.
+            w.path.add(local)
+            if (w.gapStart >= 0) { w.gaps.add(w.gapStart until w.path.size); w.gapSta
+rt = -1 }
+            w.gaps.add(w.gapStart until w.path.size)
+            w.gapStart = -1
+            return
+        }
+        // A point every 25 cm, between reports if the player moved further than that
+.
+        while (local.flat(w.path.last()) >= POINT_SPACING) {
+            val last = w.path.last()
+            val k = POINT_SPACING / local.flat(last)
+            w.path.add(last + (local - last) * k)
+        }
+    }
+
+    /**
+
+Fixed two test failures (save loading poses wrongly, and path points spaced too far apart). Re-running the core tests.
+
+  Ran 1 shell command
+
+A gap in the fake runner, not the game: the "follow" beat really is a walk to the painting, and the runner wasn't counting it. Fixing that.
+
+● Bash(cd "C:/Users/austen.tweed/AppData/Roaming/com.codespace.apptauribrowser/lcode/workspaces/RHC-App/rhc-android/homevisits-core/src/commonTest/kotlin/com/rockhard/…)
+116:        b is Beat.GoTo || b is Beat.AlignByTap || b is Beat.Tour || b is Beat.Follow
+]]></system-out>
+Updated homevisits-core\src\commonTest\kotlin\com\rockhard\blocker\homevisits\story\FakeRunner.kt (+1 -1)
+    }
+
+    private fun arrives(b: Beat) = b is Beat.GoNew || b is Beat.FindSurface || b is B
+eat.Hang ||
+        b is Beat.GoTo || b is Beat.AlignByTap || b is Beat.Tour
+        b is Beat.GoTo || b is Beat.AlignByTap || b is Beat.Tour || b is Beat.Follow
+
+    private fun noteStart() {
+        val start = log.lastSpot ?: return
+(timeout 10m)
+
+  Ran 1 shell command
+
+All 500 generated plans completed, with 368 showing interruptions, and all links check out fine. I'm now running the full core suite plus agent B's mind tests in the background while I move on to the app.
+
+  Ran 5 shell commands
+
+● Background command "bash "C:/Users/AUSTEN~1.TWE/AppData/Local/Temp/claude/C--Users-austen-tweed-AppData-Roaming-com-codespace-apptauribrowser-lcode-workspaces-RHC-App/7e560a71-16cc-401e-af4f-6d5cd5f35ca0/scratchpad/hvtest.sh" 2>&1 | head -40" completed (exit code 0)
+
+  Ran 1 shell command
+
+All 71 core tests pass, including agent B's. Since the app can't be compiled here yet, I'm fetching the Android SDK into the scratchpad in the background so I can compile the Homevisits flavor myself.
+
+  Read 1 file, ran 2 shell commands
+You've hit your session limit · resets 3:50pm (Pacific/Auckland)
+
+● Usage limit reached · continuing automatically at 3:50pm · esc to cancel
+
+✻ Worked for 16m 40s · done 12:46 PM · 1 shell still running
+
+● Background command "S="C:/Users/AUSTEN~1.TWE/AppData/Local/Temp/claude/C--Users-austen-tweed-AppData-Roaming-com-codespace-apptauribrowser-lcode-workspaces-RHC-App/7e560a71-16cc-401e-af4f-6d5cd5f35ca0/scratchpad"; mkdir -p "$S/android" && cd "$S/android" && curl -sL -o clt.zip "https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip" && unzip -q clt.zip && mkdir -p cmdline-tools/latest && mv cmdline-tools/bin cmdline-tools/lib cmdline-tools/source.properties cmdline-tools/NOTICE.txt cmdline-tools/latest/ 2>/dev/null; export JAVA_HOME="$S/jdk/jdk-17.0.20.1+1"; export PATH="$JAVA_HOME/bin:$PATH"; yes | cmd //c "cmdline-tools\\latest\\bin\\sdkmanager.bat --sdk_root=$(cygpath -w "$S/android") platforms;android-34 build-tools;34.0.0 platform-tools" 2>&1 | tail -3; ls" completed (exit code 0)
+You've hit your session limit · resets 3:50pm (Pacific/Auckland)
+
+✻ Crunched for 0s · done 12:46 PM · 1 shell still running
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+───────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⚠ Usage limit reached · limit resets 3:50pm
+    Continuing automatically at 3:50pm · esc to cancel · /usage-credits to continue now
+  ⏵⏵ auto mode on · 1 shell ·

@@ -82,9 +82,19 @@ android {
             resValue("string", "essay_prompt", "MOMENTUM_MODE")
         }
     }
+
+    // The AR kit (camera + ARCore, package com.rockhard.blocker.ar): both Gamers APKs build it, Timesavers neither
+    sourceSets {
+        getByName("gamersMaleNetbeasts") { java.srcDir("src/ar/java") }
+        getByName("gamersFemaleHomevisits") { java.srcDir("src/ar/java") }
+    }
 }
 dependencies {
+    add("gamersMaleNetbeastsImplementation", "com.google.ar:core:1.41.0")
     add("gamersFemaleHomevisitsImplementation", "com.google.ar:core:1.41.0")
+    // Rigged 3D figures, which the AR kit draws
+    add("gamersMaleNetbeastsImplementation", project(":figure-core"))
+    add("gamersFemaleHomevisitsImplementation", project(":figure-core"))
     implementation(project(":world-core"))
     add("gamersFemaleHomevisitsImplementation", project(":homevisits-core"))
 }

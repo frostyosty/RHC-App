@@ -54,8 +54,8 @@ Each part of that example is built in one of the steps:
 - The flavor exists in `rhc-android/app/build.gradle.kts`. It has the id suffix
   `.homevisits`, the block-screen title "AVERT YOUR EYES." and the message "Take a
   deep breath and step away.". It's option 4 in `release.sh`.
-- Apart from those two strings, the APK plays Netbeasts. Its `flavor_id`
-  ("female_gamers") isn't read anywhere.
+- Since step 01 the APK no longer plays Netbeasts: it opens a placeholder
+  Homevisits screen and runs on Momentum (`rhc-android/README.md` §5.2).
 - The flavor was added on 2026-04-17 (it replaced a "Behaviour" flavor), with
   `// Placeholder until Homevisits is built!` in `MainActivity`. That comment has
   since been removed. Nothing described what Homevisits would be until the user did
@@ -120,7 +120,8 @@ rhc-android/
     AndroidManifest.xml              camera, ARCore, the activities
     java/com/rockhard/blocker/homevisits/
       HomevisitsActivity.kt          the home screen (not AR)
-      ar/                            ARCore session, renderer, beat runner, spot capture
+      ar/                            beat runner, spot capture, room kinds (the camera
+                                     and ARCore code is the shared kit in app/src/ar/)
       twod/                          visits without AR
       ui/                            dialogue panel, calendar, who's who, catalogue, messages
     assets/homevisits/               content: cast, conversations, catalogue (text files)
@@ -137,12 +138,12 @@ core decides can be tested without a phone.
 
 | # | Step | What it gives | Needs | Size | Status |
 |---|---|---|---|---|---|
-| 01 | [Groundwork](01-groundwork.md) | The APK opens its own home screen and runs on Momentum; the core module exists; the female/male bug is fixed | — | S | not started (wait i think this is done?) |
+| 01 | [Groundwork](01-groundwork.md) | The APK opens its own home screen and runs on Momentum; the core module exists; the female/male bug is fixed | — | S | built 2026-10-16; waiting on its "Done when" checks (compile, `jvmTest`, emulator) |
 | 02 | [AR foundation](02-ar-foundation.md) | Camera and ARCore working past the Guardian; floors, benches and walls; sprites that stay put; tested on real phones | 01 | M | not started (wait i think this part way through?)  |
 | 03 | [House map](03-house-map.md) | The home as data, and the walked-routes rule proved on generated floor plans | 01 | M | not started |
 | 04 | [First visit](04-first-visit.md) | The parcel, bench, painting, knock and tour: the errands that map the home | 02, 03 | L | not started |
 | 05 | [Coming back](05-coming-back.md) | The next day the painting is still on the wall, because the game finds known places again | 04 | L | not started |
-| 06 | [Emotions engine](06-emotions-engine.md) | How characters feel about things, about you and about each other | 01 | L | not started |
+| 06 | [Emotions engine](06-emotions-engine.md) | How characters feel about things, about you and about each other | 01 | L | built 2026-10-16 (`mind/`, tests pass); the soak's charts in `tools/homevisits_sim` still to do |
 | 07 | [Conversations](07-conversations.md) | Characters talk about things and your answers change relationships; the content language | 06 | L | not started |
 | 08 | [Visits and calendar](08-visits-and-calendar.md) | Who comes when, promises, arrival order; the calendar and who's-who screens | 06, 07 | M | not started |
 | 09 | [Messages and 2D visits](09-messages-and-2d.md) | Playing without AR (no ARCore, no camera, not home), and texts between visits | 07, 08 | M | not started |

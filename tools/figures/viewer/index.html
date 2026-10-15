@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Figure Viewer</title>
+<style>
+  :root { --bg: #1d1f24; --panel: #262930; --line: #383c46; --text: #e6e6e6; --dim: #9aa0aa; --accent: #e9c46a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: grid; grid-template-columns: 250px 1fr; font: 13px/1.4 system-ui, sans-serif; color: var(--text); background: var(--bg); overflow: hidden; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+  h1 { font-size: 14px; margin: 0; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin: 0 0 4px; display: flex; justify-content: space-between; align-items: center; }
+  .shelf button.file { display: block; width: 100%; text-align: left; background: none; border: 0; color: var(--text); padding: 3px 6px; border-radius: 4px; cursor: pointer; font: inherit; }
+  .shelf button.file:hover { background: #313540; }
+  .shelf button.file.on { background: #3d4250; color: var(--accent); }
+  .shelf .empty { color: var(--dim); padding: 0 6px; font-style: italic; }
+  .shelf button.all { font-size: 11px; background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 4px; cursor: pointer; padding: 0 6px; }
+  .shelf button.all:hover { color: var(--text); }
+  main { position: relative; }
+  canvas { display: block; }
+  .bar { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; pointer-events: none; }
+  .bar > * { pointer-events: auto; }
+  .chip { background: rgba(38, 41, 48, .92); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; display: flex; gap: 6px; align-items: center; }
+  select, input[type=number] { background: #1d1f24; color: var(--text); border: 1px solid var(--line); border-radius: 4px; font: inherit; padding: 1px 4px; }
+  input[type=number] { width: 56px; }
+  button.act { background: #3d4250; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; cursor: pointer; font: inherit; }
+  button.act:hover { border-color: var(--accent); }
+  button.act:disabled { opacity: .5; cursor: wait; }
+  .info { position: absolute; bottom: 10px; left: 10px; max-width: 360px; }
+  .info .chip { display: block; }
+  .parts label { display: block; cursor: pointer; }
+  pre#log { white-space: pre-wrap; font-size: 11px; color: var(--dim); margin: 0; max-height: 220px; overflow-y: auto; }
+  .label { font-size: 11px; color: #fff; background: rgba(0, 0, 0, .45); padding: 1px 5px; border-radius: 3px; }
+  .help { color: var(--dim); font-size: 11px; }
+  @media (max-width: 700px) { body { grid-template-columns: 1fr; grid-template-rows: 40vh 1fr; } }
+</style>
+<script type="importmap">
+  { "imports": { "three": "/three/build/three.module.js", "three/addons/": "/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<aside>
+  <h1>🧍 Figures</h1>
+  <div id="shelves"></div>
+  <div>
+    <h2>Make</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:6px">
+      <button class="act" data-make="cast" title="node wardrobe.mjs: the cast in wardrobe.json">Rebuild cast</button>
+      <button class="act" data-make="assets" title="node wardrobe.mjs --assets: also copy them into the Homevisits APK">Cast → APK</button>
+    </div>
+    <div style="display:flex; gap:6px; margin-top:6px; align-items:center">
+      <button class="act" data-make="random">Random</button>
+      <input type="number" id="count" value="8" min="1" max="30" title="how many">
+      seed <input type="number" id="seed" value="1" min="1" title="the same seed makes the same people">
+    </div>
+  </div>
+  <pre id="log"></pre>
+  <div class="help">Drag to turn, scroll to zoom, right-drag to pan. Space plays and pauses; ← and → step through the shelf. The page reloads a figure when its file changes.</div>
+</aside>
+<main id="main">
+  <div class="bar">
+    <span class="chip">Move <select id="move"></select> <button class="act" id="play">⏸</button></span>
+    <span class="chip">Speed <input type="range" id="speed" min="0.1" max="2" step="0.1" value="1" style="width:70px"></span>
+    <span class="chip"><label><input type="checkbox" id="turn"> Turntable</label></span>
+    <span class="chip"><label><input type="checkbox" id="wire"> Wireframe</label></span>
+    <span class="chip"><label><input type="checkbox" id="bones"> Bones</label></span>
+    <span class="chip"><label><input type="checkbox" id="room" checked> Room light</label></span>
+    <span class="chip"><button class="act" id="face" title="F: close up on the face, again for the whole body">Face</button></span>
+  </div>
+  <div class="info"><div class="chip" id="info">Pick a figure on the left.</div></div>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const main = document.getElementById('main');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+main.prepend(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.domElement.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none';
+main.append(labels.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 100);
+camera.position.set(0, 1.2, 4);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.9, 0);
+controls.enableDamping = true;
+
+const hemi = new THREE.HemisphereLight(0xfff4e6, 0x6b5f52, 1.6);
+const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+sun.position.set(1.5, 4, 3);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0005;
+scene.add(hemi, sun, sun.target);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(12, 64), new THREE.MeshStandardMaterial({ color: 0xbfb6a8, roughness: 1 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+const grid = new THREE.GridHelper(24, 48, 0x8a8277, 0xa69e92);
+grid.position.y = 0.001;
+scene.add(floor, grid);
+
+const loader = new GLTFLoader();
+const stage = new THREE.Group();
+scene.add(stage);
+const clock = new THREE.Clock();
+let shown = []; // { url, mtime, root, mixer, clips, action, helper, label, gltf, size }
+let shared = []; // moves.glb's moves, for figures without their own
+let shelfData = [];
+let current = { shelf: null, file: null }; // file null: the whole shelf
+let playing = true;
+const hash = new URLSearchParams(location.hash.slice(1));
+
+function setRoom(on) {
+  scene.background = new THREE.Color(on ? 0xd9d2c7 : 0x1d1f24);
+  floor.visible = on;
+  grid.material.opacity = on ? 0.35 : 1;
+  grid.material.transparent = true;
+}
+setRoom(true);
+
+function resize() {
+  const w = main.clientWidth, h = main.clientHeight;
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  labels.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+async function loadShared() {
+  const assets = shelfData.find((s) => s.name === 'APK assets');
+  const moves = assets?.files.find((f) => f.name === 'moves');
+  shared = moves ? (await loader.loadAsync(moves.url + '?t=' + moves.mtime)).animations : [];
+}
+
+function clear() {
+  for (const s of shown) {
+    stage.remove(s.root);
+    s.helper && scene.remove(s.helper);
+    s.mixer.stopAllAction();
+    s.root.traverse((o) => { o.geometry?.dispose(); [].concat(o.material ?? []).forEach((m) => { m.map?.dispose(); m.dispose(); }); });
+  }
+  shown = [];
+}
+
+async function show(shelf, file, keepCamera = false) {
+  current = { shelf, file };
+  const s = shelfData.find((x) => x.name === shelf);
+  const files = s ? (file ? s.files.filter((f) => f.name === file) : s.files.filter((f) => f.name !== 'moves')) : [];
+  document.querySelectorAll('.file').forEach((b) => b.classList.toggle('on', b.dataset.shelf === shelf && b.dataset.file === file));
+  const loaded = await Promise.all(files.map((f) => loader.loadAsync(f.url + '?t=' + f.mtime).then((gltf) => ({ f, gltf }))));
+  clear();
+  const gap = 0.85;
+  loaded.forEach(({ f, gltf }, i) => {
+    const root = gltf.scene;
+    root.position.x = (i - (loaded.length - 1) / 2) * gap;
+    root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+    stage.add(root);
+    const mixer = new THREE.AnimationMixer(root);
+    const own = new Set(gltf.animations.map((c) => c.name));
+    const clips = [...gltf.animations, ...shared.filter((c) => !own.has(c.name))];
+    const box = new THREE.Box3().setFromObject(root);
+    let label = null;
+    if (loaded.length > 1) {
+      const div = document.createElement('div');
+      div.className = 'label';
+      div.textContent = f.name;
+      label = new CSS2DObject(div);
+      label.position.set(0, box.max.y + 0.12, 0);
+      root.add(label);
+    }
+    const helper = new THREE.SkeletonHelper(root);
+    helper.visible = document.getElementById('bones').checked;
+    scene.add(helper);
+    shown.push({ url: f.url, mtime: f.mtime, root, mixer, clips, action: null, helper, label, gltf, size: f.size, name: f.name, height: box.max.y - box.min.y });
+  });
+  fillMoves();
+  applyWire();
+  if (!keepCamera) frame();
+  describe();
+}
+
+/** Close up on the first figure's face (the stage turns, so this looks at whatever side faces the camera). */
+function faceView() {
+  if (!shown.length) return;
+  const s = shown[0];
+  const y = s.height * 0.935;
+  controls.target.set(s.root.position.x, y, 0);
+  camera.position.set(s.root.position.x, y + 0.01, 0.62);
+}
+
+function frame() {
+  if (!shown.length) return;
+  // from what's known rather than a bounding box, which skinned meshes overstate
+  const tall = Math.max(...shown.map((s) => s.height));
+  const size = new THREE.Vector3((shown.length - 1) * 0.85 + 0.8, tall, 0.5);
+  const mid = new THREE.Vector3(0, tall / 2, 0);
+  const fit = Math.max(size.y, size.x / camera.aspect) / (2 * Math.tan((camera.fov * Math.PI) / 360));
+  controls.target.copy(mid);
+  camera.position.set(mid.x, mid.y + size.y * 0.1, mid.z + fit * 1.1 + size.z / 2);
+  sun.shadow.camera.left = -size.x / 2 - 2; sun.shadow.camera.right = size.x / 2 + 2;
+  sun.shadow.camera.top = 3; sun.shadow.camera.bottom = -3;
+  sun.shadow.camera.updateProjectionMatrix();
+}
+
+function fillMoves() {
+  const sel = document.getElementById('move');
+  const prev = sel.value;
+  const names = [...new Set(shown.flatMap((s) => s.clips.map((c) => c.name)))];
+  sel.innerHTML = '<option value="">(rest pose)</option>' + names.map((n) => `<option>${n}</option>`).join('');
+  sel.value = names.includes(prev) ? prev : names.includes('Idle') ? 'Idle' : names[0] ?? '';
+  playMove(sel.value);
+}
+
+function playMove(name) {
+  for (const s of shown) {
+    const clip = s.clips.find((c) => c.name === name);
+    const next = clip ? s.mixer.clipAction(clip) : null;
+    if (next === s.action) continue;
+    if (next) { next.reset().play(); if (s.action) next.crossFadeFrom(s.action, 0.25, false); }
+    else s.action?.fadeOut(0.25);
+    s.action = next;
+  }
+  describe();
+}
+
+function applyWire() {
+  const on = document.getElementById('wire').checked;
+  for (const s of shown) s.root.traverse((o) => [].concat(o.material ?? []).forEach((m) => { m.wireframe = on; }));
+}
+
+function describe() {
+  const el = document.getElementById('info');
+  if (!shown.length) { el.textContent = 'Nothing on this shelf yet. Use Make on the left.'; return; }
+  if (shown.length > 1) {
+    el.innerHTML = `<b>${current.shelf}</b>: ${shown.length} figures. Click one on the left to look closer.`;
+    return;
+  }
+  const s = shown[0];
+  let tris = 0, joints = 0;
+  const parts = [];
+  s.root.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry;
+    tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+    if (o.isSkinnedMesh) joints = Math.max(joints, o.skeleton.bones.length);
+    parts.push(o);
+  });
+  const own = s.gltf.animations.map((c) => c.name);
+  const move = document.getElementById('move').value;
+  el.innerHTML = `<b>${s.name}</b> · ${(s.size / 1024).toFixed(0)} KB · ${Math.round(tris).toLocaleString()} triangles · ${joints} joints · ${s.height.toFixed(2)} m tall<br>`
+    + `Moves: ${own.length ? own.join(', ') : '<i>none of its own</i>'}${shared.length ? ` (+ moves.glb)` : ''}`
+    + (move && !s.clips.some((c) => c.name === move) ? `<br><span style="color:#e76f51">It has no "${move}".</span>` : '')
+    + '<div class="parts" style="margin-top:6px">' + parts.map((p, i) => `<label><input type="checkbox" data-part="${i}" ${p.visible ? 'checked' : ''}> ${p.name || p.parent?.name || 'mesh'} <span style="color:var(--dim)">${p.material?.name ?? ''}</span></label>`).join('') + '</div>';
+  el.querySelectorAll('[data-part]').forEach((box) => box.addEventListener('change', () => { parts[box.dataset.part].visible = box.checked; }));
+}
+
+async function refreshShelves() {
+  const data = await (await fetch('/api/list')).json();
+  const changed = JSON.stringify(data) !== JSON.stringify(shelfData);
+  if (!changed) return;
+  shelfData = data;
+  document.getElementById('shelves').innerHTML = data.map((s) => `
+    <div class="shelf">
+      <h2>${s.name} ${s.files.length > 1 ? `<button class="all" data-shelf="${s.name}">all side by side</button>` : ''}</h2>
+      ${s.files.length ? s.files.map((f) => `<button class="file" data-shelf="${s.name}" data-file="${f.name}">${f.name}</button>`).join('') : '<div class="empty">empty</div>'}
+    </div>`).join('');
+  document.querySelectorAll('.file').forEach((b) => b.addEventListener('click', () => show(b.dataset.shelf, b.dataset.file)));
+  document.querySelectorAll('.all').forEach((b) => b.addEventListener('click', () => show(b.dataset.shelf, null)));
+  document.querySelectorAll('.file').forEach((b) => b.classList.toggle('on', b.dataset.shelf === current.shelf && b.dataset.file === current.file));
+  await loadShared();
+  // reload what's on screen if its files changed
+  if (current.shelf) {
+    const s = data.find((x) => x.name === current.shelf);
+    const now = s ? s.files.filter((f) => !current.file || f.name === current.file) : [];
+    const stale = now.length !== shown.length || now.some((f) => !shown.some((x) => x.url === f.url && x.mtime === f.mtime));
+    if (stale) await show(current.shelf, current.file, true);
+  } else if (hash.get('shelf')) {
+    // a link straight to a view: #shelf=cast&file=rachel&move=Walk&t=0.3&yaw=45&face=1 (t pauses the move there)
+    await show(hash.get('shelf'), hash.get('file'));
+    if (hash.get('move') !== null) { document.getElementById('move').value = hash.get('move'); playMove(hash.get('move')); }
+    if (hash.get('room') === '0') { document.getElementById('room').checked = false; setRoom(false); }
+    if (hash.get('yaw')) stage.rotation.y = (Number(hash.get('yaw')) * Math.PI) / 180;
+    if (hash.get('face') === '1') faceView();
+    if (hash.get('t')) { shown.forEach((x) => x.mixer.setTime(Number(hash.get('t')))); togglePlay(); }
+  } else {
+    const first = data.find((s) => s.name === 'cast' && s.files.length) ?? data.find((s) => s.files.length);
+    if (first) await show(first.name, first.files.length > 1 ? null : first.files[0].name);
+  }
+}
+
+document.getElementById('move').addEventListener('change', (e) => playMove(e.target.value));
+document.getElementById('play').addEventListener('click', togglePlay);
+function togglePlay() { playing = !playing; document.getElementById('play').textContent = playing ? '⏸' : '▶'; }
+document.getElementById('wire').addEventListener('change', applyWire);
+document.getElementById('bones').addEventListener('change', (e) => shown.forEach((s) => { s.helper.visible = e.target.checked; }));
+document.getElementById('room').addEventListener('change', (e) => setRoom(e.target.checked));
+let faceOn = false;
+function toggleFace() { faceOn = !faceOn; if (faceOn) faceView(); else frame(); }
+document.getElementById('face').addEventListener('click', toggleFace);
+document.querySelectorAll('[data-make]').forEach((b) => b.addEventListener('click', async () => {
+  const what = b.dataset.make;
+  const log = document.getElementById('log');
+  document.querySelectorAll('[data-make]').forEach((x) => { x.disabled = true; });
+  log.textContent = 'Working…';
+  const seed = document.getElementById('seed').value, count = document.getElementById('count').value;
+  try {
+    const r = await (await fetch(`/api/make?what=${what}&seed=${seed}&count=${count}`, { method: 'POST' })).json();
+    log.textContent = (r.ok ? '' : '❌ ') + r.log;
+    if (what === 'random') document.getElementById('seed').value = Number(seed) + 1;
+  } catch (e) { log.textContent = '❌ ' + e; }
+  document.querySelectorAll('[data-make]').forEach((x) => { x.disabled = false; });
+  await refreshShelves();
+  if (what === 'random') await show('variants', null);
+  else await show('cast', null);
+}));
+addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  if (e.key === 'f' || e.key === 'F') toggleFace();
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    const s = shelfData.find((x) => x.name === current.shelf);
+    if (!s?.files.length) return;
+    const i = s.files.findIndex((f) => f.name === current.file);
+    const next = s.files[(i + (e.key === 'ArrowRight' ? 1 : s.files.length - 1)) % s.files.length];
+    show(s.name, next.name);
+  }
+});
+
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  const speed = Number(document.getElementById('speed').value);
+  if (playing) for (const s of shown) s.mixer.update(dt * speed);
+  if (document.getElementById('turn').checked) stage.rotation.y += dt * 0.5;
+  controls.update();
+  renderer.render(scene, camera);
+  labels.render(scene, camera);
+});
+
+await refreshShelves();
+setInterval(() => refreshShelves().catch(() => {}), 2000);
+</script>
+</body>
+</html>

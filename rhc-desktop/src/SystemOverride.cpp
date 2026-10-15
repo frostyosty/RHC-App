@@ -2,12 +2,15 @@
 #include "ui/CustomModal.h"
 #include "Globals.h"
 #include "HostsBlocker.h"
+#include "TaskSchedulerSetup.h"
 #include "include/DatabaseManager.h"
 #include "include/StringUtils.h"
 #include <chrono>
 #include <iomanip>
 #include <sstream>
 #include <wininet.h>
+#include "ui/Dpi.h"
+using RHC::UI::Dpi;
 
 namespace RHC {
     namespace SystemOverride {
@@ -99,6 +102,7 @@ namespace RHC {
 
         void ExecuteUninstall() {
             RHC::HostsBlocker::SyncHostsFile(std::vector<std::string>());
+            RHC::TaskScheduler::RemoveTask();
             HKEY hKey;
             if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
                 RegDeleteValueA(hKey, "RHC_Core"); RegDeleteValueA(hKey, "Sync_Service_Host"); RegCloseKey(hKey);
@@ -151,19 +155,19 @@ namespace RHC {
         LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch (uMsg) {
                 case WM_CREATE: {
-                    HFONT hFont = CreateFontA(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, "Segoe UI");
-                    CreateWindowExA(0, "STATIC", "SYSTEM OVERRIDE", WS_CHILD | WS_VISIBLE | SS_CENTER, 0, 20, 400, 30, hwnd, NULL, NULL, NULL);
-                    hStatusText = CreateWindowExA(0, "STATIC", "", WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 60, 360, 40, hwnd, NULL, NULL, NULL);
-                    hCombo = CreateWindowExA(0, "COMBOBOX", "", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, 100, 110, 200, 200, hwnd, NULL, NULL, NULL);
+                    HFONT hFont = CreateFontA(Dpi::Scale(16), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, "Segoe UI");
+                    CreateWindowExA(0, "STATIC", "SYSTEM OVERRIDE", WS_CHILD | WS_VISIBLE | SS_CENTER, 0, Dpi::Scale(20), Dpi::Scale(400), Dpi::Scale(30), hwnd, NULL, NULL, NULL);
+                    hStatusText = CreateWindowExA(0, "STATIC", "", WS_CHILD | WS_VISIBLE | SS_CENTER, Dpi::Scale(20), Dpi::Scale(60), Dpi::Scale(360), Dpi::Scale(40), hwnd, NULL, NULL, NULL);
+                    hCombo = CreateWindowExA(0, "COMBOBOX", "", CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE, Dpi::Scale(100), Dpi::Scale(110), Dpi::Scale(200), Dpi::Scale(200), hwnd, NULL, NULL, NULL);
                     SendMessageA(hCombo, CB_ADDSTRING, 0, (LPARAM)"3 Days"); SendMessageA(hCombo, CB_ADDSTRING, 0, (LPARAM)"5 Days"); SendMessageA(hCombo, CB_ADDSTRING, 0, (LPARAM)"1 Week"); SendMessageA(hCombo, CB_ADDSTRING, 0, (LPARAM)"2 Weeks");
                     SendMessageA(hCombo, CB_SETCURSEL, 0, 0);
-                    hBtnPause = CreateWindowExA(0, "BUTTON", "Sched Pause", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 50, 160, 140, 40, hwnd, (HMENU)1, NULL, NULL);
-                    hBtnUninstall = CreateWindowExA(0, "BUTTON", "Sched Uninstall", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 210, 160, 140, 40, hwnd, (HMENU)2, NULL, NULL);
+                    hBtnPause = CreateWindowExA(0, "BUTTON", "Sched Pause", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, Dpi::Scale(50), Dpi::Scale(160), Dpi::Scale(140), Dpi::Scale(40), hwnd, (HMENU)1, NULL, NULL);
+                    hBtnUninstall = CreateWindowExA(0, "BUTTON", "Sched Uninstall", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, Dpi::Scale(210), Dpi::Scale(160), Dpi::Scale(140), Dpi::Scale(40), hwnd, (HMENU)2, NULL, NULL);
                     SendMessage(hStatusText, WM_SETFONT, (WPARAM)hFont, TRUE); SendMessage(hCombo, WM_SETFONT, (WPARAM)hFont, TRUE); SendMessage(hBtnPause, WM_SETFONT, (WPARAM)hFont, TRUE); SendMessage(hBtnUninstall, WM_SETFONT, (WPARAM)hFont, TRUE);
                     UpdateUI(); return 0;
                 }
                 case WM_COMMAND: if (LOWORD(wParam) == 1) ScheduleOrExecute("PAUSE"); if (LOWORD(wParam) == 2) ScheduleOrExecute("UNINSTALL"); return 0;
-                case WM_CTLCOLORSTATIC: SetTextColor((HDC)wParam, RGB(255, 255, 255)); SetBkColor((HDC)wParam, RGB(18, 18, 18)); return (LRESULT)CreateSolidBrush(RGB(18, 18, 18));
+                case WM_CTLCOLORSTATIC: { SetTextColor((HDC)wParam, RGB(255, 255, 255)); SetBkColor((HDC)wParam, RGB(18, 18, 18)); static HBRUSH br = CreateSolidBrush(RGB(18, 18, 18)); return (LRESULT)br; } // made once: a brush per message leaks GDI handles
                 case WM_CLOSE: ShowWindow(hwnd, SW_HIDE); return 0;
             }
             return DefWindowProcA(hwnd, uMsg, wParam, lParam);
@@ -171,7 +175,7 @@ namespace RHC {
 
         void Initialize(HINSTANCE hInstance) {
             WNDCLASSA wc = {0}; wc.lpfnWndProc = WndProc; wc.hInstance = hInstance; wc.lpszClassName = "RHC_Override"; wc.hbrBackground = CreateSolidBrush(RGB(18, 18, 18)); RegisterClassA(&wc);
-            hwnd = CreateWindowExA(0, "RHC_Override", "System Override", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 400, 260, NULL, NULL, hInstance, NULL);
+            hwnd = CreateWindowExA(0, "RHC_Override", "System Override", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, Dpi::Scale(400), Dpi::Scale(260), NULL, NULL, hInstance, NULL);
         }
         void Show() { UpdateUI(); ShowWindow(hwnd, SW_RESTORE); SetForegroundWindow(hwnd); }
         HWND GetWindowHandle() { return hwnd; }

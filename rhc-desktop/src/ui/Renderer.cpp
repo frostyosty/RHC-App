@@ -20,24 +20,26 @@ namespace RHC {
             return Gdiplus::Color(255, GetRValue(cr), GetGValue(cr), GetBValue(cr));
         }
 
-        // Custom GDI+ GraphicsPath generator for perfect anti-aliased rounded boxes
-        static Gdiplus::GraphicsPath* CreateRoundedRectPath(const RECT& rect, int radius) {
+        // Anti-aliased rounded box path. `inset` pulls the edges in, so a pen of
+        // width 2*inset drawn on the path stays inside the box instead of being
+        // half clipped and smeared across two pixels.
+        static Gdiplus::GraphicsPath* CreateRoundedRectPath(const RECT& rect, int radius, Gdiplus::REAL inset) {
             Gdiplus::GraphicsPath* path = new Gdiplus::GraphicsPath();
-            int x = rect.left;
-            int y = rect.top;
-            int width = rect.right - rect.left;
-            int height = rect.bottom - rect.top;
-            int diameter = radius * 2;
+            Gdiplus::REAL x = rect.left + inset;
+            Gdiplus::REAL y = rect.top + inset;
+            Gdiplus::REAL width = (rect.right - rect.left) - inset * 2;
+            Gdiplus::REAL height = (rect.bottom - rect.top) - inset * 2;
+            Gdiplus::REAL diameter = (radius - inset) * 2;
 
             if (diameter > width) diameter = width;
             if (diameter > height) diameter = height;
 
             if (diameter <= 0) {
-                path->AddRectangle(Gdiplus::Rect(x, y, width, height));
+                path->AddRectangle(Gdiplus::RectF(x, y, width, height));
                 return path;
             }
 
-            Gdiplus::Rect corner(x, y, diameter, diameter);
+            Gdiplus::RectF corner(x, y, diameter, diameter);
 
             // Top-Left Arc
             path->AddArc(corner, 180, 90);
@@ -63,31 +65,38 @@ namespace RHC {
 
             Gdiplus::Graphics graphics(hdc);
             graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+            // Pixel centres sit at +0.5, so integer edges land on pixel boundaries
+            // and straight edges stay sharp instead of blurring over two pixels.
+            graphics.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf);
 
             RECT rect = node->calculatedBounds;
-            Gdiplus::GraphicsPath* path = CreateRoundedRectPath(rect, node->style.borderRadius);
+            Gdiplus::GraphicsPath* path = CreateRoundedRectPath(rect, node->style.borderRadius, 0.0f);
 
             // 1. Fill container background (supports solid or multi-color gradients)
             if (node->style.backgroundGradient.enabled) {
+                // One pixel larger than the box: GDI+ wraps the gradient at the
+                // brush edge, which otherwise shows as a seam of the end colour.
                 Gdiplus::LinearGradientBrush brush(
-                    Gdiplus::Rect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top),
+                    Gdiplus::Rect(rect.left - 1, rect.top - 1, rect.right - rect.left + 2, rect.bottom - rect.top + 2),
                     ToGdiColor(node->style.backgroundGradient.colorStart),
                     ToGdiColor(node->style.backgroundGradient.colorEnd),
                     Gdiplus::LinearGradientModeVertical
                 );
                 graphics.FillPath(&brush, path);
-            } else {
+            } else if (node->style.hasBackground) {
                 Gdiplus::SolidBrush brush(ToGdiColor(node->style.backgroundColor));
                 graphics.FillPath(&brush, path);
             }
-
-            // 2. Render antialiased border boundary line
-            if (node->style.borderWidth > 0) {
-                Gdiplus::Pen pen(ToGdiColor(node->style.borderColor), static_cast<Gdiplus::REAL>(node->style.borderWidth));
-                graphics.DrawPath(&pen, path);
-            }
-
             delete path;
+
+            // 2. Render antialiased border, drawn just inside the box
+            if (node->style.borderWidth > 0) {
+                Gdiplus::REAL bw = static_cast<Gdiplus::REAL>(node->style.borderWidth);
+                Gdiplus::GraphicsPath* borderPath = CreateRoundedRectPath(rect, node->style.borderRadius, bw / 2);
+                Gdiplus::Pen pen(ToGdiColor(node->style.borderColor), bw);
+                graphics.DrawPath(&pen, borderPath);
+                delete borderPath;
+            }
 
             // 3. Render all descendant child node nodes recursively
             for (const auto child : node->children) {

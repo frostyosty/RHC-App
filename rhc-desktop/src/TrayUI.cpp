@@ -7,6 +7,8 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <chrono>
+#include "ui/Dpi.h"
+using RHC::UI::Dpi;
 
 namespace RHC {
     namespace CloakEngine { void EngageDeadMansSwitch(); }
@@ -20,8 +22,8 @@ namespace RHC {
         LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch (uMsg) {
                 case WM_CREATE: {
-                    hBtnSleep = CreateWindowExW(0, L"BUTTON", L"Sleep PC", WS_CHILD, 0, 0, 150, 40, hwnd, (HMENU)(UINT_PTR)ID_BTN_NIGHT_SLEEP, NULL, NULL);
-                    hBtnShutDown = CreateWindowExW(0, L"BUTTON", L"Shut Down", WS_CHILD, 0, 0, 150, 40, hwnd, (HMENU)(UINT_PTR)ID_BTN_NIGHT_SHUTDOWN, NULL, NULL);
+                    hBtnSleep = CreateWindowExW(0, L"BUTTON", L"Sleep PC", WS_CHILD, 0, 0, Dpi::Scale(150), Dpi::Scale(40), hwnd, (HMENU)(UINT_PTR)ID_BTN_NIGHT_SLEEP, NULL, NULL);
+                    hBtnShutDown = CreateWindowExW(0, L"BUTTON", L"Shut Down", WS_CHILD, 0, 0, Dpi::Scale(150), Dpi::Scale(40), hwnd, (HMENU)(UINT_PTR)ID_BTN_NIGHT_SHUTDOWN, NULL, NULL);
                     RHC::UI::SmoothButton::Attach(hBtnSleep);
                     RHC::UI::SmoothButton::Attach(hBtnShutDown);
                     return 0;
@@ -123,35 +125,40 @@ namespace RHC {
                     }
                     return 0;
                 }
-                case WM_PAINT: { 
-                    PAINTSTRUCT ps; 
-                    HDC hdc = BeginPaint(hwnd, &ps); 
-                    RECT rect; 
-                    GetClientRect(hwnd, &rect); 
+                case WM_PRINTCLIENT: {
+                    // SmoothButton asks for this to paint behind its rounded corners
+                    static HBRUSH brNight = CreateSolidBrush(RGB(10, 10, 12));
+                    static HBRUSH brRed = CreateSolidBrush(RGB(220, 50, 40));
+                    RECT rect; GetClientRect(hwnd, &rect);
+                    bool isNightfall = (g_RedWallReason.find(L"Nightfall") != std::wstring::npos);
+                    FillRect((HDC)wParam, &rect, isNightfall ? brNight : brRed);
+                    return 0;
+                }
+                case WM_PAINT: {
+                    PAINTSTRUCT ps;
+                    HDC hdc = BeginPaint(hwnd, &ps);
+                    RECT rect;
+                    GetClientRect(hwnd, &rect);
 
                     bool isNightfall = (g_RedWallReason.find(L"Nightfall") != std::wstring::npos);
 
-                    if (isNightfall) {
-                        FillRect(hdc, &rect, CreateSolidBrush(RGB(10, 10, 12))); 
-                        SetTextColor(hdc, RGB(200, 200, 200)); 
-                    } else {
-                        FillRect(hdc, &rect, CreateSolidBrush(RGB(220, 50, 40))); 
-                        SetTextColor(hdc, RGB(255, 255, 255)); 
-                    }
+                    // Same fill as WM_PRINTCLIENT; made once, a brush per paint leaks GDI handles
+                    SendMessageW(hwnd, WM_PRINTCLIENT, (WPARAM)hdc, PRF_CLIENT);
+                    SetTextColor(hdc, isNightfall ? RGB(200, 200, 200) : RGB(255, 255, 255));
                     
                     SetBkMode(hdc, TRANSPARENT); 
                     
-                    HFONT hFontBig = CreateFontW(48, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI Emoji"); 
-                    HFONT hFontSmall = CreateFontW(24, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI"); 
+                    HFONT hFontBig = CreateFontW(Dpi::Scale(48), 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI Emoji"); 
+                    HFONT hFontSmall = CreateFontW(Dpi::Scale(24), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI"); 
                     
-                    SelectObject(hdc, hFontBig); 
-                    
+                    HGDIOBJ hOldFont = SelectObject(hdc, hFontBig);
+
                     if (isNightfall) {
                         DrawTextW(hdc, L"🌙 NIGHTFALL ACTIVE 🌙", -1, &rect, DT_CENTER | DT_SINGLELINE | DT_VCENTER); 
                         
                         int midX = rect.right / 2;
-                        SetWindowPos(hBtnSleep, NULL, midX - 160, rect.bottom - 100, 150, 40, SWP_NOZORDER);
-                        SetWindowPos(hBtnShutDown, NULL, midX + 10, rect.bottom - 100, 150, 40, SWP_NOZORDER);
+                        SetWindowPos(hBtnSleep, NULL, midX - Dpi::Scale(160), rect.bottom - Dpi::Scale(100), Dpi::Scale(150), Dpi::Scale(40), SWP_NOZORDER);
+                        SetWindowPos(hBtnShutDown, NULL, midX + Dpi::Scale(10), rect.bottom - Dpi::Scale(100), Dpi::Scale(150), Dpi::Scale(40), SWP_NOZORDER);
                         ShowWindow(hBtnSleep, SW_SHOW);
                         ShowWindow(hBtnShutDown, SW_SHOW);
                     } else {
@@ -162,12 +169,13 @@ namespace RHC {
 
                     if (!g_RedWallReason.empty()) { 
                         SelectObject(hdc, hFontSmall); 
-                        rect.top += 100; 
+                        rect.top += Dpi::Scale(100); 
                         std::wstring msg = (isNightfall ? L"Go to sleep. Or power off." : L"Triggered by: " + g_RedWallReason); 
                         DrawTextW(hdc, msg.c_str(), -1, &rect, DT_CENTER | DT_WORDBREAK); 
                     } 
                     
-                    DeleteObject(hFontBig); 
+                    SelectObject(hdc, hOldFont); // a font still selected into a DC can't be deleted
+                    DeleteObject(hFontBig);
                     DeleteObject(hFontSmall); 
                     EndPaint(hwnd, &ps); 
                     return 0; 

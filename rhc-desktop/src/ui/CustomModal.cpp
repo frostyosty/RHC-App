@@ -5,6 +5,8 @@
 #include "Renderer.h"
 #include "SmoothButton.h"
 #include "DoubleBuffer.h"
+#include "Dpi.h"
+#include <dwmapi.h>
 
 namespace RHC {
     namespace UI {
@@ -22,8 +24,8 @@ namespace RHC {
                     SmoothButton::Attach(g_hModalBtnOk);
                     
                     // 2. Build the flex layouts tree for the modal window bounds
-                    g_modalLayout = new UINode(hwnd);
-                    CSSEngine::ParseInline("background: linear-gradient(#202124, #171717); border-radius: 12px; border: 1px solid #5f6368; padding: 20px; flex-direction: column; justify-content: space-between; align-items: center;", g_modalLayout->style, g_modalLayout->layout);
+                    g_modalLayout = new UINode(); // no hwnd: Arrange would move the popup itself to the screen corner
+                    CSSEngine::ParseInline("background: linear-gradient(#202124, #171717); border-radius: 8px; border: 1px solid #5f6368; padding: 20px; flex-direction: column; justify-content: space-between; align-items: center;", g_modalLayout->style, g_modalLayout->layout);
 
                     UINode* headerNode = new UINode();
                     CSSEngine::ParseInline("height: 40px; flex-direction: row; justify-content: center; align-items: center;", headerNode->style, headerNode->layout);
@@ -54,11 +56,16 @@ namespace RHC {
                         DoubleBuffer buffer(hdcPaint, &rc);
                         HDC hdc = buffer.getDC();
 
+                        // Fill outside the rounded backplane with the dashboard colour the modal
+                        // sits over, instead of leaving square grey corners around it
+                        static HBRUSH hBrCorner = CreateSolidBrush(RGB(18, 18, 18));
+                        FillRect(hdc, &rc, hBrCorner);
+
                         // Render rounded backplane and child panels recursively
                         Renderer::DrawNode(hdc, g_modalLayout);
 
                         // Draw Modal Title using standard Segoe UI text bounds
-                        HFONT hFontTitle = CreateFontW(20, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
+                        HFONT hFontTitle = CreateFontW(Dpi::Scale(20), 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
                         HGDIOBJ hOldFont = SelectObject(hdc, hFontTitle);
                         SetTextColor(hdc, RGB(255, 255, 255));
                         SetBkMode(hdc, TRANSPARENT);
@@ -67,7 +74,7 @@ namespace RHC {
                         DrawTextW(hdc, g_modalTitle.c_str(), -1, &titleRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
                         // Draw Modal Message Body (supports multiple lines)
-                        HFONT hFontBody = CreateFontW(14, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
+                        HFONT hFontBody = CreateFontW(Dpi::Scale(14), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
                         SelectObject(hdc, hFontBody);
                         SetTextColor(hdc, RGB(200, 200, 202));
                         
@@ -79,6 +86,11 @@ namespace RHC {
                         DeleteObject(hFontBody);
                     }
                     EndPaint(hwnd, &ps);
+                    return 0;
+                }
+                case WM_PRINTCLIENT: {
+                    // SmoothButton asks for this to paint behind its rounded corners
+                    Renderer::DrawNode((HDC)wParam, g_modalLayout);
                     return 0;
                 }
                 case WM_COMMAND: {
@@ -128,13 +140,18 @@ namespace RHC {
             GetWindowRect(hwndParent, &parentRect);
             int parentWidth = parentRect.right - parentRect.left;
             int parentHeight = parentRect.bottom - parentRect.top;
-            int modalWidth = 440;
-            int modalHeight = 240;
+            int modalWidth = Dpi::Scale(440);
+            int modalHeight = Dpi::Scale(240);
             int x = parentRect.left + (parentWidth - modalWidth) / 2;
             int y = parentRect.top + (parentHeight - modalHeight) / 2;
 
             HWND hwndModal = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, L"RHC_Modal", title.c_str(), WS_POPUP, x, y, modalWidth, modalHeight, hwndParent, NULL, hInst, NULL);
             
+            // Windows 11 rounds and anti-aliases the popup's own corners (a no-op on 10)
+            const DWORD DWMWA_WINDOW_CORNER_PREFERENCE_ID = 33;
+            const int DWMWCP_ROUND_VALUE = 2;
+            DwmSetWindowAttribute(hwndModal, DWMWA_WINDOW_CORNER_PREFERENCE_ID, &DWMWCP_ROUND_VALUE, sizeof(DWMWCP_ROUND_VALUE));
+
             if (hwndParent) {
                 EnableWindow(hwndParent, FALSE);
             }

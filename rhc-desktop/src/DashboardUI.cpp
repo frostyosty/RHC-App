@@ -10,8 +10,10 @@
 #include "include/MomentumEngine.h"
 #include "include/LeaderboardEngine.h"
 #include "include/StringUtils.h"
+#include "ui/Dpi.h"
 
 #include <windows.h>
+#include <algorithm>
 #include <commctrl.h>
 #include <chrono>
 #include <iomanip>
@@ -46,6 +48,55 @@ namespace RHC {
 
         // Custom Flex Engine layouts hierarchy root node
         UINode* g_dashboardLayout = nullptr;
+
+        // The laid-out content can be taller than the screen at high scaling, so the
+        // dashboard scrolls: the tree is arranged at its full height, shifted up by g_dashScrollY.
+        static int g_dashContentHeight = 0;
+        static int g_dashScrollY = 0;
+
+        // Full height of a column node whose children all have fixed heights
+        static int MeasureColumnHeight(const UINode* n) {
+            int h = n->style.padding.top + n->style.padding.bottom;
+            for (const auto c : n->children) {
+                h += std::max(0, c->layout.height) + c->style.margin.top + c->style.margin.bottom;
+            }
+            return h;
+        }
+
+        static void LayoutDashboard(HWND hwnd) {
+            if (!g_dashboardLayout) return;
+            RECT rc; GetClientRect(hwnd, &rc);
+            SCROLLINFO si = { sizeof(si), SIF_RANGE | SIF_PAGE | SIF_POS, 0, g_dashContentHeight - 1, (UINT)rc.bottom,
+                              std::clamp(g_dashScrollY, 0, std::max(0, g_dashContentHeight - (int)rc.bottom)) };
+            g_dashScrollY = si.nPos;
+            // Showing or hiding the scroll bar changes the client width, so measure again after
+            SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
+            GetClientRect(hwnd, &rc);
+
+            RECT content = { 0, -g_dashScrollY, rc.right, g_dashContentHeight - g_dashScrollY };
+            FlexEngine::Arrange(g_dashboardLayout, content);
+            RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+        }
+
+        // Windows sends the wheel to the control under the mouse, and a closed combo
+        // box uses it to change its selection - so scrolling the dashboard past a
+        // task combo would quietly change what EXECUTE spends Momentum on. Closed
+        // combos pass the wheel up to the dashboard instead.
+        static LRESULT CALLBACK ComboWheelProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
+            if (uMsg == WM_MOUSEWHEEL && !SendMessageW(hWnd, CB_GETDROPPEDSTATE, 0, 0)) {
+                return SendMessageW(GetParent(hWnd), uMsg, wParam, lParam);
+            }
+            if (uMsg == WM_NCDESTROY) RemoveWindowSubclass(hWnd, ComboWheelProc, 1);
+            return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        }
+
+        static void ScrollDashboardTo(HWND hwnd, int y) {
+            RECT rc; GetClientRect(hwnd, &rc);
+            y = std::clamp(y, 0, std::max(0, g_dashContentHeight - (int)rc.bottom));
+            if (y == g_dashScrollY) return;
+            g_dashScrollY = y;
+            LayoutDashboard(hwnd);
+        }
 
         std::vector<TaskItem> recentFavorites;
         std::vector<std::string> curRedirectTriggers;
@@ -357,28 +408,27 @@ namespace RHC {
         LRESULT CALLBACK DashboardProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             switch (uMsg) {
                 case WM_CREATE: {
-                    SetWindowPos(hwnd, NULL, 0, 0, 800, 1000, SWP_NOMOVE | SWP_NOZORDER);
-
-                    g_hFontGiant = CreateFontW(40, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
-                    g_hFontTitle = CreateFontW(22, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
-                    g_hFontNormal = CreateFontW(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
-                    g_hFontEmoji = CreateFontW(16, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI Emoji");
-                    g_hFontSmall = CreateFontW(14, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
+                    g_hFontGiant = CreateFontW(RHC::UI::Dpi::Scale(40), 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
+                    g_hFontTitle = CreateFontW(RHC::UI::Dpi::Scale(22), 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
+                    g_hFontNormal = CreateFontW(RHC::UI::Dpi::Scale(16), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
+                    g_hFontEmoji = CreateFontW(RHC::UI::Dpi::Scale(16), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI Emoji");
+                    g_hFontSmall = CreateFontW(RHC::UI::Dpi::Scale(14), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, CLEARTYPE_QUALITY, 0, L"Segoe UI");
 
                     auto addText = [hwnd](int x, int y, int w, int h, const wchar_t* txt, HFONT font) { HWND t = CreateWindowExW(0, L"STATIC", txt, WS_CHILD | WS_VISIBLE | SS_CENTER, x, y, w, h, hwnd, NULL, NULL, NULL); SendMessage(t, WM_SETFONT, (WPARAM)font, TRUE); return t; };
                     
                     HWND hTitle1 = addText(0, 10, 780, 30, L"1. NEW OVERCOME", g_hFontTitle);
                     
-                    addText(20, 42, 180, 15, L"App Name (.exe)", g_hFontSmall);
-                    addText(210, 42, 80, 15, L"Bypass Window", g_hFontSmall);
+                    HWND hLblApp = addText(20, 42, 180, 15, L"App Name (.exe)", g_hFontSmall);
+                    HWND hLblAppTime = addText(210, 42, 80, 15, L"Bypass Window", g_hFontSmall);
                     HWND hBtnAppHelp = CreateWindowExW(0, L"BUTTON", L"?", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 292, 39, 16, 16, hwnd, (HMENU)ID_BTN_BYPASS_HELP, NULL, NULL);
 
-                    addText(400, 42, 180, 15, L"Domain (e.g. site.com)", g_hFontSmall);
-                    addText(590, 42, 80, 15, L"Bypass Window", g_hFontSmall);
+                    HWND hLblWeb = addText(400, 42, 180, 15, L"Domain (e.g. site.com)", g_hFontSmall);
+                    HWND hLblWebTime = addText(590, 42, 80, 15, L"Bypass Window", g_hFontSmall);
                     HWND hBtnWebHelp = CreateWindowExW(0, L"BUTTON", L"?", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 672, 39, 16, 16, hwnd, (HMENU)ID_BTN_BYPASS_HELP, NULL, NULL);
 
                     SendMessage(hBtnAppHelp, WM_SETFONT, (WPARAM)g_hFontSmall, TRUE);
                     SendMessage(hBtnWebHelp, WM_SETFONT, (WPARAM)g_hFontSmall, TRUE);
+                    RHC::UI::SmoothButton::Attach(hBtnAppHelp); RHC::UI::SmoothButton::Attach(hBtnWebHelp);
                     
                     g_hComboAppBlock = CreateWindowExW(WS_EX_CLIENTEDGE, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP, 20, 60, 180, 200, hwnd, NULL, NULL, NULL);
                     g_hEditAppTime = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP, 210, 60, 80, 25, hwnd, NULL, NULL, NULL);
@@ -447,13 +497,39 @@ namespace RHC {
                     // =======================================================
                     // INITIALIZE THE FLEX ENGINE LAYOUT TREE FOR RESIZING
                     // =======================================================
-                    g_dashboardLayout = new UINode(hwnd);
+                    // No hwnd on the root: Arrange would SetWindowPos the dashboard itself to
+                    // its own client rect (moving it to the screen corner and shrinking it)
+                    g_dashboardLayout = new UINode();
                     CSSEngine::ParseInline("padding: 10px 20px; flex-direction: column; justify-content: start; align-items: stretch;", g_dashboardLayout->style, g_dashboardLayout->layout);
 
                     // Row 0: Section 1 Title
                     UINode* t1Node = new UINode(hTitle1);
                     CSSEngine::ParseInline("height: 30px; margin-top: 10px;", t1Node->style, t1Node->layout);
                     g_dashboardLayout->AddChild(t1Node);
+
+                    // Row 0b: labels over the inputs. Each label has its box's width and margin,
+                    // and the "?" sits in the gap over the Block button (16 + 64 = its 80), so
+                    // the columns line up at every scale.
+                    UINode* rowLabels = new UINode();
+                    CSSEngine::ParseInline("height: 18px; flex-direction: row; justify-content: space-between; align-items: center;", rowLabels->style, rowLabels->layout);
+                    g_dashboardLayout->AddChild(rowLabels);
+
+                    rowLabels->AddChild(new UINode(hLblApp));
+                    CSSEngine::ParseInline("flex-grow: 2; height: 16px; margin-right: 10px;", rowLabels->children.back()->style, rowLabels->children.back()->layout);
+                    rowLabels->AddChild(new UINode(hLblAppTime));
+                    CSSEngine::ParseInline("width: 80px; height: 16px; margin-right: 10px;", rowLabels->children.back()->style, rowLabels->children.back()->layout);
+                    rowLabels->AddChild(new UINode(hBtnAppHelp));
+                    CSSEngine::ParseInline("width: 16px; height: 16px;", rowLabels->children.back()->style, rowLabels->children.back()->layout);
+                    rowLabels->AddChild(new UINode()); // rest of the space over the Block App button
+                    CSSEngine::ParseInline("width: 64px; height: 16px; margin-right: 20px;", rowLabels->children.back()->style, rowLabels->children.back()->layout);
+                    rowLabels->AddChild(new UINode(hLblWeb));
+                    CSSEngine::ParseInline("flex-grow: 2; height: 16px; margin-right: 10px;", rowLabels->children.back()->style, rowLabels->children.back()->layout);
+                    rowLabels->AddChild(new UINode(hLblWebTime));
+                    CSSEngine::ParseInline("width: 80px; height: 16px; margin-right: 10px;", rowLabels->children.back()->style, rowLabels->children.back()->layout);
+                    rowLabels->AddChild(new UINode(hBtnWebHelp));
+                    CSSEngine::ParseInline("width: 16px; height: 16px;", rowLabels->children.back()->style, rowLabels->children.back()->layout);
+                    rowLabels->AddChild(new UINode());
+                    CSSEngine::ParseInline("width: 64px; height: 16px;", rowLabels->children.back()->style, rowLabels->children.back()->layout);
 
                     // Row 1: Add Blocks inputs
                     UINode* rowInputs = new UINode();
@@ -614,28 +690,68 @@ namespace RHC {
                     SendMessage(g_hListBlocks, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE); SendMessage(g_hListRedirects, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
                     SendMessage(g_hListEarned, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE); SendMessage(g_hListSpent, WM_SETFONT, (WPARAM)g_hFontEmoji, TRUE);
 
-                    // The dashboard window has no WS_THICKFRAME, so it can't be resized by the
-                    // user and WM_SIZE never fires after creation - the tree above would
-                    // otherwise sit unused and every control would stay at the raw legacy
-                    // coordinates passed to CreateWindowExW. Arrange it once immediately so the
-                    // flex layout is what actually renders.
-                    RECT rcInitial; GetClientRect(hwnd, &rcInitial);
-                    FlexEngine::Arrange(g_dashboardLayout, rcInitial);
+                    for (HWND combo : { g_hComboAppBlock, g_hComboRedirectTrigger, g_hComboRedirectTarget,
+                                        g_hComboPhysical, g_hComboMental, g_hComboWork, g_hComboChores }) {
+                        SetWindowSubclass(combo, ComboWheelProc, 1, 0);
+                    }
+
+                    // Size the window to fit the layout, but no taller than the work area;
+                    // if it's cut short, add room for the scroll bar and let it scroll.
+                    g_dashContentHeight = MeasureColumnHeight(g_dashboardLayout);
+                    RECT want = { 0, 0, RHC::UI::Dpi::Scale(784), g_dashContentHeight };
+                    AdjustWindowRectEx(&want, GetWindowLong(hwnd, GWL_STYLE) & ~WS_VSCROLL, FALSE, GetWindowLong(hwnd, GWL_EXSTYLE));
+                    RECT work; SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0);
+                    int winW = want.right - want.left;
+                    int winH = want.bottom - want.top;
+                    if (winH > work.bottom - work.top) {
+                        winH = work.bottom - work.top;
+                        winW += GetSystemMetrics(SM_CXVSCROLL);
+                    }
+                    RECT cur; GetWindowRect(hwnd, &cur);
+                    int winX = std::clamp((int)cur.left, (int)work.left, std::max((int)work.left, (int)work.right - winW));
+                    int winY = std::clamp((int)cur.top, (int)work.top, std::max((int)work.top, (int)work.bottom - winH));
+                    SetWindowPos(hwnd, NULL, winX, winY, winW, winH, SWP_NOZORDER | SWP_NOACTIVATE);
+
+                    // Arrange now as well: WM_SIZE won't fire if the size didn't change
+                    LayoutDashboard(hwnd);
 
                     RefreshBlockListUI();
                     return 0;
                 }
                 case WM_SIZE: {
-                    RECT rc; GetClientRect(hwnd, &rc);
-                    if (g_dashboardLayout) {
-                        FlexEngine::Arrange(g_dashboardLayout, rc);
-                        InvalidateRect(hwnd, NULL, TRUE);
-                    }
+                    LayoutDashboard(hwnd);
                     return 0;
                 }
-                case WM_CTLCOLORSTATIC: { HDC hdcStatic = (HDC)wParam; SetTextColor(hdcStatic, RGB(255, 255, 255)); SetBkColor(hdcStatic, RGB(18, 18, 18)); return (LRESULT)CreateSolidBrush(RGB(18, 18, 18)); }
-                case WM_CTLCOLORLISTBOX: { HDC hdcList = (HDC)wParam; SetTextColor(hdcList, RGB(220, 220, 220)); SetBkColor(hdcList, RGB(30, 30, 32)); return (LRESULT)CreateSolidBrush(RGB(30, 30, 32)); }
-                case WM_CTLCOLOREDIT: { HDC hdcEdit = (HDC)wParam; SetTextColor(hdcEdit, RGB(255, 255, 255)); SetBkColor(hdcEdit, RGB(40, 40, 42)); return (LRESULT)CreateSolidBrush(RGB(40, 40, 42)); }
+                case WM_VSCROLL: {
+                    RECT rc; GetClientRect(hwnd, &rc);
+                    int y = g_dashScrollY;
+                    switch (LOWORD(wParam)) {
+                        case SB_LINEUP:   y -= RHC::UI::Dpi::Scale(40); break;
+                        case SB_LINEDOWN: y += RHC::UI::Dpi::Scale(40); break;
+                        case SB_PAGEUP:   y -= rc.bottom; break;
+                        case SB_PAGEDOWN: y += rc.bottom; break;
+                        case SB_TOP:      y = 0; break;
+                        case SB_BOTTOM:   y = g_dashContentHeight; break;
+                        case SB_THUMBTRACK:
+                        case SB_THUMBPOSITION: {
+                            SCROLLINFO si = { sizeof(si), SIF_TRACKPOS };
+                            GetScrollInfo(hwnd, SB_VERT, &si);
+                            y = si.nTrackPos;
+                            break;
+                        }
+                    }
+                    ScrollDashboardTo(hwnd, y);
+                    return 0;
+                }
+                case WM_MOUSEWHEEL: {
+                    // Reaches here when the control under the mouse doesn't scroll itself
+                    int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+                    ScrollDashboardTo(hwnd, g_dashScrollY - MulDiv(delta, RHC::UI::Dpi::Scale(60), WHEEL_DELTA));
+                    return 0;
+                }
+                case WM_CTLCOLORSTATIC: { HDC hdcStatic = (HDC)wParam; SetTextColor(hdcStatic, RGB(255, 255, 255)); SetBkColor(hdcStatic, RGB(18, 18, 18)); static HBRUSH br = CreateSolidBrush(RGB(18, 18, 18)); return (LRESULT)br; } // made once: a brush per message leaks GDI handles
+                case WM_CTLCOLORLISTBOX: { HDC hdcList = (HDC)wParam; SetTextColor(hdcList, RGB(220, 220, 220)); SetBkColor(hdcList, RGB(30, 30, 32)); static HBRUSH br = CreateSolidBrush(RGB(30, 30, 32)); return (LRESULT)br; }
+                case WM_CTLCOLOREDIT: { HDC hdcEdit = (HDC)wParam; SetTextColor(hdcEdit, RGB(255, 255, 255)); SetBkColor(hdcEdit, RGB(40, 40, 42)); static HBRUSH br = CreateSolidBrush(RGB(40, 40, 42)); return (LRESULT)br; }
                 case WM_COMMAND: {
                     int id = LOWORD(wParam);
                     

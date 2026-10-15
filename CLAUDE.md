@@ -6,9 +6,12 @@ share logic:
 | Path | What it is | Toolchain |
 |---|---|---|
 | `rhc-android/` | Kotlin app, package `com.rockhard.blocker`, 4 product flavors (Gamers/Timesavers × Male/Female) | Gradle 8.7, AGP + Kotlin 1.9.22, JDK 17, compileSdk 34 |
+| `rhc-android/homevisits-core/` | Pure Kotlin core for Homevisits (the female Gamers APK's game); only that APK uses it. Test with `./gradlew :homevisits-core:jvmTest` | Kotlin Multiplatform, jvm target |
 | `rhc-desktop/` | Win32/GDI C++17 app + Windows service + NSIS installer | mingw-w64 cross-compile, `makensis` |
 | `rhc-common/` | Shared C++ engines (SQLite `DatabaseManager`, Momentum, ShieldRuleEngine, Leaderboard) used by desktop; mirrors the Android Kotlin logic | — |
 | `sprite_studio/` | Sprite Studio (Python, port 8080, start with `./launch-sprite-studio.sh`) + sprite autogen (`sprite_studio/autogen`) | Python 3 + Pillow |
+| `rhc-android/figure-core/` | Pure Kotlin glTF loading, skinning and moves for the AR kit's 3D people. Test with `./gradlew :figure-core:jvmTest` | Kotlin Multiplatform, jvm target |
+| `tools/figures/` | 3D people for the AR games: `standin.mjs` (rigged stand-in bodies), `wardrobe.mjs` + `wardrobe.json` (clothes cut from the body, the cast, random variants), `check.mjs` (validator + figure-core limits), `viewer/serve.mjs` (browser viewer on :5178), `import.sh` (Quaternius packs). Runs on plain Node, no Codespace needed | Node (`npm install` in `tools/figures`) |
 | `tools/` | Icon generator (Node/sharp), 3D world preview, helper scripts | Node, JVM |
 
 Feature-level detail (blocking, cooldown, Momentum, Netbeasts) lives in
@@ -142,8 +145,14 @@ exploring. Rules that keep the design working:
 - Keep the Android Kotlin logic and the `rhc-common` C++ engines in sync. A
   change to the rules or scoring in one usually needs the same change in the other.
 - Android's runtime permission prompts come from the permission controller,
-  which the Guardian blocks as anti-tamper. Ask the way
-  `LocationEngine.requestPermission` does: set `ALLOW_PERMISSION_PROMPT_UNTIL`
-  (`ShieldRuleEngine` then lets only that package through) and clear it in
-  `onRequestPermissionsResult`. Don't use `ALLOW_SETTINGS_UNTIL` for this,
-  because it unlocks all of Settings.
+  which the Guardian blocks as anti-tamper. Ask with `PermissionGate.request`
+  and call `PermissionGate.onResult` from `onRequestPermissionsResult`: it sets
+  and clears `ALLOW_PERMISSION_PROMPT_UNTIL` (`ShieldRuleEngine` then lets only
+  that package through). Don't use `ALLOW_SETTINGS_UNTIL` for this, because it
+  unlocks all of Settings.
+- **The AR kit** (`app/src/ar/`, package `com.rockhard.blocker.ar`) is the
+  camera and ARCore code both Gamers APKs build (`sourceSets` in
+  `app/build.gradle.kts`); the Timesavers APKs build neither it nor ARCore. It
+  knows nothing about either game: wording (`TrackingPhrases`) and what a
+  surface is (a bench, a lawn) are the game's. Sprites over the camera get built
+  here, once.

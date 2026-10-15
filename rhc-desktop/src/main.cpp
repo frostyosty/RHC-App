@@ -24,6 +24,8 @@
 #include "SystemOverride.h"
 #include "CrashReporter.h"
 #include "NightfallUI.h"
+#include "TaskSchedulerSetup.h"
+#include "ui/Dpi.h"
 
 // ==========================================
 // GLOBAL VARIABLE DEFINITIONS
@@ -77,9 +79,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // from (e.g. a Downloads folder) instead of the installed copy.
     if (RHC::InstallerUI::CheckAndInstall(hInstance)) return 0;
 
+    // Single-instance guard. The Run key, the scheduled task and the service
+    // watchdog can all try to launch the GUI around the same moment (e.g. at
+    // logon, or right after a kill); without this they'd stack duplicate
+    // windows. If one is already up, surface it and exit.
+    CreateMutexW(NULL, FALSE, L"Global\\RHCMomentumShieldSingleton");
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        HWND existing = FindWindowW(L"RHC_Native_UI", NULL);
+        if (existing) { ShowWindow(existing, SW_RESTORE); SetForegroundWindow(existing); }
+        return 0;
+    }
+
     RHC::CrashReporter::Initialize();
-    RHC::CloakEngine::UncloakIfNeeded(); 
-    RHC::CloakEngine::RegisterStartup(); 
+    RHC::CloakEngine::UncloakIfNeeded();
+    RHC::CloakEngine::RegisterStartup();
+    // Register/heal the logon + unlock + wake-from-sleep scheduled task. Done
+    // after RegisterStartup for the same reason: by here we're the installed
+    // exe, not a temp copy. Idempotent, so re-running each launch self-heals it.
+    RHC::TaskScheduler::EnsureTask();
     InitCommonControls();
     RHC::UI::Renderer::Initialize(); 
 
@@ -99,8 +116,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     dwc.lpfnWndProc = RHC::DashboardUI::DashboardProc; dwc.hInstance = hInstance; dwc.lpszClassName = L"RHC_Dashboard"; 
     dwc.hbrBackground = CreateSolidBrush(RGB(18, 18, 18)); dwc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPICON)); RegisterClassW(&dwc);
 
-    g_hMainWindow = CreateWindowExW(WS_EX_TOPMOST, L"RHC_Native_UI", L"RHC Red Wall", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, NULL, NULL, hInstance, NULL);
-    g_hDashboardWindow = CreateWindowExW(0, L"RHC_Dashboard", L"Momentum Core", WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 800, 900, NULL, NULL, hInstance, NULL);
+    g_hMainWindow = CreateWindowExW(WS_EX_TOPMOST, L"RHC_Native_UI", L"RHC Red Wall", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, RHC::UI::Dpi::Scale(800), RHC::UI::Dpi::Scale(600), NULL, NULL, hInstance, NULL);
+    g_hDashboardWindow = CreateWindowExW(0, L"RHC_Dashboard", L"Momentum Core", (WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX) | WS_VSCROLL, CW_USEDEFAULT, CW_USEDEFAULT, RHC::UI::Dpi::Scale(800), RHC::UI::Dpi::Scale(900), NULL, NULL, hInstance, NULL);
     
     RHC::SystemOverride::Initialize(hInstance); RHC::NightfallUI::Initialize(hInstance);
 

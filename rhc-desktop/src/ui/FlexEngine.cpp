@@ -1,4 +1,5 @@
 #include "FlexEngine.h"
+#include "Dpi.h"
 #include <algorithm>
 
 namespace RHC {
@@ -10,11 +11,16 @@ namespace RHC {
             root->calculatedBounds = parentRect;
 
             if (root->hwnd) {
+                int w = root->calculatedBounds.right - root->calculatedBounds.left;
+                int h = root->calculatedBounds.bottom - root->calculatedBounds.top;
+                // A combo box's window height includes its drop-down list, so the
+                // laid-out height alone would leave the list no room to open.
+                wchar_t cls[16] = {0};
+                GetClassNameW(root->hwnd, cls, 16);
+                if (lstrcmpiW(cls, L"COMBOBOX") == 0) h += Dpi::Scale(COMBO_DROP_HEIGHT);
                 // Update physical Win32 control placement on screen
-                SetWindowPos(root->hwnd, NULL, 
-                             root->calculatedBounds.left, root->calculatedBounds.top,
-                             root->calculatedBounds.right - root->calculatedBounds.left,
-                             root->calculatedBounds.bottom - root->calculatedBounds.top,
+                SetWindowPos(root->hwnd, NULL,
+                             root->calculatedBounds.left, root->calculatedBounds.top, w, h,
                              SWP_NOZORDER | SWP_NOACTIVATE);
             }
 
@@ -129,9 +135,20 @@ namespace RHC {
                 int crossMarginStart = isRow ? marginTop : marginLeft;
                 int crossMarginEnd   = isRow ? marginBottom : marginRight;
 
+                // align-self wins, otherwise the parent's align-items applies (as in CSS)
+                AlignItems align = root->layout.alignItems;
+                switch (measure.node->layout.alignSelf) {
+                    case AlignSelf::Start:   align = AlignItems::Start; break;
+                    case AlignSelf::Center:  align = AlignItems::Center; break;
+                    case AlignSelf::End:     align = AlignItems::End; break;
+                    case AlignSelf::Stretch: align = AlignItems::Stretch; break;
+                    case AlignSelf::Auto:    break;
+                }
+
+                // Stretch only fills the cross axis when no size was set for it
+                bool explicitCross = isRow ? (measure.node->layout.height >= 0) : (measure.node->layout.width >= 0);
                 int crossSize = measure.crossSize;
-                if (measure.node->layout.alignItems == AlignItems::Stretch || 
-                    root->layout.alignItems == AlignItems::Stretch) {
+                if (align == AlignItems::Stretch && !explicitCross) {
                     crossSize = crossLimit - (crossMarginStart + crossMarginEnd);
                 }
 
@@ -139,9 +156,6 @@ namespace RHC {
                 int availableCrossSpace = crossLimit - (crossMarginStart + crossMarginEnd + crossSize);
 
                 if (availableCrossSpace > 0) {
-                    auto align = (measure.node->layout.alignItems != AlignItems::Start) 
-                                 ? measure.node->layout.alignItems 
-                                 : root->layout.alignItems;
                     if (align == AlignItems::Center) {
                         crossPos += availableCrossSpace / 2;
                     } else if (align == AlignItems::End) {

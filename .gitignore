@@ -25,3 +25,8 @@ __pycache__/
 
 # 3D world preview renders (tools/world_preview/run.sh)
 tools/world_preview/out/
+
+# Downloaded 3D packs and the figure tools' installs and previews (tools/figures)
+tools/figures/packs/
+tools/figures/preview/out/
+tools/figures/out/

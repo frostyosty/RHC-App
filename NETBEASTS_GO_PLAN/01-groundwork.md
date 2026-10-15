@@ -68,7 +68,7 @@ floating point to decide which cell you're in.
   12 and up the player can allow only approximate. Add
   `LocationEngine.hasPrecise(context)` and ask in the game's own words first
   ("To find beasts on your street I need to know which street"), then with
-  `LocationEngine.requestPermission`. Approximate only: say so, and leave the
+  `LocationEngine.requestPermission` (which goes through `PermissionGate`). Approximate only: say so, and leave the
   outdoor game off.
 - **Which way you're facing.** `Sensor.TYPE_ROTATION_VECTOR`, turned to true
   north with `GeomagneticField`. While you're walking faster than 1 m/s, use

@@ -1,4 +1,5 @@
 #include "CSSEngine.h"
+#include "Dpi.h"
 #include "include/StringUtils.h"
 #include <sstream>
 #include <algorithm>
@@ -49,7 +50,7 @@ namespace RHC {
                 int num = 0;
                 // Standard dimension parser extraction
                 std::sscanf(s.c_str(), "%d", &num);
-                return num;
+                return Dpi::Scale(num); // CSS px are 100%-scale pixels
             };
 
             BoxModel model = {0, 0, 0, 0};
@@ -101,6 +102,7 @@ namespace RHC {
                     } else {
                         style.backgroundColor = ParseHexColor(val);
                         style.backgroundGradient.enabled = false;
+                        style.hasBackground = (RHC::StringUtils::toLower(val) != "transparent");
                     }
                 }
                 else if (key == "color") {
@@ -109,13 +111,24 @@ namespace RHC {
                 else if (key == "border-radius") {
                     int r = 0;
                     std::sscanf(val.c_str(), "%d", &r);
-                    style.borderRadius = r;
+                    style.borderRadius = Dpi::Scale(r);
                 }
                 else if (key == "margin") {
                     style.margin = ParseBoxModel(val);
                 }
                 else if (key == "padding") {
                     style.padding = ParseBoxModel(val);
+                }
+                else if (key == "margin-top" || key == "margin-right" || key == "margin-bottom" || key == "margin-left" ||
+                         key == "padding-top" || key == "padding-right" || key == "padding-bottom" || key == "padding-left") {
+                    // One side only; ParseBoxModel with a single value gives it on every side
+                    int v = ParseBoxModel(val).top;
+                    BoxModel& box = (key[0] == 'm') ? style.margin : style.padding;
+                    std::string side = key.substr(key.find('-') + 1);
+                    if (side == "top") box.top = v;
+                    else if (side == "right") box.right = v;
+                    else if (side == "bottom") box.bottom = v;
+                    else box.left = v;
                 }
                 else if (key == "flex-direction") {
                     std::string dir = RHC::StringUtils::toLower(val);
@@ -137,6 +150,14 @@ namespace RHC {
                     else if (a == "flex-end" || a == "end") layout.alignItems = AlignItems::End;
                     else if (a == "stretch") layout.alignItems = AlignItems::Stretch;
                 }
+                else if (key == "align-self") {
+                    std::string a = RHC::StringUtils::toLower(val);
+                    if (a == "auto") layout.alignSelf = AlignSelf::Auto;
+                    else if (a == "flex-start" || a == "start") layout.alignSelf = AlignSelf::Start;
+                    else if (a == "center") layout.alignSelf = AlignSelf::Center;
+                    else if (a == "flex-end" || a == "end") layout.alignSelf = AlignSelf::End;
+                    else if (a == "stretch") layout.alignSelf = AlignSelf::Stretch;
+                }
                 else if (key == "flex-grow") {
                     int grow = 0;
                     std::sscanf(val.c_str(), "%d", &grow);
@@ -147,14 +168,14 @@ namespace RHC {
                     if (val.find('%') == std::string::npos) {
                         std::sscanf(val.c_str(), "%d", &w);
                     }
-                    layout.width = w; // -1 represents flexible percentage bounds
+                    layout.width = (w >= 0) ? Dpi::Scale(w) : -1; // -1 represents flexible percentage bounds
                 }
                 else if (key == "height") {
                     int h = -1;
                     if (val.find('%') == std::string::npos) {
                         std::sscanf(val.c_str(), "%d", &h);
                     }
-                    layout.height = h;
+                    layout.height = (h >= 0) ? Dpi::Scale(h) : -1;
                 }
                 else if (key == "border" || key == "border-right" || key == "border-left" || key == "border-top" || key == "border-bottom") {
                     auto borderParts = RHC::StringUtils::split(val, ' ');
@@ -165,7 +186,8 @@ namespace RHC {
                         } else if (cleanBp.find("px") != std::string::npos || std::isdigit(cleanBp[0])) {
                             int w = 0;
                             std::sscanf(cleanBp.c_str(), "%d", &w);
-                            style.borderWidth = w;
+                            // Rounded down so 1px hairlines stay one device pixel up to 199%
+                            style.borderWidth = (w > 0) ? std::max(1, w * Dpi::Get() / 96) : 0;
                         }
                     }
                 }

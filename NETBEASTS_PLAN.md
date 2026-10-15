@@ -285,7 +285,8 @@ actions (potion, repel spray, the human punch in `executeHumanPunch`) via
 
 can the net throw be a button you tap outide of combat (so while your walking you can just tap it and a net jsut gets thrown in the direction your facing) if it lands you mght catch the beast if it misses it triggers combat? USEr yes, odds similar to what the netbeast throw is, but odds go up the more netbeasts you have. cost is one net, and if you miss then the net dissapears and combat triggers.
 
-please check that the a poacher as well as one of those minibosses arriving on [say wednesday] are properly iplemented in the 3d world. since we brought them in, did we add a determinism test for the new sim paths (summon, rival's cages, resolving) to ensure JVM and wasm stay bit-identical, leaving the existing pins untouched since the wild-beast paths haven't changed?
+~~please check that the a poacher as well as one of those minibosses arriving on [say wednesday] are properly iplemented in the 3d world. since we brought them in, did we add a determinism test for the new sim paths (summon, rival's cages, resolving) to ensure JVM and wasm stay bit-identical, leaving the existing pins untouched since the wild-beast paths haven't changed?~~
+Done 2026-10-16: `WorldVisitors.kt`; `DeterminismTest` pins a poacher fight (`POACHER_PRINT`) and a boss fight (`BOSS_PRINT`); described in `rhc-android/README.md` 5.1.
 
 
 

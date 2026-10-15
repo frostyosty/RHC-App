@@ -43,6 +43,7 @@ for src in \
     rhc-desktop/src/DashboardUI.cpp \
     rhc-desktop/src/TrayUI.cpp \
     rhc-desktop/src/SystemOverride.cpp \
+    rhc-desktop/src/TaskSchedulerSetup.cpp \
     rhc-desktop/src/NightfallUI.cpp \
     rhc-desktop/src/CrashReporter.cpp \
     rhc-desktop/src/UIAScanner.cpp \
@@ -65,7 +66,7 @@ x86_64-w64-mingw32-g++ -s \
     "${COMMON_OBJS[@]}" \
     -o rhc-desktop/rhc_desktop.exe \
     -static -static-libgcc -static-libstdc++ \
-    -mwindows -lgdi32 -luser32 -lole32 -loleaut32 -lwinhttp -lrpcrt4 -lcomctl32 -luuid -lpowrprof -lgdiplus -ldwmapi
+    -mwindows -lgdi32 -luser32 -lole32 -loleaut32 -lwinhttp -lrpcrt4 -lcomctl32 -luuid -lpowrprof -lgdiplus -ldwmapi -luxtheme
 
 x86_64-w64-mingw32-g++ -s \
     "$SERVICE_OBJ" \
@@ -75,7 +76,7 @@ x86_64-w64-mingw32-g++ -s \
     "$OBJ_DIR/rhc-common_src_sqlite3.c.o" \
     -o rhc-desktop/rhc_guardian_svc.exe \
     -static -static-libgcc -static-libstdc++ \
-    -ladvapi32 -lwtsapi32
+    -ladvapi32 -lwtsapi32 -luserenv
 
 rm -rf "$OBJ_DIR" rhc-desktop/app.res
 echo "✅ SUCCESS! rhc_desktop.exe and rhc_guardian_svc.exe generated."

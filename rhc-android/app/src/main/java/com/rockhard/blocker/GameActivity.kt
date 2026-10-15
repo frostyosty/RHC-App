@@ -254,7 +254,11 @@ class GameActivity : Activity() {
             printLog("> Welcome back, $playerName!")
 
             // The first time, offer to use the phone's location, and look up the weather once that's answered
-            if (LocationEngine.shouldOffer(this)) LocationEngine.offer(this, onDeclined = { refreshWeather() }) else refreshWeather()
+            if (LocationEngine.shouldOffer(this)) LocationEngine.offer(this, onDeclined = { refreshWeather() }) else {
+                refreshWeather()
+                if (StepCounter.shouldOffer(this)) StepCounter.offer(this) // on a later opening than the location offer
+            }
+            StepCounter.payOut(this) { paid -> if (paid != null) payOutSteps(paid) }
 
             processFleePenalty()
             checkOfflineExpeditions()
@@ -322,6 +326,23 @@ class GameActivity : Activity() {
             LocationEngine.onPermissionResult(this)
             refreshWeather()
         }
+        if (requestCode == StepCounter.REQUEST_CODE) StepCounter.onPermissionResult(this)
+    }
+
+    /** The step bank's pay-out (Netbeasts Go 02): coins, and HP for the party (slower for flyers and higher levels). */
+    private fun payOutSteps(paid: com.rockhard.blocker.world.go.StepPayout) {
+        if (paid.steps <= 0) return
+        focusCoins += paid.coins
+        var healed = 0
+        party.forEach { p ->
+            val hp = com.rockhard.blocker.world.go.StepHealing.heal(paid.steps, p.hp, p.maxHp, p.type == "Flying")
+            if (hp > 0) { p.hp = p.hp.coerceAtLeast(0) + hp; healed += hp }
+        }
+        saveItems(); saveParty(); updateBagScreen(); updatePartyScreen()
+        val steps = String.format("%,d", paid.steps)
+        printLog("> 👣 $steps steps since you last looked: +${paid.coins} coin${if (paid.coins == 1) "" else "s"}")
+        if (healed > 0) printLog("> 💚 The walk healed your party ($healed HP).")
+        Toast.makeText(this, "👣 $steps steps: +${paid.coins} 💰", Toast.LENGTH_LONG).show()
     }
 
     internal fun saveParty() {

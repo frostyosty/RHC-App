@@ -35,6 +35,7 @@
 #include <windows.h>
 #include <tlhelp32.h>
 #include <wtsapi32.h>
+#include <userenv.h>
 #include <ctime>
 #include <string>
 #include <vector>
@@ -44,6 +45,7 @@
 
 namespace {
     const wchar_t* kServiceName = L"RHCGuardian";
+    const wchar_t* kGuiExe = L"rhc_desktop.exe";
     SERVICE_STATUS g_Status = {};
     SERVICE_STATUS_HANDLE g_StatusHandle = nullptr;
     HANDLE g_StopEvent = nullptr;
@@ -142,6 +144,97 @@ namespace {
         if (isActive) WTSDisconnectSession(WTS_CURRENT_SERVER_HANDLE, sessionId, FALSE);
     }
 
+    // --- GUI watchdog ------------------------------------------------------
+    // The GUI (rhc_desktop.exe) hosts the visible enforcement - red wall,
+    // screen-text scanning, overlays - which a Session 0 service can't draw.
+    // A user who kills the GUI (Task Manager, taskkill, fkill) silences that
+    // layer even though this service keeps enforcing the web/exe/nightfall
+    // rules. So the service relaunches the GUI into the interactive session
+    // when it's missing. The scheduled task covers logon/unlock/wake; this
+    // covers a mid-session kill, within one poll (~2s).
+    //
+    // In the spirit of the rest of this file: this races a kill, it does not
+    // fight an admin. There's no process protection, no self-hiding; a user
+    // who wants out uses the delay-locked System Override, and an admin can
+    // still stop the service.
+
+    bool GuiRunningInSession(DWORD targetSession) {
+        HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (snap == INVALID_HANDLE_VALUE) return true; // fail safe: don't spam launches
+        bool found = false;
+        PROCESSENTRY32W pe = {}; pe.dwSize = sizeof(pe);
+        if (Process32FirstW(snap, &pe)) {
+            do {
+                if (lstrcmpiW(pe.szExeFile, kGuiExe) == 0) {
+                    DWORD sess = 0;
+                    if (ProcessIdToSessionId(pe.th32ProcessID, &sess) && sess == targetSession) {
+                        found = true; break;
+                    }
+                }
+            } while (Process32NextW(snap, &pe));
+        }
+        CloseHandle(snap);
+        return found;
+    }
+
+    void LaunchGuiInSession(DWORD sessionId, const std::wstring& exePath, const std::wstring& workDir) {
+        HANDLE userToken = nullptr;
+        if (!WTSQueryUserToken(sessionId, &userToken)) return; // no interactive user
+
+        // The GUI manifest is requireAdministrator. On a UAC machine the
+        // session token is the filtered (standard) token, which can't launch
+        // an elevated exe - so prefer the linked elevated token when there is
+        // one. A plain standard user has none; then relaunch just won't fire,
+        // which is fine (the service itself still enforces).
+        HANDLE elevated = nullptr;
+        TOKEN_LINKED_TOKEN lt = {}; DWORD retLen = 0;
+        if (GetTokenInformation(userToken, TokenLinkedToken, &lt, sizeof(lt), &retLen) && lt.LinkedToken) {
+            elevated = lt.LinkedToken;
+        }
+
+        HANDLE primary = nullptr;
+        if (DuplicateTokenEx(elevated ? elevated : userToken, MAXIMUM_ALLOWED, nullptr,
+                             SecurityIdentification, TokenPrimary, &primary)) {
+            LPVOID env = nullptr;
+            CreateEnvironmentBlock(&env, primary, FALSE);
+            STARTUPINFOW si = {}; si.cb = sizeof(si);
+            si.lpDesktop = const_cast<LPWSTR>(L"winsta0\\default");
+            PROCESS_INFORMATION pi = {};
+            std::wstring cmd = L"\"" + exePath + L"\"";
+            std::vector<wchar_t> cmdBuf(cmd.begin(), cmd.end()); cmdBuf.push_back(0);
+            CreateProcessAsUserW(primary, exePath.c_str(), cmdBuf.data(), nullptr, nullptr,
+                                 FALSE, CREATE_UNICODE_ENVIRONMENT, env, workDir.c_str(), &si, &pi);
+            if (pi.hProcess) CloseHandle(pi.hProcess);
+            if (pi.hThread)  CloseHandle(pi.hThread);
+            if (env) DestroyEnvironmentBlock(env);
+            CloseHandle(primary);
+        }
+        if (elevated) CloseHandle(elevated);
+        CloseHandle(userToken);
+    }
+
+    void MaybeRelaunchGui(RHC::DatabaseManager& db, const std::wstring& installDir) {
+        // Honour a consensual pause: while System Override has paused the app,
+        // don't drag the GUI back up.
+        if (db.getString("OVERRIDE_IS_PAUSED", "") == "TRUE") return;
+
+        DWORD sessionId = WTSGetActiveConsoleSessionId();
+        if (sessionId == 0xFFFFFFFF || sessionId == 0) return; // nobody at the console
+        if (GuiRunningInSession(sessionId)) return;
+
+        std::wstring exePath = installDir + L"\\" + kGuiExe;
+        if (GetFileAttributesW(exePath.c_str()) == INVALID_FILE_ATTRIBUTES) return;
+
+        // Cooldown so a GUI that dies on startup can't become a tight respawn
+        // loop; retry at most ~every 8s.
+        static ULONGLONG lastLaunch = 0;
+        ULONGLONG now = GetTickCount64();
+        if (now - lastLaunch < 8000) return;
+        lastLaunch = now;
+
+        LaunchGuiInSession(sessionId, exePath, installDir);
+    }
+
     void ReportStatus(DWORD state, DWORD exitCode = NO_ERROR, DWORD waitHint = 0) {
         g_Status.dwCurrentState = state;
         g_Status.dwWin32ExitCode = exitCode;
@@ -168,7 +261,8 @@ namespace {
 
         ReportStatus(SERVICE_START_PENDING, NO_ERROR, 3000);
         g_StopEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
-        std::wstring dbPath = GetInstallDir() + L"\\rhc_state.db";
+        std::wstring installDir = GetInstallDir();
+        std::wstring dbPath = installDir + L"\\rhc_state.db";
         std::string dbPathUtf8 = WideToUtf8(dbPath);
         ReportStatus(SERVICE_RUNNING);
 
@@ -177,6 +271,7 @@ namespace {
             RHC::DatabaseManager db(dbPathUtf8);
             EnforceExeBlocklist(db);
             EnforceNightfallLock(db);
+            MaybeRelaunchGui(db, installDir);
             if (syncCounter++ >= 30) { SyncHostsFromDb(db); syncCounter = 0; }
         }
 

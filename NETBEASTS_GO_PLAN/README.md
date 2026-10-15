@@ -114,10 +114,10 @@ be tested without a phone or a walk.
 | # | Step | What it gives | Needs | Size | Status |
 |---|---|---|---|---|---|
 | 01 | [Groundwork](01-groundwork.md) | The game follows where you are while it's open; places and time as whole numbers; fake walks to test with | — | M | not started |
-| 02 | [Step bank](02-step-bank.md) | Walking with the phone in your pocket earns coins, and later trails | — | S | not started |
+| 02 | [Step bank](02-step-bank.md) | Walking with the phone in your pocket earns coins, heals your netbeasts, and later trails | — | S | built 2026-10-16; waiting on its "Done when" checks |
 | 03 | [The radar](03-radar.md) | The outdoor screen: you, north, rings, dots; the standing-still and too-fast rules | 01 | M | not started |
 | 04 | [Beasts at real places](04-beasts-at-real-places.md) | Beasts around you that everyone sees; walk into reach, tap, fight in the Wilds view; trails | 01, 02, 03 | M | not started |
-| 05 | [The AR kit](05-ar-kit.md) | Homevisits' camera code moved to where both games build it; one way to ask for permissions | Homevisits 01 | S | not started |
+| 05 | [The AR kit](05-ar-kit.md) | Homevisits' camera code moved to where both games build it; one way to ask for permissions | Homevisits 01 | S | built 2026-10-16; waiting on its "Done when" checks |
 | 06 | [AR encounters](06-ar-encounters.md) | The beast on your real ground through the camera; flicking a net at it | 04, 05, Homevisits 02's findings | L | not started |
 | 07 | [Streets and caches](07-streets-and-caches.md) | Real streets and parks under the radar; caches at landmarks; beasts kept off roads and water | 03, 04 | L | not started; optional |
 | 08 | [Together outdoors](08-together.md) | Other players nearby, shared fights, the colossus as something you gather for | 04; `NETBEASTS_PLAN.md` §4 and phase 5 | L | not started; a sketch only |

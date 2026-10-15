@@ -5,10 +5,13 @@
 Android permission past the Guardian). Nothing else.
 
 **Shared with Netbeasts Go.** The camera and ARCore code this step builds is
-also used by the outdoor game. `NETBEASTS_GO_PLAN/05-ar-kit.md` moves what's
-already built from `homevisits/ar/` to `app/src/ar/` (package
-`com.rockhard.blocker.ar`) and says what stays Homevisits' own. If that has
-landed, build the rest of this step there. `ROADMAP.md` puts it first.
+also used by the outdoor game. Since 2026-10-16 (`NETBEASTS_GO_PLAN/05-ar-kit.md`)
+it lives in `app/src/ar/` (package `com.rockhard.blocker.ar`), which both Gamers
+APKs build, and the paths `ar/...` below mean there. Build the rest of this step
+there, except what's about rooms: telling a floor from a bench, table or seat
+(the kit's `Surfaces` only says which way a plane faces), the beat runner, spot
+capture, and the wording of tracking hints (passed in as `TrackingPhrases`).
+Items 1, 2 and 4 below are done.
 
 ## Goal
 
@@ -59,8 +62,8 @@ down what works.
    - `NONE`: no ARCore, or it can't be installed (no Play Store). These phones get
      the 2D visits of step 09. Until 09 exists, show a kind "not on this phone yet"
      screen.
-4. **The camera permission past the Guardian.** `ar/CameraPermission.kt` follows
-   `LocationEngine.requestPermission` and `onPermissionResult`:
+4. **The camera permission past the Guardian.** `ar/CameraPermission.kt` goes
+   through `PermissionGate` (in `main`), as `LocationEngine` does:
    1. Show the in-story explanation first.
    2. Set `ALLOW_PERMISSION_PROMPT_UNTIL`.
    3. Call `requestPermissions(CAMERA)`.
@@ -192,15 +195,20 @@ could become a regression test.
 
 ## Interfaces (for later steps)
 
-- `ArTier.detect(activity)`; `CameraPermission.ensure(activity, onResult)`.
+All in package `com.rockhard.blocker.ar` (the shared kit), except the room kinds.
+
+- `ArTierChecker.detect(context)`; `CameraPermission.hasPermission / requestPermission / onPermissionResult`
+  (the in-story explanation before it is Homevisits').
 - `ArSession`: the lifecycle, and a per-frame callback with the camera pose, the
   tracking state and hint, the light estimate, and access to the CPU grey image and
   the point cloud (step 05 uses those two).
-- `Surfaces.hit(x, y): SurfaceHit?` (the kind, the pose, the way it faces, the
-  height above the floor) and `Surfaces.floorY`.
+- `Surfaces.hit(frame, x, y): SurfaceHit?` (today: the way it faces and its
+  height; still to add: the pose) and `Surfaces.floorY`. The kind (floor, bench,
+  table, seat) is worked out on Homevisits' side from the height above the floor.
 - `ArRenderer`: add, move and remove sprites (billboard, wall or decal) at world
   poses, each with an animation, a facing and a tint.
-- `Tracking`: the current hint (or null), and the stairs flag.
+- `Tracking.getHint(camera, phrases)`: the current hint (or null), in the
+  game's own words; and the stairs flag.
 
 ## Ask
 
