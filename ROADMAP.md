@@ -112,15 +112,14 @@ These are the places where the user might reasonably want it the other way:
 
 Soonest first. Each is an **Ask** in its plan, with a default there.
 
-| Before | Decision | Where |
+| Before | Decision | Where | user input
 |---|---|---|
-| 3 | Phones that can't run ARCore; camera permission denied for good | `HOMEVISITS_PLAN/02-ar-foundation.md` |
-| 5 | How the net thrown while walking works: the odds, and what a miss costs | The loose note in `NETBEASTS_PLAN.md` |
-| 6 | What steps buy, and the daily cap | `NETBEASTS_GO_PLAN/02-step-bank.md` |
-| 7 | A mode in the Netbeasts APK or its own APK ANSWER a mode inside Netbeasts; beside the Wilds or instead ANSWER beside; shared Aether ANSWER shared; the name ANSWER netbeasts go is fine | `NETBEASTS_GO_PLAN/README.md` |
-| 10 | Where the save and identity live; host or server | `NETBEASTS_PLAN.md` §3, §4 |
-| 12 | Whether to use OpenStreetMap data | `NETBEASTS_GO_PLAN/07-streets-and-caches.md` |
-
+| 3 | Phones that can't run ARCore; camera permission denied for good | `HOMEVISITS_PLAN/02-ar-foundation.md` | answered
+| 5 | How the net thrown while walking works: the odds, and what a miss costs | The loose note in `NETBEASTS_PLAN.md` | answered
+| 6 | What steps buy, and the daily cap | `NETBEASTS_GO_PLAN/02-step-bank.md` | answered
+| 7 | A mode in the Netbeasts APK or its own APK ANSWER a mode inside Netbeasts; beside the Wilds or instead ANSWER beside; shared Aether ANSWER shared; the name ANSWER netbeasts go is fine | `NETBEASTS_GO_PLAN/README.md` | dont know if i updated that file yet directly but ive answered here
+| 10 | Where the save and identity live; host or server | `NETBEASTS_PLAN.md` §3, §4 | answered
+| 12 | Whether to use OpenStreetMap data | `NETBEASTS_GO_PLAN/07-streets-and-caches.md` | the default answers here are fine
 
 
 

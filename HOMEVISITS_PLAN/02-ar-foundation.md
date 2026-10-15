@@ -206,10 +206,10 @@ could become a regression test.
 
 - **Phones without ARCore.** Default: the 2D visits (09). The alternative is a
   camera-only mode later, where things are fixed to compass directions and you
-  can't walk around them.
+  can't walk around them. USER: Yes. 2d visits is fine for that, dont need compass alternative at this point.
 - **Camera permission permanently denied.** Android then only lets you change it in
   Settings, which the Guardian locks. Default: explain, and use the 2D visits. The
-  alternative is a narrow allowance for our own App Info page.
+  alternative is a narrow allowance for our own App Info page. USER: is there a way around this settings so e.g. can we make a narrow exception in the guardian system so the user can get to the camera settings, or have our own camera settings tunnel within the app, or pause the guardian as a one off for a few minutes while the user fixes this?
 
 ## Findings
 

@@ -51,9 +51,9 @@ here.
 
 - **What steps buy, and the cap.** Default: 1 coin per 200 steps, counting up
   to 15,000 steps a day (75 coins). For scale, the Wilds give 5 coins a walk
-  plus what you pick up, and the first mount is planned at 200.
+  plus what you pick up, and the first mount is planned at 200. yes this is good
 - **Should steps also heal your netbeasts?** Default: no. Keep it to coins
-  until it's been played.
+  until it's been played. Yes they should, but some netbeasts more than others. flying ones can be slow to heal, higher levels heal slower too.
 
 ## Interfaces (for later steps)
 

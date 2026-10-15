@@ -75,7 +75,7 @@ it for people playing together: the host's list wins.
   service the game would lean on besides the weather.
 - **Are churches caches?** Default: yes. It suits the app, and they're
   landmarks people know. Tapping one needs you near it, not in it.
-- **What a cache gives.** Default: 3-6 coins, and one time in five a net.
+- **What a cache gives.** Default: 30-60 coins, and one time in five a net.Some should also have a netbeast in there, a special church one.
 
 ## On a walk (the user, on their phone)
 

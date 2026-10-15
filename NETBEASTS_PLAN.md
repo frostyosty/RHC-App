@@ -88,13 +88,13 @@ web doesn't have yet:
 
 **Ask:**
 - Where the save and identity live (Supabase with the leaderboard's
-  anonymous UUID, or an account), and how a phone and a browser link.
+  anonymous UUID, or an account), and how a phone and a browser link. Yes supabase is fine, no account, just qr sync
 - Its own page or an iframe, and where it's hosted. An iframe doesn't stop
   WebSockets, but cross-origin iframes get partitioned or blocked storage
   (Safari especially), so identity can't rely on `localStorage` there; pass
-  a token in with `postMessage` or keep it server-side.
+  a token in with `postMessage` or keep it server-side. iframe is good, hosted on my website on a page
 - Aether on the web. The daily playtime limit is set on the phone. A browser
-  version either reads the same Aether from the server or is a way round it.
+  version either reads the same Aether from the server or is a way round it. yeah has to read this from the server so need to move that to supabase etc.
 
 ## 4. Multiplayer
 
@@ -108,10 +108,12 @@ the region too, so the host sends its `Region.encode()` with the seed. Test
 with a phone and a browser tab, or two tabs.
 
 **Ask:**
-- Host-authoritative (one player's device runs the sim) or a server.
+- Host-authoritative (one player's device runs the sim) or a server. server
 - Syncing through Supabase Realtime (the leaderboard already uses Supabase)
-  or a small relay.
-- How encounters work when two players are near one creature.
+  or a small relay. supabase
+- How encounters work when two players are near one creature. USER first come first served, other player can hang around ready to challenge the winner. No better yet, you see another human being attacked, you can throw down a beast to attack that netbeast at the same time! however there should be buttons for the user to press should the user want to attack the other user's netbeast at the same time as the computers netbeast is attacking them (sort of backstabbing another user). 
+computer netbeasts can switch the focus of their attacks  with each attack instance. Since the netbeasts are circling each other, a third combatant means the circles need to change, into a complex 3 circle system. A fourth player needs to be able to get roped in too so this needs to be modular!
+If the killing blow on a netbeast is landed by a user, the netbeast gets captured rather than slain.
 
 ## 5. Wilds phases 4-6
 
@@ -121,9 +123,9 @@ chase, and mounts need phase 2's coins. Mark each item `(done <date>)` when
 it lands and update README §5.1 in the same change.
 
 These were written for one player. **Ask** at the start of each phase how it
-works with others around: who a chasing beast follows and whether others can
-step in, whether the colossus interrupts everyone's walk or only yours,
-whether other players see your mount, and whose dragon fights a sky beast.
+works with others around: who a chasing beast follows (USER: they follow the closest player. if there is a point in time wehre another player ends up being closer, the one getting chased swaps.) and whether others can
+step in, whether the colossus interrupts everyone's walk or only yours, (USER:the collosus if if your meaning the big bad from a red wall is just yours that is interrupted and you fight it on your own, if your meaning the big bad from say a weekly event, then it interrupts everyone.) 
+whether other players see your mount, (USER  other players see your mount so need the player sprite in a sitting position, and the mount sprites fleshed out,) and whose dragon fights a sky beast (Same mechanic as multiplayer "how encounters work when two players are near one creature.")
 
 ### Phase 4. Fleeing
 
@@ -231,7 +233,7 @@ fast mount (stamina and no encounters), then the dragon.
   the shop. Tune how many coins lie around (`COIN_TRAILS`/`COIN_SINGLES` in
   `WorldMap`) to these prices.
   **Ask:** the feed price and how long a full stamina bar lasts, and
-  whether the dragon needs feed too.
+  whether the dragon needs feed too. USER yes dragon needs feed, stamina lasts the level of the netbeast.
 - **Who they are** (agreed with the user; the names can change later): a
   horse-like netbeast, **Gigahoof** (quick mount), an elephant-like one,
   **Teraphant** (fast mount), and a dragon, **Petadrake**. The names follow
@@ -255,7 +257,7 @@ fast mount (stamina and no encounters), then the dragon.
   and it lies down where it stopped. There are still no colliders: the
   sidestep's probe grows with speed, so it swerves round trunks.
   **Ask:** what happens at water. Default: it stops at the shore and you
-  climb off.
+  climb off USER no it goes through the water just slows down a lot 9gradually then quick) but no more than to 40% of original speed) and the steed is mostly submerged during water travel)
 - **Dragon** (was the plane). It takes off from open ground, and you steer
   and climb by dragging. The voxel renderer draws from altitude: raise the
   eye height and the draw distance, and watch the frame time. There are no
@@ -281,7 +283,7 @@ actions (potion, repel spray, the human punch in `executeHumanPunch`) via
 `playFx`, and a hand-polish pass on any effect that reads weakly in game.
 
 
-can the net throw be a button you tap outide of combat (so while your walking you can just tap it and a net jsut gets thrown in the direction your facing) if it lands you mght catch the beast if it misses it triggers combat?
+can the net throw be a button you tap outide of combat (so while your walking you can just tap it and a net jsut gets thrown in the direction your facing) if it lands you mght catch the beast if it misses it triggers combat? USEr yes, odds similar to what the netbeast throw is, but odds go up the more netbeasts you have. cost is one net, and if you miss then the net dissapears and combat triggers.
 
 please check that the a poacher as well as one of those minibosses arriving on [say wednesday] are properly iplemented in the 3d world. since we brought them in, did we add a determinism test for the new sim paths (summon, rival's cages, resolving) to ensure JVM and wasm stay bit-identical, leaving the existing pins untouched since the wild-beast paths haven't changed?
 
