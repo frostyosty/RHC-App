@@ -326,7 +326,7 @@ class GuardianService : AccessibilityService() {
                 if (action.redirectTarget != null) {
                     handleRedirect(action.redirectTarget)
                 } else {
-                    triggerBossInvasion(action.reason, action.canDefend)
+                    triggerBossInvasion(action.reason, action.canDefend, packageName)
                 }
             }
             is ShieldAction.RewardApp -> handleReward(action.triggerWord, "BLOCKLIST_APP")
@@ -422,7 +422,11 @@ class GuardianService : AccessibilityService() {
         addLog("Scavenged URL for $element.")
     }
 
-    private fun triggerBossInvasion(debugReason: String, canDefend: Boolean) {
+    private fun appLabelOf(pkg: String): String = try {
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString()
+    } catch (e: Exception) { pkg.ifEmpty { "An app" } }
+
+    private fun triggerBossInvasion(debugReason: String, canDefend: Boolean, blockedPackage: String) {
         val prefs = getSharedPreferences("RHC_PREFS", Context.MODE_PRIVATE)
 
         val isGamers = Flavor.isGamers && !Flavor.homevisits()
@@ -453,6 +457,7 @@ class GuardianService : AccessibilityService() {
         }
 
         addLog("RED WALL DROPPED. Reason: $debugReason")
+        val explanation = BlockExplainer.explain(debugReason, appLabelOf(blockedPackage), prefs.getInt("NIGHTFALL_END", -1))
 
         // --- INSTANT PRODUCTIVITY REDIRECT ---
         // Homevisits gets the Momentum wall (step 12 gives it its own), but opens its game when that's the home app
@@ -507,10 +512,10 @@ class GuardianService : AccessibilityService() {
                     "⚡ MOMENTUM GAINED: +$minsSaved MINS"
                 }
 
-                val toastySubtitle = if (isGamers && !isNightfall && !isTamper && !isDrastic && canDefend) {
-                    "Tap to defend your Netbeasts..."
+                val toastySubtitle = explanation.summary + " · " + if (isGamers && !isNightfall && !isTamper && !isDrastic && canDefend) {
+                    "tap to defend your Netbeasts..."
                 } else {
-                    "Tap to claim and view details..."
+                    "tap to see why..."
                 }
 
                 addView(TextView(this@GuardianService).apply {
@@ -554,6 +559,8 @@ class GuardianService : AccessibilityService() {
             } else {
                 "Urge Overcome:\n\"$triggerWord\""
             }
+
+            overlayView?.findViewById<TextView>(R.id.tvBlockWhy)?.text = explanation.details
 
             val tvMsg = overlayView?.findViewById<TextView>(R.id.tvOverlayMessage)
             val tvTitle = overlayView?.findViewById<TextView>(R.id.tvOverlayTitle)
