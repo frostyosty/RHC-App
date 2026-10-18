@@ -38,7 +38,7 @@ class Pose(val skeleton: Skeleton) {
         return out
     }
 
-    /** out[oo..] = a[ao..] × b[bo..], without allocating; out must not overlap a or b. */
+    /** Computes out = a × b using offsets, without allocating. The output must not overlap either input. */
     private fun mul(a: FloatArray, ao: Int, b: FloatArray, bo: Int, out: FloatArray, oo: Int) {
         for (c in 0 until 4) for (r in 0 until 4) {
             var sum = 0f
