@@ -39,13 +39,8 @@ internal fun GameActivity.spawnEventBossQTE() {
             isWildBattle = true
             battleOver = false
             setUIState("BATTLE")
-            if (party.isNotEmpty()) {
-                showBattleArena(party[activePetIndex].name, bossName)
-            } else {
-                playerLastStand = true
-                showBattleArena("YOU", bossName)
-            }
-            updateBattleUI()
+            if (party.isEmpty()) playerLastStand = true
+            beginScreenFight()
         }
     }
     qteView.findViewById<Button>(R.id.btnQteNet).visibility = View.GONE

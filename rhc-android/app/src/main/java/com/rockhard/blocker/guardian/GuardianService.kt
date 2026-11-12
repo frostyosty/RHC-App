@@ -17,6 +17,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
+import com.rockhard.blocker.guardian.BlockExplainer
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Button
 import android.widget.TextView
@@ -376,7 +377,7 @@ class GuardianService : AccessibilityService() {
 
         if (isGamers) {
             val bName = GoodBeastEngine.generateName(triggerWord)
-            val (m1, m2, m3) = SkillEngine.generateMoves("Reclaimed", 1)
+            val (m1, m2, m3) = SkillEngine.generateMoves("Reclaimed", 1) { kotlin.random.Random.nextInt(it) }
             val partyStr = prefs.getString("PARTY_DATA", "") ?: ""
             val newBeast = "$bName,Reclaimed,150,150,$m1,$m2,$m3,0,0,0,0,true,None,0,0,0,0,None,0"
             prefs.edit().putString("PARTY_DATA", if (partyStr.isEmpty()) newBeast else "$partyStr;$newBeast").apply()

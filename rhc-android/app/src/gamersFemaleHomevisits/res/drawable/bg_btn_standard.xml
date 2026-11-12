@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Homevisits only (overrides main's bg_btn_standard): a quiet outlined pill -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape><corners android:radius="50dp"/><solid android:color="#3A2F3E"/><stroke android:width="1dp" android:color="#80D8A48F"/></shape>
+    </item>
+    <item>
+        <shape><corners android:radius="50dp"/><solid android:color="#26202A"/><stroke android:width="1dp" android:color="#50D8A48F"/></shape>
+    </item>
+</selector>

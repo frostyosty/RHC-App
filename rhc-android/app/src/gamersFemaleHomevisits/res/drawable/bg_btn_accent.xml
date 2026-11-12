@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Homevisits only (overrides main's bg_btn_accent): a flat rose-gold pill that dims when pressed -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape><corners android:radius="50dp"/><gradient android:angle="0" android:startColor="#6E4337" android:endColor="#8A5647"/></shape>
+    </item>
+    <item>
+        <shape><corners android:radius="50dp"/><gradient android:angle="0" android:startColor="#8A5647" android:endColor="#A9705E"/></shape>
+    </item>
+</selector>

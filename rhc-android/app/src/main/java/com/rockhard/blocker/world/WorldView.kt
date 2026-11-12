@@ -45,6 +45,8 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
         fun onCompanionOut(e: WorldEvent.CompanionOut)
         /** A poacher's netbeast came out of his cage. */
         fun onRivalOut(e: WorldEvent.RivalOut) {}
+        /** The battle rules said something about a fight (WorldFight.kt picks out its own). */
+        fun onFighting(e: WorldEvent.Fighting) {}
         /** You walked into a coin. */
         fun onCoinPicked(e: WorldEvent.CoinPicked)
         fun onExplorationOver()
@@ -193,6 +195,7 @@ class WorldView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
                 is WorldEvent.Encounter -> listener?.onEncounter(e)
                 is WorldEvent.CompanionOut -> listener?.onCompanionOut(e)
                 is WorldEvent.RivalOut -> listener?.onRivalOut(e)
+                is WorldEvent.Fighting -> listener?.onFighting(e)
                 is WorldEvent.SlippedPast -> if (e.playerId == s.localPlayerId) listener?.onSlippedPast(e)
                 is WorldEvent.CoinPicked -> if (e.playerId == s.localPlayerId) listener?.onCoinPicked(e)
                 is WorldEvent.ExplorationOver -> { stop(); listener?.onExplorationOver(); return }

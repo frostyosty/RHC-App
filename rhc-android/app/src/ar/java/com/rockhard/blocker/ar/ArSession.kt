@@ -31,10 +31,13 @@ class ArSession(private val activity: Activity) {
             // Lock to 30 fps to save battery and reduce heat
             val filter = com.google.ar.core.CameraConfigFilter(session)
             filter.targetFps = java.util.EnumSet.of(com.google.ar.core.CameraConfig.TargetFps.TARGET_FPS_30)
-            val cameraConfigs = session!!.getSupportedCameraConfigs(filter)
-            if (cameraConfigs.isNotEmpty()) {
-                session!!.cameraConfig = cameraConfigs[0]
-            }
+            // Only ever the camera and image size ARCore picked itself, at 30 fps: on a
+            // phone with several back cameras another config can be a lens whose
+            // calibration doesn't match, which throws ARCore's sense of a metre out.
+            val default = session!!.cameraConfig
+            session!!.getSupportedCameraConfigs(filter).firstOrNull {
+                it.cameraId == default.cameraId && it.imageSize == default.imageSize && it.textureSize == default.textureSize
+            }?.let { session!!.cameraConfig = it }
             
             if (session!!.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
                 config.depthMode = Config.DepthMode.AUTOMATIC

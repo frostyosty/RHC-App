@@ -51,7 +51,6 @@ class GameActivity : Activity() {
     internal var transfusers = 0
     internal var party = mutableListOf<Netbeast>()
     internal var activePetIndex = 0
-    internal var lastStandStrike: Runnable? = null // the beast's clock while you're punching
     internal var forSaleParty = mutableListOf<Netbeast>()
     internal var marketBeasts = mutableListOf<Netbeast>()
     internal val activeOffers = mutableMapOf<String, Int>()
@@ -73,9 +72,8 @@ class GameActivity : Activity() {
 
     internal val activeExpeditions = mutableMapOf<Int, Long>()
     internal val activeQTEs = mutableMapOf<Int, View>()
-    internal val participatingPets = mutableSetOf<Int>()
 
-    internal var battleTimerRunnable: Runnable? = null
+    internal var screenFight: ScreenFight? = null // the battle screen's fight (FightHost.kt)
     internal val mainHandler = Handler(Looper.getMainLooper())
     private var tickCounter = 0
     private val exploreRunnable =
@@ -237,14 +235,13 @@ class GameActivity : Activity() {
             printLog("⚠️ EMERGENCY: ${currentEnemy?.name} HAS INVADED!")
             printLog("==================================")
             if (party.isNotEmpty()) {
+                activePetIndex = activePetIndex.coerceIn(0, party.size - 1)
                 printLog("> You sent out ${party[activePetIndex].name} to defend!")
-                showBattleArena(party[activePetIndex].name, bossName)
             } else {
                 playerLastStand = true
                 printLog("> You have no Netbeasts! Defend yourself!")
-                showBattleArena("YOU", bossName)
             }
-            updateBattleUI()
+            beginScreenFight()
             startTicking() // Aether and Nightfall pick up again once the invasion is over
         } else {
             // Nightfall hours, or today's Aether is spent: no playing (a Defend fight above still goes ahead)

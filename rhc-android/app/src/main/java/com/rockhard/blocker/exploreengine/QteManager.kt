@@ -115,9 +115,8 @@ internal fun GameActivity.spawnWildQTE(petIndex: Int, pet: Netbeast) {
 internal fun GameActivity.startWildBattle(petIndex: Int, wildBeast: Netbeast) {
     qteContainer.removeAllViews(); activeQTEs.clear(); currentEnemy = wildBeast; isWildBattle = true; battleOver = false
     setUIState("BATTLE")
-    if (petIndex == -1) { playerLastStand = true; showBattleArena("YOU", wildBeast.name) } 
-    else { activePetIndex = petIndex; showBattleArena(party[petIndex].name, wildBeast.name) }
-    updateBattleUI()
+    if (petIndex == -1) playerLastStand = true else activePetIndex = petIndex
+    beginScreenFight()
 }
 
 /**
@@ -162,9 +161,8 @@ internal fun GameActivity.spawnRescueQTE(capturedBeast: Netbeast, suburb: String
             setUpPoacherBattle(capturedBeast)
             setUIState("BATTLE"); printLog("\n> 🦹 POACHER: 'Come and take it!'")
             
-            if (party.isEmpty()) { playerLastStand = true; showBattleArena("YOU", currentEnemy!!.name) } 
-            else { activePetIndex = 0; showBattleArena(party[0].name, currentEnemy!!.name) }
-            updateBattleUI()
+            if (party.isEmpty()) playerLastStand = true else activePetIndex = 0
+            beginScreenFight()
         }
     }
     qteView.findViewById<Button>(R.id.btnQteNet).visibility = View.GONE

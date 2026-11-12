@@ -35,6 +35,15 @@ class ArRenderer(private val arSession: ArSession) : GLSurfaceView.Renderer {
     /** How many figures are placed; read from any thread. */
     @Volatile var figureCount = 0
         private set
+    /**
+     * For checking ARCore's scale against a tape measure: the phone's height
+     * above the newest figure's feet and how far it is along the floor, metres
+     * (NaN with no figure). Read from any thread.
+     */
+    @Volatile var phoneAboveFeet = Float.NaN
+        private set
+    @Volatile var figureDistance = Float.NaN
+        private set
 
     private var frameCounter = 0
     private var lastFpsTime = System.currentTimeMillis()
@@ -97,6 +106,12 @@ class ArRenderer(private val arSession: ArSession) : GLSurfaceView.Renderer {
                 val estimate = frame.lightEstimate
                 if (estimate.state == LightEstimate.State.VALID) estimate.getColorCorrection(light, 0)
                 figureRenderer.draw(figures, view, proj, light)
+
+                val feet = figures.lastOrNull()?.anchor?.pose
+                val cam = camera.pose
+                phoneAboveFeet = if (feet == null) Float.NaN else cam.ty() - feet.ty()
+                figureDistance = if (feet == null) Float.NaN else
+                    Math.hypot((cam.tx() - feet.tx()).toDouble(), (cam.tz() - feet.tz()).toDouble()).toFloat()
             }
 
             // Calculate metrics for HUD

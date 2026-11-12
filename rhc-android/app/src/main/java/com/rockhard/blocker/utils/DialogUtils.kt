@@ -24,6 +24,7 @@ object DialogUtils {
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         
         dialogView.findViewById<TextView>(R.id.tvDialogTitle).text = title
+        Elegance.heading(dialogView.findViewById(R.id.tvDialogTitle))
         
         if (message != null) { 
             val tvMsg = dialogView.findViewById<TextView>(R.id.tvDialogMessage)
@@ -53,5 +54,6 @@ object DialogUtils {
         
         // This invokes the lambda to dynamically add buttons/checkboxes AFTER the dialog is drawn!
         viewSetup?.invoke(contentLayout, dialog)
+        Elegance.dress(dialogView)
     }
 }

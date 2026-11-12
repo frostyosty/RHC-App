@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 // The 3D Wilds sim + renderer, shared by the Android app (jvm) and the web
 // client (wasmJs). commonMain must stay pure Kotlin: no java.*, no android.*.
@@ -8,7 +8,7 @@ plugins {
 
 kotlin {
     jvm {
-        compilations.all { kotlinOptions.jvmTarget = "17" }
+        compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
     }
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {

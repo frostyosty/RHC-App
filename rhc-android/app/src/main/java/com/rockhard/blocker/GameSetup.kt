@@ -5,109 +5,41 @@ import android.view.MotionEvent
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.Toast
-import kotlin.random.Random
+import com.rockhard.blocker.world.battle.FightInput
+import com.rockhard.blocker.world.battle.FightItem
 
 internal fun GameActivity.setupBattleControls() {
-    val btn1 = findViewById<Button>(R.id.btnMove1)
-    val btn2 = findViewById<Button>(R.id.btnMove2)
-    val btn3 = findViewById<Button>(R.id.btnMove3)
-
-    btn1.setOnClickListener { if (playerLastStand) executeHumanPunch() else executePlayerMove(party[activePetIndex].move1) }
-    btn2.setOnClickListener { executePlayerMove(party[activePetIndex].move2) }
-    btn3.setOnClickListener { executePlayerMove(party[activePetIndex].move3) }
+    // the buttons say what you want; the rules (FightHost.kt) decide whether it happens
+    findViewById<Button>(R.id.btnMove1).setOnClickListener { fightInput(FightInput(move = 1)) }
+    findViewById<Button>(R.id.btnMove2).setOnClickListener { fightInput(FightInput(move = 2)) }
+    findViewById<Button>(R.id.btnMove3).setOnClickListener { fightInput(FightInput(move = 3)) }
 
     findViewById<Button>(R.id.btnSwap).setOnClickListener {
-        cancelBattleTimer()
-        if (battleOver || party.size <= 1 || playerLastStand || currentEnemy == null) return@setOnClickListener
-        val wildLvl = currentEnemy!!.maxHp / 10
-        val options = party.mapIndexed { index, p -> val diff = (p.maxHp / 10) - wildLvl; "${p.name} Lvl ${p.maxHp / 10} (${if (diff >= 0) "+$diff" else diff})" }.toTypedArray()
-        
+        val v = fightView() ?: return@setOnClickListener
+        val me = v.me
+        val enemy = currentEnemy
+        if (battleOver || playerLastStand || enemy == null || me.living().size <= 1) return@setOnClickListener
+        val wildLvl = enemy.maxHp / 10
         DialogUtils.showCustomDialog(this, "Swap to who?", null, true, "", null) { content, dialog ->
-            party.forEachIndexed { index, p ->
-                val btn = Button(this).apply { text = options[index]; setBackgroundResource(R.drawable.bg_btn_standard); setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 16) }
-                    setOnClickListener {
-                        if (index == activePetIndex) printLog("\n> ${p.name} is already fighting!") 
-                        else { activePetIndex = index; prefs.edit().putInt("ACTIVE_PET_INDEX", activePetIndex).apply(); printLog("\n> You swapped to ${party[activePetIndex].name}!"); showBattleArena(party[activePetIndex].name, currentEnemy!!.name); updateBattleUI(); if (hasHoard()) printLog("> 📦 [Hoard] The swap cost no turn!") else triggerEnemyCounterAttack() }
-                        dialog.dismiss()
-                    }
+            me.living().forEach { i ->
+                val p = me.party[i]
+                val diff = (p.maxHp / 10) - wildLvl
+                val btn = Button(this).apply { text = "${p.name} Lvl ${p.maxHp / 10} (${if (diff >= 0) "+$diff" else diff})"; setBackgroundResource(R.drawable.bg_btn_standard); setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 16) }
+                    setOnClickListener { fightInput(FightInput(cage = i)); dialog.dismiss() }
                 }; content.addView(btn)
             }
         }
     }
 
-    // MID-BATTLE POTION
-    findViewById<Button>(R.id.btnBattlePot).setOnClickListener {
-    cancelBattleTimer()
-        if (battleOver || playerLastStand) return@setOnClickListener
-        val pet = party[activePetIndex]
-        if (pet.eqPots > 0) {
-            pet.eqPots--
-            val effect = Random.nextInt(3)
-            if (effect == 0) { playerHasTripleStrike = true; printLog("\n> 🧪 Potion glows RED! Next attack will be a TRIPLE STRIKE!") } 
-            else if (effect == 1) { playerHasEvasion = true; printLog("\n> 🧪 Potion glows BLUE! Guaranteed EVASION!") } 
-            else { pet.maxHp += 10; pet.hp = (pet.hp + 10).coerceAtMost(pet.maxHp); printLog("\n> 🧪 Potion glows GREEN! Max HP increased!") }
-            saveParty(); updatePartyScreen(); updateBattleUI()
-            triggerEnemyCounterAttack()
-        }
-    }
-
-    // MID-BATTLE SPRAY
-    findViewById<Button>(R.id.btnBattleSpray).setOnClickListener {
-    cancelBattleTimer()
-        if (battleOver || playerLastStand) return@setOnClickListener
-        val pet = party[activePetIndex]
-        if (pet.eqSprays > 0) {
-            pet.eqSprays--
-            printLog("\n> 💨 ${pet.name} used a Repel Spray!")
-            saveParty(); updatePartyScreen(); updateBattleUI()
-            
-            if (isUnderAttack && Random.nextInt(100) < 5) { printLog("> CRITICAL SUCCESS! Boss flees."); endBattle() } 
-            else if (isWildBattle && Random.nextInt(100) < 60) { printLog("> The wild ${currentEnemy?.name} was blinded and ran away!"); endBattle() } 
-            else { printLog("> No effect..."); triggerEnemyCounterAttack() }
-        }
-    }
-
-    // MID-BATTLE NET (Takes a turn!)
-    findViewById<Button>(R.id.btnBattleNet).setOnClickListener {
-    cancelBattleTimer()
-        if (battleOver || playerLastStand || currentEnemy == null) return@setOnClickListener
-        val pet = party[activePetIndex]
-        if (pet.eqNets <= 0) return@setOnClickListener
-        
-        pet.eqNets--
-        saveParty(); updatePartyScreen(); updateBattleUI()
-
-        printLog("\n--- PLAYER TURN ---")
-        printLog("> You threw a Net at ${currentEnemy?.name}!")
-        playFx(false, "net")
-
-        if (currentEnemy?.type == "EventBoss" || isTrainerBattle) {
-            printLog("> ❌ You cannot catch this beast! The net bounced off!")
-            mainHandler.postDelayed({ triggerEnemyCounterAttack() }, 1000)
-            return@setOnClickListener
-        }
-
-        // QTE Catch Math
-        val totalNets = nets + party.sumOf { it.eqNets }
-        val baseCatchChance = 15 + (25.0 * Math.exp(-0.05 * totalNets)).toInt()
-        val isClear = pet.infusionStacks > 0 && pet.infusionEl == "Clear"
-        val catchPenalty = (exploreDifficulty / 100f * 20).toInt()
-        val catchChance = (if (isClear) baseCatchChance + 15 else baseCatchChance) - catchPenalty
-        
-        if (Random.nextInt(100) < catchChance) {
-            printLog("> 🌟 SUCCESS! You caught ${currentEnemy?.name} mid-battle!")
-            currentEnemy!!.isNew = true; party.add(currentEnemy!!)
-            saveParty(); updatePartyScreen(); updateDispatchButton(); endBattle()
-        } else {
-            printLog("> 💢 The net broke! ${currentEnemy?.name} breaks free!")
-            mainHandler.postDelayed({ triggerEnemyCounterAttack() }, 1000)
-        }
-    }
+    findViewById<Button>(R.id.btnBattlePot).setOnClickListener { if ((myFighter()?.eqPots ?: 0) > 0) fightInput(FightInput(item = FightItem.POTION)) }
+    findViewById<Button>(R.id.btnBattleSpray).setOnClickListener { if ((myFighter()?.eqSprays ?: 0) > 0) fightInput(FightInput(item = FightItem.SPRAY)) }
+    // takes a turn
+    findViewById<Button>(R.id.btnBattleNet).setOnClickListener { if ((myFighter()?.eqNets ?: 0) > 0) fightInput(FightInput(item = FightItem.NET)) }
 
     findViewById<Button>(R.id.btnAbandon).setOnClickListener {
-    cancelBattleTimer()
+        val p = myFighter() ?: return@setOnClickListener
         if (battleOver || playerLastStand) return@setOnClickListener
-        DialogUtils.showCustomDialog(this, "Abandon Netbeast?", "If you flee now, ${party[activePetIndex].name} will be lost forever. Are you sure?", true, "ABANDON", { printLog("\n> You ABANDONED ${party[activePetIndex].name} to save yourself!"); AnimUtils.animDeath(findViewById(R.id.spritePlayer)); val before = party.toList(); party.removeAt(activePetIndex); remapExpeditions(before); activePetIndex = 0; saveParty(); endBattle() }, null)
+        DialogUtils.showCustomDialog(this, "Abandon Netbeast?", "If you flee now, ${p.name} will be lost forever. Are you sure?", true, "ABANDON", { fightInput(FightInput(abandon = true)) }, null)
     }
 }
 

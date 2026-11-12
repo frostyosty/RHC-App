@@ -21,11 +21,11 @@ deterministic, the sim's own RNG, `DetMath` trig, in `EntitySnapshot`, and
 
 1. **Wilds phase 3**, fair fights. Small, and fine to do first.
 2. **Move the battle rules into `world-core`.** Web and multiplayer both
-   need it.
+   need it. *(Now step 03 of `NETBEASTS_WEB_PLAN/`.)*
 3. **The web client**, single-player, with the save synced between phone
-   and browser.
+   and browser. *(Now steps 01, 02, 04, 05 of `NETBEASTS_WEB_PLAN/`.)*
 4. **Multiplayer.** A browser tab is the second player for testing, so it
-   doesn't take two phones.
+   doesn't take two phones. *(Now step 06 of `NETBEASTS_WEB_PLAN/`.)*
 5. **Wilds phases 4-6**: fleeing, the red-wall colossus, mounts. They come
    after multiplayer so each is designed for more than one player from the
    start, and so no new fight rules get built on Android-only code.
@@ -42,78 +42,15 @@ from phase 2:
 
 ## 1. done - ignore
 
-## 2. Move the battle rules into `world-core`
+## 2-4. Moved to `NETBEASTS_WEB_PLAN/` (2026-11-12)
 
-The battle rules aren't in the shared code. They're `GameActivity`
-extension functions in `app/.../engines/combat/` (`executePlayerMove`,
-`triggerEnemyCounterAttack`, `endBattle` and friends), timed with
-`mainHandler.postDelayed`, rolling `kotlin.random.Random`, and keeping state
-in the `CombatState` object and `GameActivity` fields. A browser can't run
-them, and in multiplayer only the phone that started a fight could.
-`GameModels.kt` and `SkillEngine.kt` have no Android imports, so the data
-the rules use can move with them.
-
-- Move the rules into `world-core` `commonMain` as sim code: they advance on
-  the sim's ticks instead of `postDelayed`, roll the sim's RNG, and keep the
-  fight's state in the snapshot.
-- The app shows the results the way it does now, through `playSpriteAnim`,
-  `playFx`, `showBattleArena`, the battle timer and `printLog`, driven by
-  events out of the sim. The game should play the same as before.
-- Both the Wilds fight (`WorldFight.kt`) and the old battle screen
-  (`BattleUI.kt`: text-mode exploring, bosses, the red-wall Defend) use the
-  rules, so both have to run on the moved code. Don't leave a second copy.
-- Test it with a scripted fight in `DeterminismTest` that goes through the
-  real rules (damage, traits, weather, catching) and matches bit for bit on
-  the JVM and wasm. Re-pin on purpose.
-- When it lands, rewrite the "Fights stay in the world" rule in `CLAUDE.md`,
-  which still says the rules live in `engines/combat/`.
-
-## 3. The web client
-
-`world-core` (sim and renderer) already builds for `wasmJs`, and
-`DeterminismTest` proves it matches the JVM bit for bit. The renderer draws
-into an `IntArray`, which a browser canvas can show as `ImageData`. What the
-web doesn't have yet:
-
-- **A shell:** the frame loop, drag to steer and look, the HUD (timer, coins,
-  nets, minimap) and the fight panel (cages, moves, items).
-- **Sprites:** a way to load the autogen GIFs in the browser.
-- **The save:** party, bag and coins are only in Android prefs today. They
-  need to live somewhere both the phone and the browser reach, and a phone
-  and a browser need a way to link to the same player.
-- **Kotlin:** 1.9.22's `wasmJs` is experimental (`scripts/node-wasm.sh`
-  works around its tests on Node 22+). Upgrading to Kotlin 2.x is probably
-  part of this. It touches the Android build too, so do it as its own change
-  and check all four flavors still build.
-
-**Ask:**
-- Where the save and identity live (Supabase with the leaderboard's
-  anonymous UUID, or an account), and how a phone and a browser link. Yes supabase is fine, no account, just qr sync
-- Its own page or an iframe, and where it's hosted. An iframe doesn't stop
-  WebSockets, but cross-origin iframes get partitioned or blocked storage
-  (Safari especially), so identity can't rely on `localStorage` there; pass
-  a token in with `postMessage` or keep it server-side. iframe is good, hosted on my website on a page
-- Aether on the web. The daily playtime limit is set on the phone. A browser
-  version either reads the same Aether from the server or is a way round it. yeah has to read this from the server so need to move that to supabase etc.
-
-## 4. Multiplayer
-
-Everything runs through `WorldSession`, so the next step is a
-`NetWorldSession` that sends `PlayerInput` up and applies `WorldSnapshot`s
-down, with a host or server running the same `sim/` code (which by now
-includes the battle rules). Other players already render as `spr_player_*`
-and show as cyan on the minimap. Since everyone shares the day's seed, only
-entities need syncing, not the map. Players only share a map if they share
-the region too, so the host sends its `Region.encode()` with the seed. Test
-with a phone and a browser tab, or two tabs.
-
-**Ask:**
-- Host-authoritative (one player's device runs the sim) or a server. server
-- Syncing through Supabase Realtime (the leaderboard already uses Supabase)
-  or a small relay. supabase
-- How encounters work when two players are near one creature. USER first come first served, other player can hang around ready to challenge the winner. No better yet, you see another human being attacked, you can throw down a beast to attack that netbeast at the same time! however there should be buttons for the user to press should the user want to attack the other user's netbeast at the same time as the computers netbeast is attacking them (sort of backstabbing another user). 
-computer netbeasts can switch the focus of their attacks  with each attack instance. Since the netbeasts are circling each other, a third combatant means the circles need to change, into a complex 3 circle system. A fourth player needs to be able to get roped in too so this needs to be modular!
-If the killing blow on a netbeast is landed by a user, the netbeast gets captured rather than slain.
+The battle rules into `world-core`, the web client and multiplayer are now
+one plan, `NETBEASTS_WEB_PLAN/`, and it comes first (agreed with the user
+2026-11-12: the version for the website's Games tab is the priority). The
+user's answers that were here (Supabase, QR sync, an iframe on their
+website, Aether from the server, a server, Supabase Realtime, and how
+fights with several players work) are copied into that plan's README and
+step 06, word for word where it matters.
 
 ## 5. Wilds phases 4-6
 

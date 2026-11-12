@@ -15,7 +15,7 @@ internal fun GameActivity.evolveBeast(petIndex: Int) {
             pet.maxHp = (pet.maxHp * 1.5).toInt()
             pet.hp = pet.maxHp
 
-            val newMoves = SkillEngine.generateMoves(pet.type, nextEvo.evoStage)
+            val newMoves = SkillEngine.generateMoves(pet.type, nextEvo.evoStage) { kotlin.random.Random.nextInt(it) }
             if (nextEvo.evoStage == 2) pet.move2 = newMoves.second
             if (nextEvo.evoStage == 3) pet.move3 = newMoves.third
 

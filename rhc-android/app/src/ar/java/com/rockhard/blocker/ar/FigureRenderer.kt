@@ -117,6 +117,8 @@ internal class FigureRenderer {
         GLES30.glEnable(GLES30.GL_BLEND)
         GLES30.glBlendFunc(GLES30.GL_ONE, GLES30.GL_ONE_MINUS_SRC_ALPHA)
         GLES30.glDepthMask(false)
+        GLES30.glBindVertexArray(0)
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0) // the disc is a client-side array
         GLES30.glUseProgram(shadowProgram)
         for (f in figures) {
             if (f.anchor.trackingState != TrackingState.TRACKING) continue
@@ -210,6 +212,11 @@ internal class FigureRenderer {
             GLES30.glBindVertexArray(0)
             val tex = if (part.image < 0) white else textures.getOrPut(part.image) { imageTexture(fig, part.image) }
             GpuPart(vao, part.indices.size, tex, part.color, skinned)
+        }.also {
+            // The array buffer binding isn't part of a VAO. Left bound, it turns every
+            // client-side array after it (the camera quad, the shadows) into an offset
+            // into this buffer, and the camera goes black.
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0)
         }
     }
 

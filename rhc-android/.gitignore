@@ -1,3 +1,5 @@
 zz_quicksave.txt
 ../zz_quicksave.txt
 /zz_quicksave.txt
+# Kotlin 2.x compiler session data and error logs
+.kotlin/

@@ -120,6 +120,12 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.llMomentumContainer).visibility = if (isGamers) View.GONE else View.VISIBLE
         findViewById<View>(R.id.llSafariCard).visibility = if (isGamers) View.VISIBLE else View.GONE
         if (Flavor.homevisits()) updateHomevisitsCard()
+        if (Elegance.on) {
+            // The Homevisits APK's softer look: dusk backdrop, script headings, a rose-gold game button, and a staggered fade-in
+            findViewById<View>(R.id.llMainContent).let { content -> (content.parent as View).background = Elegance.backdrop(); Elegance.dress(content); Elegance.reveal(content as android.view.ViewGroup) }
+            findViewById<Button>(R.id.btnGame).backgroundTintList = null
+            Elegance.crossFade(this)
+        }
 
         refreshWeather()
 
@@ -167,7 +173,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btnGame).setOnClickListener {
             val closed = AetherEngine.closedReason(prefs)
             if (closed != null) Toast.makeText(this, closed, Toast.LENGTH_LONG).show()
-            else if (Flavor.homevisits()) startActivity(Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)) else startActivity(Intent(this, GameActivity::class.java))
+            else if (Flavor.homevisits()) { startActivity(Intent().setClassName(this, Flavor.HOMEVISITS_ACTIVITY)); Elegance.crossFade(this) } else startActivity(Intent(this, GameActivity::class.java))
         }
         
         // --- NEW: Attach Uninstaller listener to the main layout button ---

@@ -11,7 +11,6 @@ import com.rockhard.blocker.world.render.Palette
 import com.rockhard.blocker.world.render.TerrainRenderer
 import com.rockhard.blocker.world.sim.HouseStyle
 import com.rockhard.blocker.world.sim.LocalWorldSession
-import com.rockhard.blocker.world.sim.Species
 import com.rockhard.blocker.world.sim.World
 import com.rockhard.blocker.world.sim.WorldEvent
 import com.rockhard.blocker.world.sim.WorldMap
@@ -51,7 +50,7 @@ internal fun speciesOf(p: Netbeast) = p.name.replace(Regex("\\[.*?\\]"), "").tri
 /** The species in your lead cage, or null if you have no netbeasts. */
 internal fun GameActivity.leadCompanion(): String? = walkOrder().firstOrNull()?.let { speciesOf(it) }
 
-private val beastSpecies get() = GameData.beasts.map { Species(it.name, it.evoStage) }
+private val beastSpecies get() = GameData.species
 
 /** Which day and region a walk belongs to: a prepared walk for another is stale. */
 private fun GameActivity.walkKey() = "${todaysSeed()}|${RegionProbe.load(prefs).encode()}"
@@ -144,6 +143,7 @@ internal fun GameActivity.showWorld() {
         override fun onEncounter(e: WorldEvent.Encounter) = onWorldEncounter(e)
         override fun onCompanionOut(e: WorldEvent.CompanionOut) = onWorldCompanionOut(e)
         override fun onRivalOut(e: WorldEvent.RivalOut) = onWorldRivalOut(e)
+        override fun onFighting(e: WorldEvent.Fighting) = onWorldFighting(e)
         override fun onCoinPicked(e: WorldEvent.CoinPicked) = onWorldCoin(e)
         override fun onExplorationOver() = finishExploration()
         override fun onSlippedPast(e: WorldEvent.SlippedPast) = printLog("> 🕊️ A wild ${e.species} looks straight through you. The Cloak of Christ hides you.")

@@ -1,11 +1,14 @@
 package com.rockhard.blocker.homevisits
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
+import android.graphics.Typeface
 import android.opengl.GLSurfaceView
 import android.os.BatteryManager
 import android.os.Bundle
@@ -14,12 +17,15 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.rockhard.blocker.AetherEngine
+import com.rockhard.blocker.Elegance
 import com.rockhard.blocker.MomentumEngine
 import com.rockhard.blocker.ar.ArRenderer
 import com.rockhard.blocker.ar.ArSession
@@ -83,6 +89,7 @@ class HomevisitsActivity : Activity() {
                     Planes Found: ${arRenderer?.planesCount}
                     Cam Height: ${String.format("%.2f", camHeight)}m
                     Depth: ${arSession?.session?.isDepthModeSupported(com.google.ar.core.Config.DepthMode.AUTOMATIC) ?: false}
+                    Phone above feet: ${arRenderer?.phoneAboveFeet?.let { if (it.isNaN()) "-" else String.format("%.2f m", it) }} | Figure: ${arRenderer?.figureDistance?.let { if (it.isNaN()) "-" else String.format("%.2f m away", it) }}
                     Figures: ${arRenderer?.figureCount} (${testFigure?.let { if (it.isMannequin) "mannequin" else "test.glb" } ?: "loading"}) | Move: ${testFigure?.clips?.getOrNull(moveIndex)?.name ?: "-"}
                     Batt: $batteryLevel% | Temp: ${batteryTemp}°C
                 """.trimIndent()
@@ -100,23 +107,22 @@ class HomevisitsActivity : Activity() {
             finish()
             return
         }
+        Elegance.crossFade(this)
         showPlaceholderScreen()
         registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
     }
 
+    /** The welcome screen: script title, today's Momentum counting up, everything fading in. Seven taps opens the AR test. */
     private fun showPlaceholderScreen() {
+        val dp = resources.displayMetrics.density
+        val momentum = MomentumEngine.calculateCurrentMomentum(getSharedPreferences("RHC_PREFS", MODE_PRIVATE))
+        val faces = Elegance.faces(this)
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.parseColor("#121212"))
-        }
-
-        val tv = TextView(this).apply {
-            text = "Homevisits\n\nToday's Momentum: ${MomentumEngine.calculateCurrentMomentum(getSharedPreferences("RHC_PREFS", MODE_PRIVATE))} min\n\nYour first visitor is on the way."
-            textSize = 24f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            setPadding(32, 32, 32, 32)
+            background = Elegance.backdrop()
+            setPadding((32 * dp).toInt(), 0, (32 * dp).toInt(), 0)
             setOnClickListener {
                 taps++
                 if (taps >= 7) {
@@ -125,8 +131,49 @@ class HomevisitsActivity : Activity() {
                 }
             }
         }
-        root.addView(tv)
+        fun line(text: String, sizeSp: Float, face: Typeface, color: Int, topDp: Int = 0, spacing: Float = 0f) = TextView(this).apply {
+            this.text = text
+            textSize = sizeSp
+            typeface = face
+            letterSpacing = spacing
+            setTextColor(color)
+            gravity = Gravity.CENTER
+            root.addView(this, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = (topDp * dp).toInt() })
+        }
+
+        line("WELCOME HOME", 14f, faces.label, Elegance.ROSE_GOLD, spacing = 0.35f)
+        line("Homevisits", 64f, faces.script, Elegance.IVORY, topDp = 2)
+        root.addView(View(this).apply { setBackgroundColor(Elegance.ROSE_GOLD); alpha = 0.6f },
+            LinearLayout.LayoutParams((56 * dp).toInt(), (1 * dp).coerceAtLeast(1f).toInt()).apply { topMargin = (18 * dp).toInt(); bottomMargin = (22 * dp).toInt() })
+        val count = line("0", 76f, faces.light, Elegance.IVORY)
+        line(if (momentum == 1) "minute of Momentum today" else "minutes of Momentum today", 18f, faces.body, Elegance.MUTED, spacing = 0.03f)
+        val visitor = line("Your first visitor is on the way.", 22f, faces.italic, Elegance.ROSE_GOLD, topDp = 44)
+
         setContentView(root)
+
+        Elegance.reveal(root, stepMs = 140, startMs = 120)
+        ValueAnimator.ofInt(0, momentum).apply {
+            duration = 1400
+            startDelay = 600
+            interpolator = DecelerateInterpolator(2f)
+            addUpdateListener { count.text = (it.animatedValue as Int).toString() }
+        }.start()
+        // The visitor line breathes gently once it has faded in
+        breathing?.cancel()
+        breathing = ObjectAnimator.ofFloat(visitor, View.ALPHA, 1f, 0.45f).apply {
+            duration = 2600
+            startDelay = 1900
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.REVERSE
+            interpolator = AccelerateDecelerateInterpolator()
+            start()
+        }
+    }
+    private var breathing: ObjectAnimator? = null
+
+    override fun finish() {
+        super.finish()
+        Elegance.crossFade(this)
     }
 
     private fun launchArDebugMode() {
@@ -139,6 +186,7 @@ class HomevisitsActivity : Activity() {
     }
 
     private fun startArSession() {
+        breathing?.cancel()
         isArMode = true
         arSession = ArSession(this)
         if (arSession?.setup() == false) {
@@ -268,6 +316,7 @@ class HomevisitsActivity : Activity() {
         super.onDestroy()
         unregisterReceiver(batteryReceiver)
         hudHandler.removeCallbacks(hudRunnable)
+        breathing?.cancel()
         arSession?.destroy()
     }
 }

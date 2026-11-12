@@ -111,10 +111,10 @@ internal fun GameActivity.checkOfflineExpeditions() {
             if (kotlin.random.Random.nextInt(100) < 30) {
                 val wildName = GameData.beasts.random().name; val pl = kotlin.random.Random.nextInt(40, 160)
                 currentEnemy = Netbeast(wildName, "Wild", pl, pl, "Tackle", "Bite", "Swipe", 0L, 0, 0, 0, false, "None", 0, 0, 0, 0, "None", 0)
-                isWildBattle = true
-                if (isPlayer) { playerLastStand = true; setUIState("BATTLE"); showBattleArena("YOU", wildName) } 
-                else { activePetIndex = idx; setUIState("BATTLE"); showBattleArena(party[idx].name, wildName) }
-                printLog("⚠️ OFFLINE AMBUSH!\n> While you were away, $pName was attacked by a wild $wildName!"); updateBattleUI(); break
+                isWildBattle = true; isTrainerBattle = false; battleOver = false
+                if (isPlayer) playerLastStand = true else activePetIndex = idx
+                setUIState("BATTLE")
+                printLog("⚠️ OFFLINE AMBUSH!\n> While you were away, $pName was attacked by a wild $wildName!"); beginScreenFight(); break
             } else { val c = kotlin.random.Random.nextInt(5, 15); focusCoins += c; printLog("> \uD83C\uDFC1 Offline: $pName returned with $c Focus Coins!") }
         } else printLog("> $pName is still exploring...")
     }

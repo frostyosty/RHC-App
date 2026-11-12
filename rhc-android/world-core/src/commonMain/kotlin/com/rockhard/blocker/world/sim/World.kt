@@ -1,5 +1,12 @@
 package com.rockhard.blocker.world.sim
 
+import com.rockhard.blocker.world.battle.Fight
+import com.rockhard.blocker.world.battle.FightEvent
+import com.rockhard.blocker.world.battle.FightInput
+import com.rockhard.blocker.world.battle.FightOutcome
+import com.rockhard.blocker.world.battle.FightSetup
+import com.rockhard.blocker.world.battle.FightSnapshot
+import com.rockhard.blocker.world.battle.SideSetup
 import com.rockhard.blocker.world.sim.DetMath.atan2
 import com.rockhard.blocker.world.sim.DetMath.cos
 import com.rockhard.blocker.world.sim.DetMath.hypot
@@ -17,8 +24,8 @@ enum class EntityKind { PLAYER, BEAST, CAGE, COMPANION, RIVAL }
 enum class EntityState { WALKING, PATROL, PAUSE, SHY, RETURN, ENGAGED, THROWN, LANDED, GONE, DONE, WAIT, LEAVE, ROAM }
 
 /**
- * A one-off pose the host asks for when the battle rules resolve something
- * (a move lands, a hit, fainting). Rendered with the spr_<name>_<anim> GIFs;
+ * A one-off pose, when the battle rules resolve something (a move lands, a
+ * hit, fainting): FightEvent.Pose. Rendered with the spr_<name>_<anim> GIFs;
  * FAINT holds until the encounter is resolved.
  */
 enum class Action(val anim: String, val ticks: Int) {
@@ -90,15 +97,14 @@ class Entity(
 /**
  * One tick of intent from a player; this is what a client would send to a
  * host. While walking the only input is steering (a one-off turn in
- * radians). In a fight, steering picks which way you circle, and
- * [throwCage] names the netbeast whose cage you throw (a new throw
- * recalls the one that's out). [recall] puts it back with nothing
- * thrown in its place. While walking, [letOut] names a netbeast whose cage
- * you toss down: it comes out and roams for the rest of the walk, going
- * after coins if [forage] is set.
+ * radians). In a fight, steering picks which way you circle, and [fight] is
+ * what you do in it (a move, a cage to throw, an item): the rules decide
+ * what happens, and the cages fly when they say so. While walking, [letOut]
+ * names a netbeast whose cage you toss down: it comes out and roams for the
+ * rest of the walk, going after coins if [forage] is set.
  */
 data class PlayerInput(
-    val lookDelta: Double = 0.0, val throwCage: String? = null, val recall: Boolean = false,
+    val lookDelta: Double = 0.0, val fight: FightInput? = null,
     val letOut: String? = null, val forage: Boolean = false,
 )
 
@@ -118,6 +124,12 @@ sealed class WorldEvent {
     data class SlippedPast(val playerId: Int, val beastId: Int, val species: String) : WorldEvent()
     /** The player's exploration timer ran out. */
     data class ExplorationOver(val playerId: Int) : WorldEvent()
+    /**
+     * Something happened in fight [fightId] ([World.startFight]): a log line, a pose, loot, the
+     * end. The World has already moved the cages and posed the fighters; the host shows the rest
+     * and writes the save. After [FightEvent.Closed] the fight is gone and the walk goes on.
+     */
+    data class Fighting(val fightId: Int, val event: FightEvent) : WorldEvent()
 }
 
 /** How a fight ended. PLAYER_BEATEN: it clobbered you (a last stand lost), so you're knocked flat first. */
@@ -141,6 +153,7 @@ data class CoinGone(val coin: Int, val ticks: Int)
  */
 data class WorldSnapshot(
     val tick: Long, val entities: List<EntitySnapshot>, val coinsGone: List<CoinGone> = emptyList(), val awake: List<Long> = emptyList(),
+    val fights: List<FightSnapshot> = emptyList(),
 )
 
 /**
@@ -249,6 +262,12 @@ class World(val map: WorldMap) {
     /** The tiles whose beasts are out (WorldMap.key), in the order they woke. */
     private val awake = LinkedHashSet<Long>()
 
+    /** The fights going on, by id ([startFight]). */
+    val fights = LinkedHashMap<Int, Fight>()
+    private var nextFight = 1
+    /** A fight's opening, said on the next tick. */
+    private val queued = mutableListOf<WorldEvent>()
+
     init {
         wake(map.spawnX, map.spawnY)
     }
@@ -333,6 +352,7 @@ class World(val map: WorldMap) {
     fun step(inputs: Map<Int, PlayerInput>): List<WorldEvent> {
         tick++
         val events = mutableListOf<WorldEvent>()
+        events += queued; queued.clear()
         val gone = coinGone.entries.iterator()
         while (gone.hasNext()) { val g = gone.next(); if (g.value <= 1) gone.remove() else g.setValue(g.value - 1) }
         val players = entities.values.filter { it.kind == EntityKind.PLAYER }
@@ -359,6 +379,12 @@ class World(val map: WorldMap) {
                 e.pendingFx?.let { e.fx = it; e.fxAge = 0 }
                 e.pendingAction = Action.NONE; e.pendingFx = null
             }
+        }
+        // the fights after everyone has moved: a cage that opened this tick is out for the rules too
+        for (f in fights.values.toList()) {
+            val fi = HashMap<Int, FightInput>()
+            for (s in f.sides) if (s.isPlayer) inputs[s.entity]?.fight?.let { fi[s.index] = it }
+            handle(f, f.step(fi), events)
         }
         return events
     }
@@ -391,8 +417,6 @@ class World(val map: WorldMap) {
             EntityState.ENGAGED -> {
                 val b = entities[p.link]
                 if (b == null) { p.state = EntityState.WALKING; p.link = -1; return }
-                if (input.throwCage != null) throwCage(p, b, input.throwCage)
-                else if (input.recall) recall(p, b)
                 // swiping picks which way you circle (drag right and you step to your right) and holds it
                 // for a while; otherwise the fight turns round every few seconds
                 if (abs(input.lookDelta) > 1e-4) {
@@ -805,9 +829,10 @@ class World(val map: WorldMap) {
      * out goes back in its cage (or, fainted, lies where it fell and fades) and
      * he throws the new one's cage in, where the last one stood or, the first
      * time, [RIVAL_LAND] of the way to you. Until it's out ([WorldEvent.RivalOut])
-     * the fight is between you and him.
+     * the fight is between you and him. The rules do this (FightEvent.SentOut);
+     * internal so the preview can stage a fight without them.
      */
-    fun rivalSendOut(playerId: Int, species: String) {
+    internal fun rivalSendOut(playerId: Int, species: String) {
         val p = entities[playerId] ?: return
         val r = rivalOf(p) ?: return
         entities.values.removeAll { it.kind == EntityKind.CAGE && it.link == r.id }
@@ -862,6 +887,7 @@ class World(val map: WorldMap) {
             }
         }
         events += WorldEvent.RivalOut(p.id, b.id, b.species)
+        sideOf(r.id)?.let { (f, s) -> f.petOut(s) }
     }
 
     /** A fainted beast with no territory to go back to lies there [FADE_TICKS], then it's gone. */
@@ -915,6 +941,7 @@ class World(val map: WorldMap) {
                     b.orbitDir = -p.orbitDir; b.orbitSpin = 0.0 // against your circle, so they sweep across your view
                     p.targetX = mx; p.targetY = my
                     events += WorldEvent.CompanionOut(p.id, b.id, out.species)
+                    sideOf(p.id)?.let { (f, s) -> f.petOut(s) }
                 }
             }
             else -> {}
@@ -943,12 +970,32 @@ class World(val map: WorldMap) {
         }
     }
 
-    /**
-     * Called by the host when its battle rules resolve something: shows the pose. A hit
-     * waits until its attacker's lunge reaches its peak, so the blow lands on contact.
-     */
-    fun perform(playerId: Int, role: Role, action: Action) {
-        val e = roleEntity(playerId, role) ?: return
+    /** [playerId] throws [species]' cage into their fight (the rules say when: FightEvent.SentOut). Internal: the preview stages fights with it. */
+    internal fun throwCage(playerId: Int, species: String) {
+        val p = entities[playerId] ?: return
+        val b = entities[p.link] ?: return
+        if (p.state == EntityState.ENGAGED) throwCage(p, b, species)
+    }
+
+    /** [playerId]'s netbeast goes back in its cage (FightEvent.Recalled). Internal, like [throwCage]. */
+    internal fun recall(playerId: Int) {
+        val p = entities[playerId] ?: return
+        val b = entities[p.link] ?: return
+        if (p.state == EntityState.ENGAGED) recall(p, b)
+    }
+
+    /** A pose on whoever has [role] in [playerId]'s fight (FightEvent.Pose). Internal, like [throwCage]. */
+    internal fun perform(playerId: Int, role: Role, action: Action) {
+        act(roleEntity(playerId, role) ?: return, action)
+    }
+
+    /** fx_<name> over whoever has [role] in [playerId]'s fight, when the blow lands (FightEvent.Fx). */
+    internal fun effect(playerId: Int, role: Role, fx: String) {
+        fxOn(roleEntity(playerId, role) ?: return, fx)
+    }
+
+    /** Shows a pose on [e]. A hit waits until its attacker's lunge reaches its peak, so the blow lands on contact. */
+    private fun act(e: Entity, action: Action) {
         val wait = when (action) {
             Action.HIT -> untilBlowLands(e)
             Action.FAINT -> if (e.pendingAction != Action.NONE) e.pendingTicks else 0 // it drops when that blow lands
@@ -958,9 +1005,7 @@ class World(val map: WorldMap) {
         else { e.action = action; e.actionTicks = action.ticks }
     }
 
-    /** Plays fx_<name> over the entity taking [role], when the blow lands. */
-    fun effect(playerId: Int, role: Role, fx: String) {
-        val e = roleEntity(playerId, role) ?: return
+    private fun fxOn(e: Entity, fx: String) {
         val wait = untilBlowLands(e)
         if (wait > 0) { e.pendingFx = fx; e.pendingTicks = maxOf(e.pendingTicks, wait) }
         else { e.fx = fx; e.fxAge = 0 }
@@ -972,13 +1017,101 @@ class World(val map: WorldMap) {
         return if (a.action == Action.ATTACK) a.actionTicks - Action.ATTACK.ticks / 2 else 0
     }
 
+    // ------------------------------------------------------------------ fights
+
     /**
-     * Called by the host once the battle for an Encounter is over. Walking resumes. A beaten
-     * visitor is gone for good: a boss faints and fades, a rival walks off. Otherwise a visitor
-     * waits there again, except a boss you drove off, which walks off.
+     * The fight for [playerId]'s encounter with [foeId] (a beast, a boss or a rival) begins: [mine]
+     * is the player's side, [foe] the other; the World fills in their entities. The rules run here
+     * from now on, a tick at a time, on players' [PlayerInput.fight]; what they say comes out as
+     * [WorldEvent.Fighting] (the opening on the next tick), and when it closes the encounter is
+     * resolved. Its dice are seeded from the map, the tick and the foe, so every machine rolls the
+     * same. Returns the fight's id, or -1 if the player isn't squared up to anyone.
+     */
+    fun startFight(playerId: Int, foeId: Int, setup: FightSetup, mine: SideSetup, foe: SideSetup): Int {
+        val p = entities[playerId] ?: return -1
+        if (p.state != EntityState.ENGAGED || entities[foeId] == null || sideOf(playerId) != null) return -1
+        val id = nextFight++
+        val seed = map.seed xor (tick * -0x61c8864680b583ebL) xor (foeId.toLong() shl 40) xor id.toLong()
+        val f = Fight.create(id, setup, listOf(mine.copy(entity = playerId), foe.copy(entity = foeId)), seed)
+        fights[id] = f
+        handle(f, f.start(), queued)
+        return id
+    }
+
+    /** The fight [entityId] is a side of, and which side. */
+    fun sideOf(entityId: Int): Pair<Fight, Int>? {
+        for (f in fights.values) for (s in f.sides) if (s.entity == entityId) return f to s.index
+        return null
+    }
+
+    /** The world's part of what the rules said: cages, poses, effects. Everything goes on to the host. */
+    private fun handle(f: Fight, evs: List<FightEvent>, out: MutableList<WorldEvent>) {
+        for (e in evs) {
+            when (e) {
+                is FightEvent.Pose -> {
+                    val a = when (e.anim) { "attack" -> Action.ATTACK; "hit" -> Action.HIT; "faint" -> Action.FAINT; "victory" -> Action.VICTORY; else -> null }
+                    if (a != null) fighter(f, e.side, e.person)?.let { act(it, a) }
+                }
+                is FightEvent.Fx -> fighter(f, e.side, e.person)?.let { fxOn(it, e.fx) }
+                is FightEvent.SentOut -> {
+                    val s = f.sides[e.side]
+                    val species = s.party.getOrNull(e.index)?.species
+                    if (species != null) {
+                        if (s.isPlayer) throwCage(s.entity, species)
+                        else if (entities[s.entity]?.kind == EntityKind.RIVAL) firstPlayer(f)?.let { rivalSendOut(it.id, species) }
+                    }
+                }
+                is FightEvent.Recalled -> f.sides[e.side].let { s -> if (s.isPlayer) recall(s.entity) }
+                else -> {}
+            }
+            out += WorldEvent.Fighting(f.id, e)
+            if (e is FightEvent.Closed) closeFight(f)
+        }
+    }
+
+    private fun firstPlayer(f: Fight) = f.sides.firstOrNull { it.isPlayer }?.let { entities[it.entity] }
+
+    /** Who [side]'s pose is on: the player ([person]) or their netbeast; a rival or his netbeast that's out; a beast. */
+    private fun fighter(f: Fight, side: Int, person: Boolean): Entity? {
+        val s = f.sides.getOrNull(side) ?: return null
+        val e = entities[s.entity] ?: return null
+        if (s.isPlayer) return if (person) e else companionOf(e)
+        if (e.kind == EntityKind.RIVAL && !person) return firstPlayer(f)?.let { p -> entities[p.link]?.takeIf { it.kind == EntityKind.BEAST } }
+        return e
+    }
+
+    /**
+     * The fight closed: everyone in it walks on (knocked flat if it beat them), and the foe is
+     * beaten if any player won or caught it, else it goes back to waiting or patrolling.
+     */
+    private fun closeFight(f: Fight) {
+        fights.remove(f.id)
+        val players = f.sides.filter { it.isPlayer }
+        val foe = f.sides.firstOrNull { !it.isPlayer } ?: return
+        val outcome = when {
+            players.any { it.outcome == FightOutcome.WON || it.outcome == FightOutcome.CAUGHT } -> EncounterOutcome.BEAST_DEFEATED
+            players.all { it.outcome == FightOutcome.BEATEN } -> EncounterOutcome.PLAYER_BEATEN
+            else -> EncounterOutcome.PLAYER_FLED
+        }
+        val fought = firstPlayer(f)?.let { entities[it.link] }
+        for (s in players) resolvePlayer(s.entity, if (s.outcome == FightOutcome.BEATEN) EncounterOutcome.PLAYER_BEATEN else outcome)
+        resolveFoe(foe.entity, outcome, fought)
+    }
+
+    /**
+     * The encounter is over without the rules (the walk ended, or a host with no fight for it).
+     * Walking resumes, and any fight [playerId] was in is dropped. A beaten visitor is gone for
+     * good: a boss faints and fades, a rival walks off. Otherwise a visitor waits there again,
+     * except a boss you drove off, which walks off.
      */
     fun resolveEncounter(playerId: Int, beastId: Int, outcome: EncounterOutcome) {
+        sideOf(playerId)?.let { fights.remove(it.first.id) }
         val fought = entities[playerId]?.let { entities[it.link] } // a rival's netbeast, if he had one out
+        resolvePlayer(playerId, outcome)
+        resolveFoe(beastId, outcome, fought)
+    }
+
+    private fun resolvePlayer(playerId: Int, outcome: EncounterOutcome) {
         entities.values.removeAll { it.kind == EntityKind.COMPANION && it.link == playerId || it.kind == EntityKind.CAGE && it.link == playerId }
         entities[playerId]?.let { p ->
             p.grace = GRACE_TICKS; p.link = -1; p.foe = -1; p.timer = 0
@@ -993,6 +1126,10 @@ class World(val map: WorldMap) {
             p.action = Action.NONE; p.actionTicks = 0
             p.pendingAction = Action.NONE; p.pendingFx = null; p.pendingTicks = 0
         }
+    }
+
+    /** [fought]: the rival's netbeast that was out, if he had one. */
+    private fun resolveFoe(beastId: Int, outcome: EncounterOutcome, fought: Entity?) {
         val b = entities[beastId] ?: return
         b.foe = -1
         b.pendingAction = Action.NONE; b.pendingFx = null; b.pendingTicks = 0
@@ -1025,7 +1162,7 @@ class World(val map: WorldMap) {
     fun snapshot() = WorldSnapshot(tick, entities.values.map {
         EntitySnapshot(it.id, it.kind, it.x, it.y, it.z, it.angle, it.species, it.size, it.ownerId, it.zoneId, it.moving, it.state, it.link,
             it.foe, it.action, it.actionTicks, it.fx, it.fxAge, it.orbitX, it.orbitY, it.orbitR, it.downTicks, it.recoverTicks)
-    }, coinGone.map { CoinGone(it.key, it.value) }, awake.toList())
+    }, coinGone.map { CoinGone(it.key, it.value) }, awake.toList(), fights.values.map { it.snapshot() })
 
     /** For clients: replace local entities with the host's view. */
     fun applySnapshot(s: WorldSnapshot) {
@@ -1043,5 +1180,7 @@ class World(val map: WorldMap) {
             entities[e.id] = e
             if (e.id >= nextId) nextId = e.id + 1
         }
+        fights.clear()
+        for (f in s.fights) { fights[f.id] = Fight.restore(f); if (f.id >= nextFight) nextFight = f.id + 1 }
     }
 }

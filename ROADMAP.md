@@ -11,7 +11,8 @@ the user <date>".
 
 | Plan | Covers | Where it stands (2026-10-03) |
 |---|---|---|
-| `NETBEASTS_PLAN.md` | The Wilds; the battle rules moving into `world-core`; the web client; multiplayer; Wilds phases 4-6 | Wilds phases 1-3 are built. Two loose notes from the user sit near the end of the file (see 1 and 5 below) |
+| `NETBEASTS_WEB_PLAN/` | **First (2026-11-12).** The Wilds in a browser in the user's website's Games tab: Kotlin 2.x, publishing on release, the battle rules into `world-core`, the web client, save and Aether in Supabase, multiplayer, in 6 steps | 01 built 2026-11-12: Kotlin 2.4.21, and `netbeasts-web` walks today's Wilds in desktop Chrome (Firefox, Safari and a phone still to try) |
+| `NETBEASTS_PLAN.md` | The Wilds; Wilds phases 4-6 (its §2-4 moved to `NETBEASTS_WEB_PLAN/`) | Wilds phases 1-3 are built. Two loose notes from the user sit near the end of the file (see 1 and 5 below) |
 | `HOMEVISITS_PLAN/` | The game in the female Gamers APK, in 12 steps | Code exists for step 01 and part of step 02, and no step is signed off: the plan's table still says "not started". The APK shows a placeholder screen, so it has no game at the moment |
 | `NETBEASTS_GO_PLAN/` | Netbeasts outdoors on foot, in 8 steps | Nothing built. The design is a proposal, with four questions to answer before its step 01 |
 
@@ -26,15 +27,23 @@ other.
 | Drawing sprites over the camera | Not built | Homevisits, Netbeasts Go | Homevisits 02, built in the shared kit |
 | Asking for an Android permission past the Guardian | `PermissionGate` in `main`; `LocationEngine` and `CameraPermission` both use it | Location, camera, step counter | Built (Go 05, 2026-10-16) |
 | Decoding the autogen GIFs | `world/SpriteBank.kt` | The Wilds, both camera games | Built; the kit reuses it |
-| The fight rules | `engines/combat/`, Android only | The battle screen, the Wilds, Netbeasts Go, the web, multiplayer | Netbeasts §2 moves them to `world-core` |
+| The fight rules | `engines/combat/`, Android only | The battle screen, the Wilds, Netbeasts Go, the web, multiplayer | `NETBEASTS_WEB_PLAN/` 03 moves them to `world-core` |
 | Where you are | `LocationEngine`, one fix at a time | Weather, the Wilds' region, Netbeasts Go | Go 01 adds following |
-| Daily play time and Nightfall | `AetherEngine` | All three games | Built |
+| Daily play time and Nightfall | `AetherEngine` | All three games, and the web | Built on the phone; `NETBEASTS_WEB_PLAN/` 05 moves it to Supabase |
 | A pure, tested core with a phone-free tool | `world-core` + `tools/world_preview`; `homevisits-core` | All three | Go's core goes inside `world-core`; `tools/homevisits_sim` and `tools/go_sim` are still to make |
 | Art | `sprite_studio/autogen` | All three | Built; Homevisits adds people and furniture (its `art.md`) |
 
 ## The order
 
-Two things decide it. First, a step that needs the user's phone at home or on
+**First, before everything below (agreed with the user 2026-11-12): the
+website version of Netbeasts, `NETBEASTS_WEB_PLAN/`.** The 3D Wilds in the
+third tab of the Games page on the user's website, single-player then
+multiplayer, updated by every release. It takes in what was item 10 below
+(Netbeasts §2, §3, §4). Its step 03 (the battle rules into `world-core`) can
+run alongside its steps 01-02. The rest of this list keeps its order after
+it; the small sign-offs that wait on the user's phone can go alongside.
+
+Two things decide the rest. First, a step that needs the user's phone at home or on
 a walk waits on the user, so those tests are batched and put early. Second,
 the female APK has no game until Homevisits 04, so that comes before the new
 outdoor game.
@@ -47,7 +56,8 @@ outdoor game.
      boss right in the 3D Wilds, and pinned?~~ Done 2026-10-16: both in
      `WorldVisitors.kt`, written up in `rhc-android/README.md` 5.1, and
      `DeterminismTest` has a poacher fight (`POACHER_PRINT`) and a boss fight
-     (`BOSS_PRINT`).
+     (`BOSS_PRINT`). `BOSS_PRINT` was left at `0L` until 2026-11-12, when it
+     was pinned to the JVM value (`452232951521158191L`).
 2. **The shared AR kit** (Go 05). Small. Built 2026-10-16: the kit is in
    `app/src/ar/` and `PermissionGate` in `main`. Left: its "Done when" checks
    in the Codespace (all four flavors compile, the Homevisits AR test screen
@@ -72,8 +82,9 @@ outdoor game.
    top of it.
 9. **Homevisits 05: coming back.** With this the camera track of Homevisits
    is done.
-10. **Netbeasts §2, §3, §4**: the battle rules into `world-core`, the web
-    client, multiplayer. The order agreed on 2026-09-27, unchanged.
+10. ~~**Netbeasts §2, §3, §4**: the battle rules into `world-core`, the web
+    client, multiplayer.~~ Moved to the front as `NETBEASTS_WEB_PLAN/`
+    (2026-11-12).
 11. **Homevisits 10, 11, 12**, once the people track (below) has reached 08.
 12. **Netbeasts phases 4-6** (fleeing, the colossus, mounts), then **Go 07**
     (streets and caches, optional) and **Go 08** (together outdoors, which

@@ -10,7 +10,7 @@ import android.widget.TextView
 internal fun GameActivity.updateHealthBars() {
     val pbPlayer = findViewById<ProgressBar>(R.id.pbPlayerHp)
     val pbEnemy = findViewById<ProgressBar>(R.id.pbEnemyHp)
-    if (party.isNotEmpty()) { pbPlayer.max = party[activePetIndex].maxHp; pbPlayer.progress = party[activePetIndex].hp.coerceAtLeast(0) }
+    party.getOrNull(activePetIndex)?.let { pbPlayer.max = it.maxHp; pbPlayer.progress = it.hp.coerceAtLeast(0) }
     if (currentEnemy != null) { pbEnemy.max = currentEnemy!!.maxHp; pbEnemy.progress = currentEnemy!!.hp.coerceAtLeast(0) }
 }
 
@@ -26,13 +26,12 @@ internal fun GameActivity.showBattleArena(playerName: String, enemyName: String)
     val eLabel = findViewById<TextView>(R.id.spriteEnemyLabel)
     val tvEnemyTraits = findViewById<TextView>(R.id.tvEnemyTraits)
 
-    resetArenaRules()
-    // a fight in the 3D Wilds stays in the world: the new fighter's cage flies instead
-    if (worldFight != null) { worldFighterChanged(playerName); return }
+    // a fight in the 3D Wilds stays in the world: the World throws the new fighter's cage
+    if (worldFight != null) return
     arena.visibility = View.VISIBLE
     
     var pScale = 1.0f; var eScale = 1.0f
-    val pLvl = if (!playerLastStand) party[activePetIndex].maxHp / 10 else 1
+    val pLvl = if (!playerLastStand) (party.getOrNull(activePetIndex)?.maxHp ?: 10) / 10 else 1
     val eLvl = currentEnemy?.maxHp?.div(10) ?: 1
     
     val cleanPName = playerName.replace(Regex("\\[.*?\\]"), "").trim()
@@ -85,14 +84,6 @@ internal fun GameActivity.showBattleArena(playerName: String, enemyName: String)
     pContainer.translationX = -400f; eContainer.translationX = 400f
     pContainer.animate().translationX(20f).setDuration(500).start()
     eContainer.animate().translationX(-20f).setDuration(500).start()
-}
-
-/** The rules part of sending a fighter in: fresh combat state, and the wild one may soak up the weather. */
-internal fun GameActivity.resetArenaRules() {
-    CombatState.reset()
-    if (currentEnemy != null && currentEnemy!!.type != "Poacher" && currentEnemy!!.infusionEl == "None" && currentWeather != "Clear" && currentWeather != "Offline" && kotlin.random.Random.nextInt(100) < 25) {
-        currentEnemy!!.infusionEl = currentWeather; currentEnemy!!.infusionStacks = kotlin.random.Random.nextInt(1, 4)
-    }
 }
 
 internal fun GameActivity.hideBattleArena() {
@@ -161,9 +152,8 @@ internal fun GameActivity.updateBattleUI() {
         btn1.text = "THROW PUNCH"
         btn2.visibility = View.GONE; btn3?.visibility = View.GONE; infoRow.visibility = View.GONE
         actionRow?.visibility = View.GONE; btnAbandon.visibility = View.GONE
-        armLastStandStrike() // it comes for you on its own clock, however fast you punch
-    } else if (party.isNotEmpty()) {
-        val p = party[activePetIndex]
+    } else {
+        val p = myFighter() ?: party.getOrNull(activePetIndex) ?: return
         btn1.text = p.move1; btn2.text = p.move2; btn3?.text = p.move3
         
         val toggleInfo = { moveName: String ->
@@ -180,42 +170,5 @@ internal fun GameActivity.updateBattleUI() {
         if (p.eqPots > 0) { btnBattlePot.visibility = View.VISIBLE; btnBattlePot.text = "POT (${p.eqPots})" } else btnBattlePot.visibility = View.GONE
         if (p.eqSprays > 0) { btnBattleSpray.visibility = View.VISIBLE; btnBattleSpray.text = "SPRY (${p.eqSprays})" } else btnBattleSpray.visibility = View.GONE
     }
-    
-    startBattleTimer() // START THE PRESSURE TIMER!
-}
-
-internal fun GameActivity.cancelBattleTimer() {
-    battleTimerRunnable?.let { mainHandler.removeCallbacks(it) }
-    findViewById<ProgressBar>(R.id.pbBattleTimer)?.visibility = View.GONE
-    worldPatienceReset()
-}
-
-internal fun GameActivity.startBattleTimer() {
-    cancelBattleTimer()
-    // in the 3D Wilds the pressure is the wild beast's patience (WorldFight.kt)
-    if (worldFight != null) { refreshWorldFightPanel(); return }
-    if (battleOver || playerLastStand || currentEnemy == null) return
-    
-    var ticks = 0
-    battleTimerRunnable = object : Runnable {
-        override fun run() {
-            if (battleOver) return
-            ticks++
-            
-            val pb = findViewById<ProgressBar>(R.id.pbBattleTimer)
-            if (ticks == 60) { // 3 Seconds of invisible delay
-                pb?.visibility = View.VISIBLE
-                pb?.progress = 100
-            } else if (ticks in 61..120) { // 3 Seconds of visible bar depletion
-                val remaining = 100 - ((ticks - 60) * (100.0 / 60.0)).toInt()
-                pb?.progress = remaining
-            } else if (ticks > 120) { // TIME IS UP!
-                cancelBattleTimer()
-                executePlayerMove("Basic Attack")
-                return
-            }
-            mainHandler.postDelayed(this, 50) // Ticks every 50ms
-        }
-    }
-    mainHandler.postDelayed(battleTimerRunnable!!, 50)
+    // the pressure timer and a last stand's clock are the rules' (FightHost.kt shows the bar)
 }

@@ -1,6 +1,10 @@
 package com.rockhard.blocker
-import kotlin.random.Random
 
+// The moves: what each does, how the Party screen describes it, and which a
+// netbeast learns. Shared by the phone, the web client and the server (pure
+// data, no Android, no unseeded randomness). Moved here from app's
+// engines/SkillEngine.kt in NETBEASTS_WEB_PLAN step 03; what a move does in a
+// fight is in world/battle/Fight.kt (resolveSkill).
 object SkillEngine {
     // --- THE MASTER SKILL DATABASE ---
     // You can easily change the effects, chances, and types here without hunting for code!
@@ -17,8 +21,10 @@ object SkillEngine {
         val fx: String? = fxName(name),
     )
 
+    private val NON_ALNUM = Regex("[^a-z0-9]+")
+
     // "Data Drain" -> data_drain, "Sky-Breaker" -> sky_breaker (effects.slug in effects.py)
-    fun fxName(move: String) = move.lowercase().split(Regex("[^a-z0-9]+")).filter { it.isNotEmpty() }.joinToString("_")
+    fun fxName(move: String) = move.lowercase().split(NON_ALNUM).filter { it.isNotEmpty() }.joinToString("_")
 
     // Old move names -> new ones. Saved parties store moves by name, so
     // SaveManager runs every loaded move through this.
@@ -98,36 +104,47 @@ object SkillEngine {
             "Obliterate" to SkillDef("Obliterate", "Shield", 30),
         )
 
+    fun def(move: String) = SKILL_DATABASE[move] ?: SkillDef(move)
+
     fun fxFor(move: String) = SKILL_DATABASE[move]?.fx ?: fxName(move)
 
     fun isAntiAir(move: String) = SKILL_DATABASE[move]?.isAntiAir == true
 
     fun isAntiFlyingDouble(move: String) = SKILL_DATABASE[move]?.isDoubleAir == true
 
+    /**
+     * The moves a netbeast of [type] knows at [evoStage]. [pick] returns a random index below its
+     * argument (the host's randomness: `{ Random.nextInt(it) }` on the phone).
+     */
     fun generateMoves(
         type: String,
         evoStage: Int,
+        pick: (Int) -> Int,
     ): Triple<String, String, String> {
         val p1 =
+            shuffled(
+                when (type) {
+                    "Tech" -> listOf("Ping", "Glitch", "Data Drain", "Overclock", "Static", "Timeshift")
+                    "Social" -> listOf("Shriek", "Silence", "Doxx", "Ensnare", "Ratio")
+                    "Gaming" -> listOf("Rapid Fire", "Rage", "Venom Rush", "Power Surge", "Plunder")
+                    "Streaming" -> listOf("Lag", "Jump Cut", "Binge", "Autoplay", "Hijack")
+                    "Reclaimed" -> listOf("Cyber Strike", "Aero Beam", "Mecha Dash", "Pixel Slash", "Light Pulse")
+                    "Flying" -> listOf("Tackle", "Swipe", "Bite")
+                    else -> listOf("Tackle", "Bite", "Scratch", "Growl", "Swipe")
+                },
+                pick,
+            )
+        val p2Options =
             when (type) {
-                "Tech" -> listOf("Ping", "Glitch", "Data Drain", "Overclock", "Static", "Timeshift").shuffled()
-                "Social" -> listOf("Shriek", "Silence", "Doxx", "Ensnare", "Ratio").shuffled()
-                "Gaming" -> listOf("Rapid Fire", "Rage", "Venom Rush", "Power Surge", "Plunder").shuffled()
-                "Streaming" -> listOf("Lag", "Jump Cut", "Binge", "Autoplay", "Hijack").shuffled()
-                "Reclaimed" -> listOf("Cyber Strike", "Aero Beam", "Mecha Dash", "Pixel Slash", "Light Pulse").shuffled()
-                "Flying" -> listOf("Tackle", "Swipe", "Bite").shuffled()
-                else -> listOf("Tackle", "Bite", "Scratch", "Growl", "Swipe").shuffled()
+                "Tech" -> listOf("System Wipe", "Firewall")
+                "Social" -> listOf("Viral Surge", "Deplatform")
+                "Gaming" -> listOf("Critical Strike", "Parry")
+                "Streaming" -> listOf("Marathon", "Hypnotize")
+                "Reclaimed" -> listOf("Chrono Blast", "Nova Shield")
+                "Flying" -> listOf("Aero Beam", "Chrono Blast")
+                else -> listOf("Ambush", "Feral Strike")
             }
-        val p2 =
-            when (type) {
-                "Tech" -> listOf("System Wipe", "Firewall").random()
-                "Social" -> listOf("Viral Surge", "Deplatform").random()
-                "Gaming" -> listOf("Critical Strike", "Parry").random()
-                "Streaming" -> listOf("Marathon", "Hypnotize").random()
-                "Reclaimed" -> listOf("Chrono Blast", "Nova Shield").random()
-                "Flying" -> listOf("Aero Beam", "Chrono Blast").random()
-                else -> listOf("Ambush", "Feral Strike").random()
-            }
+        val p2 = p2Options[pick(p2Options.size)]
         val ultimate =
             when (type) {
                 "Tech" -> "Fatal Exception"
@@ -145,12 +162,22 @@ object SkillEngine {
         }
     }
 
+    /** Fisher-Yates with the caller's randomness. */
+    private fun <T> shuffled(list: List<T>, pick: (Int) -> Int): List<T> {
+        val out = list.toMutableList()
+        for (i in out.size - 1 downTo 1) {
+            val j = pick(i + 1)
+            val t = out[i]; out[i] = out[j]; out[j] = t
+        }
+        return out
+    }
+
     fun getDetails(
         move: String,
         maxHp: Int,
     ): String {
         val b = (maxHp * 0.25).toInt()
-        val def = SKILL_DATABASE[move] ?: SkillDef(move)
+        val def = def(move)
 
         if (def.type == "Ultimate") return "ULTIMATE: Deals ${b * 3} dmg if HP < 50%. Otherwise ${(b * 0.5).toInt()} dmg."
         if (def.type == "Timeshift") return "✨ Restores 2:00 Aether instead of attacking."
@@ -175,134 +202,5 @@ object SkillEngine {
         if (def.isDoubleAir) bonus += "\n  ↳ ✈️💥 DOUBLE DAMAGE vs Flying!"
 
         return "$baseText\n  ↳ $bonus"
-    }
-
-    fun resolveSkill(
-        act: GameActivity,
-        pet: Netbeast,
-        move: String,
-    ): Pair<Int, String> {
-        val def = SKILL_DATABASE[move] ?: SkillDef(move)
-
-        if (def.type ==
-            "Timeshift"
-        ) {
-            act.aetherSeconds += 120
-            return Pair(0, "> ⏳ TIMESHIFT! Manipulated the realm to restore 2:00 Aether!")
-        }
-        if (def.type == "Basic") {
-            val dmg = (act.currentEnemy!!.hp * 0.10).toInt().coerceAtLeast(1)
-            return Pair(dmg, "> ⏱️ Time ran out! Basic Attack stripped 10% of their current HP!")
-        }
-        val b = (pet.maxHp * 0.25).toInt()
-        val roll = Random.nextInt(100)
-        var dmg =
-            if (roll < 30) {
-                (b * 0.8).toInt()
-            } else if (roll < 80) {
-                b
-            } else {
-                (b * 1.2).toInt()
-            }
-        var log = ""
-
-        if (def.type == "Ultimate") {
-            if (pet.hp <= pet.maxHp / 2) {
-                dmg = b * 3
-                log = "> 🛑 ULTIMATE ACTIVATED! DEVASTATING DAMAGE!"
-            } else {
-                dmg = (b * 0.5).toInt()
-                log = "> ⚠️ Ultimate failed... requires HP below 50%!"
-            }
-            return Pair(dmg.coerceAtLeast(1), log)
-        }
-
-        log =
-            if (roll < 30) {
-                "> 📉 Weak hit!"
-            } else if (roll < 80) {
-                "> ⚔️ Solid hit!"
-            } else {
-                "> 💥 Critical strike!"
-            }
-        val bonusRoll = Random.nextInt(100)
-
-        if (bonusRoll < def.effectChance) {
-            when (def.effect) {
-                "PurgeEnemy" -> {
-                    val cleanName =
-                        act.currentEnemy!!
-                            .name
-                            .replace(Regex("\\[.*?\\]"), "")
-                            .trim()
-                    act.currentEnemy!!.name = cleanName
-                    act.currentEnemy!!.infusionStacks = 0
-                    act.currentEnemy!!.infusionEl = "None"
-                    log += "\n> ✝️ CLEANSED! The enemy was stripped of all unnatural power!"
-                }
-
-                "Lifesteal" -> {
-                    val heal = (dmg * 0.5).toInt().coerceAtLeast(1)
-                    pet.hp = (pet.hp + heal).coerceAtMost(pet.maxHp)
-                    log +=
-                        "\n> 🧛 LIFESTEAL! Recovered $heal HP!"
-                }
-
-                "DoubleStrike" -> {
-                    dmg *= 2
-                    log += "\n> ⚔️⚔️ DOUBLE STRIKE! Hit twice in a row!"
-                }
-
-                "Stun" -> {
-                    CombatState.enemyStunned = true
-                    log += "\n> ⚡ STUNNED! Enemy skips turn!"
-                }
-
-                "Poison" -> {
-                    CombatState.enemyPoisonStacks++
-                    log += "\n> ☠️ POISONED! Enemy takes passive damage!"
-                }
-
-                "Shield" -> {
-                    val shieldAmt = (pet.maxHp * 0.2).toInt()
-                    CombatState.playerShield += shieldAmt
-                    log +=
-                        "\n> 🛡️ SHIELDED! Gained $shieldAmt Temp HP!"
-                }
-
-                "StealSpray" -> {
-                    act.sprays++
-                    log += "\n> 💨 STOLE a Repel Spray!"
-                }
-
-                "StealNet" -> {
-                    act.nets++
-                    log += "\n> 🕸️ STOLE a Net!"
-                }
-
-                "StealPotion" -> {
-                    act.potions++
-                    log += "\n> 🧪 STOLE a Potion!"
-                }
-
-                "StealCoins" -> {
-                    val c = Random.nextInt(5, 15)
-                    act.focusCoins += c
-                    log += "\n> 🪙 STOLE $c Coins!"
-                }
-
-                "Terrify" -> {
-                    CombatState.terrified = true
-                    log += "\n> 👻 TERRIFIED! Enemy breaks formation!"
-                }
-            }
-        }
-        val struckTwice = bonusRoll < def.effectChance && def.effect == "DoubleStrike"
-        val herd = act.herdChance(pet)
-        if (!struckTwice && herd > 0 && Random.nextInt(100) < herd) {
-            dmg *= 2
-            log += "\n> 🐾⚔️ [Herd] DOUBLE STRIKE! Its pack drove it on! ($herd%)"
-        }
-        return Pair(dmg.coerceAtLeast(1), log)
     }
 }

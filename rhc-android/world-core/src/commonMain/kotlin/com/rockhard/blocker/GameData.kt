@@ -1,16 +1,10 @@
 package com.rockhard.blocker
 
-data class Netbeast(
-    var name: String, val type: String, var hp: Int, var maxHp: Int, 
-    var move1: String, var move2: String, var move3: String, val boughtAt: Long, 
-    var eqNets: Int, var eqPots: Int, var eqSprays: Int, 
-    var isNew: Boolean, var infusionEl: String, var infusionStacks: Int, var listedPrice: Int = 0,
-    var expedsDone: Int = 0, var amulets: Int = 0,
-    var lastMove: String = "None", var moveStreak: Int = 0
-) {
-    fun isGrouchy(): Boolean = (System.currentTimeMillis() - boughtAt) < (24 * 60 * 60 * 1000) && boughtAt > 0
-}
+import com.rockhard.blocker.world.sim.Species
 
+// The beast and trait tables, shared by the phone, the web client and the preview
+// (pure data, no Android or clock). Moved here from app's GameModels.kt in
+// NETBEASTS_WEB_PLAN step 01 so the web makes the same map as the phone.
 object GameData {
     val bossNames = listOf("Pronosaur", "Gorella", "Fleshwire", "Lustrot", "The Dark One")
 
@@ -69,4 +63,7 @@ object GameData {
         BeastDef("Stratolord", "Flying", 130, "Bite", "Sky-Breaker", "Flying", 3),
         BeastDef("Cartini", "Shopping", 45, "Snatch", "Price Gouge", "Shopping", 1)
     )
+
+    /** The beasts as the map sees them (name and stage), in table order: every client must pass the map this same list. */
+    val species: List<Species> get() = beasts.map { Species(it.name, it.evoStage) }
 }

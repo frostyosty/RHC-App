@@ -1,3 +1,6 @@
+import com.rockhard.blocker.GameData
+import com.rockhard.blocker.Netbeast
+import com.rockhard.blocker.world.battle.*
 import com.rockhard.blocker.world.render.*
 import com.rockhard.blocker.world.sim.*
 import java.awt.image.BufferedImage
@@ -6,7 +9,7 @@ import kotlin.math.atan2
 import java.io.File
 import javax.imageio.ImageIO
 
-val DRAW = "/workspaces/RHC-App/rhc-android/app/src/main/res/drawable-nodpi"
+val DRAW = System.getenv("RHC_DRAWABLES") ?: "/workspaces/RHC-App/rhc-android/app/src/main/res/drawable-nodpi" // run.sh sets it
 val cache = HashMap<String, Texture?>()
 val src = SpriteSource { key, _ ->
     cache.getOrPut(key) {
@@ -79,9 +82,7 @@ fun huntSteer(w: World, me: Entity): Double {
 // renders preview PNGs using the real sprite GIFs.
 fun main(args: Array<String>) {
     val out = args[0]
-    val species = listOf("Bytelet" to 1, "Cacheon" to 2, "Technophasia" to 3, "Chirplet" to 1, "Viralia" to 2, "Trendrake" to 3,
-        "Noobit" to 1, "Skirmalot" to 2, "Grindlord" to 3, "Bufferoo" to 1, "Streamlet" to 2, "Bingewyrm" to 3,
-        "Zephyrlet" to 1, "Airstream" to 2, "Stratolord" to 3, "Cartini" to 1).map { Species(it.first, it.second) }
+    val species = GameData.species // the same list, in the same order, as the phone and the web
     val seed = 20260923L * 2654435761L
 
     // DetMath (the sim's platform-identical trig) against kotlin.math
@@ -228,7 +229,7 @@ fun main(args: Array<String>) {
     check(me.state == EntityState.ENGAGED && world.roleEntity(me.id, Role.BEAST) === b) { "no encounter with the placed beast: $log" }
     val gap = map.distance(me.x, me.y, b.x, b.y)
     check(gap > 2.0) { "the beast came right up to you ($gap tiles)" }
-    s.throwCage("Cacheon")
+    s.world.throwCage(s.localPlayerId, "Cacheon")
     run(10); rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_throw.png")
     run(100)
     val comp = world.roleEntity(me.id, Role.COMPANION)
@@ -248,18 +249,18 @@ fun main(args: Array<String>) {
     println("fight: circled the other way $flips times in 12s (slowest ${"%.2f".format(slowest)})")
     check(flips in 2..4 && slowest < 0.1) { "the circling should reverse every 3-6s, easing through a stop: $flips flips" }
     // a hit lands when the attacker's lunge peaks, not when the move is called
-    s.perform(Role.COMPANION, Action.ATTACK); run(3); s.effect(Role.BEAST, "bite"); s.perform(Role.BEAST, Action.HIT)
+    s.world.perform(s.localPlayerId, Role.COMPANION, Action.ATTACK); run(3); s.world.effect(s.localPlayerId, Role.BEAST, "bite"); s.world.perform(s.localPlayerId, Role.BEAST, Action.HIT)
     check(b.action != Action.HIT && b.fx == null) { "the hit should wait for the lunge" }
     run(4)
     check(b.action == Action.HIT && b.fx == "bite") { "the hit should land at the lunge's peak" }
     rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_attack.png")
     run(60)
     // the beast's counter at the top of its lunge, with no effect in the way: the bodies should meet
-    s.perform(Role.BEAST, Action.ATTACK); run(Action.ATTACK.ticks / 2)
+    s.world.perform(s.localPlayerId, Role.BEAST, Action.ATTACK); run(Action.ATTACK.ticks / 2)
     rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_lunge.png")
     run(30)
     val a0 = me.orbitA; run(60); check(me.orbitA != a0) { "you stopped circling" }
-    s.perform(Role.BEAST, Action.FAINT); run(30); rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_faint.png")
+    s.world.perform(s.localPlayerId, Role.BEAST, Action.FAINT); run(30); rc.render(world, me, 0, Palette.DAY, src, 0); save(rc, "$out/fight_faint.png")
     val onScreen = rc.onScreen.keys
     s.resolveEncounter(b.id, EncounterOutcome.BEAST_DEFEATED)
     // you walk on at 60% pace, easing back to full over 8s
@@ -277,7 +278,7 @@ fun main(args: Array<String>) {
     b2.state = EntityState.PAUSE; b2.timer = 9999; me.grace = 0
     run(30)
     check(me.state == EntityState.ENGAGED) { "no second encounter: $log" }
-    s.perform(Role.BEAST, Action.ATTACK); run(8); s.perform(Role.PLAYER, Action.HIT); run(20)
+    s.world.perform(s.localPlayerId, Role.BEAST, Action.ATTACK); run(8); s.world.perform(s.localPlayerId, Role.PLAYER, Action.HIT); run(20)
     s.resolveEncounter(b2.id, EncounterOutcome.PLAYER_BEATEN)
     x0 = me.x; y0 = me.y
     // one render a tick with the clock running, so the eased roll and eye height play out as in the app
@@ -343,7 +344,7 @@ fun main(args: Array<String>) {
 
         val boss = vs.summon(EntityKind.BEAST, "Titan", 1.5)
         val bossIn = walkInto(boss)
-        vs.throwCage("Cacheon"); step(60); shot("visitor_boss_fight")
+        vs.world.throwCage(vs.localPlayerId, "Cacheon"); step(60); shot("visitor_boss_fight")
         // lost: you walk on, and it waits there again without squaring up to you straight away
         vs.resolveEncounter(boss, EncounterOutcome.PLAYER_BEATEN)
         step(30 * 6) { e -> check(e !is WorldEvent.Encounter) { "the boss squared up again straight after" } }
@@ -352,21 +353,21 @@ fun main(args: Array<String>) {
         val poacher = vs.summon(EntityKind.RIVAL, "Poacher", 0.7)
         val poacherIn = walkInto(poacher)
         var outs = 0
-        vs.rivalSendOut("Bytelet"); step(60) { e -> if (e is WorldEvent.RivalOut) outs++ }
+        vs.world.rivalSendOut(vs.localPlayerId, "Bytelet"); step(60) { e -> if (e is WorldEvent.RivalOut) outs++ }
         val first = checkNotNull(vw.roleEntity(vme.id, Role.BEAST)) { "his netbeast didn't come out: $vlog" }
         check(outs == 1 && first.species == "Bytelet") { "the wrong netbeast came out: $vlog" }
-        vs.throwCage("Cacheon"); step(60)
+        vs.world.throwCage(vs.localPlayerId, "Cacheon"); step(60)
         check(vw.roleEntity(vme.id, Role.COMPANION) != null) { "yours didn't come out: $vlog" }
         step(60); shot("poacher_duel")
         val pr = vw.entities[poacher]!!
         check(map.distance(vme.x, vme.y, pr.x, pr.y) > map.distance(vme.x, vme.y, first.x, first.y) + 1) { "the poacher should hang back behind his netbeast" }
         // his first falls and lies there; he sends out the next where it fell
-        vs.perform(Role.BEAST, Action.FAINT); step(30)
-        vs.rivalSendOut("Chirplet"); step(60) { e -> if (e is WorldEvent.RivalOut) outs++ }
+        vs.world.perform(vs.localPlayerId, Role.BEAST, Action.FAINT); step(30)
+        vs.world.rivalSendOut(vs.localPlayerId, "Chirplet"); step(60) { e -> if (e is WorldEvent.RivalOut) outs++ }
         val second = checkNotNull(vw.roleEntity(vme.id, Role.BEAST)) { "his second netbeast didn't come out: $vlog" }
         check(outs == 2 && second.species == "Chirplet" && first.state == EntityState.GONE) { "his first should lie there and the second be out: $vlog" }
         step(30); shot("poacher_second")
-        vs.perform(Role.BEAST, Action.FAINT); step(30)
+        vs.world.perform(vs.localPlayerId, Role.BEAST, Action.FAINT); step(30)
         vs.resolveEncounter(poacher, EncounterOutcome.BEAST_DEFEATED)
         step(30)
         check(pr.state == EntityState.LEAVE && vme.state == EntityState.WALKING)
@@ -482,7 +483,7 @@ fun main(args: Array<String>) {
 
     // soak: whole explorations on both maps. A wanderer steers at random and should never be
     // ambushed; a hunter heads for the nearest beast and catches them. Each fight throws a
-    // cage after 2s, trades a few blows and ends.
+    // cage after 2s and shouts moves until the rules end it.
     val t0 = System.nanoTime()
     // A coin seeker heads for the nearest coin (and fights whatever it walks into on the way).
     for ((name, m) in maps) for (mode in listOf("wanderer", "hunter", "coins")) {
@@ -490,7 +491,7 @@ fun main(args: Array<String>) {
     val rng = kotlin.random.Random(1)
     val sw = World(m); val ss = LocalWorldSession(sw, "soak", "Cacheon", 180)
     val me2 = sw.entities[ss.localPlayerId]!!
-    var enc = 0; var over = false; var ticks = 0; var fightTicks = -1; var beastId = -1; var outs = 0; var behind = 0; var coins = 0
+    var enc = 0; var over = false; var ticks = 0; var fightTicks = -1; var beastId = -1; var outs = 0; var behind = 0; var coins = 0; var closed = 0
     while (!over && ticks < 30 * 1200) {
         ticks++
         if (hunter && me2.state == EntityState.WALKING) ss.steer(huntSteer(sw, me2))
@@ -498,22 +499,26 @@ fun main(args: Array<String>) {
         else if (ticks % 60 == 0) ss.steer(rng.nextDouble(-0.6, 0.6))
         if (fightTicks >= 0) {
             fightTicks++
-            if (fightTicks == 60) ss.throwCage(listOf("Cacheon", "Bytelet").random(rng))
-            if (fightTicks in 120..300 && fightTicks % 45 == 0) { ss.perform(Role.COMPANION, Action.ATTACK); ss.perform(Role.BEAST, Action.HIT) }
-            if (fightTicks == 330) ss.perform(Role.BEAST, Action.FAINT)
-            // every third fight you lose and get knocked flat
-            if (fightTicks == 390) { ss.resolveEncounter(beastId, if (enc % 3 == 0) EncounterOutcome.PLAYER_BEATEN else EncounterOutcome.BEAST_DEFEATED); fightTicks = -1 }
+            // the battle rules run it (world/battle): throw a cage after 2s, then shout moves
+            if (fightTicks == 60) ss.fight(FightInput(cage = rng.nextInt(2)))
+            if (fightTicks > 60 && fightTicks % 45 == 0) ss.fight(FightInput(move = 1 + rng.nextInt(3)))
+            check(fightTicks < 30 * 120) { "a fight that never ended" }
         }
         val hx = kotlin.math.cos(me2.angle); val hy = kotlin.math.sin(me2.angle)
         for (e in ss.update(World.DT)) when (e) {
             is WorldEvent.Encounter -> {
                 enc++; fightTicks = 0; beastId = e.beastId
+                // every third fight your netbeasts are worn out: you lose and get knocked flat
+                val hp = if (enc % 3 == 0) 3 else 80
+                val mine = SideSetup(SideKind.PLAYER, listOf("Cacheon", "Bytelet").map { Netbeast(it, "Fire", hp, 80, "Tackle", "Bite", "Swipe", 0L, 0, 0, 0, false, "None", 0) })
+                check(ss.startFight(e.beastId, FightSetup(FightStyle.WILDS), mine, SideSetup(SideKind.WILD, wild = WildSpec(e.species, e.stage))) > 0) { "no fight for the encounter" }
                 // it must have been in front of you: you walked into it, it didn't jump you
                 val b = sw.entities[e.beastId]!!
                 if ((b.x - me2.x) * hx + (b.y - me2.y) * hy <= 0) behind++
             }
             is WorldEvent.CompanionOut -> outs++
             is WorldEvent.RivalOut -> {}
+            is WorldEvent.Fighting -> if (e.event == FightEvent.Closed) { closed++; fightTicks = -1 }
             is WorldEvent.CoinPicked -> {
                 coins++
                 val c = m.coin(e.coin)
@@ -523,8 +528,9 @@ fun main(args: Array<String>) {
             is WorldEvent.ExplorationOver -> over = true
         }
     }
-    println("[$name] $mode: over=$over after ${ticks / 30}s of sim, fights=$enc (from behind: $behind), netbeasts out=$outs, coins=$coins")
-    check(over && outs == enc && behind == 0)
+    println("[$name] $mode: over=$over after ${ticks / 30}s of sim, fights=$enc (closed: $closed, from behind: $behind), netbeasts out=$outs, coins=$coins")
+    // each fight sends at least one netbeast out (more when one falls), and every one the walk didn't cut short closes
+    check(over && outs >= enc && closed >= enc - 1 && behind == 0)
     when (mode) {
         "hunter" -> check(enc >= 3) { "a hunter should catch beasts" }
         "coins" -> check(coins >= 15) { "heading for coins should pick plenty up: $coins" }

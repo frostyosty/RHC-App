@@ -67,6 +67,8 @@ class BackgroundRenderer {
         GLES20.glDisable(GLES20.GL_DEPTH_TEST)
         GLES20.glDepthMask(false)
         GLES20.glUseProgram(program)
+        // The quad is a client-side array: with a buffer bound it would be read as an offset into it
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)

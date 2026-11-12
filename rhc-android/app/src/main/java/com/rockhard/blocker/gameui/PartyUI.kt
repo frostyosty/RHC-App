@@ -161,8 +161,8 @@ internal fun GameActivity.updatePartyScreen() {
         val tvLore = TextView(this).apply { text = "\nFound roaming $loreText$flyingNote"; setTextColor(Color.parseColor("#888888")); setTypeface(null, android.graphics.Typeface.ITALIC); setPadding(0, 16, 0, 0) }
 
         detailsPanel.addView(headerLayout); detailsPanel.addView(traitLayout); 
-        partyTraits(p).forEach { t ->
-            val desc = if (t == "Herd") "${herdSize(p)} in the party: +${herdChance(p)}% Double Strike chance." else GameData.traits.find { it.name == t }?.desc ?: ""
+        com.rockhard.blocker.world.battle.PartyTraits.of(party, p).forEach { t ->
+            val desc = if (t == "Herd") "${com.rockhard.blocker.world.battle.PartyTraits.herdSize(party, p)} in the party: +${com.rockhard.blocker.world.battle.PartyTraits.herdChance(party, p)}% Double Strike chance." else GameData.traits.find { it.name == t }?.desc ?: ""
             detailsPanel.addView(TextView(this).apply { text = "[$t] $desc"; setTextColor(Color.parseColor("#FFBB33")); textSize = 13f; setPadding(0, 8, 0, 0) })
         }
         

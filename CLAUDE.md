@@ -5,13 +5,15 @@ share logic:
 
 | Path | What it is | Toolchain |
 |---|---|---|
-| `rhc-android/` | Kotlin app, package `com.rockhard.blocker`, 4 product flavors (Gamers/Timesavers × Male/Female) | Gradle 8.7, AGP + Kotlin 1.9.22, JDK 17, compileSdk 34 |
+| `rhc-android/` | Kotlin app, package `com.rockhard.blocker`, 4 product flavors (Gamers/Timesavers × Male/Female) | Gradle 8.7, AGP 8.5.2, Kotlin 2.4.21, JDK 17, compileSdk 34 |
 | `rhc-android/homevisits-core/` | Pure Kotlin core for Homevisits (the female Gamers APK's game); only that APK uses it. Test with `./gradlew :homevisits-core:jvmTest` | Kotlin Multiplatform, jvm target |
 | `rhc-desktop/` | Win32/GDI C++17 app + Windows service + NSIS installer | mingw-w64 cross-compile, `makensis` |
 | `rhc-common/` | Shared C++ engines (SQLite `DatabaseManager`, Momentum, ShieldRuleEngine, Leaderboard) used by desktop; mirrors the Android Kotlin logic | — |
 | `sprite_studio/` | Sprite Studio (Python, port 8080, start with `./launch-sprite-studio.sh`) + sprite autogen (`sprite_studio/autogen`) | Python 3 + Pillow |
 | `rhc-android/figure-core/` | Pure Kotlin glTF loading, skinning and moves for the AR kit's 3D people. Test with `./gradlew :figure-core:jvmTest` | Kotlin Multiplatform, jvm target |
 | `tools/figures/` | 3D people for the AR games: `standin.mjs` (rigged stand-in bodies), `wardrobe.mjs` + `wardrobe.json` (clothes cut from the body, the cast, random variants), `check.mjs` (validator + figure-core limits), `viewer/serve.mjs` (browser viewer on :5178), `import.sh` (Quaternius packs). Runs on plain Node, no Codespace needed | Node (`npm install` in `tools/figures`) |
+| `rhc-android/netbeasts-web/` | The Wilds in a browser (`NETBEASTS_WEB_PLAN/`): a thin wasm shell (canvas, input, sprite sheets) over `world-core`. Serve with `./gradlew :netbeasts-web:wasmJsBrowserDevelopmentRun`, build with `:netbeasts-web:wasmJsBrowserDistribution` | Kotlin/Wasm, Node + Yarn on PATH |
+| `tools/web_sprites/` | `make_sheets.py`: the autogen GIFs as PNG sprite sheets + `index.txt` for the web; the web build runs it | Python 3 + Pillow |
 | `tools/` | Icon generator (Node/sharp), 3D world preview, helper scripts | Node, JVM |
 
 Feature-level detail (blocking, cooldown, Momentum, Netbeasts) lives in
@@ -20,9 +22,14 @@ Feature-level detail (blocking, cooldown, Momentum, Netbeasts) lives in
 More docs, read only when the work calls for them:
 - `ROADMAP.md`: which step of which plan comes next, across the three plans
   below, and the code they share. Read it before starting planned work.
-- `NETBEASTS_PLAN.md`: what isn't built yet for Netbeasts and the Wilds, and
-  the agreed order to build it in (moving the battle rules into `world-core`,
-  the web client, multiplayer, then Wilds phases 4-6).
+- `NETBEASTS_WEB_PLAN/`: **the current priority.** The 3D Wilds in a
+  browser, inside the Games tab of the user's website (the htc repo), with
+  multiplayer, published by every release: Kotlin 2.x, the publish pipeline,
+  the battle rules into `world-core`, the web client, the save and Aether in
+  Supabase, the server. Laid out like the other plan folders: its
+  `README.md`, then only your step's file.
+- `NETBEASTS_PLAN.md`: what isn't built yet for Netbeasts and the Wilds
+  besides the web (Wilds phases 4-6, art, loose notes).
 - `HOMEVISITS_PLAN/`: the plan for Homevisits, the game in the female Gamers
   APK (walking your home with the camera, visitors, the emotions engine). It
   has one file per step: read its `README.md`, then only your step's file.
@@ -101,7 +108,7 @@ exploring. Rules that keep the design working:
 - **Sim trig goes through `DetMath`**, never `kotlin.math`'s
   `sin`/`cos`/`atan2`/`hypot`, which differ in the last bit between the JVM and
   wasm. Map generation avoids trig altogether (rejection sampling, smoothstep
-  waves). `DeterminismTest` pins the map, a coastal NZ map and a scripted fight:
+  waves). `DeterminismTest` pins the map, a coastal NZ map and scripted fights (the walk, a poacher, the boss, a battle-screen fight and a three-sided one, all through the real rules):
   run `./gradlew :world-core:jvmTest :world-core:wasmJsNodeTest`, and re-pin
   only when you meant to change generation or the sim.
 - The map is `WorldMap.generate(seed, species, region)`. The `Region` (from
@@ -129,10 +136,15 @@ exploring. Rules that keep the design working:
 - Test sim/render changes with `bash tools/world_preview/run.sh` (JVM soak test
   + preview PNGs, including `map_*.png` overviews and the fight sequence) before
   building an APK.
-- Fights stay in the world (`world/WorldFight.kt`). The rules are still the
-  battle code in `engines/combat/`; it reaches the world only through the hooks
-  in `playSpriteAnim`, `playFx`, `showBattleArena`, the battle timer and
-  `printLog`. Don't fork the rules into the world code.
+- Fights stay in the world. The battle rules are `world-core`'s
+  `world/battle/` (`Fight.kt`): pure and deterministic like the sim (30 Hz
+  ticks, its own seeded dice, any number of sides), the same for the battle
+  screen, the Wilds, the web and the server. Players act through
+  `FightInput`s; the rules emit `FightEvent`s, which the phone shows and saves
+  from (`gameui/FightHost.kt`). In the Wilds the World runs the fight
+  (`World.startFight`, `WorldEvent.Fighting`); the battle screen runs a
+  `LocalFight`. Don't put rules in the app: change them in `Fight.kt`, and
+  re-pin `DeterminismTest` on purpose.
 - New creature or scenery art comes from `sprite_studio/autogen`
   (`designs.py`; props are `prop_*.gif`), not hand-made files. Two renderer
   constants must match autogen: `TerrainRenderer.CREATURE_CANVAS` (42/32, the

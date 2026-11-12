@@ -20,7 +20,8 @@ trap 'rm -rf "$BUILD"' EXIT
 mkdir -p "$OUT"
 echo "🔨 Compiling world sim + renderer..."
 java -cp "$CP" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -nowarn -no-stdlib -cp "$STDLIB" -d "$BUILD" \
-    "$ROOT/tools/world_preview/WorldPreview.kt" "$WORLD"/sim/*.kt "$WORLD"/render/*.kt
+    "$ROOT/tools/world_preview/WorldPreview.kt" "$WORLD"/sim/*.kt "$WORLD"/render/*.kt "$WORLD"/battle/*.kt \
+    "$WORLD"/../GameData.kt "$WORLD"/../Netbeast.kt "$WORLD"/../SkillEngine.kt
 echo "🌲 Running..."
-java -cp "$BUILD:$STDLIB" WorldPreviewKt "$OUT"
+RHC_DRAWABLES="$ROOT/rhc-android/app/src/main/res/drawable-nodpi" java -cp "$BUILD:$STDLIB" WorldPreviewKt "$OUT"
 echo "🖼️  Previews in $OUT"

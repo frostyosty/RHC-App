@@ -1,0 +1,43 @@
+html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    color: #fff;
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* The frame is rendered small (200 or 320 px across, like the phone) and scaled up unfiltered */
+#view {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    touch-action: none;
+    cursor: grab;
+}
+#view:active { cursor: grabbing; }
+
+#stats, #hint {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    pointer-events: none;
+    text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+#stats { top: 6px; font: 11px/1.3 ui-monospace, Menlo, Consolas, monospace; opacity: 0.85; }
+#hint { bottom: 16px; text-align: center; }
+
+#old {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    background: #1a2230;
+}
+#old[hidden] { display: none; }

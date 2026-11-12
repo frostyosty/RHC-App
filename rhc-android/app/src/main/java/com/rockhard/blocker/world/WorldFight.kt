@@ -2,7 +2,6 @@ package com.rockhard.blocker
 
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
@@ -10,11 +9,16 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.rockhard.blocker.world.WorldView
-import com.rockhard.blocker.world.sim.Action
+import com.rockhard.blocker.world.battle.FightInput
+import com.rockhard.blocker.world.battle.FightItem
+import com.rockhard.blocker.world.battle.FightOutcome
+import com.rockhard.blocker.world.battle.FightSetup
+import com.rockhard.blocker.world.battle.FightStyle
+import com.rockhard.blocker.world.battle.SideKind
+import com.rockhard.blocker.world.battle.SideSetup
+import com.rockhard.blocker.world.battle.WildSpec
 import com.rockhard.blocker.world.sim.EncounterOutcome
-import com.rockhard.blocker.world.sim.Role
 import com.rockhard.blocker.world.sim.WorldEvent
-import kotlin.random.Random
 
 // Fights in the 3D Wilds, without leaving the world. A wild beast squares up
 // and you circle each other; you pick a netbeast from the cages down the left
@@ -27,205 +31,85 @@ import kotlin.random.Random
 // the same way; the poacher throws his netbeasts' cages one at a time, and
 // your cages wait until his netbeast is out.
 //
-// The rules are the normal battle code in engines/combat (executePlayerMove,
-// triggerEnemyCounterAttack, the item buttons): the world only presents them.
-// The hooks are playSpriteAnim/playFx (poses and effects on the fighters),
-// showBattleArena (a new netbeast goes in), the battle timer (the beast's
-// patience) and printLog (captions over the world).
+// The World runs the fight (world-core's battle rules, the same as the
+// battle screen's): the phone starts it, sends the panel's taps in as
+// FightInputs, and shows what the rules say (FightHost.kt's applyFight; the
+// World poses the fighters and throws the cages itself). When it closes, the
+// World has already resolved the encounter and the walk goes on.
 
-/** How long the wild beast waits for you before it acts on its own. */
-private const val PATIENCE_MS = 7000L
-private const val TICK_MS = 100L
-/** With no netbeasts left, the beast strikes you this long after it turns on you (punches don't slow it). */
-private const val LAST_STAND_MS = 3000L
-/** Punches can be thrown this fast (they take no turn). */
-private const val PUNCH_GAP_MS = 150L
-/** A beat so you see your netbeast fall before the next cage flies. */
-private const val NEXT_CAGE_DELAY_MS = 1200L
-
-internal class WorldFight(val beastId: Int) {
-    var outName: String? = null     // the netbeast that's out (or whose cage is in the air)
-    var cageInAir = false           // the panel waits for CompanionOut
-    var freeHit = false             // the beast knocked the cage loose: it strikes as soon as the netbeast is out
-    var patienceMs = PATIENCE_MS
-    var busyUntil = 0L              // an exchange is playing out: patience waits
-    var lastTap = 0L                // no double-taps while a move resolves
-    var lastStand = false           // its clock is LAST_STAND_MS now, and punches don't reset it
-    var clobbered = false           // it hit YOU (a last stand lost): you're knocked flat when the fight ends
+internal class WorldFight(val beastId: Int, val fightId: Int, val view: FightView) {
     var partyLead: Netbeast? = null // the party's own lead, put back after the fight
-    var foeOut: Netbeast? = null    // a poacher's netbeast that's out in the world (or whose cage is in the air)
-    var foeCageInAir = false        // ...the fight waits for RivalOut
-    var foesOut = 0                 // how many of his have come out
-    var tick: Runnable? = null
+    var closed = false              // the rules closed it (the World resolved the encounter)
 }
 
 internal fun GameActivity.onWorldEncounter(e: WorldEvent.Encounter) {
+    val s = worldSession ?: return
     val visitor = worldVisitors[e.beastId]
-    val partyLead = party.getOrNull(activePetIndex)
-    val lead = if (noCages()) -1 else walkLeadIndex() // the top cage in the walk's column
-    if (visitor != null) setUpVisitorBattle(visitor) else {
-        val def = GameData.beasts.find { it.name == e.species } ?: GameData.beasts.random()
-        val refHp = if (lead == -1) 20 else party[lead].maxHp
-        // Territory further from the start (higher evo stage) hits harder
-        val pl = (refHp * (0.6 + 0.2 * e.stage) * Random.nextDouble(0.85, 1.15)).toInt().coerceAtLeast(10)
-        val name = if (Random.nextInt(100) < 10) "[Obscure] ${def.name}" else def.name
-        currentEnemy = Netbeast(name, "Wild", pl, pl, def.m1, def.m2, "Tackle", 0L, 0, 0, 0, false, "None", 0, 0, 0, 0, "None", 0)
-        isWildBattle = true; isTrainerBattle = false; battleOver = false
+    val foe = if (visitor != null) {
+        setUpVisitorBattle(visitor)
+        foeSide() ?: return
+    } else {
+        currentEnemy = null; isWildBattle = true; isTrainerBattle = false
+        SideSetup(SideKind.WILD, wild = WildSpec(e.species, e.stage)) // the rules roll it from your lead
     }
-    val enemy = currentEnemy ?: return
-    playerLastStand = noCages(); participatingPets.clear()
-    if (lead >= 0) activePetIndex = lead
-    resetArenaRules()
-    val f = WorldFight(e.beastId).also { it.partyLead = partyLead }
-    worldFight = f
+    val cages = walkOrder()
+    val setup = FightSetup(FightStyle.WILDS, currentWeather, System.currentTimeMillis(), currentCity)
+    val id = s.startFight(e.beastId, setup, mySide(cages, -1), foe)
+    val fight = s.world.fights[id]
+    if (fight == null) { s.resolveEncounter(e.beastId, EncounterOutcome.PLAYER_FLED); return }
+    val v = FightView(fight, s.world.sideOf(s.localPlayerId)?.second ?: 0, wilds = true)
+    v.rescueName = capturedRescueTarget?.name
+    currentEnemy = fight.sides.firstOrNull { !it.isPlayer }?.party?.firstOrNull()
+    playerLastStand = v.me.lastStand
+    battleOver = false
+    worldFight = WorldFight(e.beastId, id, v).also { it.partyLead = party.getOrNull(activePetIndex) }
     qteContainer.visibility = View.GONE // nothing else starts a battle mid-fight
-    val cagesOrFists = if (noCages()) noCagesLine() else "> Quick! Pick a cage to throw!"
-    when (visitor?.kind) {
-        VisitorKind.POACHER -> {
-            printLog("\n> 🦹 POACHER: 'Come and take it!'\n> He throws a cage...")
-            f.foeOut = enemy; f.foeCageInAir = true
-            worldSession?.rivalSendOut(speciesOf(enemy))
-        }
-        VisitorKind.BOSS -> {
-            printLog("\n> 👑 ${speciesOf(enemy)} (HP: ${enemy.maxHp}) rears up in front of you! Defend $currentCity!")
-            printLog(cagesOrFists)
-        }
-        null -> {
-            printLog("\n> ⚠️ A wild ${enemy.name} (HP: ${enemy.maxHp}) squares up to you! You circle each other...")
-            printLog(cagesOrFists)
-        }
-    }
-    vibratePhone(80)
-    refreshWorldFightPanel()
-    startPatience()
-}
-
-internal fun GameActivity.onWorldCompanionOut(e: WorldEvent.CompanionOut) {
-    val f = worldFight ?: return
-    f.cageInAir = false
-    val p = party.getOrNull(activePetIndex) ?: return
-    printLog("> ${p.name} bursts out to face ${foeLabel()}!")
-    updateBattleUI() // the moves appear, and the beast's patience starts over
-    if (f.freeHit) {
-        f.freeHit = false
-        cancelBattleTimer()
-        mainHandler.postDelayed({ if (worldFight === f && !battleOver) triggerEnemyCounterAttack() }, 500)
-    }
-}
-
-/** The poacher's netbeast is out of its cage: it's the one you fight now, and its patience starts full. */
-internal fun GameActivity.onWorldRivalOut(e: WorldEvent.RivalOut) {
-    val f = worldFight ?: return
-    f.foeCageInAir = false
-    f.patienceMs = if (f.lastStand) LAST_STAND_MS else PATIENCE_MS
-    if (f.foesOut++ == 0) {
-        printLog("> The poacher's ${currentEnemy?.name} bursts out of its cage!")
-        printLog(if (noCages()) noCagesLine() else "> Quick! Pick a cage to throw!")
-    }
     refreshWorldFightPanel()
 }
 
-/** A poacher's netbeast is on its way: his last one fell or he swapped, and the new one isn't out yet. */
-private fun GameActivity.foeArriving(f: WorldFight) = f.foeCageInAir || (isTrainerBattle && currentEnemy !== f.foeOut)
-
-/** Who you're up against, for the log: "the wild Cacheon", "the poacher's Cacheon", or the boss by name. */
-private fun GameActivity.foeLabel(): String {
-    val e = currentEnemy ?: return "the beast"
-    return when {
-        isTrainerBattle -> "the poacher's ${e.name}"
-        e.type == "EventBoss" -> speciesOf(e)
-        else -> "the wild ${e.name}"
-    }
+/** What the rules said about our fight, from the World. */
+internal fun GameActivity.onWorldFighting(e: WorldEvent.Fighting) {
+    val f = worldFight ?: return
+    if (e.fightId == f.fightId) applyFight(f.view, listOf(e.event))
 }
 
-/** Called when the battle ends (endBattle -> HUB) or the walk does: the walk goes on. */
+internal fun GameActivity.onWorldCompanionOut(@Suppress("UNUSED_PARAMETER") e: WorldEvent.CompanionOut) = refreshWorldFightPanel()
+
+/** The poacher's netbeast is out of its cage: it's the one you fight now. */
+internal fun GameActivity.onWorldRivalOut(@Suppress("UNUSED_PARAMETER") e: WorldEvent.RivalOut) = refreshWorldFightPanel()
+
+/**
+ * Called when the fight closes (closed -> HUB) or the walk ends: the walk goes on. If the rules
+ * hadn't closed it, the encounter ends here, as the rules left it.
+ */
 internal fun GameActivity.endWorldFight() {
     val f = worldFight ?: return
-    f.tick?.let { mainHandler.removeCallbacks(it) }
-    val enemy = currentEnemy
-    // beaten, or caught in a net (then it's in your party now)
-    val won = enemy != null && (enemy.hp <= 0 || party.any { it === enemy })
-    val outcome = when {
-        won -> EncounterOutcome.BEAST_DEFEATED
-        f.clobbered -> EncounterOutcome.PLAYER_BEATEN // you pick yourself up off the ground
-        else -> EncounterOutcome.PLAYER_FLED
+    if (!f.closed) {
+        val r = f.view.fight.result
+        val outcome = when (r?.outcomes?.get(f.view.side)) {
+            FightOutcome.WON, FightOutcome.CAUGHT -> EncounterOutcome.BEAST_DEFEATED
+            FightOutcome.BEATEN -> EncounterOutcome.PLAYER_BEATEN
+            else -> EncounterOutcome.PLAYER_FLED
+        }
+        worldSession?.resolveEncounter(f.beastId, outcome)
     }
-    worldSession?.resolveEncounter(f.beastId, outcome)
     // the fight sent out netbeasts in walk order; the party's lead is unchanged (unless it fell)
     activePetIndex = party.indexOfFirst { it === f.partyLead }.takeIf { it >= 0 } ?: 0
     prefs.edit().putInt("ACTIVE_PET_INDEX", activePetIndex).apply()
     worldFight = null
-    if (!battleOver) { battleOver = true; isWildBattle = false }
+    if (!battleOver) { battleOver = true; isWildBattle = false; isTrainerBattle = false }
+    playerLastStand = false
     findViewById<View>(R.id.worldFightPanel)?.visibility = View.GONE
     refreshWalkCages()
 }
 
 /** What the HUD needs: both fighters' health and how patient the beast still is. */
 internal fun GameActivity.worldFightHud() = object : WorldView.FightHud {
-    override fun enemy() = currentEnemy?.takeIf { worldFight?.let { f -> !foeArriving(f) } == true }?.let {
-        WorldView.Fighter(speciesOf(it), it.maxHp / 10, it.hp, it.maxHp)
-    }
-    override fun mine() = party.getOrNull(activePetIndex)?.takeIf { worldFight?.outName != null && !playerLastStand }?.let {
-        WorldView.Fighter(speciesOf(it), it.maxHp / 10, it.hp, it.maxHp)
-    }
-    override fun patience(): Float {
-        val f = worldFight ?: return -1f
-        return if (f.cageInAir || battleOver || foeArriving(f)) -1f else (f.patienceMs.toFloat() / if (f.lastStand) LAST_STAND_MS else PATIENCE_MS).coerceIn(0f, 1f)
-    }
-}
-
-// ---------------------------------------------------------------- hooks from the battle code
-
-/** From cancelBattleTimer: you acted, so the beast's patience starts over once the exchange plays out. */
-internal fun GameActivity.worldPatienceReset() {
-    val f = worldFight ?: return
-    if (f.lastStand) return
-    f.patienceMs = PATIENCE_MS
-    f.busyUntil = SystemClock.uptimeMillis() + 1800
-}
-
-/** From playSpriteAnim: the same pose on the fighter in the world. */
-internal fun GameActivity.worldAct(isPlayer: Boolean, name: String, anim: String) {
-    if (worldFight == null) return
-    val action = when (anim) { "attack" -> Action.ATTACK; "hit" -> Action.HIT; "faint" -> Action.FAINT; "victory" -> Action.VICTORY; else -> return }
-    val role = roleFor(isPlayer, name)
-    // in the world the beast only ever hits YOU with the blow that ends a lost last stand
-    if (role == Role.PLAYER && action == Action.HIT) worldFight?.clobbered = true
-    worldSession?.perform(role, action)
-}
-
-/** From playFx: the effect over the fighter in the world. */
-internal fun GameActivity.worldFx(onPlayer: Boolean, fx: String) {
-    if (worldFight == null) return
-    worldSession?.effect(roleFor(onPlayer, if (playerLastStand) "YOU" else ""), fx)
-}
-
-private fun GameActivity.roleFor(isPlayer: Boolean, name: String) = when {
-    !isPlayer -> Role.BEAST
-    playerLastStand || name.equals("YOU", ignoreCase = true) -> Role.PLAYER
-    else -> Role.COMPANION
-}
-
-/**
- * From showBattleArena: a different netbeast is fighting now (yours fell and
- * the next was sent out). After a beat so you see it fall, its cage flies.
- */
-internal fun GameActivity.worldFighterChanged(name: String) {
-    val f = worldFight ?: return
-    // or the poacher sent out another (his last one fell, or he swapped): its cage flies in
-    val enemy = currentEnemy
-    if (isTrainerBattle && enemy != null && enemy !== f.foeOut) {
-        f.foeOut = enemy; f.foeCageInAir = true
-        worldSession?.rivalSendOut(speciesOf(enemy))
-        refreshWorldFightPanel()
-        return
-    }
-    if (name == "YOU" || playerLastStand) return // refreshWorldFightPanel recalls the fallen one
-    val p = party.getOrNull(activePetIndex) ?: return
-    if (f.outName == p.name && !f.cageInAir) return
-    f.cageInAir = true
-    refreshWorldFightPanel()
-    mainHandler.postDelayed({ if (worldFight === f && !battleOver) throwWorldCage(activePetIndex) }, NEXT_CAGE_DELAY_MS)
+    override fun enemy() = worldFight?.view?.let { v ->
+        if (v.fight.foeArriving(v.me)) null else (v.fight.foeOf(v.me) ?: v.fight.sides.firstOrNull { !it.isPlayer })?.pet()
+    }?.let { WorldView.Fighter(speciesOf(it), it.maxHp / 10, it.hp, it.maxHp) }
+    override fun mine() = worldFight?.view?.me?.pet()?.let { WorldView.Fighter(speciesOf(it), it.maxHp / 10, it.hp, it.maxHp) }
+    override fun patience(): Float = worldFight?.view?.let { it.fight.patienceShown(it.me) } ?: -1f
 }
 
 /** From printLog: battle log lines as captions over the world. */
@@ -237,80 +121,30 @@ internal fun GameActivity.worldCaption(msg: String) {
 // ---------------------------------------------------------------- the panel
 
 internal fun GameActivity.setupWorldFightControls() {
-    findViewById<Button>(R.id.worldMove1)?.setOnClickListener { worldMove(1) }
-    findViewById<Button>(R.id.worldMove2)?.setOnClickListener { worldMove(2) }
-    findViewById<Button>(R.id.worldMove3)?.setOnClickListener { worldMove(3) }
+    findViewById<Button>(R.id.worldMove1)?.setOnClickListener { fightInput(FightInput(move = 1)) }
+    findViewById<Button>(R.id.worldMove2)?.setOnClickListener { fightInput(FightInput(move = 2)) }
+    findViewById<Button>(R.id.worldMove3)?.setOnClickListener { fightInput(FightInput(move = 3)) }
     // hold a move for what it does
     for ((id, n) in listOf(R.id.worldMove1 to 1, R.id.worldMove2 to 2, R.id.worldMove3 to 3)) {
         findViewById<Button>(id)?.setOnLongClickListener {
-            val p = party.getOrNull(activePetIndex)
+            val p = myFighter()
             if (p != null && !playerLastStand) worldCaption(SkillEngine.getDetails(moveOf(p, n), p.maxHp))
             true
         }
     }
-    // the items reuse the battle screen's buttons, so the rules stay in one place
-    findViewById<Button>(R.id.worldNet)?.setOnClickListener { worldItem("nets", { it.eqNets }, R.id.btnBattleNet) }
-    findViewById<Button>(R.id.worldPot)?.setOnClickListener { worldItem("potions", { it.eqPots }, R.id.btnBattlePot) }
-    findViewById<Button>(R.id.worldSpray)?.setOnClickListener { worldItem("sprays", { it.eqSprays }, R.id.btnBattleSpray) }
+    findViewById<Button>(R.id.worldNet)?.setOnClickListener { worldItem("nets", { it.eqNets }, FightItem.NET) }
+    findViewById<Button>(R.id.worldPot)?.setOnClickListener { worldItem("potions", { it.eqPots }, FightItem.POTION) }
+    findViewById<Button>(R.id.worldSpray)?.setOnClickListener { worldItem("sprays", { it.eqSprays }, FightItem.SPRAY) }
 }
 
-/**
- * An item button: uses it through the battle screen's button, or, when the netbeast that's
- * out has none equipped, says where to get some (without passing the tap on, which would
- * reset the beast's patience).
- */
-private fun GameActivity.worldItem(what: String, count: (Netbeast) -> Int, battleButton: Int) {
-    val p = party.getOrNull(activePetIndex) ?: return
+/** An item button: uses it, or, when the netbeast that's out has none equipped, says where to get some. */
+private fun GameActivity.worldItem(what: String, count: (Netbeast) -> Int, item: FightItem) {
+    val p = myFighter() ?: return
     if (count(p) <= 0) { worldCaption("${speciesOf(p)} has no $what equipped. Equip them in the Bag."); return }
-    worldTap { findViewById<Button>(battleButton)?.performClick() }
+    fightInput(FightInput(item = item))
 }
 
 private fun moveOf(p: Netbeast, n: Int) = when (n) { 1 -> p.move1; 2 -> p.move2; else -> p.move3 }
-
-/** Runs a tap on the panel unless a cage (yours or his) is in the air or you just tapped. */
-private inline fun GameActivity.worldTap(action: () -> Unit) {
-    val f = worldFight ?: return
-    val now = SystemClock.uptimeMillis()
-    if (battleOver || f.cageInAir || foeArriving(f) || now - f.lastTap < 900) return
-    f.lastTap = now
-    action()
-}
-
-private fun GameActivity.worldMove(n: Int) {
-    val f = worldFight ?: return
-    if (playerLastStand) {
-        val now = SystemClock.uptimeMillis()
-        if (battleOver || foeArriving(f) || now - f.lastTap < PUNCH_GAP_MS) return
-        f.lastTap = now
-        executeHumanPunch()
-    } else worldTap { party.getOrNull(activePetIndex)?.let { executePlayerMove(moveOf(it, n)) } }
-}
-
-private fun GameActivity.worldCageTapped(i: Int) = worldTap {
-    val f = worldFight ?: return@worldTap
-    if (i !in party.indices) return@worldTap
-    if (f.outName == null) {
-        cancelBattleTimer()
-        printLog("> You throw ${party[i].name}'s cage!")
-        throwWorldCage(i)
-    } else if (i != activePetIndex) {
-        // a swap costs a turn, as on the battle screen: the beast strikes once the new one is out
-        cancelBattleTimer()
-        printLog("\n> You swapped to ${party[i].name}!")
-        resetArenaRules()
-        f.freeHit = true
-        throwWorldCage(i)
-    }
-}
-
-private fun GameActivity.throwWorldCage(i: Int) {
-    val f = worldFight ?: return
-    val p = party.getOrNull(i) ?: return
-    activePetIndex = i
-    f.outName = p.name; f.cageInAir = true
-    worldSession?.throwCage(speciesOf(p))
-    refreshWorldFightPanel()
-}
 
 /** Rebuilds the left panel for where the fight is: cages to pick, a cage in the air, or moves. */
 internal fun GameActivity.refreshWorldFightPanel() {
@@ -319,6 +153,8 @@ internal fun GameActivity.refreshWorldFightPanel() {
     if (f == null) { panel.visibility = View.GONE; refreshWalkCages(); return }
     panel.visibility = View.VISIBLE
     refreshWalkCages()
+    val fight = f.view.fight
+    val me = f.view.me
     val title = findViewById<TextView>(R.id.worldFightTitle)
     val cages = findViewById<LinearLayout>(R.id.worldCages)
     val moves = findViewById<View>(R.id.worldMoves)
@@ -327,31 +163,27 @@ internal fun GameActivity.refreshWorldFightPanel() {
     cages.removeAllViews()
     items.visibility = View.GONE
     when {
-        playerLastStand -> {
-            // all your netbeasts are down (or you had none): back in its cage, the beast turns on you
-            if (f.outName != null) {
-                f.outName = null
-                mainHandler.postDelayed({ if (worldFight === f) worldSession?.recall() }, NEXT_CAGE_DELAY_MS)
-            }
-            if (!f.lastStand) {
-                f.lastStand = true; f.patienceMs = LAST_STAND_MS
-                f.busyUntil = SystemClock.uptimeMillis() + NEXT_CAGE_DELAY_MS // it turns on you once yours is gone
-            }
+        fight.over -> {
+            title.text = ""
+            moves.visibility = View.GONE
+        }
+        me.lastStand -> {
+            // all your netbeasts are down (or you had none): the beast turns on you
             title.text = "NO NETBEASTS LEFT"
             moves.visibility = View.VISIBLE
             b1.text = "👊 THROW PUNCH"; b2.visibility = View.GONE; b3.visibility = View.GONE
         }
-        f.outName == null -> {
+        me.active < 0 -> {
             title.text = "THROW A CAGE"
             moves.visibility = View.GONE
-            walkOrder().forEach { p -> cages.addView(cageView(party.indexOfFirst { it === p }, p, compact = false)) }
+            me.available().forEach { i -> cages.addView(cageView(i, me.party[i], compact = false)) }
         }
-        f.cageInAir -> {
-            title.text = "${speciesOf(party.getOrNull(activePetIndex) ?: return)} is coming out…"
+        me.arriving -> {
+            title.text = "${speciesOf(me.party[me.active])} is coming out…"
             moves.visibility = View.GONE
         }
         else -> {
-            val p = party.getOrNull(activePetIndex) ?: return
+            val p = me.pet() ?: return
             title.text = "SHOUT A MOVE"
             moves.visibility = View.VISIBLE
             b1.text = p.move1; b2.text = p.move2; b3.text = p.move3
@@ -364,16 +196,15 @@ internal fun GameActivity.refreshWorldFightPanel() {
             )) { btn.text = "$label $n"; btn.alpha = if (n > 0) 1f else 0.4f }
             items.visibility = View.VISIBLE
             // the others, small, to swap in (costs a turn)
-            val others = walkOrder().map { o -> party.indexOfFirst { it === o } }.filter { it >= 0 && it != activePetIndex }
-            others.chunked(4).forEach { rowIdx ->
+            me.available().filter { it != me.active }.chunked(4).forEach { rowIdx ->
                 val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-                rowIdx.forEach { row.addView(cageView(it, party[it], compact = true)) }
+                rowIdx.forEach { row.addView(cageView(it, me.party[it], compact = true)) }
                 cages.addView(row)
             }
         }
     }
-    // the panel waits (worldTap) until his netbeast is out
-    if (foeArriving(f) && !playerLastStand && !f.cageInAir) title.text = "THE POACHER THROWS A CAGE…"
+    // the panel waits until his netbeast is out
+    if (fight.foeArriving(me) && !fight.over && !me.lastStand && !me.arriving) title.text = "THE POACHER THROWS A CAGE…"
 }
 
 /** The netbeast's idle sprite behind the cage bars (also the walk's cage column, WorldCages.kt). */
@@ -392,16 +223,17 @@ internal fun GameActivity.cageBackground(): GradientDrawable {
     return GradientDrawable().apply { cornerRadius = 8 * d; setColor(Color.argb(200, 64, 74, 88)); setStroke(d.toInt().coerceAtLeast(1), Color.argb(120, 255, 214, 102)) }
 }
 
-/** A cage to tap in a fight; the full size adds its name, level and health. */
+/** A cage to tap in a fight ([i]: its place in your side of the fight); the full size adds its name, level and health. */
 private fun GameActivity.cageView(i: Int, p: Netbeast, compact: Boolean): View {
     val d = resources.displayMetrics.density
     fun px(dp: Int) = (dp * d).toInt()
     val icon = cageIcon(p)
     val bg = cageBackground()
+    val tap = View.OnClickListener { fightInput(FightInput(cage = i)) }
     if (compact) {
         icon.background = bg
         icon.layoutParams = LinearLayout.LayoutParams(px(34), px(34)).apply { marginEnd = px(3); bottomMargin = px(3) }
-        icon.setOnClickListener { worldCageTapped(i) }
+        icon.setOnClickListener(tap)
         return icon
     }
     val row = LinearLayout(this).apply {
@@ -417,58 +249,6 @@ private fun GameActivity.cageView(i: Int, p: Netbeast, compact: Boolean): View {
         setTextColor(Color.WHITE); textSize = 10f; setShadowLayer(2f, 0f, 0f, Color.BLACK)
         setPadding(px(4), 0, 0, 0)
     })
-    row.setOnClickListener { worldCageTapped(i) }
+    row.setOnClickListener(tap)
     return row
-}
-
-// ---------------------------------------------------------------- the beast's patience
-
-private fun GameActivity.startPatience() {
-    val f = worldFight ?: return
-    f.tick?.let { mainHandler.removeCallbacks(it) }
-    val r = object : Runnable {
-        override fun run() {
-            if (worldFight !== f || battleOver) return
-            val running = findViewById<WorldView>(R.id.worldView)?.isRunning == true // paused while the app is
-            if (running && !f.cageInAir && !foeArriving(f) && SystemClock.uptimeMillis() >= f.busyUntil) {
-                f.patienceMs -= TICK_MS
-                if (f.patienceMs <= 0) { f.patienceMs = PATIENCE_MS; beastLosesPatience(f) }
-            }
-            mainHandler.postDelayed(this, TICK_MS)
-        }
-    }
-    f.tick = r
-    mainHandler.postDelayed(r, TICK_MS)
-}
-
-/** You took too long: the beast acts on its own. */
-private fun GameActivity.beastLosesPatience(f: WorldFight) {
-    val enemy = currentEnemy ?: return
-    when {
-        f.outName == null && !noCages() -> {
-            // it lunges at you and knocks a cage loose: that netbeast has to fight, and takes the first hit
-            val i = walkOrder().random().let { c -> party.indexOfFirst { it === c } }
-            printLog("\n> ⏳ You hesitated! ${foeLabel().replaceFirstChar { it.uppercase() }} lunges at you!\n> ${party[i].name}'s cage is knocked from your hands and bursts open!")
-            playSpriteAnim(false, enemy.name, "attack")
-            vibratePhone(200)
-            f.freeHit = true
-            throwWorldCage(i)
-        }
-        playerLastStand -> {
-            cancelBattleTimer()
-            printLog("\n--- ENEMY TURN ---\n> ⏳ You hesitated! ${foeLabel().replaceFirstChar { it.uppercase() }} lunges at YOU!")
-            playSpriteAnim(false, enemy.name, "attack")
-            mainHandler.postDelayed({
-                if (worldFight !== f || battleOver) return@postDelayed
-                playSpriteAnim(true, "YOU", "hit"); vibratePhone(800)
-                printLog("> ${enemy.name} obliterates you for 9,999 damage.")
-                endBattle()
-            }, 450)
-        }
-        else -> {
-            cancelBattleTimer()
-            printLog("\n> ⏳ You hesitated! ${foeLabel().replaceFirstChar { it.uppercase() }} strikes first!")
-            triggerEnemyCounterAttack()
-        }
-    }
 }
