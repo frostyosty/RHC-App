@@ -1,5 +1,11 @@
 # RHC roadmap
 
+
+TODO
+
+- Sculpt mode in the viewer. Run node tools/figures/viewer/serve.mjs, open http://localhost:5178, pick someone on the cast shelf and tick Sculpt. Each click on their face adds a soft blob; Alt-click carves one out. There are controls for size, softness and left/right mirroring, plus Undo (Ctrl+Z) and Clear. Each click saves to tools/figures/sculpts/<name>.json and rebuilds that person in about 1.5 seconds. When you're happy, press Cast → APK to put the faces in the game.
+
+
 What to build next, across all three games. The detail is in each plan; this
 file only says which step of which plan comes when, and why.
 

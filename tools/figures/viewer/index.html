@@ -56,6 +56,7 @@
     </div>
   </div>
   <pre id="log"></pre>
+  <div class="help"><b>Sculpt:</b> pick someone on the cast shelf, tick Sculpt, then click their face to add a blob (hold Alt to carve). Each click is saved to <code>sculpts/&lt;name&gt;.json</code> and they're rebuilt in a second or two. Cast → APK puts the new faces in the game.</div>
   <div class="help">Drag to turn, scroll to zoom, right-drag to pan. Space plays and pauses; ← and → step through the shelf. The page reloads a figure when its file changes.</div>
 </aside>
 <main id="main">
@@ -67,6 +68,16 @@
     <span class="chip"><label><input type="checkbox" id="bones"> Bones</label></span>
     <span class="chip"><label><input type="checkbox" id="room" checked> Room light</label></span>
     <span class="chip"><button class="act" id="face" title="F: close up on the face, again for the whole body">Face</button></span>
+    <span class="chip" title="Reshape a cast member's face: pick one from the cast shelf"><label><input type="checkbox" id="sculpt"> Sculpt</label></span>
+  </div>
+  <div class="bar" id="sculptBar" style="top:48px; display:none">
+    <span class="chip"><select id="sOp"><option value="add">Add (build up)</option><option value="carve">Carve (dig in)</option></select></span>
+    <span class="chip">Size <input type="range" id="sSize" min="2" max="30" step="0.5" value="8" style="width:80px"> <span id="sSizeV">8 mm</span></span>
+    <span class="chip">Soft <input type="range" id="sSoft" min="0.15" max="1.5" step="0.05" value="0.6" style="width:70px"></span>
+    <span class="chip"><label><input type="checkbox" id="sMirror" checked> Mirror</label></span>
+    <span class="chip"><label><input type="checkbox" id="sShow" checked> Show strokes</label></span>
+    <span class="chip"><button class="act" id="sUndo" title="Ctrl+Z">Undo</button> <button class="act" id="sClear">Clear all</button></span>
+    <span class="chip" id="sStatus"></span>
   </div>
   <div class="info"><div class="chip" id="info">Pick a figure on the left.</div></div>
 </main>
@@ -187,6 +198,7 @@ async function show(shelf, file, keepCamera = false) {
   applyWire();
   if (!keepCamera) frame();
   describe();
+  if (sculpting.on) { if (current.shelf === 'cast' && current.file === sculpting.name) drawStrokes(); else setSculpt(false); }
 }
 
 /** Close up on the first figure's face (the stage turns, so this looks at whatever side faces the camera). */
@@ -217,7 +229,7 @@ function fillMoves() {
   const prev = sel.value;
   const names = [...new Set(shown.flatMap((s) => s.clips.map((c) => c.name)))];
   sel.innerHTML = '<option value="">(rest pose)</option>' + names.map((n) => `<option>${n}</option>`).join('');
-  sel.value = names.includes(prev) ? prev : names.includes('Idle') ? 'Idle' : names[0] ?? '';
+  sel.value = sculpting.on ? '' : names.includes(prev) ? prev : names.includes('Idle') ? 'Idle' : names[0] ?? '';
   playMove(sel.value);
 }
 
@@ -335,6 +347,115 @@ addEventListener('keydown', (e) => {
     show(s.name, next.name);
   }
 });
+
+// ---- Sculpt mode ---------------------------------------------------------
+// Strokes are soft blobs added to or carved from the body's shape, at the 1.75 m
+// reference size standin.mjs builds in; the server saves them and rebuilds the person.
+const sculpting = { on: false, name: null, strokes: [], scale: 1, timer: 0, busy: false, again: false };
+const strokeGroup = new THREE.Group();
+scene.add(strokeGroup);
+const cursor = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: 0xe9c46a, wireframe: true, transparent: true, opacity: 0.6, depthTest: false }));
+cursor.visible = false;
+scene.add(cursor);
+const ray = new THREE.Raycaster();
+const el = (id) => document.getElementById(id);
+const sStatus = (t) => { el('sStatus').textContent = t; };
+
+async function setSculpt(on) {
+  el('sculpt').checked = on;
+  el('sculptBar').style.display = on ? 'flex' : 'none';
+  sculpting.on = false; cursor.visible = false; strokeGroup.clear();
+  if (!on) return;
+  if (current.shelf !== 'cast' || !current.file || shown.length !== 1) {
+    el('sculpt').checked = false; el('sculptBar').style.display = 'none';
+    el('log').textContent = 'Sculpt: pick one person on the cast shelf first.';
+    return;
+  }
+  const r = await fetch(`/api/sculpt?name=${encodeURIComponent(current.file)}`);
+  if (!r.ok) { el('log').textContent = 'Sculpt: ' + await r.text(); el('sculpt').checked = false; el('sculptBar').style.display = 'none'; return; }
+  const data = await r.json();
+  Object.assign(sculpting, { on: true, name: current.file, strokes: data.strokes, scale: data.scale });
+  el('turn').checked = false;
+  stage.rotation.y = 0;
+  el('move').value = ''; playMove('');
+  shown[0].mixer.stopAllAction();
+  faceOn = true; faceView();
+  sStatus(data.usesPack ? '⚠️ This body comes from a pack, which has its own face: strokes only change stand-ins.' : `${sculpting.strokes.length} strokes`);
+  drawStrokes();
+}
+
+function drawStrokes() {
+  strokeGroup.clear();
+  if (!sculpting.on || !shown.length || !el('sShow').checked) return;
+  const root = shown[0].root;
+  root.updateMatrixWorld(true);
+  for (const st of sculpting.strokes) for (const x of st.mirror && Math.abs(st.c[0]) > 1e-4 ? [st.c[0], -st.c[0]] : [st.c[0]]) {
+    const m = new THREE.Mesh(cursor.geometry, new THREE.MeshBasicMaterial({ color: st.op === 'carve' ? 0xe76f51 : 0x2a9d8f, transparent: true, opacity: 0.25, depthWrite: false }));
+    m.position.copy(root.localToWorld(new THREE.Vector3(x, st.c[1], st.c[2]).multiplyScalar(sculpting.scale)));
+    m.scale.setScalar(st.r * sculpting.scale);
+    strokeGroup.add(m);
+  }
+}
+
+/** Where the pointer touches the figure, in world space, or null. */
+function pick(e) {
+  if (!shown.length) return null;
+  const rect = renderer.domElement.getBoundingClientRect();
+  ray.setFromCamera(new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1), camera);
+  return ray.intersectObject(shown[0].root, true)[0]?.point ?? null;
+}
+
+function save() {
+  clearTimeout(sculpting.timer);
+  sStatus(`${sculpting.strokes.length} strokes · saving soon…`);
+  sculpting.timer = setTimeout(async () => {
+    if (sculpting.busy) { sculpting.again = true; return; }
+    sculpting.busy = true;
+    sStatus('Rebuilding…');
+    try {
+      const r = await fetch(`/api/sculpt?name=${encodeURIComponent(sculpting.name)}`, { method: 'POST', body: JSON.stringify({ strokes: sculpting.strokes }) });
+      const out = r.ok ? await r.json() : { ok: false, log: await r.text() };
+      el('log').textContent = (out.ok ? '' : '❌ ') + out.log;
+      sStatus(out.ok ? `${sculpting.strokes.length} strokes · saved` : 'Rebuild failed: see the log');
+      await refreshShelves();
+    } catch (err) {
+      sStatus('Save failed: ' + err);
+    } finally {
+      sculpting.busy = false;
+      if (sculpting.again) { sculpting.again = false; save(); }
+    }
+  }, 600);
+}
+
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (!sculpting.on) return;
+  const p = pick(e);
+  cursor.visible = !!p;
+  if (p) { cursor.position.copy(p); cursor.scale.setScalar((Number(el('sSize').value) / 1000) * sculpting.scale); }
+});
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!sculpting.on || e.button !== 0 || !downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
+  const p = pick(e);
+  if (!p) return;
+  const local = shown[0].root.worldToLocal(p.clone()).divideScalar(sculpting.scale);
+  const r = Number(el('sSize').value) / 1000;
+  sculpting.strokes.push({
+    op: e.altKey ? 'carve' : el('sOp').value,
+    c: local.toArray().map((v) => Math.round(v * 1e5) / 1e5), r, k: Math.round(r * Number(el('sSoft').value) * 1e5) / 1e5,
+    mirror: el('sMirror').checked,
+  });
+  drawStrokes();
+  save();
+});
+el('sculpt').addEventListener('change', (e) => setSculpt(e.target.checked));
+el('sShow').addEventListener('change', drawStrokes);
+el('sSize').addEventListener('input', (e) => { el('sSizeV').textContent = `${e.target.value} mm`; });
+function undoStroke() { if (sculpting.on && sculpting.strokes.length) { sculpting.strokes.pop(); drawStrokes(); save(); } }
+el('sUndo').addEventListener('click', undoStroke);
+el('sClear').addEventListener('click', () => { if (sculpting.on && confirm(`Remove all of ${sculpting.name}'s strokes?`)) { sculpting.strokes = []; drawStrokes(); save(); } });
+addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoStroke(); } });
 
 renderer.setAnimationLoop(() => {
   const dt = clock.getDelta();

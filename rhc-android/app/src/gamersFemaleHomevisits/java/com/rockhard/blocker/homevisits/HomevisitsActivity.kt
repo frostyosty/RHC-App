@@ -266,7 +266,9 @@ class HomevisitsActivity : Activity() {
 
     /**
      * A tap stands the test figure on whatever floor-like surface it hits,
-     * turned to face the phone, 1.65 m tall, doing the current move.
+     * turned to face the phone, 1.6 m tall, doing the current move. A tap
+     * nearer than [MIN_DROP_M] along the floor puts them that far away instead,
+     * in the same direction, so nobody appears in your face.
      */
     private fun dropFigure(x: Float, y: Float) {
         val loaded = testFigure ?: return
@@ -278,8 +280,16 @@ class HomevisitsActivity : Activity() {
                 return@queue
             }
             val cam = frame.camera.pose
-            val yaw = atan2(cam.tx() - hit.pose.tx(), cam.tz() - hit.pose.tz())
-            val placed = renderer.place(loaded.figure, hit.uprightAnchor(), yaw, 1.65f)
+            val dx = hit.pose.tx() - cam.tx()
+            val dz = hit.pose.tz() - cam.tz()
+            val along = Math.hypot(dx.toDouble(), dz.toDouble()).toFloat()
+            val anchor = if (along >= MIN_DROP_M || along < 0.01f) hit.uprightAnchor() else {
+                val k = MIN_DROP_M / along
+                hit.uprightAnchorAt(cam.tx() + dx * k, cam.tz() + dz * k)
+            }
+            val feet = anchor.pose
+            val yaw = atan2(cam.tx() - feet.tx(), cam.tz() - feet.tz())
+            val placed = renderer.place(loaded.figure, anchor, yaw, 1.6f)
             loaded.clips.getOrNull(moveIndex)?.let { placed.play(it, fadeS = 0f) }
         }
     }
@@ -320,3 +330,6 @@ class HomevisitsActivity : Activity() {
         arSession?.destroy()
     }
 }
+
+/** How near the phone, along the floor, a tapped-in figure may stand (metres). */
+private const val MIN_DROP_M = 1.6f

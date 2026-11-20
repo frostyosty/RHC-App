@@ -290,6 +290,7 @@ uniform mat4 u_Model;
 uniform vec4 u_Joints[${MAX_JOINTS * 3}];
 out vec3 v_Normal;
 out vec2 v_Uv;
+out float v_Depth;
 mat4 joint(float f) {
     int j = int(f + 0.5) * 3;
     vec4 a = u_Joints[j];
@@ -303,6 +304,7 @@ void main() {
     gl_Position = u_Mvp * skin * vec4(a_Pos, 1.0);
     v_Normal = mat3(u_Model) * mat3(skin) * a_Normal;
     v_Uv = a_Uv;
+    v_Depth = gl_Position.w; // distance in front of the camera, in metres
 }
 """
 
@@ -311,6 +313,7 @@ void main() {
 precision mediump float;
 in vec3 v_Normal;
 in vec2 v_Uv;
+in float v_Depth;
 uniform sampler2D u_Texture;
 uniform vec4 u_Color;
 uniform vec4 u_Light;
@@ -318,6 +321,10 @@ out vec4 o_Color;
 void main() {
     vec4 base = texture(u_Texture, v_Uv) * u_Color;
     if (base.a < 0.5) discard;
+    // Up close a person dissolves (dithered, so no sorting), so walking into
+    // someone never shows the inside of their head: gone nearer than 22 cm.
+    float near = clamp((v_Depth - 0.22) / 0.2, 0.0, 1.0);
+    if (near < fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))))) discard;
     vec3 n = normalize(v_Normal);
     float d = dot(n, normalize(vec3(0.3, 1.0, 0.5))) * 0.5 + 0.5;
     vec3 lit = base.rgb * (0.35 + 0.75 * d * d) * u_Light.rgb * (u_Light.a / 0.466);

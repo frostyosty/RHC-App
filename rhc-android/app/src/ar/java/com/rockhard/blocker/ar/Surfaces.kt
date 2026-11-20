@@ -21,6 +21,10 @@ data class SurfaceHit(
     /** An anchor at the hit, kept upright (no tilt or turn), that moves with the plane as ARCore refines it. */
     fun uprightAnchor(): Anchor =
         result.trackable.createAnchor(Pose.makeTranslation(pose.tx(), pose.ty(), pose.tz()))
+
+    /** Like [uprightAnchor], but moved along the floor to (x, z), at the hit's height and on the same plane. */
+    fun uprightAnchorAt(x: Float, z: Float): Anchor =
+        result.trackable.createAnchor(Pose.makeTranslation(x, pose.ty(), z))
 }
 
 object Surfaces {

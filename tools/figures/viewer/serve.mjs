@@ -4,7 +4,7 @@
 //   node tools/figures/viewer/serve.mjs      then open http://localhost:5178
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
-import { readFile, readdir, stat } from 'node:fs/promises';
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, extname, join, normalize, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,6 +52,39 @@ function run(script, args) {
   });
 }
 
+const SCULPTS = join(TOOLS, 'sculpts');
+
+/**
+ * Sculpt mode: GET gives a cast member's strokes and the scale between their
+ * figure and the 1.75 m reference the strokes are in; POST saves new strokes
+ * to sculpts/<name>.json and rebuilds just that person.
+ */
+async function sculpt(req, name) {
+  const cfg = JSON.parse(await readFile(join(TOOLS, 'wardrobe.json'), 'utf8'));
+  const person = cfg.cast[name];
+  if (!person || !/^[a-z0-9_-]+$/i.test(name)) return [404, 'not in the cast'];
+  const file = join(SCULPTS, `${name}.json`);
+  if (req.method === 'POST') {
+    let body = '';
+    for await (const chunk of req) { body += chunk; if (body.length > 1e6) return [413, 'too big']; }
+    const strokes = (JSON.parse(body).strokes ?? []).map((st) => ({
+      op: st.op === 'carve' ? 'carve' : 'add',
+      c: st.c.slice(0, 3).map(Number), r: Number(st.r), ...(st.k != null && { k: Number(st.k) }), mirror: !!st.mirror,
+    }));
+    if (strokes.some((st) => ![...st.c, st.r].every(Number.isFinite))) return [400, 'bad stroke'];
+    await mkdir(SCULPTS, { recursive: true });
+    // one stroke a line, so a sculpt's git diff reads stroke by stroke
+    await writeFile(file, `{ "strokes": [\n${strokes.map((st) => '  ' + JSON.stringify(st)).join(',\n')}\n] }\n`);
+    return [200, JSON.stringify(await run('wardrobe.mjs', ['--only', name])), 'application/json'];
+  }
+  const { BUILDS } = await import('../standin.mjs');
+  const body = cfg.bodies[person.body] ?? {};
+  const height = person.height ?? BUILDS[body.standin ?? 'female'].height;
+  const usesPack = !!body.pack && existsSync(join(TOOLS, 'packs', body.pack));
+  const strokes = existsSync(file) ? JSON.parse(await readFile(file, 'utf8')).strokes : [];
+  return [200, JSON.stringify({ strokes, scale: height / 1.75, usesPack }), 'application/json'];
+}
+
 createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const send = (code, body, type = 'text/plain') => { res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' }); res.end(body); };
@@ -65,6 +98,7 @@ createServer(async (req, res) => {
       if (!args) return send(400, 'what=cast|assets|random');
       return send(200, JSON.stringify(await run('wardrobe.mjs', args)), 'application/json');
     }
+    if (url.pathname === '/api/sculpt') return send(...await sculpt(req, url.searchParams.get('name')));
     let file = null;
     if (url.pathname === '/' || url.pathname === '/index.html') file = join(HERE, 'index.html');
     else if (url.pathname.startsWith('/three/')) file = inside(THREE, url.pathname.slice('/three/'.length));

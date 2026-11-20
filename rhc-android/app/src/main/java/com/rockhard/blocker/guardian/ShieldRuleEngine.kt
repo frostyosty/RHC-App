@@ -50,6 +50,9 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
         "intimacy", "intimate", "adult", "mature", "romance", "dildo", "underwear", "strip", "sensual"
     )
 
+    // Soft words that count every time they appear, not just once per page
+    private val strongSoftWords = setOf("nude", "naked", "boobs", "tits", "sex")
+
     private val protectedPkgs = listOf(
         "systemui", "nexus", "pixel", "gallery", "camera", "dialer", "contacts",
         "note", "keyboard", "inputmethod", "swiftkey", "clock", "alarm",
@@ -164,13 +167,28 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
     private val homeLauncherWords = listOf("launcher", "trebuchet", "quickstep")
     private val explicitUrlWords = listOf("sexy", "porn", "nude", "naked", "nsfw", "porno", "onlyfans", "xvideo", "pornhub", "rule34", "erotic")
     private val nonAlphanumeric = Regex("[^a-zA-Z0-9]")
-    private val wholeWordRequired = listOf("ass", "butt", "strip", "sex", "tits", "fap", "milf", "anal", "breast", "breasts", "mature", "nude", "naked", "dick", "cock", "pussy", "cum")
+    private val wholeWordRequired = listOf("ass", "butt", "strip", "sex", "tits", "fap", "milf", "anal", "breast", "breasts", "mature", "nude", "naked", "dick", "cock", "pussy", "cum", "adult")
     // Fixed safe phrases are erased before any matching
-    private val safePhrases = listOf("chicken breast", "turkey breast", "breast cancer", "weather stripping", "power strip", "comic strip", "strip mall", "sex education", "fair sex")
+    private val safePhrases = listOf(
+        "chicken breast", "turkey breast", "duck breast", "breast fillet", "breast meat", "breast cancer", "breastfeeding", "breast feeding", "breaststroke", "breast stroke",
+        "weather stripping", "power strip", "comic strip", "strip mall", "sex education", "fair sex",
+        "1 adult", "2 adults", "adult ticket", "adult tickets", "adult price", "adult fare", "adult education", "adult learning", "young adult", "adult size"
+    )
+    private val breastContext = listOf(
+        "chicken", "turkey", "duck", "poultry", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "grill", "bake", "oven",
+        "bone", "fillet", "skin", "kg", "per kg", "price", "cook", "marinade", "stuffed", "protein", "calorie", "serving", "dice", "slice",
+        "screening", "mammogram", "stroke", "swim", "nursing", "baby", "countdown", "woolworths", "new world", "pak'n", "butcher"
+    )
     // If a word is found, check the surrounding words. If they match these, it's safe.
     private val safeContextMap = mapOf(
-        "breast" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
-        "breasts" to listOf("chicken", "turkey", "duck", "cancer", "feed", "pump", "milk", "meat", "recipe", "roast", "fried", "bone", "fillet"),
+        "breast" to breastContext,
+        "breasts" to breastContext,
+        "adult" to listOf(
+            "ticket", "child", "children", "kid", "senior", "concession", "student", "family", "infant", "teen", "youth",
+            "price", "fare", "admission", "entry", "book", "booking", "pass", "per person", "guest", "passenger", "seat",
+            "qty", "quantity", "select", "add", "$", "nz$", "education", "learning", "literacy", "dental", "vaccine", "dose",
+            "size", "fiction", "young", "member", "pool", "swim", "bus", "ferry", "flight", "cinema", "movie", "event"
+        ),
         "mature" to listOf("cheese", "cheddar", "tree", "forest", "nature", "audience", "rating", "market", "economy", "student", "age"),
         "strip" to listOf("weather", "power", "comic", "mall", "led", "light", "bacon", "steak", "pork", "beef", "wood", "metal", "plastic", "stripes"),
         "naked" to listOf("eye", "truth", "mole rat", "gun", "snake", "bike", "motorcycle", "short", "option"),
@@ -540,7 +558,10 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
     }
 
     val imageCount = page.imageCount
-        val softThreshold = if (imageCount >= 8) 2 else 4
+        // Longer pages (inboxes, articles, forums) brush past mild words by sheer volume, so the bar rises
+        // with length: +1 per 3000 characters past the first 2000, at most +4. Image-heavy pages rise half as fast
+        val lengthBonus = ((sanitizedText.length - 2000).coerceAtLeast(0) / 3000).coerceAtMost(4)
+        val softThreshold = if (imageCount >= 8) 2 + lengthBonus / 2 else 4 + lengthBonus
 
         var softCount = 0
         val caughtWords = mutableListOf<String>()
@@ -557,8 +578,13 @@ class ShieldRuleEngine(private val prefs: SharedPreferences, private val appName
                 index += word.length
             }
         }
-        if (softCount >= softThreshold) {
-            GuardianService.addLog("Web block: matched soft words limit (" + softCount + "/" + softThreshold + ") with " + imageCount + " images on page")
+        // Most mild words count once however often they appear (a recipe or booking page repeats them),
+        // but the stronger ones count every hit: a page that keeps saying "nude" is what it looks like
+        val strongHits = caughtWords.count { it in strongSoftWords }
+        val otherDistinct = caughtWords.filter { it !in strongSoftWords }.distinct().size
+        val softScore = strongHits + otherDistinct
+        if (softScore >= softThreshold) {
+            GuardianService.addLog("Web block: matched soft words limit (score " + softScore + " = " + strongHits + " strong hits + " + otherDistinct + " other distinct, " + softCount + " hits / " + softThreshold + ") with " + imageCount + " images, " + sanitizedText.length + " chars")
             return ShieldAction.Block("Content Guard: " + caughtWords.distinct().joinToString(" & ") + " (detected " + softCount + " times)", true)
         }
 

@@ -7,6 +7,9 @@
 //   node wardrobe.mjs                   the cast in wardrobe.json → out/cast/
 //   node wardrobe.mjs --random 12 [--seed 7]   random people → out/variants/
 //   node wardrobe.mjs --assets          also copy the cast into the Homevisits APK's assets
+//   node wardrobe.mjs --only rachel     just one of the cast (the viewer's Sculpt mode uses this)
+// A cast member's face is sculpted in sculpts/<name>.json (the viewer's Sculpt mode
+// writes it); stand-in bodies only, since a pack body has its own face.
 // Bodies come from the Quaternius pack when it's unpacked in packs/, otherwise
 // from standin.mjs.
 import { Logger, NodeIO } from '@gltf-transform/core';
@@ -323,10 +326,15 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       console.log(`🎲 v${String(i).padStart(2, '0')}: ${from}, ${p.wear.map((w) => `${w.garment} (${w.pattern})`).join(', ')}`);
     }
   } else {
+    const only = flag('--only');
+    if (only && !cfg.cast[only]) throw new Error(`no "${only}" in wardrobe.json's cast`);
     for (const [name, person] of Object.entries(cfg.cast)) {
+      if (only && name !== only) continue;
       const spec = cfg.bodies[person.body];
       if (!spec) throw new Error(`${name}: no body "${person.body}" in wardrobe.json`);
-      const { doc, from } = await loadBody(spec, { ...(person.height && { height: person.height }), ...(person.skin && { skin: person.skin }), brows: browsOf(person, cfg.garments) });
+      const sculptFile = join(HERE, 'sculpts', `${name}.json`);
+      const sculpt = existsSync(sculptFile) ? JSON.parse(readFileSync(sculptFile, 'utf8')) : undefined;
+      const { doc, from } = await loadBody(spec, { ...(person.height && { height: person.height }), ...(person.skin && { skin: person.skin }), brows: browsOf(person, cfg.garments), ...(sculpt && { sculpt }) });
       dress(doc, person.wear, cfg.garments);
       const file = join(HERE, 'out/cast', `${name}.glb`);
       await save(doc, file);

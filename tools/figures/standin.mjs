@@ -84,6 +84,7 @@ function smin(a, b, k) {
 /** The shapes the body is made of, each moved by one bone, at the 1.75 m reference size. */
 function shapesOf(b, J) {
   const S = [];
+  S.carve = [];
   const ell = (bone, c, r, k) => S.push({ bone, k, d: (p) => ellipsoid(p, c, r) });
   const cap = (bone, a, c, r1, r2, k) => S.push({ bone, k, d: (p) => cone(p, a, c, r1, r2) });
   ell('pelvis', [0, 0.92, -0.005], [b.hips, 0.11, 0.105], 0.05);
@@ -94,9 +95,19 @@ function shapesOf(b, J) {
   cap('neck_01', [0, 1.38, -0.005], [0, 1.57, 0], 0.052, 0.047, 0.04);
   ell('head', [0, 1.645, 0.012], [0.078, 0.108, 0.095], 0.03);
   ell('head', [0, 1.592, 0.035], [0.06, 0.05, 0.06], 0.05);
-  cap('head', [0, 1.64, 0.098], [0, 1.615, 0.107], 0.01, 0.0135, 0.016);
+  // the face's shape, which the fine head mesh can show: nose, lips, chin
+  cap('head', [0, 1.66, 0.101], [0, 1.622, 0.117], 0.0055, 0.0085, 0.01);
+  ell('head', [0, 1.619, 0.116], [0.0105, 0.009, 0.0095], 0.006);
+  ell('head', [0, 1.5795, 0.0955], [0.0185, 0.005, 0.0065], 0.005);
+  ell('head', [0, 1.5685, 0.0935], [0.0155, 0.0058, 0.007], 0.005);
+  ell('head', [0, 1.551, 0.068], [0.019, 0.014, 0.013], 0.012);
   for (const [s, x] of [['l', 1], ['r', -1]]) {
     ell('head', [x * 0.079, 1.636, 0], [0.012, 0.026, 0.018], 0.012);
+    ell('head', [x * 0.0105, 1.614, 0.108], [0.0068, 0.0058, 0.0065], 0.005); // the nose's wings
+    ell('head', [x * 0.03, 1.67, 0.094], [0.024, 0.007, 0.01], 0.012); // brow ridge
+    ell('head', [x * 0.044, 1.632, 0.072], [0.026, 0.013, 0.014], 0.024); // cheekbone
+    // eye sockets, carved after everything is joined, so the eyes sit in them
+    S.carve.push({ k: 0.008, d: (p) => ellipsoid(p, [x * 0.031, 1.656, 0.1], [0.0165, 0.0115, 0.0095]) });
     cap(`clavicle_${s}`, [0, 1.415, -0.005], [x * (b.shoulders - 0.01), 1.4, 0], 0.066, 0.056, 0.05);
     const hand = J[`hand_${s}`];
     const dir = [x * Math.sin(ARM_DOWN), -Math.cos(ARM_DOWN), 0];
@@ -108,8 +119,30 @@ function shapesOf(b, J) {
     cap(`foot_${s}`, [x * 0.1, 0.042, -0.045], [x * 0.1, 0.038, 0.1], 0.042, 0.037, 0.03);
     cap(`ball_${s}`, [x * 0.1, 0.037, 0.1], [x * 0.1, 0.031, 0.165], 0.037, 0.031, 0.02);
   }
+  for (const st of b.sculpt?.strokes ?? []) addStroke(S, st);
   return S;
 }
+
+/**
+ * One sculpt stroke (sculpts/<name>.json, made in the viewer's Sculpt mode):
+ * a soft blob added to the head or carved out of it, at the 1.75 m reference
+ * size. `r` is a radius or [x, y, z] radii, `k` how softly it blends (default
+ * 0.6 × the radius), `mirror` also does it on the other side of the face.
+ */
+function addStroke(S, { op = 'add', c, r, k, mirror = false }) {
+  const rr = Array.isArray(r) ? r : [r, r, r];
+  const soft = k ?? Math.max(...rr) * 0.6;
+  for (const cx of mirror && Math.abs(c[0]) > 1e-4 ? [c[0], -c[0]] : [c[0]]) {
+    const at = [cx, c[1], c[2]];
+    const shape = { bone: 'head', k: soft, d: (p) => ellipsoid(p, at, rr), box: [at.map((v, i) => v - rr[i] - soft), at.map((v, i) => v + rr[i] + soft)] };
+    (op === 'carve' ? S.carve : S).push(shape);
+  }
+}
+
+/** The head's mesh box (reference size), grown to take in any sculpt strokes on it. */
+const HEAD_BOX = [[-0.115, 1.49, -0.12], [0.115, 1.79, 0.145]];
+/** Where the coarse body mesh stops and the fine head mesh starts (reference y), overlapping a little. */
+const BODY_TOP = 1.52, HEAD_BOTTOM = 1.505;
 
 // ---- meshing ---------------------------------------------------------------
 
@@ -166,11 +199,31 @@ function surfaceNets(sdf, lo, hi, h) {
   return { pos: new Float32Array(pos), tris: Uint32Array.from(tris) };
 }
 
-/** A small UV sphere, for the eyes. */
-function sphere(c, r, rings = 6, segs = 10) {
+/**
+ * Several surface-nets meshes as one: of each, only the triangles whose corners
+ * all pass its `keep(y)`, and only the vertices those use.
+ */
+function joinNets(parts) {
+  const pos = [], tris = [];
+  for (const [net, keep] of parts) {
+    const map = new Int32Array(net.pos.length / 3).fill(-1);
+    for (let t = 0; t < net.tris.length; t += 3) {
+      const c = [net.tris[t], net.tris[t + 1], net.tris[t + 2]];
+      if (!c.every((v) => keep(net.pos[v * 3 + 1]))) continue;
+      for (const v of c) {
+        if (map[v] < 0) { map[v] = pos.length / 3; pos.push(net.pos[v * 3], net.pos[v * 3 + 1], net.pos[v * 3 + 2]); }
+        tris.push(map[v]);
+      }
+    }
+  }
+  return { pos: new Float32Array(pos), tris: Uint32Array.from(tris) };
+}
+
+/** A small UV sphere, for the eyes; with `th0`/`th1` (radians from the top) only that band of it, for the eyelids. */
+function sphere(c, r, rings = 6, segs = 10, th0 = 0, th1 = Math.PI) {
   const pos = [], nrm = [], tris = [];
   for (let i = 0; i <= rings; i++) for (let j = 0; j <= segs; j++) {
-    const th = (i / rings) * Math.PI, ph = (j / segs) * 2 * Math.PI;
+    const th = th0 + (i / rings) * (th1 - th0), ph = (j / segs) * 2 * Math.PI;
     const n = [Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)];
     nrm.push(...n);
     pos.push(c[0] + n[0] * r, c[1] + n[1] * r, c[2] + n[2] * r);
@@ -237,12 +290,15 @@ function faceOf(sdfRef) {
     return g.map((x) => x / l);
   };
   const onSkin = (x, y, sink) => [x, y, surfaceZ(x, y) - sink];
-  const parts = { whites: [], irises: [], brows: [], mouth: [] };
+  const parts = { whites: [], irises: [], lids: [], brows: [], mouth: [] };
   for (const x of [1, -1]) {
-    const c = [x * 0.031, 1.655, 0.09];
+    const c = [x * 0.031, 1.655, 0.0875];
     parts.whites.push(sphere(c, 0.0125, 8, 12));
     // the iris sits on the front of the white, looking a touch inward and down
-    parts.irises.push(sphere([c[0] - x * 0.0015, c[1] - 0.001, c[2] + 0.0095], 0.0068, 6, 10));
+    parts.irises.push(sphere([c[0] - x * 0.0012, c[1] - 0.0008, c[2] + 0.0078], 0.0066, 6, 14));
+    // eyelids: skin over the top and bottom of the eye, leaving an almond of it showing
+    const lid = 0.0138;
+    parts.lids.push(sphere(c, lid, 5, 14, 0, 1.2), sphere(c, lid, 4, 14, 2.08, Math.PI));
     // a brow: a soft arch over the eye, thicker near the nose
     const brow = [];
     for (let i = 0; i <= 8; i++) {
@@ -331,10 +387,23 @@ export function makeStandin(build = 'female', { moves = true, name } = {}) {
   const J0 = jointsAt(b);
   const J = Object.fromEntries(Object.entries(J0).map(([k, v]) => [k, v.map((x) => x * s)]));
   const shapes = shapesOf(b, J0);
-  const sdfRef = (p) => { let d = Infinity; for (const sh of shapes) d = d === Infinity ? sh.d(p) : smin(d, sh.d(p), sh.k); return d; };
+  const sdfRef = (p) => {
+    let d = Infinity;
+    for (const sh of shapes) d = d === Infinity ? sh.d(p) : smin(d, sh.d(p), sh.k);
+    for (const sh of shapes.carve) d = -smin(-d, sh.d(p), sh.k); // smooth subtraction
+    return d;
+  };
   const sdf = (p) => sdfRef(p.map((x) => x / s)) * s;
 
-  const net = surfaceNets(sdf, [-0.7 * s, -0.03 * s, -0.22 * s], [0.7 * s, 1.8 * s, 0.26 * s], 0.016 * s);
+  // the body on a 16 mm grid, the head on a 5 mm one so the face's shape shows,
+  // joined at the neck (the two overlap there by a centimetre and a half)
+  const hb = HEAD_BOX.map((v) => [...v]);
+  for (const sh of [...shapes, ...shapes.carve]) if (sh.box && sh.box[1][1] > HEAD_BOTTOM) for (let a = 0; a < 3; a++) {
+    hb[0][a] = Math.min(hb[0][a], sh.box[0][a]); hb[1][a] = Math.max(hb[1][a], sh.box[1][a]);
+  }
+  const bodyNet = surfaceNets(sdf, [-0.7 * s, -0.03 * s, -0.22 * s], [0.7 * s, (BODY_TOP + 0.04) * s, 0.26 * s], 0.016 * s);
+  const headNet = surfaceNets(sdf, hb[0].map((x) => x * s), hb[1].map((x) => x * s), 0.005 * s);
+  const net = joinNets([[bodyNet, (y) => y < BODY_TOP * s], [headNet, (y) => y > HEAD_BOTTOM * s]]);
   const vcount = net.pos.length / 3;
 
   // normals from the field's slope
@@ -389,17 +458,19 @@ export function makeStandin(build = 'female', { moves = true, name } = {}) {
 
   const mat = (n, hex, rough = 0.85) => doc.createMaterial(n)
     .setBaseColorFactor([...hex.match(/\w\w/g).map((h) => (parseInt(h, 16) / 255) ** 2.2), 1]).setRoughnessFactor(rough).setMetallicFactor(0);
+  const skinMat = mat('skin', b.skin);
   const body = doc.createPrimitive()
     .setAttribute('POSITION', acc('VEC3', net.pos)).setAttribute('NORMAL', acc('VEC3', nrm))
     .setAttribute('JOINTS_0', acc('VEC4', joints)).setAttribute('WEIGHTS_0', acc('VEC4', weights))
     .setIndices(acc('SCALAR', vcount > 65535 ? net.tris : Uint16Array.from(net.tris)))
-    .setMaterial(mat('skin', b.skin));
+    .setMaterial(skinMat);
   // the face, held by the head bone: one primitive per material
   const mesh = doc.createMesh('Body').addPrimitive(body);
   const headJ = names.indexOf('head');
   const face = faceOf(sdfRef);
   const looks = {
     whites: mat('eye_white', '#efece6', 0.35),
+    lids: skinMat,
     irises: mat('eyes', b.iris ?? '#3b2a1e', 0.25),
     brows: mat('brows', b.brows ?? '#3a2a1e', 0.9),
     mouth: mat('mouth', b.lips ?? lipsFor(b.skin), 0.6),
