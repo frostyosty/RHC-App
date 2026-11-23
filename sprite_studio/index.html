@@ -557,9 +557,9 @@ How to do it:
 - Read sprite_studio/CLAUDE.md first and follow it. It describes the cacheon style every creature is drawn in and the render, look, fix loop to use.
 - The drawing is the \`${beast}\` design in sprite_studio/autogen/designs.py: the line \`design('${beast}', ...)\` and the view functions and Kit class it names. Change only this creature's code. The shared parts (dleg, bird_leg, bat_wing and so on) are used by other rows, so if you need one to behave differently, add a new helper instead of changing it.
 - Keep what makes it this creature: the idea behind its name, its line's accent colour, its grid size, its views and the way it faces. Change its shape: silhouette, proportions, head, limbs, crest, tail, wings, plating. Comparing the old and new GIFs at thumbnail size, I should see the difference straight away.
-- Start by putting the row back on its original colours and rendering the design as it is now, so you know what you are moving away from: \`python3 sprite_studio/autogen/autogen.py --only ${beast} --look original\`, then the same command with \`--turnaround\` and a PNG path outside the repo. Look at the image.
-- After each change render the turnaround again and look at it. Check the open mouth and angry eyes too. Keep going until every view reads as the same creature.
-- Put every scratch image and script outside the repo, which is committed automatically.
+- Start by putting the row back on its original colours: \`python3 sprite_studio/autogen/autogen.py --only ${beast} --look original\`. Then draw the design as it is now, so you know what you are moving away from: \`python3 sprite_studio/loop/loop.py look ${beast} --look 0\`. That gives one picture of every view, the walk step and the angry, hurt and closed-eye faces. Look at it.
+- After each change run \`python3 sprite_studio/loop/loop.py redo ${beast} --look 0\` and look at its picture. It shows before and after for the cells that changed and checks every animation for clipping. Keep going until every view reads as the same creature.
+- Put every scratch image and script outside the repo, which is committed automatically. (sprite_studio/loop/out/ is ignored by git, so the loop's pictures are fine there.)
 - When it reads well, write the GIFs with \`python3 sprite_studio/autogen/autogen.py --only ${beast}\`. It must print no ⚠️ edge warnings.
 - Skip the world preview (step 5 of the loop). I'll look at the result in the Studio.
 

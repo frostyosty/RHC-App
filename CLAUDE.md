@@ -38,6 +38,8 @@ More docs, read only when the work calls for them:
   way: its `README.md`, then only your step's file.
 - `sprite_studio/CLAUDE.md`: how creatures, props and battle effects are
   drawn (the cacheon style). Read it before drawing or adding any art.
+  To change or remake a sprite, use the loop in `sprite_studio/loop/`
+  (`loop.py look` / `redo`; its `README.md` explains them).
 
 ## Build & release
 

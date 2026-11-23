@@ -34,15 +34,21 @@ creature should look and be built. The user signed off on it. How it was made:
   (open/closed/hurt/happy/angry), `s.mouth` (open jaw showing teeth) and `s.t`
   (glow flicker). Autogen builds every animation from those, including `turn`,
   the 8-direction spin.
-- **Loop.** Iterate visually, not blind:
-  1. Render the views with `python3 sprite_studio/autogen/autogen.py --turnaround views.png --only <row>`,
-     and a big side-by-side of normal and `Pose(mouth=True, eyes='angry')`,
-     then look at the images.
+- **Loop.** Iterate visually, not blind. `sprite_studio/loop/` does a round in
+  one command, with one picture and a line of numbers per cell (read its
+  `README.md`):
+  1. `python3 sprite_studio/loop/loop.py look <row> --look 0` draws every view,
+     the walk step, the angry open mouth, hurt and closed eyes. Look at the
+     picture. Add `--anims attack,hit` to see animations frame by frame.
   2. Fix whatever reads badly: a floating head, pillar legs, a featureless
      back of the head.
-  3. Repeat until every view reads as the same creature.
-  4. Write the GIFs with `autogen.py --only <row>` (it must print no ⚠️
-     edge warnings).
+  3. `python3 sprite_studio/loop/loop.py redo <row> --look 0` shows only the
+     cells that changed, before and after, says which cells didn't change,
+     and checks every animation for clipping. Repeat until every view reads
+     as the same creature. If the feet gap differs between views, the
+     creature floats or sinks in one of them.
+  4. Write the GIFs with `autogen.py --only <row>`, or `redo <row> --write`.
+     It must print no ⚠️ edge warnings.
   5. Check `turn.png` from `bash tools/world_preview/run.sh`.
 - **Canvas.** Frames are padded to 42/32 of the grid, so lunges never clip.
   The 3D renderer's `CREATURE_CANVAS` matches that, so don't change one without
